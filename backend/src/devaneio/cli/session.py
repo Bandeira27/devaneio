@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state
+from devaneio.llm import ChatClient
 from devaneio.narration import Narrator, load_builtin_pack
 from devaneio.rules import RuleSystem, load_builtin_rules, validate_campaign_against_rules
 from devaneio.rules import validate_state_against_rules
@@ -37,6 +38,7 @@ class Session:
     campaign_path: Path
     save_path: Path
     narrator: Narrator
+    llm: ChatClient | None = None  # opcional; nunca gravado na partida
 
 
 def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> Session:

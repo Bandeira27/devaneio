@@ -72,6 +72,15 @@ class CommandError(ValueError):
 Handler = Callable[[Session, "str | None", list[str]], "tuple[GameState, str]"]
 
 
+def is_command(line: str) -> bool:
+    """A primeira palavra (depois de um `id:` opcional) é um comando conhecido? Sem shlex,
+    para que aspas soltas em texto livre não escondam um comando."""
+    parts = line.split()
+    if parts and parts[0].endswith(":") and len(parts[0]) > 1:
+        parts = parts[1:]
+    return bool(parts) and parts[0].lower() in COMMANDS
+
+
 def execute(session: Session, line: str) -> tuple[Session, str]:
     try:
         tokens = shlex.split(line)
@@ -183,7 +192,7 @@ def _go(session: Session, actor: str | None, args: list[str]) -> tuple[GameState
 def _check(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) not in (2, 3):
         raise CommandError("uso: testar <habilidade> <dificuldade> [modificador]")
-    character = _actor(session, actor)
+    character = resolve_actor(session, actor)
     result = resolve_check(
         session.state, session.rules,
         character_id=character.id, skill_id=args[0], difficulty_id=args[1],
@@ -196,7 +205,7 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
     if len(args) not in (2, 3):
         raise CommandError("uso: atacar <arma> <alvo> [modificador]")
     weapon_id, target_id = args[0], args[1]
-    character = _actor(session, actor)
+    character = resolve_actor(session, actor)
     weapon = next((w for w in session.rules.weapons if w.id == weapon_id), None)
     if weapon is None:
         raise CommandError(f"arma '{weapon_id}' não existe no sistema de regras")
@@ -259,7 +268,7 @@ def _rest(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
 def _sheet(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) > 1:
         raise CommandError("uso: ficha [id]")
-    character = _actor(session, args[0] if args else actor)
+    character = resolve_actor(session, args[0] if args else actor)
     attrs = ", ".join(f"{k} {v}" for k, v in character.attributes.items())
     inventory = ", ".join(character.inventory) or "vazio"
     return session.state, (
@@ -325,7 +334,7 @@ COMMANDS: dict[str, Handler] = {
 # --- apoio ---------------------------------------------------------------------
 
 
-def _actor(session: Session, actor: str | None) -> Character:
+def resolve_actor(session: Session, actor: str | None) -> Character:
     characters = session.state.characters
     if actor is not None:
         character = characters.get(actor)

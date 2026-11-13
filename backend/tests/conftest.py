@@ -37,3 +37,10 @@ def rules(rules_data: dict):
     from devaneio.rules import RuleSystem
 
     return RuleSystem.model_validate(rules_data)
+
+
+@pytest.fixture(autouse=True)
+def _no_llm_from_the_environment(monkeypatch):
+    """Nenhum teste fala com um LLM real por causa das variáveis do usuário."""
+    for name in ("BASE_URL", "MODEL", "API_KEY", "TIMEOUT"):
+        monkeypatch.delenv(f"DEVANEIO_LLM_{name}", raising=False)

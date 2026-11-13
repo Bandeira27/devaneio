@@ -4,14 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 from pydantic import ValidationError
 
+from dataclasses import replace
+
+from devaneio.llm import LlmConfig, LlmError, OpenAiCompatClient
 from devaneio.schema import CampaignIntegrityError
 
-from .commands import CommandError, execute
+from .commands import CommandError, execute, is_command
+from .freeform import run_freeform
 from .output import format_output, status_banner
 from .session import CliError, load_game, new_game, save_game
 
@@ -29,6 +34,9 @@ def main(argv: list[str] | None = None) -> int:
 
     play = sub.add_parser("jogar", help="abre uma partida salva")
     play.add_argument("partida", type=Path)
+    play.add_argument(
+        "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
+    )
 
     args = parser.parse_args(argv)
     try:
@@ -40,10 +48,15 @@ def main(argv: list[str] | None = None) -> int:
                 f"Para jogar: python -m devaneio.cli jogar {args.partida}"
             )
             return 0
-        return _play(load_game(args.partida))
+        session = load_game(args.partida)
+        if not args.sem_llm:
+            config = LlmConfig.from_env(os.environ)
+            if config is not None:
+                session = replace(session, llm=OpenAiCompatClient(config))
+        return _play(session)
     except FileNotFoundError as exc:
         print(f"erro: arquivo não encontrado: {exc.filename}", file=sys.stderr)
-    except (ValidationError, CampaignIntegrityError, CliError) as exc:
+    except (ValidationError, CampaignIntegrityError, CliError, LlmError) as exc:
         print(f"erro: {exc}", file=sys.stderr)
     return 1
 
@@ -53,6 +66,11 @@ def _play(session) -> int:
     session, text = execute(session, "olhar")
     print(text)
     print("\nDigite 'ajuda' para os comandos.")
+    if session.llm is not None:
+        print(
+            f"LLM ligado ({session.llm.description}): escreva livremente e o mestre propõe as ações. "
+            "O contexto da partida é enviado a esse servidor."
+        )
     while True:
         try:
             line = input("\n> ")
@@ -62,13 +80,22 @@ def _play(session) -> int:
         if line.strip().lower() in QUIT:
             break
         before = session.state
+        say, commands = "", ()
         try:
-            session, text = execute(session, line)
+            if session.llm is not None and line.strip() and not is_command(line):
+                result = run_freeform(session, line)
+                session, say, commands, text = result.session, result.say, result.commands, ""
+            else:
+                session, text = execute(session, line)
         except CommandError as exc:
             print(f"erro: {exc}")
             continue
         save_game(session)
-        output = format_output(session.narrator, before, session.state, text)
+        if say:
+            print(f"Mestre: {say}")
+        if commands:
+            print(f"  (ações propostas: {'; '.join(commands)})")
+        output = format_output(session.narrator, before, session.state, text, session.llm)
         if output:
             print(output)
         banner = status_banner(before, session.state)
