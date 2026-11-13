@@ -160,3 +160,19 @@ def test_failed_beat_is_narrated(narrator, campaign, rules):
 
     s = fail_beat(activate_beat(s, campaign, beat_id="chegada").state, campaign, beat_id="chegada").state
     assert "Chegada à vila" in narrator.narrate(s.events[-1], len(s.events) - 1, s)
+
+
+def test_heal_and_rest_are_narrated(narrator, campaign, rules, played):
+    from devaneio.engine import heal, rest
+
+    s = apply_damage(played, campaign, target_kind="character", target_id="aria", amount=3, source="x").state
+    healed = heal(s, campaign, target_kind="character", target_id="aria", amount=2, source="poção")
+    i = len(healed.state.events) - 1
+    prose = narrator.narrate(healed.state.events[i], i, healed.state)
+    assert "Aria" in prose and "poção" in prose and prose != healed.text and "#" not in prose
+
+    cleared = apply_damage(healed.state, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x").state
+    rested = rest(cleared, campaign, rules)
+    j = len(rested.state.events) - 1
+    prose = narrator.narrate(rested.state.events[j], j, rested.state)
+    assert "Aria (+" in prose and prose != rested.text and "#" not in prose

@@ -17,6 +17,8 @@ EVENT_VARIABLES: dict[str, tuple[str, ...]] = {
     "check": ("ator", "habilidade", "dificuldade", "total", "margem", "desfecho"),
     "damage": ("atacante", "alvo", "arma", "fonte", "dano", "hp", "hp_max"),
     "move": ("origem", "destino", "descricao"),
+    "heal": ("alvo", "fonte", "cura", "hp", "hp_max"),
+    "rest": ("curados",),
     "character_joined": ("ator", "hp"),
     "turn_end": ("turno",),
     "director": ("tensao", "local"),

@@ -76,6 +76,21 @@ class Narrator:
                 "hp": str(d.get("hp_after", "")),
                 "hp_max": str(self._max_hp(state, d.get("target_kind"), d.get("target_id"))),
             }
+        if kind == "heal":
+            return "", {
+                "alvo": self._name(state, d.get("target_kind"), d.get("target_id")),
+                "fonte": str(d.get("source", "")),
+                "cura": str(d.get("amount", "")),
+                "hp": str(d.get("hp_after", "")),
+                "hp_max": str(self._max_hp(state, d.get("target_kind"), d.get("target_id"))),
+            }
+        if kind == "rest":
+            healed = d.get("healed", {})
+            parts = [
+                f"{self._name(state, 'character', cid)} (+{info.get('amount', 0)})"
+                for cid, info in healed.items()
+            ]
+            return "", {"curados": ", ".join(parts)}
         if kind == "move":
             dest = self._location(d.get("to_location_id"))
             return "", {

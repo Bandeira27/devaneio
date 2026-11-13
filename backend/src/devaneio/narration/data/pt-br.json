@@ -47,6 +47,19 @@
       "É demais para #alvo#: #fonte# derruba quem ainda tentava ficar de pé."
     ],
 
+    "heal": [
+      "#alvo# se recompõe (#fonte#): #cura# de vida de volta, #hp# de #hp_max#.",
+      "A ajuda funciona. #fonte# devolve #cura# a #alvo#, que volta a #hp# de #hp_max#.",
+      "Um alívio: #alvo# recupera #cura# (#fonte#) e fica com #hp# de #hp_max#."
+    ],
+
+    "rest": [
+      "O grupo respira fundo e descansa: #curados#. #sossego#",
+      "Um descanso curto, o bastante para refazer corpo e cabeça: #curados#. #sossego#",
+      "Há tempo de cuidar dos ferimentos: #curados#. #sossego#"
+    ],
+    "sossego": ["Por ora, ninguém interrompe.", "O silêncio é bem-vindo desta vez.", "Algum conforto, finalmente."],
+
     "move": [
       "O grupo deixa #origem# e segue para #destino#. #descricao#",
       "De #origem# a #destino#, o caminho se faz andando. #descricao#",
