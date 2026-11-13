@@ -50,6 +50,11 @@ export interface Character {
  */
 export interface NpcState {
   alive: boolean;
+  hp: number;
+  max_hp: number;
+  attributes: {
+    [k: string]: number;
+  };
   disposition: number;
   location_id: string | null;
 }

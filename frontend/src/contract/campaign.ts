@@ -36,6 +36,9 @@ export interface Npc {
   location_id?: string | null;
   faction_id?: string | null;
   secrets?: string[];
+  attributes?: {
+    [k: string]: number;
+  };
 }
 /**
  * Marco da trama. `requires` lista marcos que precisam estar concluídos antes.
