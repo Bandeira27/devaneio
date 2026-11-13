@@ -29,7 +29,7 @@ uv venv && uv pip install -e ".[dev]"
 
 Comandos: `olhar`, `entrar <id> "<nome>" [FOR=3 ...]`, `ir <local>`, `testar <habilidade>
 <dificuldade> [modificador]`, `atacar <arma> <alvo> [modificador]`, `ferir <alvo> <quantia>`,
-`ficha`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
+`ficha`, `marcos`, `marco ativar|concluir|falhar <id>`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
 O arquivo da partida é salvo após cada ação e é a fonte da verdade. `atacar` compõe no CLI
 um `resolve_check` (habilidade da arma contra Normal) e, em acerto, um `deal_damage`.
 
@@ -81,6 +81,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 3: NPCs com atributos (parciais na campanha, completados pelos defaults do sistema) e `hp` pela fórmula de `max_hp`; `deal_damage` (arma rolada com os atributos do atacante), `apply_damage` (quantia fixa) e `end_turn`. hp tem piso em 0: personagem fica fora de combate, morte é decisão narrativa; NPC fica `alive=false`.
 - Etapa 4: `add_character` (atributos parciais completados pelo sistema, hp pela fórmula) e `move` (o grupo anda junto, só por `connections`). Com isso uma partida mínima dá a volta: criar, andar, testar, ferir, encerrar turno.
 - Etapa 5: linha de comando (`devaneio.cli`) com partida em disco e interpretador de comandos puro; `Weapon.skill` no sistema de regras; campanha de exemplo em `campaigns/`.
+- Etapa 6: marcos como ações (`activate_beat`, `complete_beat`, `fail_beat`), condições declarativas na campanha (`activate_when`/`complete_when`) e o diretor de narrativa: avança marcos pelos gatilhos, faz NPCs hostis reagirem ao fim do turno e mede a tensão. `combat` e `dispositions` no sistema de regras; `disposition` e `weapon_id` no NPC.
 
 ## Motor
 
@@ -96,6 +97,22 @@ avançado e um `Event` no log. O estado de entrada nunca é alterado. O acerto d
 | `move` | campanha | `move` |
 | `resolve_check` | regras | `check` |
 | `deal_damage` / `apply_damage` | campanha (+ regras) | `damage` |
+| `activate_beat` / `complete_beat` / `fail_beat` | campanha | `beat_activated` / `beat_done` / `beat_failed` |
+| `direct` / `pass_turn` | campanha, regras | `director` (+ os eventos das ações que dispara) |
 | `end_turn` | — | `turn_end` |
 
-Sem LLM, sem multiplayer, sem interface gráfica. NPCs ainda não agem (não há diretor de narrativa).
+## Diretor de narrativa
+
+Determinístico, sem LLM, em `backend/src/devaneio/engine/director.py`. Ao fim de cada turno
+(`pass_turn`) ele: (1) avança marcos cujas condições declaradas na campanha valem;
+(2) faz cada NPC hostil (disposição abaixo de `dispositions.hostile_below`) presente no local
+atacar um personagem de pé, com a habilidade da arma contra `combat.attack_difficulty`;
+(3) avança marcos de novo (um NPC caído pode concluir algo); (4) mede a **tensão** (0 a 1,
+a partir de hp perdido, hostis presentes, caídos e marcos falhos) e registra um evento
+`director`. A tensão é derivada e, por enquanto, só observada: usá-la para ritmo é trabalho
+futuro. O diretor nunca inventa texto; só dispara ações do motor.
+
+Condições disponíveis nos marcos: `at_location`, `npc_down`, `beat_done`, `turn_at_least`.
+Um marco sem `complete_when` só conclui por ação explícita (`marco concluir <id>` no CLI).
+
+Sem LLM, sem multiplayer, sem interface gráfica.
