@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "id": "sombra-do-vale",
+  "title": "A Sombra do Vale",
+  "premise": "Um culto esquecido desperta nas ruínas acima da vila de Pedra Alta. Alguém precisa subir a montanha antes que o deus adormecido abra os olhos.",
+  "rules_id": "default",
+  "start_location_id": "vila",
+  "locations": [
+    {
+      "id": "vila",
+      "name": "Vila de Pedra Alta",
+      "description": "Casas de pedra agarradas à encosta. Fumaça de forja, cheiro de pão e olhares desconfiados para a montanha.",
+      "connections": [
+        "floresta"
+      ]
+    },
+    {
+      "id": "floresta",
+      "name": "Floresta Cinzenta",
+      "description": "Pinheiros altos demais, silêncio demais. A trilha sobe entre raízes e névoa.",
+      "connections": [
+        "vila",
+        "ruinas"
+      ]
+    },
+    {
+      "id": "ruinas",
+      "name": "Ruínas do Templo",
+      "description": "Colunas quebradas em volta de um altar intacto. Alguém varreu o chão recentemente.",
+      "connections": [
+        "floresta"
+      ]
+    }
+  ],
+  "factions": [
+    {
+      "id": "culto",
+      "name": "Culto da Sombra",
+      "description": "Devotos de um deus que a vila prefere não nomear.",
+      "goals": [
+        "despertar o deus adormecido",
+        "manter a vila ignorante até o fim"
+      ]
+    }
+  ],
+  "npcs": [
+    {
+      "id": "ferreiro",
+      "name": "Bram",
+      "description": "Ferreiro de braços grossos e poucas palavras. Perdeu o irmão na montanha.",
+      "location_id": "vila",
+      "secrets": [
+        "sabe o caminho secreto para o altar"
+      ]
+    },
+    {
+      "id": "sacerdote",
+      "name": "Irmão Vael",
+      "description": "Sorriso manso, mãos sempre limpas.",
+      "location_id": "ruinas",
+      "faction_id": "culto",
+      "secrets": [
+        "é o líder do culto"
+      ],
+      "attributes": {
+        "FOR": 3,
+        "PRE": 4
+      }
+    }
+  ],
+  "beats": [
+    {
+      "id": "chegada",
+      "title": "Chegada à vila",
+      "description": "Os aventureiros chegam a Pedra Alta e ouvem sobre os desaparecimentos."
+    },
+    {
+      "id": "pista",
+      "title": "A pista nas ruínas",
+      "description": "Algo nas ruínas aponta para o culto.",
+      "requires": [
+        "chegada"
+      ]
+    },
+    {
+      "id": "confronto",
+      "title": "Confronto com o culto",
+      "description": "O culto é desmascarado e o despertar, interrompido ou não.",
+      "requires": [
+        "pista"
+      ]
+    }
+  ]
+}
