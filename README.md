@@ -65,6 +65,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 1: esquema de dados (`Campaign` estático e `GameState` mutável), validação de integridade e contrato gerado.
 - Etapa 2: interpretador de expressões, esquema do sistema de regras com o sistema padrão, RNG reprodutível e `resolve_check` (teste de habilidade que gera novo estado e evento).
 - Etapa 3: NPCs com atributos (parciais na campanha, completados pelos defaults do sistema) e `hp` pela fórmula de `max_hp`; `deal_damage` (arma rolada com os atributos do atacante), `apply_damage` (quantia fixa) e `end_turn`. hp tem piso em 0: personagem fica fora de combate, morte é decisão narrativa; NPC fica `alive=false`.
+- Etapa 4: `add_character` (atributos parciais completados pelo sistema, hp pela fórmula) e `move` (o grupo anda junto, só por `connections`). Com isso uma partida mínima dá a volta: criar, andar, testar, ferir, encerrar turno.
 
 ## Motor
 
@@ -72,5 +73,14 @@ Toda ação do motor (`backend/src/devaneio/engine/`) é uma função pura: rece
 (e, quando precisa, `Campaign` e `RuleSystem`), devolve um novo estado com `rng_draws`
 avançado e um `Event` no log. O estado de entrada nunca é alterado. O acerto de um ataque
 é um `resolve_check`; o dano é um `deal_damage` separado, para quem orquestra decidir.
+
+| Ação | Precisa de | Evento |
+|---|---|---|
+| `initial_state` | campanha, regras | — |
+| `add_character` | regras | `character_joined` |
+| `move` | campanha | `move` |
+| `resolve_check` | regras | `check` |
+| `deal_damage` / `apply_damage` | campanha (+ regras) | `damage` |
+| `end_turn` | — | `turn_end` |
 
 Sem LLM, sem multiplayer, sem interface.
