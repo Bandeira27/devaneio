@@ -27,6 +27,8 @@ class Npc(StrictModel):
     location_id: Id | None = None
     faction_id: Id | None = None
     secrets: list[str] = []
+    # Parcial: atributos ausentes recebem o default do sistema de regras ao criar o estado.
+    attributes: dict[str, int] = {}
 
 
 class Beat(StrictModel):

@@ -115,6 +115,20 @@
           "default": true,
           "type": "boolean"
         },
+        "hp": {
+          "type": "integer"
+        },
+        "max_hp": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {},
+          "type": "object"
+        },
         "disposition": {
           "default": 0,
           "type": "integer"
@@ -134,6 +148,9 @@
       },
       "required": [
         "alive",
+        "hp",
+        "max_hp",
+        "attributes",
         "disposition",
         "location_id"
       ],

@@ -16,6 +16,7 @@ from .validation import (
     builtin_rules_json,
     load_builtin_rules,
     load_rules,
+    validate_campaign_against_rules,
     validate_rules,
     validate_state_against_rules,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "load_rules",
     "parse",
     "roll",
+    "validate_campaign_against_rules",
     "validate_rules",
     "validate_state_against_rules",
 ]

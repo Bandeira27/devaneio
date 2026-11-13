@@ -1,15 +1,17 @@
 import pytest
 from pydantic import ValidationError
 
+from devaneio.engine import initial_state
 from devaneio.rules import (
     RulesIntegrityError,
     RuleSystem,
     load_builtin_rules,
     load_rules,
+    validate_campaign_against_rules,
     validate_rules,
     validate_state_against_rules,
 )
-from devaneio.schema import Character, initial_state
+from devaneio.schema import Campaign, Character
 
 
 def errors_of(data: dict) -> list[str]:
@@ -120,15 +122,36 @@ def _hero(**attributes) -> Character:
 
 
 def test_state_matching_rules_has_no_errors(campaign, rules):
-    state = initial_state(campaign, 1, [_hero(FOR=2, AGI=3, MEN=1, PRE=2)])
+    state = initial_state(campaign, rules, 1, [_hero(FOR=2, AGI=3, MEN=1, PRE=2)])
     assert validate_state_against_rules(state, rules) == []
 
 
 def test_state_against_rules_reports_each_problem(campaign, rules):
-    state = initial_state(campaign, 1, [_hero(FOR=9, AGI=3, PRE=2, XIS=1)])
+    state = initial_state(campaign, rules, 1, [_hero(FOR=9, AGI=3, PRE=2, XIS=1)])
     errors = validate_state_against_rules(state, rules)
     assert errors == [
         "personagem 'aria' não tem o atributo 'MEN'",
         "personagem 'aria' tem atributo 'XIS', que o sistema não declara",
         "personagem 'aria': FOR = 9 fora de [1, 5]",
+    ]
+
+
+def test_npc_attributes_in_state_are_checked_too(campaign, rules):
+    state = initial_state(campaign, rules, 1)
+    state.npcs["ferreiro"].attributes["FOR"] = 0
+    assert validate_state_against_rules(state, rules) == ["npc 'ferreiro': FOR = 0 fora de [1, 5]"]
+
+
+def test_campaign_matching_rules_has_no_errors(campaign, rules):
+    assert validate_campaign_against_rules(campaign, rules) == []
+
+
+def test_campaign_against_rules_reports_each_problem(campaign_data, rules):
+    campaign_data["rules_id"] = "outro"
+    campaign_data["npcs"][1]["attributes"] = {"FOR": 7, "XIS": 1}  # parcial é permitido, inválido não
+    errors = validate_campaign_against_rules(Campaign.model_validate(campaign_data), rules)
+    assert errors == [
+        "campanha pede o sistema 'outro', mas o sistema é 'default'",
+        "npc 'sacerdote' tem atributo 'XIS', que o sistema não declara",
+        "npc 'sacerdote': FOR = 7 fora de [1, 5]",
     ]

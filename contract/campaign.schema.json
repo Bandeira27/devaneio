@@ -135,6 +135,13 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {},
+          "type": "object"
         }
       },
       "required": [

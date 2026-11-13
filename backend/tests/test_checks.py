@@ -1,21 +1,21 @@
 import pytest
 
-from devaneio.engine import EngineError, classify_outcome, resolve_check
+from devaneio.engine import EngineError, classify_outcome, initial_state, resolve_check
 from devaneio.engine.checks import OUTCOME_LABELS
 from devaneio.rng import Rng
 from devaneio.rules import CheckOutcome, Outcomes
-from devaneio.schema import Character, GameState, initial_state, validate_against_campaign
+from devaneio.schema import Character, GameState, validate_against_campaign
 
 SEED = 2024
 
 
 @pytest.fixture
-def state(campaign) -> GameState:
+def state(campaign, rules) -> GameState:
     hero = Character(
         id="aria", name="Aria", attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
         hp=10, max_hp=10,
     )
-    return initial_state(campaign, SEED, [hero])
+    return initial_state(campaign, rules, SEED, [hero])
 
 
 def check(state, rules, **kw):
@@ -126,6 +126,6 @@ def test_unknown_ids_raise(state, rules, kw, fragment):
 
 def test_missing_attribute_on_character_raises(campaign, rules):
     hero = Character(id="zed", name="Zed", attributes={"AGI": 1}, hp=5, max_hp=5)
-    state = initial_state(campaign, 1, [hero])
+    state = initial_state(campaign, rules, 1, [hero])
     with pytest.raises(EngineError, match="atributo 'FOR' não existe"):
         resolve_check(state, rules, character_id="zed", skill_id="lutar", difficulty_id="facil")

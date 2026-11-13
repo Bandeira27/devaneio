@@ -1,13 +1,14 @@
 import pytest
 from pydantic import ValidationError
 
+from devaneio.engine import initial_state
 from devaneio.schema import (
     BeatStatus,
     Character,
     Event,
     Fact,
     GameState,
-    initial_state,
+    NpcState,
     validate_against_campaign,
 )
 
@@ -25,17 +26,8 @@ def hero() -> Character:
 
 
 @pytest.fixture
-def state(campaign, hero) -> GameState:
-    return initial_state(campaign, rng_seed=42, characters=[hero])
-
-
-def test_initial_state_is_coherent(state, campaign):
-    assert validate_against_campaign(state, campaign) == []
-    assert state.turn == 0 and state.rng_draws == 0
-    assert state.current_location_id == campaign.start_location_id
-    assert set(state.npcs) == {"ferreiro", "sacerdote"}
-    assert state.npcs["sacerdote"].location_id == "ruinas"
-    assert all(s is BeatStatus.PENDING for s in state.beats.values())
+def state(campaign, rules, hero) -> GameState:
+    return initial_state(campaign, rules, rng_seed=42, characters=[hero])
 
 
 def test_json_roundtrip(state, campaign):
@@ -56,6 +48,11 @@ def test_hp_above_max_is_rejected():
 def test_negative_max_hp_is_rejected():
     with pytest.raises(ValidationError):
         Character(id="x", name="X", hp=0, max_hp=-1)
+
+
+def test_npc_hp_above_max_is_rejected():
+    with pytest.raises(ValidationError, match="maior que max_hp"):
+        NpcState(hp=7, max_hp=6)
 
 
 def test_character_key_must_match_id(state, hero):

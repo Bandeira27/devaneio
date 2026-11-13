@@ -6,6 +6,7 @@ from collections import Counter
 from importlib import resources
 from typing import Any, Iterable
 
+from devaneio.schema.campaign import Campaign
 from devaneio.schema.game_state import GameState
 
 from .expression import identifiers, parse
@@ -69,21 +70,41 @@ def load_builtin_rules(rules_id: str = "default") -> RuleSystem:
     return load_rules(builtin_rules_json(rules_id))
 
 
+def validate_campaign_against_rules(campaign: Campaign, rules: RuleSystem) -> list[str]:
+    """A campanha pede este sistema e os atributos parciais dos NPCs existem nele."""
+    errors: list[str] = []
+    if campaign.rules_id != rules.id:
+        errors.append(f"campanha pede o sistema '{campaign.rules_id}', mas o sistema é '{rules.id}'")
+    declared = {a.id: a for a in rules.attributes}
+    for npc in campaign.npcs:
+        errors += _attribute_errors(f"npc '{npc.id}'", npc.attributes, declared, partial=True)
+    return errors
+
+
 def validate_state_against_rules(state: GameState, rules: RuleSystem) -> list[str]:
-    """Todo personagem tem exatamente os atributos declarados, dentro dos limites."""
+    """Personagens e NPCs têm exatamente os atributos declarados, dentro dos limites."""
     errors: list[str] = []
     declared = {a.id: a for a in rules.attributes}
     for char_id, char in state.characters.items():
-        for name in sorted(set(declared) - set(char.attributes)):
-            errors.append(f"personagem '{char_id}' não tem o atributo '{name}'")
-        for name in sorted(set(char.attributes) - set(declared)):
-            errors.append(f"personagem '{char_id}' tem atributo '{name}', que o sistema não declara")
-        for name, value in char.attributes.items():
-            attr = declared.get(name)
-            if attr is not None and not attr.min <= value <= attr.max:
-                errors.append(
-                    f"personagem '{char_id}': {name} = {value} fora de [{attr.min}, {attr.max}]"
-                )
+        errors += _attribute_errors(f"personagem '{char_id}'", char.attributes, declared)
+    for npc_id, npc in state.npcs.items():
+        errors += _attribute_errors(f"npc '{npc_id}'", npc.attributes, declared)
+    return errors
+
+
+def _attribute_errors(
+    who: str, attributes: dict[str, int], declared: dict, partial: bool = False
+) -> list[str]:
+    errors: list[str] = []
+    if not partial:
+        for name in sorted(set(declared) - set(attributes)):
+            errors.append(f"{who} não tem o atributo '{name}'")
+    for name in sorted(set(attributes) - set(declared)):
+        errors.append(f"{who} tem atributo '{name}', que o sistema não declara")
+    for name, value in attributes.items():
+        attr = declared.get(name)
+        if attr is not None and not attr.min <= value <= attr.max:
+            errors.append(f"{who}: {name} = {value} fora de [{attr.min}, {attr.max}]")
     return errors
 
 
@@ -97,6 +118,7 @@ __all__ = [
     "builtin_rules_json",
     "load_builtin_rules",
     "load_rules",
+    "validate_campaign_against_rules",
     "validate_rules",
     "validate_state_against_rules",
 ]

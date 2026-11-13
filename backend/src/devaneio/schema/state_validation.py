@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Iterable
-
 from .campaign import Campaign
-from .game_state import BeatStatus, Character, GameState, NpcState
+from .game_state import GameState
 
 
 def validate_against_campaign(state: GameState, campaign: Campaign) -> list[str]:
@@ -42,20 +40,3 @@ def validate_against_campaign(state: GameState, campaign: Campaign) -> list[str]
 
     return errors
 
-
-def initial_state(
-    campaign: Campaign, rng_seed: int, characters: Iterable[Character] = ()
-) -> GameState:
-    """Estado inicial coerente com a campanha: turno 0, NPCs nos locais de origem,
-    todos os marcos pendentes (quem ativa marcos é o diretor de narrativa).
-
-    Assume uma campanha que passou em ``validate_campaign``.
-    """
-    return GameState(
-        campaign_id=campaign.id,
-        rng_seed=rng_seed,
-        current_location_id=campaign.start_location_id,
-        characters={c.id: c for c in characters},
-        npcs={n.id: NpcState(location_id=n.location_id) for n in campaign.npcs},
-        beats={b.id: BeatStatus.PENDING for b in campaign.beats},
-    )

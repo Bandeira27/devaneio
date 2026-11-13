@@ -17,10 +17,7 @@ from devaneio.rules import (
 )
 from devaneio.schema import Event, GameState
 
-
-class EngineError(ValueError):
-    """Ação inválida para este estado/sistema (id desconhecido, fórmula não avaliável)."""
-
+from .errors import EngineError
 
 OUTCOME_LABELS = {
     CheckOutcome.CRITICAL_FAILURE: "falha crítica",

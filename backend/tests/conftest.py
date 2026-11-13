@@ -30,6 +30,7 @@ _CAMPAIGN_DATA = {
             "location_id": "ruinas",
             "faction_id": "culto",
             "secrets": ["é o líder do culto"],
+            "attributes": {"FOR": 3, "PRE": 4},
         },
     ],
     "beats": [
