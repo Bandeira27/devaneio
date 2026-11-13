@@ -1,6 +1,6 @@
 import pytest
 
-from devaneio.engine import EngineError, classify_outcome, initial_state, resolve_check
+from devaneio.engine import EngineError, classify_outcome, initial_state, npc_check, resolve_check
 from devaneio.engine.checks import OUTCOME_LABELS
 from devaneio.rng import Rng
 from devaneio.rules import CheckOutcome, Outcomes
@@ -129,3 +129,27 @@ def test_missing_attribute_on_character_raises(campaign, rules):
     state = initial_state(campaign, rules, 1, [hero])
     with pytest.raises(EngineError, match="atributo 'FOR' não existe"):
         resolve_check(state, rules, character_id="zed", skill_id="lutar", difficulty_id="facil")
+
+
+def test_npc_check_uses_npc_attributes_and_campaign_name(state, campaign, rules):
+    result = npc_check(
+        state, campaign, rules, npc_id="sacerdote", skill_id="intimidar", difficulty_id="normal"
+    )
+    rng = Rng(SEED)
+    dice = [rng.roll(6), rng.roll(6)]
+    assert result.total == sum(dice) + 4  # PRE 4 do sacerdote
+    assert result.text.startswith("Irmão Vael testa Intimidar (2d6 + PRE) contra Normal 9:")
+    assert (result.actor_kind, result.actor_id) == ("npc", "sacerdote")
+    assert result.state.events[0].data["actor_id"] == "sacerdote"
+    assert result.state.rng_draws == 2
+
+
+def test_npc_check_unknown_npc(state, campaign, rules):
+    with pytest.raises(EngineError, match="npc 'ninguem' não está no estado"):
+        npc_check(state, campaign, rules, npc_id="ninguem", skill_id="lutar", difficulty_id="normal")
+
+
+def test_character_check_reports_actor(state, rules):
+    result = check(state, rules)
+    assert (result.actor_kind, result.actor_id) == ("character", "aria")
+    assert result.state.events[0].data["actor_kind"] == "character"

@@ -14,9 +14,9 @@ from devaneio.rules import DiceRoll, ExpressionError, RuleSystem, evaluate, pars
 from devaneio.schema import Campaign, Event, GameState
 
 from .errors import EngineError
+from .lookup import combatant
 
 TargetKind = Literal["character", "npc"]
-_KINDS = ("character", "npc")
 
 
 @dataclass(frozen=True)
@@ -46,7 +46,7 @@ def deal_damage(
     """Rola a fórmula da arma com os atributos do atacante e aplica ao alvo.
     Resultado negativo da fórmula vira 0. Não decide acerto: isso é um ``resolve_check``
     anterior, a cargo de quem orquestra."""
-    attacker_name, attacker_attrs, _ = _combatant(state, campaign, attacker_kind, attacker_id)
+    attacker_name, attacker_attrs, _ = combatant(state, campaign, attacker_kind, attacker_id)
     weapon = next((w for w in rules.weapons if w.id == weapon_id), None)
     if weapon is None:
         raise EngineError(f"arma '{weapon_id}' não existe no sistema de regras")
@@ -59,7 +59,7 @@ def deal_damage(
     amount = max(0, rolled.total)
 
     dice_text = " ".join(f"{r.dice} {list(r.values)} " for r in rolled.rolls)
-    target_name = _combatant(state, campaign, target_kind, target_id)[0]
+    target_name = combatant(state, campaign, target_kind, target_id)[0]
     text = (
         f"{attacker_name} ataca {target_name} com {weapon.name} ({weapon.damage}): "
         f"{dice_text}→ {amount} de dano"
@@ -93,32 +93,12 @@ def apply_damage(
     """Dano de quantia fixa (armadilha, queda, veneno). ``source`` é texto livre para o log."""
     if amount < 0:
         raise EngineError("dano não pode ser negativo (cura é outra ação)")
-    target_name = _combatant(state, campaign, target_kind, target_id)[0]
+    target_name = combatant(state, campaign, target_kind, target_id)[0]
     text = f"{target_name} sofre {amount} de dano ({source})"
     return _hit(
         state, target_kind, target_id, amount,
         rolls=(), rng_draws=state.rng_draws, text=text, data={"source": source},
     )
-
-
-def _combatant(
-    state: GameState, campaign: Campaign, kind: str, who_id: str
-) -> tuple[str, dict[str, int], int]:
-    """(nome, atributos, hp) de um personagem ou NPC. Nome de NPC vem da campanha."""
-    if kind == "character":
-        char = state.characters.get(who_id)
-        if char is None:
-            raise EngineError(f"personagem '{who_id}' não está no estado")
-        return char.name, char.attributes, char.hp
-    if kind == "npc":
-        npc = state.npcs.get(who_id)
-        if npc is None:
-            raise EngineError(f"npc '{who_id}' não está no estado")
-        static = next((n for n in campaign.npcs if n.id == who_id), None)
-        if static is None:
-            raise EngineError(f"npc '{who_id}' não existe na campanha")
-        return static.name, npc.attributes, npc.hp
-    raise EngineError(f"tipo de alvo desconhecido: {kind!r} (use {_KINDS})")
 
 
 def _hit(

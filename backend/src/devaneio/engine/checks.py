@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, TypeVar
+from typing import Iterable, Mapping, TypeVar
 
 from devaneio.rng import Rng
 from devaneio.rules import (
@@ -15,9 +15,10 @@ from devaneio.rules import (
     evaluate,
     parse,
 )
-from devaneio.schema import Event, GameState
+from devaneio.schema import Campaign, Event, GameState
 
 from .errors import EngineError
+from .lookup import combatant
 
 OUTCOME_LABELS = {
     CheckOutcome.CRITICAL_FAILURE: "falha crítica",
@@ -41,7 +42,8 @@ def classify_outcome(margin: int, outcomes: Outcomes) -> CheckOutcome:
 @dataclass(frozen=True)
 class CheckResult:
     state: GameState
-    character_id: str
+    actor_kind: str  # "character" | "npc"
+    actor_id: str
     skill_id: str
     difficulty_id: str
     modifier_id: str | None
@@ -62,18 +64,50 @@ def resolve_check(
     difficulty_id: str,
     modifier_id: str | None = None,
 ) -> CheckResult:
-    """Resolve um teste. Não altera ``state``: devolve um novo estado com ``rng_draws``
+    """Teste de um personagem. Não altera ``state``: devolve um novo estado com ``rng_draws``
     avançado e um ``Event`` de tipo ``check`` no log. O turno não muda aqui."""
     character = state.characters.get(character_id)
     if character is None:
         raise EngineError(f"personagem '{character_id}' não está no estado")
+    return _resolve(
+        state, rules, "character", character_id, character.name, character.attributes,
+        skill_id, difficulty_id, modifier_id,
+    )
+
+
+def npc_check(
+    state: GameState,
+    campaign: Campaign,
+    rules: RuleSystem,
+    *,
+    npc_id: str,
+    skill_id: str,
+    difficulty_id: str,
+    modifier_id: str | None = None,
+) -> CheckResult:
+    """Teste de um NPC, com os atributos do estado e o nome da campanha."""
+    name, attributes, _ = combatant(state, campaign, "npc", npc_id)
+    return _resolve(state, rules, "npc", npc_id, name, attributes, skill_id, difficulty_id, modifier_id)
+
+
+def _resolve(
+    state: GameState,
+    rules: RuleSystem,
+    actor_kind: str,
+    actor_id: str,
+    actor_name: str,
+    attributes: Mapping[str, int],
+    skill_id: str,
+    difficulty_id: str,
+    modifier_id: str | None,
+) -> CheckResult:
     skill = _find(rules.skills, skill_id, "habilidade")
     difficulty = _find(rules.difficulties, difficulty_id, "dificuldade")
     modifier = _find(rules.modifiers, modifier_id, "modificador") if modifier_id else None
 
     rng = Rng(state.rng_seed, state.rng_draws)
     try:
-        rolled = evaluate(parse(skill.formula), character.attributes, rng)
+        rolled = evaluate(parse(skill.formula), attributes, rng)
     except ExpressionError as exc:
         raise EngineError(f"habilidade '{skill_id}': {exc}") from exc
 
@@ -84,7 +118,7 @@ def resolve_check(
     dice_text = " ".join(f"{r.dice} {list(r.values)}" for r in rolled.rolls)
     formula_text = skill.formula + (f", {modifier.name}" if modifier else "")
     text = (
-        f"{character.name} testa {skill.name} ({formula_text}) contra "
+        f"{actor_name} testa {skill.name} ({formula_text}) contra "
         f"{difficulty.name} {difficulty.value}: {dice_text} → total {total}, "
         f"{OUTCOME_LABELS[outcome]}"
     )
@@ -97,7 +131,8 @@ def resolve_check(
             kind="check",
             text=text,
             data={
-                "character_id": character_id,
+                "actor_kind": actor_kind,
+                "actor_id": actor_id,
                 "skill_id": skill_id,
                 "difficulty_id": difficulty_id,
                 "modifier_id": modifier_id,
@@ -111,7 +146,8 @@ def resolve_check(
     )
     return CheckResult(
         state=new_state,
-        character_id=character_id,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
         skill_id=skill_id,
         difficulty_id=difficulty_id,
         modifier_id=modifier_id,
