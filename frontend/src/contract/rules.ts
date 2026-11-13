@@ -57,6 +57,10 @@ export interface Weapon {
   id: string;
   name: string;
   damage: string;
+  /**
+   * habilidade testada ao atacar com esta arma
+   */
+  skill: string;
   description?: string;
 }
 /**

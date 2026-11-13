@@ -60,6 +60,11 @@ def test_unknown_attribute_in_formula_is_reported(rules_data, mutate, fragment):
     assert len(errors) == 1 and fragment in errors[0]
 
 
+def test_weapon_skill_must_exist(rules_data):
+    rules_data["weapons"][0]["skill"] = "voar"
+    assert errors_of(rules_data) == ["weapon 'punhos': habilidade 'voar' não existe"]
+
+
 def test_syntax_error_in_formula_is_a_structural_error(rules_data):
     rules_data["skills"][0]["formula"] = "2d6 +"
     rules_data["max_hp"] = "6 / 2"

@@ -140,6 +140,11 @@
         "damage": {
           "type": "string"
         },
+        "skill": {
+          "description": "habilidade testada ao atacar com esta arma",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
         "description": {
           "default": "",
           "type": "string"
@@ -148,7 +153,8 @@
       "required": [
         "id",
         "name",
-        "damage"
+        "damage",
+        "skill"
       ],
       "title": "Weapon",
       "type": "object"

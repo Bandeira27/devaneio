@@ -40,8 +40,11 @@ def validate_rules(rules: RuleSystem) -> list[str]:
 
     for skill in rules.skills:
         check_formula(f"skill '{skill.id}'", skill.formula)
+    skill_ids = {x.id for x in rules.skills}
     for weapon in rules.weapons:
         check_formula(f"weapon '{weapon.id}'", weapon.damage)
+        if weapon.skill not in skill_ids:
+            errors.append(f"weapon '{weapon.id}': habilidade '{weapon.skill}' não existe")
     check_formula("max_hp", rules.max_hp)
     return errors
 

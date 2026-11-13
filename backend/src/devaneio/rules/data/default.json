@@ -26,11 +26,11 @@
     {"id": "intimidar", "name": "Intimidar", "formula": "2d6 + PRE", "description": "Impor-se pela ameaça ou presença."}
   ],
   "weapons": [
-    {"id": "punhos", "name": "Punhos", "damage": "1 + FOR"},
-    {"id": "adaga", "name": "Adaga", "damage": "1d4 + FOR"},
-    {"id": "espada", "name": "Espada", "damage": "1d6 + FOR"},
-    {"id": "arco", "name": "Arco", "damage": "1d6 + AGI"},
-    {"id": "cajado", "name": "Cajado", "damage": "1d6"}
+    {"id": "punhos", "name": "Punhos", "damage": "1 + FOR", "skill": "lutar"},
+    {"id": "adaga", "name": "Adaga", "damage": "1d4 + FOR", "skill": "lutar"},
+    {"id": "espada", "name": "Espada", "damage": "1d6 + FOR", "skill": "lutar"},
+    {"id": "arco", "name": "Arco", "damage": "1d6 + AGI", "skill": "atirar"},
+    {"id": "cajado", "name": "Cajado", "damage": "1d6", "skill": "lutar"}
   ],
   "modifiers": [
     {"id": "vantagem", "name": "Vantagem", "value": 2},

@@ -66,6 +66,7 @@ class Weapon(StrictModel):
     id: Id
     name: str
     damage: Formula
+    skill: Id = Field(description="habilidade testada ao atacar com esta arma")
     description: str = ""
 
 
