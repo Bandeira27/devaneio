@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "types": "json2ts -i ../contract/campaign.schema.json -o src/contract/campaign.ts && json2ts -i ../contract/rules.schema.json -o src/contract/rules.ts && json2ts -i ../contract/game_state.schema.json -o src/contract/game_state.ts",
+    "types": "json2ts -i ../contract/campaign.schema.json -o src/contract/campaign.ts && json2ts -i ../contract/rules.schema.json -o src/contract/rules.ts && json2ts -i ../contract/narration.schema.json -o src/contract/narration.ts && json2ts -i ../contract/game_state.schema.json -o src/contract/game_state.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -1,0 +1,162 @@
+import json
+
+import pytest
+from pydantic import ValidationError
+
+from devaneio.engine import (
+    add_character,
+    advance_beats,
+    apply_damage,
+    complete_beat,
+    deal_damage,
+    fail_beat,
+    initial_state,
+    move,
+    pass_turn,
+    resolve_check,
+)
+from devaneio.narration import (
+    EVENT_VARIABLES,
+    NarrationIntegrityError,
+    NarrationPack,
+    Narrator,
+    builtin_pack_json,
+    load_builtin_pack,
+    load_pack,
+    validate_pack,
+)
+from devaneio.schema import Event
+
+
+@pytest.fixture
+def pack():
+    return load_builtin_pack("pt-br")
+
+
+@pytest.fixture
+def narrator(campaign, rules, pack):
+    return Narrator(campaign, rules, pack)
+
+
+@pytest.fixture
+def played(campaign, rules):
+    """Uma partida curta com um evento de cada tipo."""
+    s, _ = advance_beats(initial_state(campaign, rules, 8), campaign)
+    s = add_character(s, rules, character_id="aria", name="Aria", attributes={"FOR": 3}).state
+    s, _ = advance_beats(move(s, campaign, to_location_id="floresta").state, campaign)
+    s, _ = advance_beats(move(s, campaign, to_location_id="ruinas").state, campaign)
+    s = resolve_check(s, rules, character_id="aria", skill_id="investigar", difficulty_id="normal").state
+    s = deal_damage(
+        s, campaign, rules, attacker_kind="character", attacker_id="aria", weapon_id="espada",
+        target_kind="npc", target_id="sacerdote",
+    ).state
+    s = apply_damage(s, campaign, target_kind="character", target_id="aria", amount=2, source="armadilha do altar").state
+    s = pass_turn(s, campaign, rules).state  # diretor + turn_end (+ marcos)
+    return s
+
+
+# --- pacote -----------------------------------------------------------------------
+
+
+def test_builtin_pack_is_coherent(pack):
+    assert pack.id == "pt-br" and validate_pack(pack) == []
+    for kind in EVENT_VARIABLES:
+        assert any(k == kind or k.startswith(f"{kind}.") for k in pack.rules), kind
+
+
+def test_pack_rejects_undefined_references():
+    data = json.loads(builtin_pack_json("pt-br"))
+    data["rules"]["move"] = ["#origem# → #destinno#"]
+    data["rules"]["eco_bom"] = ["#alvo#"]  # alcançado por check.*, que não oferece 'alvo'
+    with pytest.raises(NarrationIntegrityError) as info:
+        load_pack(data)
+    assert info.value.errors == [
+        "referência indefinida em check.success: #alvo#",
+        "referência indefinida em move: #destinno#",
+    ]
+
+
+def test_pack_structure_errors():
+    with pytest.raises(ValidationError):
+        NarrationPack.model_validate({"id": "x", "language": "pt", "rules": {"a": []}})
+    with pytest.raises(ValidationError):
+        NarrationPack.model_validate({"id": "x", "language": "pt", "rules": {}})
+    with pytest.raises(ValueError, match="não encontrado"):
+        load_builtin_pack("klingon")
+
+
+# --- narrador ---------------------------------------------------------------------
+
+
+def test_every_event_kind_gets_prose(narrator, played):
+    kinds = {e.kind for e in played.events}
+    assert kinds >= {"character_joined", "move", "beat_done", "beat_activated", "check", "damage", "director", "turn_end"}
+    for i, event in enumerate(played.events):
+        text = narrator.narrate(event, i, played)
+        assert text and text != event.text, (event.kind, text)
+        assert "#" not in text and "  " not in text
+
+
+def test_narration_is_deterministic_and_does_not_touch_the_state(narrator, played):
+    before = played.model_copy(deep=True)
+    once = narrator.narrate_all(played)
+    twice = narrator.narrate_all(played)
+    assert once == twice and played == before
+
+
+def test_narration_varies_with_seed_and_index(narrator, played):
+    event = next(e for e in played.events if e.kind == "move")
+    texts = {narrator.narrate(event, i, played) for i in range(12)}
+    assert len(texts) > 1
+    other = played.model_copy(update={"rng_seed": played.rng_seed + 1})
+    assert {narrator.narrate(event, i, other) for i in range(12)} != set() 
+
+
+def test_names_come_from_campaign_state_and_rules(narrator, played):
+    by_kind = {}
+    for i, e in enumerate(played.events):
+        by_kind.setdefault(e.kind, (i, e))
+    i, joined = by_kind["character_joined"]
+    assert "Aria" in narrator.narrate(joined, i, played)
+    i, mv = by_kind["move"]
+    assert "Vila de Pedra Alta" in narrator.narrate(mv, i, played) and "Floresta Cinzenta" in narrator.narrate(mv, i, played)
+    i, chk = by_kind["check"]
+    assert "Investigar" in narrator.narrate(chk, i, played)
+    i, dmg = by_kind["damage"]
+    text = narrator.narrate(dmg, i, played)
+    assert "Irmão Vael" in text and "Espada" in text
+    i, beat = by_kind["beat_done"]
+    assert "Chegada à vila" in narrator.narrate(beat, i, played)
+
+
+def test_rule_keys_follow_variants(narrator, campaign, rules, played):
+    keys = [narrator.rule_key(e, played) for e in played.events]
+    assert "damage.golpe" in keys and "damage.fonte" in keys
+    check = next(e for e in played.events if e.kind == "check")
+    assert narrator.rule_key(check, played) == f"check.{check.data['outcome']}"
+    director = next(e for e in played.events if e.kind == "director")
+    assert narrator.rule_key(director, played) in ("director.calmo", "director.tenso", "director.critico")
+    s = apply_damage(played, campaign, target_kind="character", target_id="aria", amount=99, source="queda").state
+    assert narrator.rule_key(s.events[-1], s) == "damage.fonte_queda"
+    assert "Aria" in narrator.narrate(s.events[-1], len(s.events) - 1, s)
+
+
+def test_director_variant_by_tension(narrator, played):
+    low = Event(turn=0, kind="director", text="x", data={"tension": 0.1, "actions": []})
+    mid = Event(turn=0, kind="director", text="x", data={"tension": 0.4, "actions": []})
+    high = Event(turn=0, kind="director", text="x", data={"tension": 0.9, "actions": []})
+    assert [narrator.rule_key(e, played) for e in (low, mid, high)] == ["director.calmo", "director.tenso", "director.critico"]
+    assert "Ruínas do Templo" in narrator.narrate(high, 0, played)
+
+
+def test_unknown_event_kind_falls_back_to_mechanical_text(narrator, played):
+    event = Event(turn=0, kind="eclipse", text="O céu escurece.", data={})
+    assert narrator.narrate(event, 0, played) == "O céu escurece."
+
+
+def test_failed_beat_is_narrated(narrator, campaign, rules):
+    s = initial_state(campaign, rules, 1)
+    from devaneio.engine import activate_beat
+
+    s = fail_beat(activate_beat(s, campaign, beat_id="chegada").state, campaign, beat_id="chegada").state
+    assert "Chegada à vila" in narrator.narrate(s.events[-1], len(s.events) - 1, s)

@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "id": "pt-br",
+  "language": "pt-BR",
+  "rules": {
+    "check.critical_success": [
+      "Tudo se alinha: #ator# domina #habilidade# por completo, e ainda sobra.",
+      "#ator# faz parecer fácil. Em #habilidade#, desta vez, não há o que discutir.",
+      "Um lance raro. #ator# resolve #habilidade# com uma precisão que #virada_boa#."
+    ],
+    "check.success": [
+      "#ator# se sai bem em #habilidade#. #eco_bom#",
+      "Com esforço, #ator# consegue em #habilidade#. #eco_bom#",
+      "#ator# dá conta de #habilidade#. Sem sobra, mas dá conta."
+    ],
+    "check.failure": [
+      "#ator# tenta #habilidade# e não consegue. #eco_ruim#",
+      "Não dá: em #habilidade#, #ator# fica aquém do que precisava.",
+      "#ator# erra em #habilidade#. #eco_ruim#"
+    ],
+    "check.critical_failure": [
+      "Sai tudo errado. #ator# falha em #habilidade# da pior forma possível.",
+      "#ator# falha em #habilidade#, e falha feio. #eco_pessimo#",
+      "Nada do que #ator# tenta em #habilidade# funciona; o momento vira contra."
+    ],
+    "virada_boa": ["ninguém esperava", "cala qualquer dúvida", "muda o rumo da cena"],
+    "eco_bom": ["O momento está a favor.", "Por ora, basta.", "Alguém solta o ar."],
+    "eco_ruim": ["Fica a lição.", "O momento escapa.", "Vai ter que ser de outro jeito."],
+    "eco_pessimo": ["Isso vai custar caro.", "O silêncio depois diz tudo.", "Ninguém ousa comentar."],
+
+    "damage.golpe": [
+      "#atacante# acerta #alvo# com #arma#: #dano# de dano. #alvo# ainda está de pé, com #hp# de #hp_max#.",
+      "O golpe de #atacante# encontra #alvo#. #arma# cobra #dano#; restam #hp# de #hp_max#.",
+      "#atacante# avança com #arma# e fere #alvo# (#dano#). #alvo# segue firme, por enquanto."
+    ],
+    "damage.golpe_queda": [
+      "#atacante# acerta #alvo# com #arma#, e desta vez é demais: #alvo# vai ao chão.",
+      "O golpe de #atacante# derruba #alvo#. #arma# fez o serviço; #alvo# não se levanta.",
+      "#alvo# cai diante de #atacante#. A cena muda de tom."
+    ],
+    "damage.fonte": [
+      "#alvo# sofre #dano# de dano (#fonte#) e aguenta: #hp# de #hp_max#.",
+      "Dói: #fonte# cobra #dano# de #alvo#, que segue com #hp# de #hp_max#."
+    ],
+    "damage.fonte_queda": [
+      "#alvo# não resiste (#fonte#) e cai. Não há mais o que fazer ali, por enquanto.",
+      "É demais para #alvo#: #fonte# derruba quem ainda tentava ficar de pé."
+    ],
+
+    "move": [
+      "O grupo deixa #origem# e segue para #destino#. #descricao#",
+      "De #origem# a #destino#, o caminho se faz andando. #descricao#",
+      "#destino# recebe o grupo, vindo de #origem#. #descricao#"
+    ],
+
+    "character_joined": [
+      "#ator# entra na história, com #hp# de vida e muito a provar.",
+      "Um nome novo na mesa: #ator#. #hp# pontos de vida e nenhuma cicatriz, ainda.",
+      "#ator# chega. A aventura ganha mais um par de mãos."
+    ],
+
+    "turn_end": [
+      "O turno #turno# chega ao fim. #respiro#",
+      "Fecha-se o turno #turno#. #respiro#"
+    ],
+    "respiro": ["O tempo segue.", "Algo se move ao longe.", "Ninguém relaxa de verdade."],
+
+    "director.calmo": [
+      "Em #local#, o ar está parado. Nada ameaça, por enquanto.",
+      "#local# segue quieto. A calma pode ser só aparência."
+    ],
+    "director.tenso": [
+      "Há tensão em #local#. Olhares se cruzam, mãos vão às armas.",
+      "O clima em #local# pesa. Alguém vai ter que ceder."
+    ],
+    "director.critico": [
+      "#local# virou um campo de batalha. Cada escolha agora custa caro.",
+      "Em #local#, a situação beira o colapso. Não há mais margem."
+    ],
+
+    "beat_activated": [
+      "Algo começa: #marco#. #descricao#",
+      "Um novo capítulo se abre: #marco#. #descricao#"
+    ],
+    "beat_done": [
+      "Capítulo encerrado: #marco#. #descricao#",
+      "#marco# chega ao fim. O que vem depois ainda não tem nome."
+    ],
+    "beat_failed": [
+      "#marco# se perde. O que podia ter sido não será.",
+      "Falha: #marco# escapa das mãos do grupo."
+    ]
+  }
+}

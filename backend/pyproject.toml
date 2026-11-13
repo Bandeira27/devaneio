@@ -20,7 +20,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-devaneio = ["rules/data/*.json"]
+devaneio = ["rules/data/*.json", "narration/data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
