@@ -12,6 +12,7 @@ from typing import Callable
 
 from devaneio.engine import (
     EngineError,
+    GameStatus,
     activate_beat,
     add_character,
     advance_beats,
@@ -19,14 +20,23 @@ from devaneio.engine import (
     complete_beat,
     deal_damage,
     fail_beat,
+    game_status,
+    heal,
     move,
     pass_turn,
     resolve_check,
+    rest,
 )
 from devaneio.rules import CheckOutcome
 from devaneio.schema import BeatStatus, Character, GameState
 
 from .session import Session
+
+READ_ONLY = {"ajuda", "olhar", "ficha", "marcos", "log"}
+STATUS_LABELS = {
+    GameStatus.WON: "vitória: todos os marcos foram concluídos",
+    GameStatus.LOST: "derrota: todo o grupo caiu",
+}
 
 BEAT_LABELS = {
     BeatStatus.PENDING: "pendente",
@@ -38,11 +48,14 @@ BEAT_LABELS = {
 HELP = """\
 Comandos (prefixe com `id:` para escolher o personagem quando houver mais de um):
   olhar                                  onde o grupo está, saídas, quem está aqui
-  entrar <id> "<nome>" [FOR=3 AGI=1 ...] novo personagem; atributos omitidos usam o padrão
+  entrar <id> "<nome>" [FOR=3 ...] [+item ...]  novo personagem; omitidos usam o padrão;
+                                         +espada põe a espada no inventário
   ir <local>                             mover o grupo para um local conectado
   testar <habilidade> <dificuldade> [modificador]
-  atacar <arma> <alvo> [modificador]     teste da habilidade da arma; acerto fere
+  atacar <arma> <alvo> [modificador]     teste da habilidade da arma (precisa estar no inventário); acerto fere
   ferir <alvo> <quantia> ["fonte"]       dano fixo (armadilha, queda...)
+  curar <alvo> <quantia> ["fonte"]       cura fixa (poção, magia); levanta quem estava caído
+  descansar                              recupera hp do grupo (sem hostis por perto) e gasta o turno
   ficha [id]                             atributos, hp e inventário
   marcos                                 marcos da trama e seus estados
   marco ativar|concluir|falhar <id>      mover um marco à mão (o diretor cuida dos gatilhos)
@@ -78,6 +91,12 @@ def execute(session: Session, line: str) -> tuple[Session, str]:
     handler = COMMANDS.get(name)
     if handler is None:
         raise CommandError(f"comando desconhecido '{name}'; digite 'ajuda'")
+    status = game_status(session.state)
+    if status is not GameStatus.ACTIVE and name not in READ_ONLY:
+        raise CommandError(
+            f"a partida terminou ({STATUS_LABELS[status]}); "
+            f"só é possível: {', '.join(sorted(READ_ONLY))}"
+        )
     try:
         new_state, text = handler(session, actor, args)
         if new_state is not session.state and name != "fim":
@@ -102,6 +121,9 @@ def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     npc_names = {n.id: n.name for n in campaign.npcs}
 
     lines = [f"Turno {state.turn} — {here.name} ({here.id})"]
+    status = game_status(state)
+    if status is not GameStatus.ACTIVE:
+        lines.append(f"Partida encerrada — {STATUS_LABELS[status]}.")
     if here.description:
         lines.append(here.description)
     exits = ", ".join(f"{names[c]} ({c})" for c in here.connections) or "nenhuma"
@@ -130,16 +152,23 @@ def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
 
 def _join(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) < 2:
-        raise CommandError('uso: entrar <id> "<nome>" [FOR=3 AGI=1 ...]')
+        raise CommandError('uso: entrar <id> "<nome>" [FOR=3 ...] [+item ...]')
     char_id, name, *attr_tokens = args
     attributes: dict[str, int] = {}
+    inventory: list[str] = []
     for token in attr_tokens:
+        if token.startswith("+"):
+            if len(token) == 1:
+                raise CommandError("item vazio; use +nome")
+            inventory.append(token[1:])
+            continue
         key, sep, value = token.partition("=")
         if not sep or not value.lstrip("-").isdigit():
             raise CommandError(f"atributo inválido '{token}'; use NOME=valor")
         attributes[key] = int(value)
     result = add_character(
-        session.state, session.rules, character_id=char_id, name=name, attributes=attributes
+        session.state, session.rules, character_id=char_id, name=name,
+        attributes=attributes, inventory=inventory,
     )
     return result.state, result.text
 
@@ -174,6 +203,10 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
     target_kind = _target_kind(session.state, target_id)
     if target_kind == "character" and target_id == character.id:
         raise CommandError("atacar a si mesmo não é permitido")
+    always = session.rules.combat.default_weapon
+    if weapon_id != always and weapon_id not in character.inventory:
+        extra = f" (sempre disponível: {always})" if always else ""
+        raise CommandError(f"{character.name} não tem '{weapon_id}' no inventário{extra}")
 
     check = resolve_check(
         session.state, session.rules,
@@ -201,6 +234,26 @@ def _hurt(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
         amount=int(args[1]), source=args[2] if len(args) == 3 else "dano",
     )
     return result.state, result.text
+
+
+def _heal(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) not in (2, 3) or not args[1].lstrip("-").isdigit():
+        raise CommandError('uso: curar <alvo> <quantia> ["fonte"]')
+    target_id = args[0]
+    result = heal(
+        session.state, session.campaign,
+        target_kind=_target_kind(session.state, target_id), target_id=target_id,
+        amount=int(args[1]), source=args[2] if len(args) == 3 else "cura",
+    )
+    return result.state, result.text
+
+
+def _rest(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if args:
+        raise CommandError("uso: descansar")
+    rested = rest(session.state, session.campaign, session.rules)
+    turn = pass_turn(rested.state, session.campaign, session.rules)
+    return turn.state, f"{rested.text}\n{turn.text}"
 
 
 def _sheet(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
@@ -259,6 +312,8 @@ COMMANDS: dict[str, Handler] = {
     "testar": _check,
     "atacar": _attack,
     "ferir": _hurt,
+    "curar": _heal,
+    "descansar": _rest,
     "ficha": _sheet,
     "marcos": _beats,
     "marco": _beat,

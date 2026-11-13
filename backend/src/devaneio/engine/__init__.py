@@ -9,6 +9,7 @@ from .errors import EngineError
 from .heal import HealResult, RestResult, heal, rest
 from .movement import MoveResult, move
 from .setup import initial_state
+from .status import GameStatus, game_status
 from .turns import end_turn
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "DamageResult",
     "DirectorResult",
     "EngineError",
+    "GameStatus",
     "HealResult",
     "MoveResult",
     "RestResult",
@@ -32,6 +34,7 @@ __all__ = [
     "direct",
     "end_turn",
     "fail_beat",
+    "game_status",
     "heal",
     "holds",
     "hostile_reactions",

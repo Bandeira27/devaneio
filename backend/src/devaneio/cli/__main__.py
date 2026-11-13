@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from devaneio.schema import CampaignIntegrityError
 
 from .commands import CommandError, execute
-from .output import format_output
+from .output import format_output, status_banner
 from .session import CliError, load_game, new_game, save_game
 
 QUIT = ("sair", "quit", "exit")
@@ -71,6 +71,9 @@ def _play(session) -> int:
         output = format_output(session.narrator, before, session.state, text)
         if output:
             print(output)
+        banner = status_banner(before, session.state)
+        if banner:
+            print(f"\n{banner}")
     return 0
 
 

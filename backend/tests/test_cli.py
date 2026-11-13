@@ -5,7 +5,16 @@ from pathlib import Path
 
 import pytest
 
-from devaneio.cli import CliError, CommandError, execute, format_output, load_game, new_game, save_game
+from devaneio.cli import (
+    CliError,
+    CommandError,
+    execute,
+    format_output,
+    load_game,
+    new_game,
+    save_game,
+    status_banner,
+)
 from devaneio.engine import resolve_check
 from devaneio.rules import CheckOutcome
 
@@ -200,7 +209,7 @@ def test_attack_hits_or_misses_according_to_the_check(tmp_path):
     seen = set()
     for seed in range(40):
         session = new_game(CAMPAIGN_PATH, tmp_path / f"p{seed}.json", seed=seed)
-        session, _ = run(session, 'entrar aria "Aria" FOR=3', "ir floresta", "ir ruinas")
+        session, _ = run(session, 'entrar aria "Aria" FOR=3 +espada', "ir floresta", "ir ruinas")
         predicted = resolve_check(
             session.state, session.rules,
             character_id="aria", skill_id="lutar", difficulty_id="normal",
@@ -219,13 +228,13 @@ def test_attack_hits_or_misses_according_to_the_check(tmp_path):
 
 
 def test_attack_uses_the_weapon_skill(session):
-    session, text = run(session, 'entrar aria "Aria"', "atacar arco ferreiro")
+    session, text = run(session, 'entrar aria "Aria" +arco', "atacar arco ferreiro")
     assert "Aria testa Atirar (2d6 + AGI) contra Normal 9" in text
 
 
 def test_attack_difficulty_comes_from_rules(session):
     session.rules.combat.attack_difficulty = "heroica"
-    session, text = run(session, 'entrar aria "Aria"', "atacar espada ferreiro")
+    session, text = run(session, 'entrar aria "Aria" +espada', "atacar espada ferreiro")
     assert "contra Heroica 13" in text
 
 
@@ -327,3 +336,102 @@ def test_end_to_end_output_is_narrated(tmp_path):
     assert "  [Marco concluído: Chegada à vila.]" in played.stdout
     prose = [l for l in played.stdout.split("\n") if "Floresta Cinzenta" in l and not l.startswith("  [")]
     assert prose  # a linha narrada cita o destino
+
+
+# --- inventário, cura, descanso, desfecho ---------------------------------------
+
+
+def test_join_with_items_and_sheet(session):
+    session, text = run(session, 'entrar aria "Aria" FOR=3 +espada +arco')
+    assert session.state.characters["aria"].inventory == ["espada", "arco"]
+    _, sheet = run(session, "ficha")
+    assert sheet.endswith("Inventário: espada, arco")
+    with pytest.raises(CommandError, match="item vazio"):
+        execute(session, 'entrar zed "Zed" +')
+
+
+def test_attack_requires_the_weapon_in_the_inventory(session):
+    session, _ = run(session, 'entrar aria "Aria" +espada')
+    with pytest.raises(CommandError, match="Aria não tem 'arco' no inventário \\(sempre disponível: punhos\\)"):
+        execute(session, "atacar arco ferreiro")
+    _, text = run(session, "atacar espada ferreiro")
+    assert "Aria testa Lutar" in text
+    _, text = run(session, "atacar punhos ferreiro")  # arma padrão sempre disponível
+    assert "Aria testa Lutar" in text
+
+
+def test_heal_command(session):
+    session, _ = run(session, 'entrar aria "Aria"', "ferir aria 6 queda")
+    session, text = run(session, "curar aria 4 poção")
+    assert text == "Aria recupera 4 de vida (poção), hp 4 → 8"
+    with pytest.raises(CommandError, match="uso: curar"):
+        execute(session, "curar aria")
+    with pytest.raises(CommandError, match="precisa ser positiva"):
+        execute(session, "curar aria 0")
+
+
+def test_rest_command_heals_and_spends_the_turn(session):
+    session, _ = run(session, 'entrar aria "Aria"', "ferir aria 6")
+    session, text = run(session, "descansar")
+    assert text.startswith("O grupo descansa: Aria +") and "Fim do turno 0" in text
+    assert session.state.turn == 1 and session.state.characters["aria"].hp > 4
+    kinds = [e.kind for e in session.state.events]
+    assert kinds[-3:] == ["rest", "director", "turn_end"]
+    with pytest.raises(CommandError, match="uso: descansar"):
+        execute(session, "descansar agora")
+
+
+def test_rest_refused_when_nobody_is_hurt(session):
+    session, _ = run(session, 'entrar aria "Aria"')
+    with pytest.raises(CommandError, match="todos já estão com o hp máximo"):
+        execute(session, "descansar")
+
+
+def test_rest_refused_with_a_hostile_present(session):
+    session, _ = run(session, 'entrar aria "Aria"', "ir floresta", "ir ruinas", "ferir aria 3")
+    with pytest.raises(CommandError, match="Irmão Vael hostil por perto"):
+        execute(session, "descansar")
+
+
+def test_defeat_locks_actions_and_olhar_says_so(session):
+    before = session.state
+    session, _ = run(session, 'entrar aria "Aria"', "ferir aria 99")
+    assert "DERROTA" in status_banner(before, session.state)
+    assert status_banner(session.state, session.state) == ""
+    with pytest.raises(CommandError, match="a partida terminou \\(derrota: todo o grupo caiu\\)"):
+        execute(session, "ir floresta")
+    for allowed in ("olhar", "ficha", "marcos", "log", "ajuda"):
+        run(session, allowed)
+    _, look = run(session, "olhar")
+    assert "Partida encerrada — derrota: todo o grupo caiu." in look
+
+
+def test_victory_when_the_last_beat_closes(session):
+    session, _ = run(session, 'entrar aria "Aria" +espada', "ir floresta", "ir ruinas", "marco concluir pista")
+    before = session.state
+    session, _ = run(session, "ferir sacerdote 99")
+    assert all(s.value == "done" for s in session.state.beats.values())
+    assert "VITÓRIA" in status_banner(before, session.state)
+    with pytest.raises(CommandError, match="vitória"):
+        execute(session, "fim")
+
+
+def test_help_mentions_the_new_commands(session):
+    _, text = run(session, "ajuda")
+    for fragment in ("curar <alvo>", "descansar", "+item"):
+        assert fragment in text
+
+
+def test_end_to_end_banner_and_lock(tmp_path):
+    save = tmp_path / "partida.json"
+    subprocess.run(
+        [sys.executable, "-m", "devaneio.cli", "nova", str(CAMPAIGN_PATH), str(save), "--seed", "1"],
+        check=True, capture_output=True, text=True,
+    )
+    played = subprocess.run(
+        [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
+        input='entrar aria "Aria"\nferir aria 99\nir floresta\nsair\n',
+        check=True, capture_output=True, text=True,
+    )
+    assert "*** DERROTA: todo o grupo caiu." in played.stdout
+    assert "erro: a partida terminou" in played.stdout
