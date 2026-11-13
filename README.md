@@ -82,6 +82,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 4: `add_character` (atributos parciais completados pelo sistema, hp pela fórmula) e `move` (o grupo anda junto, só por `connections`). Com isso uma partida mínima dá a volta: criar, andar, testar, ferir, encerrar turno.
 - Etapa 5: linha de comando (`devaneio.cli`) com partida em disco e interpretador de comandos puro; `Weapon.skill` no sistema de regras; campanha de exemplo em `campaigns/`.
 - Etapa 6: marcos como ações (`activate_beat`, `complete_beat`, `fail_beat`), condições declarativas na campanha (`activate_when`/`complete_when`) e o diretor de narrativa: avança marcos pelos gatilhos, faz NPCs hostis reagirem ao fim do turno e mede a tensão. `combat` e `dispositions` no sistema de regras; `disposition` e `weapon_id` no NPC.
+- Etapa 7: narração por gramáticas. Pacote `pt-br` (`backend/src/devaneio/narration/data/pt-br.json`, contrato em `contract/narration.schema.json`) no estilo Tracery; `Narrator.narrate(evento, índice, estado)` gera prosa na exibição, sem gravar no estado e sem consumir `rng_draws`. O CLI mostra a prosa e, abaixo, a linha mecânica entre colchetes.
 
 ## Motor
 
@@ -114,5 +115,17 @@ futuro. O diretor nunca inventa texto; só dispara ações do motor.
 
 Condições disponíveis nos marcos: `at_location`, `npc_down`, `beat_done`, `turn_at_least`.
 Um marco sem `complete_when` só conclui por ação explícita (`marco concluir <id>` no CLI).
+
+## Narração
+
+A narração é uma camada de exibição: o estado guarda só o texto mecânico de cada evento, e
+`devaneio.narration.Narrator` transforma evento em prosa a partir de um **pacote de narração**
+(JSON, estilo Tracery): regras com alternativas, expansão recursiva de `#simbolo#` e variáveis
+do evento (`#ator#`, `#alvo#`, `#arma#`, ...). A regra é escolhida por tipo e variante
+(`check.success`, `damage.golpe_queda`, `director.tenso`...); evento sem regra sai com o texto
+mecânico. A variedade vem de um RNG próprio semeado por (semente da partida, índice do evento):
+reproduzível, e sem tocar na aleatoriedade do jogo. Pacotes são validados na carga: toda
+referência precisa ser regra ou variável do tipo de evento. Quando houver LLM, ele entra por
+este mesmo contrato: evento entra, prosa sai.
 
 Sem LLM, sem multiplayer, sem interface gráfica.
