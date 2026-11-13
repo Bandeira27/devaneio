@@ -1,0 +1,14 @@
+{
+  "name": "devaneio-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "json2ts -i ../contract/campaign.schema.json -o src/contract/campaign.ts && json2ts -i ../contract/game_state.schema.json -o src/contract/game_state.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^16.0.0",
+    "typescript": "^7.0.2"
+  }
+}
