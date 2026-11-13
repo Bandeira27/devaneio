@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from devaneio.cli import CliError, CommandError, execute, load_game, new_game, save_game
+from devaneio.cli import CliError, CommandError, execute, format_output, load_game, new_game, save_game
 from devaneio.engine import resolve_check
 from devaneio.rules import CheckOutcome
 
@@ -278,7 +278,7 @@ def test_end_to_end_through_the_process(tmp_path):
     assert "A Sombra do Vale" in out and "Turno 0 — Vila de Pedra Alta" in out
     assert "Aria entra na aventura" in out
     assert "erro: comando desconhecido 'pular'" in out
-    assert "Fim do turno 0. Começa o turno 1." in out
+    assert "  [Fim do turno 0]" in out and "  [Diretor: tensão 0.00; nada a fazer.]" in out
 
     data = json.loads(save.read_text(encoding="utf-8"))
     assert data["state"]["turn"] == 1 and data["state"]["current_location_id"] == "floresta"
@@ -293,3 +293,37 @@ def test_missing_save_file_is_a_clean_error(tmp_path):
         capture_output=True, text=True,
     )
     assert result.returncode == 1 and "arquivo não encontrado" in result.stderr
+
+
+# --- narração na saída ----------------------------------------------------------
+
+
+def test_format_output_narrates_new_events_with_mechanical_line(session):
+    before = session.state
+    after, text = run(session, 'entrar aria "Aria" FOR=3')
+    out = format_output(session.narrator, before, after.state, text)
+    lines = out.split("\n")
+    assert len(lines) == 2
+    assert "Aria" in lines[0] and lines[0] != text
+    assert lines[1] == "  [Aria entra na aventura (FOR 3, AGI 1, MEN 2, PRE 2; hp 12).]".replace("AGI 1", "AGI 2")
+
+
+def test_format_output_keeps_plain_text_when_nothing_happened(session):
+    _, text = run(session, "olhar")
+    assert format_output(session.narrator, session.state, session.state, text) == text
+
+
+def test_end_to_end_output_is_narrated(tmp_path):
+    save = tmp_path / "partida.json"
+    subprocess.run(
+        [sys.executable, "-m", "devaneio.cli", "nova", str(CAMPAIGN_PATH), str(save), "--seed", "3"],
+        check=True, capture_output=True, text=True,
+    )
+    played = subprocess.run(
+        [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
+        input="ir floresta\nsair\n", check=True, capture_output=True, text=True,
+    )
+    assert "  [O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.]" in played.stdout
+    assert "  [Marco concluído: Chegada à vila.]" in played.stdout
+    prose = [l for l in played.stdout.split("\n") if "Floresta Cinzenta" in l and not l.startswith("  [")]
+    assert prose  # a linha narrada cita o destino

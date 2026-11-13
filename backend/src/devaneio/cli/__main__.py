@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from devaneio.schema import CampaignIntegrityError
 
 from .commands import CommandError, execute
+from .output import format_output
 from .session import CliError, load_game, new_game, save_game
 
 QUIT = ("sair", "quit", "exit")
@@ -60,14 +61,16 @@ def _play(session) -> int:
             break
         if line.strip().lower() in QUIT:
             break
+        before = session.state
         try:
             session, text = execute(session, line)
         except CommandError as exc:
             print(f"erro: {exc}")
             continue
         save_game(session)
-        if text:
-            print(text)
+        output = format_output(session.narrator, before, session.state, text)
+        if output:
+            print(output)
     return 0
 
 

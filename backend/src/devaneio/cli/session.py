@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state
+from devaneio.narration import Narrator, load_builtin_pack
 from devaneio.rules import RuleSystem, load_builtin_rules, validate_campaign_against_rules
 from devaneio.rules import validate_state_against_rules
 from devaneio.schema import Campaign, GameState, StrictModel, load_campaign
@@ -35,6 +36,7 @@ class Session:
     state: GameState
     campaign_path: Path
     save_path: Path
+    narrator: Narrator
 
 
 def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> Session:
@@ -45,7 +47,7 @@ def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> S
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
     state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
-    session = Session(campaign, rules, state, campaign_path, Path(save_path).resolve())
+    session = Session(campaign, rules, state, campaign_path, Path(save_path).resolve(), _narrator(campaign, rules))
     save_game(session)
     return session
 
@@ -60,13 +62,17 @@ def load_game(save_path: Path) -> Session:
     )
     if errors:
         raise CliError(_joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
-    return Session(campaign, rules, data.state, campaign_path, save_path)
+    return Session(campaign, rules, data.state, campaign_path, save_path, _narrator(campaign, rules))
 
 
 def save_game(session: Session) -> None:
     relative = os.path.relpath(session.campaign_path, session.save_path.parent)
     payload = SaveFile(campaign_path=relative, state=session.state)
     session.save_path.write_text(payload.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+
+def _narrator(campaign: Campaign, rules: RuleSystem) -> Narrator:
+    return Narrator(campaign, rules, load_builtin_pack("pt-br"))
 
 
 def _load_campaign_and_rules(campaign_path: Path) -> tuple[Campaign, RuleSystem]:
