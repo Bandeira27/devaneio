@@ -5,73 +5,44 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type SchemaVersion = 1;
-export type Id = string;
-export type Title = string;
-export type Premise = string;
-export type RulesId = string;
-export type StartLocationId = string;
-export type Id1 = string;
-export type Name = string;
-export type Description = string;
-export type Connections = string[];
-export type Locations = Location[];
-export type Id2 = string;
-export type Name1 = string;
-export type Description1 = string;
-export type Goals = string[];
-export type Factions = Faction[];
-export type Id3 = string;
-export type Name2 = string;
-export type Description2 = string;
-export type LocationId = string | null;
-export type FactionId = string | null;
-export type Secrets = string[];
-export type Npcs = Npc[];
-export type Id4 = string;
-export type Title1 = string;
-export type Description3 = string;
-export type Requires = string[];
-export type Beats = Beat[];
-
 export interface Campaign {
-  schema_version?: SchemaVersion;
-  id: Id;
-  title: Title;
-  premise: Premise;
-  rules_id?: RulesId;
-  start_location_id: StartLocationId;
-  locations?: Locations;
-  factions?: Factions;
-  npcs?: Npcs;
-  beats?: Beats;
+  schema_version?: 1;
+  id: string;
+  title: string;
+  premise: string;
+  rules_id?: string;
+  start_location_id: string;
+  locations?: Location[];
+  factions?: Faction[];
+  npcs?: Npc[];
+  beats?: Beat[];
 }
 export interface Location {
-  id: Id1;
-  name: Name;
-  description?: Description;
-  connections?: Connections;
+  id: string;
+  name: string;
+  description?: string;
+  connections?: string[];
 }
 export interface Faction {
-  id: Id2;
-  name: Name1;
-  description?: Description1;
-  goals?: Goals;
+  id: string;
+  name: string;
+  description?: string;
+  goals?: string[];
 }
 export interface Npc {
-  id: Id3;
-  name: Name2;
-  description?: Description2;
-  location_id?: LocationId;
-  faction_id?: FactionId;
-  secrets?: Secrets;
+  id: string;
+  name: string;
+  description?: string;
+  location_id?: string | null;
+  faction_id?: string | null;
+  secrets?: string[];
 }
 /**
  * Marco da trama. `requires` lista marcos que precisam estar concluídos antes.
  */
 export interface Beat {
-  id: Id4;
-  title: Title1;
-  description?: Description3;
-  requires?: Requires;
+  id: string;
+  title: string;
+  description?: string;
+  requires?: string[];
 }

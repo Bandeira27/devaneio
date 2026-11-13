@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 from pydantic import BaseModel
-from pydantic.json_schema import JsonSchemaMode
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode
 
 from .schema import Campaign, GameState
 
@@ -28,10 +28,18 @@ SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
 }
 
 
+class _NoFieldTitles(GenerateJsonSchema):
+    """Sem ``title`` por campo: o gerador de tipos TS transformaria cada um em um alias
+    ruidoso (``Id1``, ``Turn2``). Títulos de modelo (Character, Fact...) continuam."""
+
+    def field_title_should_be_set(self, schema) -> bool:  # type: ignore[override]
+        return False
+
+
 def render(model: type[BaseModel], mode: JsonSchemaMode) -> str:
     schema = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        **model.model_json_schema(mode=mode),
+        **model.model_json_schema(mode=mode, schema_generator=_NoFieldTitles),
     }
     return json.dumps(schema, indent=2, ensure_ascii=False) + "\n"
 

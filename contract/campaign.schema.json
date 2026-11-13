@@ -7,16 +7,13 @@
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "title": "Id",
           "type": "string"
         },
         "title": {
-          "title": "Title",
           "type": "string"
         },
         "description": {
           "default": "",
-          "title": "Description",
           "type": "string"
         },
         "requires": {
@@ -25,7 +22,6 @@
             "pattern": "^[a-z0-9][a-z0-9_-]*$",
             "type": "string"
           },
-          "title": "Requires",
           "type": "array"
         }
       },
@@ -41,16 +37,13 @@
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "title": "Id",
           "type": "string"
         },
         "name": {
-          "title": "Name",
           "type": "string"
         },
         "description": {
           "default": "",
-          "title": "Description",
           "type": "string"
         },
         "goals": {
@@ -58,7 +51,6 @@
           "items": {
             "type": "string"
           },
-          "title": "Goals",
           "type": "array"
         }
       },
@@ -74,16 +66,13 @@
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "title": "Id",
           "type": "string"
         },
         "name": {
-          "title": "Name",
           "type": "string"
         },
         "description": {
           "default": "",
-          "title": "Description",
           "type": "string"
         },
         "connections": {
@@ -92,7 +81,6 @@
             "pattern": "^[a-z0-9][a-z0-9_-]*$",
             "type": "string"
           },
-          "title": "Connections",
           "type": "array"
         }
       },
@@ -108,16 +96,13 @@
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "title": "Id",
           "type": "string"
         },
         "name": {
-          "title": "Name",
           "type": "string"
         },
         "description": {
           "default": "",
-          "title": "Description",
           "type": "string"
         },
         "location_id": {
@@ -130,8 +115,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Location Id"
+          "default": null
         },
         "faction_id": {
           "anyOf": [
@@ -143,15 +127,13 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Faction Id"
+          "default": null
         },
         "secrets": {
           "default": [],
           "items": {
             "type": "string"
           },
-          "title": "Secrets",
           "type": "array"
         }
       },
@@ -168,31 +150,25 @@
     "schema_version": {
       "const": 1,
       "default": 1,
-      "title": "Schema Version",
       "type": "integer"
     },
     "id": {
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
-      "title": "Id",
       "type": "string"
     },
     "title": {
-      "title": "Title",
       "type": "string"
     },
     "premise": {
-      "title": "Premise",
       "type": "string"
     },
     "rules_id": {
       "default": "default",
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
-      "title": "Rules Id",
       "type": "string"
     },
     "start_location_id": {
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
-      "title": "Start Location Id",
       "type": "string"
     },
     "locations": {
@@ -200,7 +176,6 @@
       "items": {
         "$ref": "#/$defs/Location"
       },
-      "title": "Locations",
       "type": "array"
     },
     "factions": {
@@ -208,7 +183,6 @@
       "items": {
         "$ref": "#/$defs/Faction"
       },
-      "title": "Factions",
       "type": "array"
     },
     "npcs": {
@@ -216,7 +190,6 @@
       "items": {
         "$ref": "#/$defs/Npc"
       },
-      "title": "Npcs",
       "type": "array"
     },
     "beats": {
@@ -224,7 +197,6 @@
       "items": {
         "$ref": "#/$defs/Beat"
       },
-      "title": "Beats",
       "type": "array"
     }
   },

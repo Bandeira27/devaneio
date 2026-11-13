@@ -16,11 +16,9 @@
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "title": "Id",
           "type": "string"
         },
         "name": {
-          "title": "Name",
           "type": "string"
         },
         "attributes": {
@@ -28,16 +26,13 @@
             "type": "integer"
           },
           "default": {},
-          "title": "Attributes",
           "type": "object"
         },
         "hp": {
-          "title": "Hp",
           "type": "integer"
         },
         "max_hp": {
           "minimum": 0,
-          "title": "Max Hp",
           "type": "integer"
         },
         "inventory": {
@@ -45,7 +40,6 @@
           "items": {
             "type": "string"
           },
-          "title": "Inventory",
           "type": "array"
         }
       },
@@ -66,22 +60,18 @@
       "properties": {
         "turn": {
           "minimum": 0,
-          "title": "Turn",
           "type": "integer"
         },
         "kind": {
-          "title": "Kind",
           "type": "string"
         },
         "text": {
           "default": "",
-          "title": "Text",
           "type": "string"
         },
         "data": {
           "additionalProperties": true,
           "default": {},
-          "title": "Data",
           "type": "object"
         }
       },
@@ -100,16 +90,13 @@
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "title": "Id",
           "type": "string"
         },
         "text": {
-          "title": "Text",
           "type": "string"
         },
         "turn": {
           "minimum": 0,
-          "title": "Turn",
           "type": "integer"
         }
       },
@@ -126,12 +113,10 @@
       "properties": {
         "alive": {
           "default": true,
-          "title": "Alive",
           "type": "boolean"
         },
         "disposition": {
           "default": 0,
-          "title": "Disposition",
           "type": "integer"
         },
         "location_id": {
@@ -144,8 +129,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Location Id"
+          "default": null
         }
       },
       "required": [
@@ -162,33 +146,27 @@
     "state_version": {
       "const": 1,
       "default": 1,
-      "title": "State Version",
       "type": "integer"
     },
     "campaign_id": {
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
-      "title": "Campaign Id",
       "type": "string"
     },
     "turn": {
       "default": 0,
       "minimum": 0,
-      "title": "Turn",
       "type": "integer"
     },
     "rng_seed": {
-      "title": "Rng Seed",
       "type": "integer"
     },
     "rng_draws": {
       "default": 0,
       "minimum": 0,
-      "title": "Rng Draws",
       "type": "integer"
     },
     "current_location_id": {
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
-      "title": "Current Location Id",
       "type": "string"
     },
     "characters": {
@@ -198,7 +176,6 @@
           "$ref": "#/$defs/Character"
         }
       },
-      "title": "Characters",
       "type": "object"
     },
     "npcs": {
@@ -208,7 +185,6 @@
           "$ref": "#/$defs/NpcState"
         }
       },
-      "title": "Npcs",
       "type": "object"
     },
     "beats": {
@@ -218,7 +194,6 @@
           "$ref": "#/$defs/BeatStatus"
         }
       },
-      "title": "Beats",
       "type": "object"
     },
     "facts": {
@@ -226,7 +201,6 @@
       "items": {
         "$ref": "#/$defs/Fact"
       },
-      "title": "Facts",
       "type": "array"
     },
     "events": {
@@ -234,7 +208,6 @@
       "items": {
         "$ref": "#/$defs/Event"
       },
-      "title": "Events",
       "type": "array"
     }
   },
