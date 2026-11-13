@@ -4,6 +4,7 @@ from .characters import AddCharacterResult, add_character
 from .checks import CheckResult, classify_outcome, resolve_check
 from .damage import DamageResult, TargetKind, apply_damage, deal_damage
 from .errors import EngineError
+from .movement import MoveResult, move
 from .setup import initial_state
 from .turns import end_turn
 
@@ -12,6 +13,7 @@ __all__ = [
     "CheckResult",
     "DamageResult",
     "EngineError",
+    "MoveResult",
     "TargetKind",
     "add_character",
     "apply_damage",
@@ -19,5 +21,6 @@ __all__ = [
     "deal_damage",
     "end_turn",
     "initial_state",
+    "move",
     "resolve_check",
 ]
