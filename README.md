@@ -18,11 +18,25 @@ frontend/   TypeScript strict — cliente fino (por enquanto só esqueleto)
 contract/   JSON Schema gerado a partir do backend
 ```
 
-## Backend
+## Jogar (linha de comando)
 
 ```bash
 cd backend
 uv venv && uv pip install -e ".[dev]"
+.venv/bin/python -m devaneio.cli nova ../campaigns/sombra-do-vale.json partida.json
+.venv/bin/python -m devaneio.cli jogar partida.json
+```
+
+Comandos: `olhar`, `entrar <id> "<nome>" [FOR=3 ...]`, `ir <local>`, `testar <habilidade>
+<dificuldade> [modificador]`, `atacar <arma> <alvo> [modificador]`, `ferir <alvo> <quantia>`,
+`ficha`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
+O arquivo da partida é salvo após cada ação e é a fonte da verdade. `atacar` compõe no CLI
+um `resolve_check` (habilidade da arma contra Normal) e, em acerto, um `deal_damage`.
+
+## Backend
+
+```bash
+cd backend
 .venv/bin/pytest -q
 .venv/bin/python -m devaneio.export_schema   # regenera contract/
 ```
@@ -66,6 +80,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 2: interpretador de expressões, esquema do sistema de regras com o sistema padrão, RNG reprodutível e `resolve_check` (teste de habilidade que gera novo estado e evento).
 - Etapa 3: NPCs com atributos (parciais na campanha, completados pelos defaults do sistema) e `hp` pela fórmula de `max_hp`; `deal_damage` (arma rolada com os atributos do atacante), `apply_damage` (quantia fixa) e `end_turn`. hp tem piso em 0: personagem fica fora de combate, morte é decisão narrativa; NPC fica `alive=false`.
 - Etapa 4: `add_character` (atributos parciais completados pelo sistema, hp pela fórmula) e `move` (o grupo anda junto, só por `connections`). Com isso uma partida mínima dá a volta: criar, andar, testar, ferir, encerrar turno.
+- Etapa 5: linha de comando (`devaneio.cli`) com partida em disco e interpretador de comandos puro; `Weapon.skill` no sistema de regras; campanha de exemplo em `campaigns/`.
 
 ## Motor
 
@@ -83,4 +98,4 @@ avançado e um `Event` no log. O estado de entrada nunca é alterado. O acerto d
 | `deal_damage` / `apply_damage` | campanha (+ regras) | `damage` |
 | `end_turn` | — | `turn_end` |
 
-Sem LLM, sem multiplayer, sem interface.
+Sem LLM, sem multiplayer, sem interface gráfica. NPCs ainda não agem (não há diretor de narrativa).
