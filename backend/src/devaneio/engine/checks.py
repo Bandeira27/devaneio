@@ -1,0 +1,137 @@
+"""Teste de habilidade: rola a fórmula, compara com a dificuldade, registra o evento."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterable, TypeVar
+
+from devaneio.rng import Rng
+from devaneio.rules import (
+    CheckOutcome,
+    DiceRoll,
+    ExpressionError,
+    Outcomes,
+    RuleSystem,
+    evaluate,
+    parse,
+)
+from devaneio.schema import Event, GameState
+
+
+class EngineError(ValueError):
+    """Ação inválida para este estado/sistema (id desconhecido, fórmula não avaliável)."""
+
+
+OUTCOME_LABELS = {
+    CheckOutcome.CRITICAL_FAILURE: "falha crítica",
+    CheckOutcome.FAILURE: "falha",
+    CheckOutcome.SUCCESS: "sucesso",
+    CheckOutcome.CRITICAL_SUCCESS: "sucesso crítico",
+}
+
+
+def classify_outcome(margin: int, outcomes: Outcomes) -> CheckOutcome:
+    """Margem = total - dificuldade. Negativa é falha; as caudas são os críticos."""
+    if margin <= outcomes.critical_failure_margin:
+        return CheckOutcome.CRITICAL_FAILURE
+    if margin < 0:
+        return CheckOutcome.FAILURE
+    if margin >= outcomes.critical_success_margin:
+        return CheckOutcome.CRITICAL_SUCCESS
+    return CheckOutcome.SUCCESS
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    state: GameState
+    character_id: str
+    skill_id: str
+    difficulty_id: str
+    modifier_id: str | None
+    rolls: tuple[DiceRoll, ...]
+    total: int
+    difficulty: int
+    margin: int
+    outcome: CheckOutcome
+    text: str
+
+
+def resolve_check(
+    state: GameState,
+    rules: RuleSystem,
+    *,
+    character_id: str,
+    skill_id: str,
+    difficulty_id: str,
+    modifier_id: str | None = None,
+) -> CheckResult:
+    """Resolve um teste. Não altera ``state``: devolve um novo estado com ``rng_draws``
+    avançado e um ``Event`` de tipo ``check`` no log. O turno não muda aqui."""
+    character = state.characters.get(character_id)
+    if character is None:
+        raise EngineError(f"personagem '{character_id}' não está no estado")
+    skill = _find(rules.skills, skill_id, "habilidade")
+    difficulty = _find(rules.difficulties, difficulty_id, "dificuldade")
+    modifier = _find(rules.modifiers, modifier_id, "modificador") if modifier_id else None
+
+    rng = Rng(state.rng_seed, state.rng_draws)
+    try:
+        rolled = evaluate(parse(skill.formula), character.attributes, rng)
+    except ExpressionError as exc:
+        raise EngineError(f"habilidade '{skill_id}': {exc}") from exc
+
+    total = rolled.total + (modifier.value if modifier else 0)
+    margin = total - difficulty.value
+    outcome = classify_outcome(margin, rules.outcomes)
+
+    dice_text = " ".join(f"{r.dice} {list(r.values)}" for r in rolled.rolls)
+    formula_text = skill.formula + (f", {modifier.name}" if modifier else "")
+    text = (
+        f"{character.name} testa {skill.name} ({formula_text}) contra "
+        f"{difficulty.name} {difficulty.value}: {dice_text} → total {total}, "
+        f"{OUTCOME_LABELS[outcome]}"
+    )
+
+    new_state = state.model_copy(deep=True)
+    new_state.rng_draws = rng.draws
+    new_state.events.append(
+        Event(
+            turn=state.turn,
+            kind="check",
+            text=text,
+            data={
+                "character_id": character_id,
+                "skill_id": skill_id,
+                "difficulty_id": difficulty_id,
+                "modifier_id": modifier_id,
+                "rolls": [{"dice": r.dice, "values": list(r.values)} for r in rolled.rolls],
+                "total": total,
+                "difficulty": difficulty.value,
+                "margin": margin,
+                "outcome": outcome.value,
+            },
+        )
+    )
+    return CheckResult(
+        state=new_state,
+        character_id=character_id,
+        skill_id=skill_id,
+        difficulty_id=difficulty_id,
+        modifier_id=modifier_id,
+        rolls=rolled.rolls,
+        total=total,
+        difficulty=difficulty.value,
+        margin=margin,
+        outcome=outcome,
+        text=text,
+    )
+
+
+T = TypeVar("T")
+
+
+def _find(items: Iterable[T], item_id: str, label: str) -> T:
+    for item in items:
+        if getattr(item, "id") == item_id:
+            return item
+    raise EngineError(f"{label} '{item_id}' não existe no sistema de regras")
