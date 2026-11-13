@@ -21,3 +21,7 @@ node_modules/
 .vscode/
 .idea/
 *.swp
+
+# Partidas salvas localmente
+partida*.json
+*.save.json
