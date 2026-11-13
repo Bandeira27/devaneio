@@ -14,16 +14,18 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode
 
+from .rules import RuleSystem
 from .schema import Campaign, GameState
 
 # <raiz>/backend/src/devaneio/export_schema.py -> <raiz>/contract
 DEFAULT_OUT = Path(__file__).resolve().parents[3] / "contract"
 
-# Campaign é documento de ENTRADA (autorado por pessoas): modo "validation", campos com
+# Campaign e RuleSystem são documentos de ENTRADA (autorados por pessoas): modo "validation", campos com
 # default são opcionais. GameState é SAÍDA do motor: modo "serialization", todo campo está
 # sempre presente, e os tipos TypeScript do cliente não ficam cheios de opcionais.
 SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
     "campaign.schema.json": (Campaign, "validation"),
+    "rules.schema.json": (RuleSystem, "validation"),
     "game_state.schema.json": (GameState, "serialization"),
 }
 

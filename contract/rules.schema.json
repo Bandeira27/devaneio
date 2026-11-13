@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Attribute": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        },
+        "min": {
+          "default": 1,
+          "type": "integer"
+        },
+        "max": {
+          "default": 5,
+          "type": "integer"
+        },
+        "default": {
+          "type": "integer",
+          "default": 2
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "Attribute",
+      "type": "object"
+    },
+    "Difficulty": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value"
+      ],
+      "title": "Difficulty",
+      "type": "object"
+    },
+    "Modifier": {
+      "additionalProperties": false,
+      "description": "Modificador situacional aplicável a qualquer teste (vantagem +2, desvantagem -2).",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value"
+      ],
+      "title": "Modifier",
+      "type": "object"
+    },
+    "Outcomes": {
+      "additionalProperties": false,
+      "description": "Graus de resultado por margem (total - dificuldade). Margem < 0 é falha, >= 0 sucesso;\nos críticos são as caudas.",
+      "properties": {
+        "critical_failure_margin": {
+          "description": "margem <= este valor é falha crítica",
+          "type": "integer"
+        },
+        "critical_success_margin": {
+          "description": "margem >= este valor é sucesso crítico",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "critical_failure_margin",
+        "critical_success_margin"
+      ],
+      "title": "Outcomes",
+      "type": "object"
+    },
+    "Skill": {
+      "additionalProperties": false,
+      "description": "Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no\ninterpretador para 'o atributo da habilidade'.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "formula": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "formula"
+      ],
+      "title": "Skill",
+      "type": "object"
+    },
+    "Weapon": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "damage": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "damage"
+      ],
+      "title": "Weapon",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "type": "integer"
+    },
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "type": "string"
+    },
+    "attributes": {
+      "items": {
+        "$ref": "#/$defs/Attribute"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "difficulties": {
+      "items": {
+        "$ref": "#/$defs/Difficulty"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "skills": {
+      "items": {
+        "$ref": "#/$defs/Skill"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "weapons": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Weapon"
+      },
+      "type": "array"
+    },
+    "modifiers": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Modifier"
+      },
+      "type": "array"
+    },
+    "outcomes": {
+      "$ref": "#/$defs/Outcomes"
+    },
+    "max_hp": {
+      "description": "fórmula de max_hp na criação do personagem",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "attributes",
+    "difficulties",
+    "skills",
+    "outcomes",
+    "max_hp"
+  ],
+  "title": "RuleSystem",
+  "type": "object"
+}

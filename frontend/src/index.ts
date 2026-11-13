@@ -2,8 +2,9 @@
 // derivados do contrato (contract/*.schema.json) compilam em modo strict.
 import type { Campaign } from "./contract/campaign";
 import type { GameState } from "./contract/game_state";
+import type { RuleSystem } from "./contract/rules";
 
-export type { Campaign, GameState };
+export type { Campaign, GameState, RuleSystem };
 
 export function describeTurn(state: GameState, campaign: Campaign): string {
   const location = campaign.locations?.find((l) => l.id === state.current_location_id);
