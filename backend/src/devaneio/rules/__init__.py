@@ -4,7 +4,9 @@ from .expression import DiceRoll, EvalResult, ExpressionError, evaluate, identif
 from .schema import (
     Attribute,
     CheckOutcome,
+    Combat,
     Difficulty,
+    Dispositions,
     Modifier,
     Outcomes,
     RuleSystem,
@@ -24,8 +26,10 @@ from .validation import (
 __all__ = [
     "Attribute",
     "CheckOutcome",
+    "Combat",
     "DiceRoll",
     "Difficulty",
+    "Dispositions",
     "EvalResult",
     "ExpressionError",
     "Modifier",

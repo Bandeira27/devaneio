@@ -35,6 +35,34 @@
       "title": "Attribute",
       "type": "object"
     },
+    "Combat": {
+      "additionalProperties": false,
+      "properties": {
+        "attack_difficulty": {
+          "description": "dificuldade dos ataques (jogadores e NPCs)",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "default_weapon": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "arma de quem não declara nenhuma (NPCs); None exige weapon_id"
+        }
+      },
+      "required": [
+        "attack_difficulty"
+      ],
+      "title": "Combat",
+      "type": "object"
+    },
     "Difficulty": {
       "additionalProperties": false,
       "properties": {
@@ -55,6 +83,20 @@
         "value"
       ],
       "title": "Difficulty",
+      "type": "object"
+    },
+    "Dispositions": {
+      "additionalProperties": false,
+      "properties": {
+        "hostile_below": {
+          "description": "NPC com disposition abaixo disto ataca o grupo",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "hostile_below"
+      ],
+      "title": "Dispositions",
       "type": "object"
     },
     "Modifier": {
@@ -216,6 +258,12 @@
     "outcomes": {
       "$ref": "#/$defs/Outcomes"
     },
+    "combat": {
+      "$ref": "#/$defs/Combat"
+    },
+    "dispositions": {
+      "$ref": "#/$defs/Dispositions"
+    },
     "max_hp": {
       "description": "fórmula de max_hp na criação do personagem",
       "type": "string"
@@ -228,6 +276,8 @@
     "difficulties",
     "skills",
     "outcomes",
+    "combat",
+    "dispositions",
     "max_hp"
   ],
   "title": "RuleSystem",

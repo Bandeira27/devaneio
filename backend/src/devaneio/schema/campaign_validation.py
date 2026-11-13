@@ -11,7 +11,7 @@ from typing import Any, Iterable
 
 from pydantic import ValidationError
 
-from .campaign import Beat, Campaign
+from .campaign import AtLocation, Beat, BeatDone, Campaign, NpcDown
 
 
 class CampaignIntegrityError(ValueError):
@@ -61,6 +61,21 @@ def validate_campaign(campaign: Campaign) -> list[str]:
                 errors.append(f"marco '{beat.id}' requer a si mesmo")
             elif req not in beat_ids:
                 errors.append(f"marco '{beat.id}' requer '{req}', que não existe")
+
+    npc_ids = {x.id for x in campaign.npcs}
+    for beat in campaign.beats:
+        for field_name in ("activate_when", "complete_when"):
+            for cond in getattr(beat, field_name):
+                where = f"marco '{beat.id}', {field_name}"
+                if isinstance(cond, AtLocation) and cond.location_id not in location_ids:
+                    errors.append(f"{where}: local '{cond.location_id}' não existe")
+                elif isinstance(cond, NpcDown) and cond.npc_id not in npc_ids:
+                    errors.append(f"{where}: npc '{cond.npc_id}' não existe")
+                elif isinstance(cond, BeatDone):
+                    if cond.beat_id == beat.id:
+                        errors.append(f"{where}: depende da própria conclusão")
+                    elif cond.beat_id not in beat_ids:
+                        errors.append(f"{where}: marco '{cond.beat_id}' não existe")
 
     errors += _beat_cycles(campaign.beats)
     return errors

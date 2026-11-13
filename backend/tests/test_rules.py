@@ -60,6 +60,33 @@ def test_unknown_attribute_in_formula_is_reported(rules_data, mutate, fragment):
     assert len(errors) == 1 and fragment in errors[0]
 
 
+def test_combat_references_must_exist(rules_data):
+    rules_data["combat"] = {"attack_difficulty": "impossivel", "default_weapon": "canhao"}
+    assert errors_of(rules_data) == [
+        "combat.attack_difficulty 'impossivel' não existe",
+        "combat.default_weapon 'canhao' não existe",
+    ]
+
+
+def test_npc_weapon_is_checked_against_rules(campaign_data, rules_data):
+    from devaneio.schema import Campaign
+
+    campaign_data["npcs"][1]["weapon_id"] = "canhao"
+    campaign = Campaign.model_validate(campaign_data)
+    rules = RuleSystem.model_validate(rules_data)
+    assert validate_campaign_against_rules(campaign, rules) == [
+        "npc 'sacerdote': arma 'canhao' não existe no sistema"
+    ]
+    rules_data["combat"]["default_weapon"] = None
+    campaign_data["npcs"][1]["weapon_id"] = None
+    assert validate_campaign_against_rules(
+        Campaign.model_validate(campaign_data), RuleSystem.model_validate(rules_data)
+    ) == [
+        "npc 'ferreiro' não tem arma e o sistema não define combat.default_weapon",
+        "npc 'sacerdote' não tem arma e o sistema não define combat.default_weapon",
+    ]
+
+
 def test_weapon_skill_must_exist(rules_data):
     rules_data["weapons"][0]["skill"] = "voar"
     assert errors_of(rules_data) == ["weapon 'punhos': habilidade 'voar' não existe"]

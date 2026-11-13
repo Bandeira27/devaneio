@@ -39,13 +39,38 @@ export interface Npc {
   attributes?: {
     [k: string]: number;
   };
+  disposition?: number;
+  weapon_id?: string | null;
 }
 /**
- * Marco da trama. `requires` lista marcos que precisam estar concluídos antes.
+ * Marco da trama. ``requires`` lista marcos que precisam estar concluídos antes.
+ *
+ * ``activate_when``: condições para passar de pendente a ativo (além dos requisitos);
+ * vazia, ativa assim que os requisitos estiverem concluídos.
+ * ``complete_when``: condições para concluir automaticamente; vazia, só conclui por ação
+ * explícita (o mestre/jogador decide).
  */
 export interface Beat {
   id: string;
   title: string;
   description?: string;
   requires?: string[];
+  activate_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
+  complete_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
+}
+export interface AtLocation {
+  kind: "at_location";
+  location_id: string;
+}
+export interface NpcDown {
+  kind: "npc_down";
+  npc_id: string;
+}
+export interface BeatDone {
+  kind: "beat_done";
+  beat_id: string;
+}
+export interface TurnAtLeast {
+  kind: "turn_at_least";
+  turn: number;
 }

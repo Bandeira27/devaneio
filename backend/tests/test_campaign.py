@@ -123,3 +123,31 @@ def test_load_campaign_raises_with_full_error_list(campaign_data):
         load_campaign(campaign_data)
     assert len(info.value.errors) == 2
     assert "Campanha inconsistente" in str(info.value)
+
+
+@pytest.mark.parametrize(
+    "cond, fragment",
+    [
+        ({"kind": "at_location", "location_id": "lua"}, "local 'lua' não existe"),
+        ({"kind": "npc_down", "npc_id": "ninguem"}, "npc 'ninguem' não existe"),
+        ({"kind": "beat_done", "beat_id": "nada"}, "marco 'nada' não existe"),
+        ({"kind": "beat_done", "beat_id": "pista"}, "depende da própria conclusão"),
+    ],
+)
+def test_condition_references_are_checked(campaign_data, cond, fragment):
+    campaign_data["beats"][1]["complete_when"] = [cond]
+    errors = errors_of(campaign_data)
+    assert len(errors) == 1 and errors[0].startswith("marco 'pista', complete_when: ") and fragment in errors[0]
+
+
+def test_unknown_condition_kind_is_a_structural_error(campaign_data):
+    campaign_data["beats"][0]["activate_when"] = [{"kind": "full_moon"}]
+    with pytest.raises(ValidationError):
+        Campaign.model_validate(campaign_data)
+
+
+def test_example_campaign_has_triggers(campaign):
+    by_id = {b.id: b for b in campaign.beats}
+    assert by_id["chegada"].complete_when[0].location_id == "floresta"
+    assert by_id["confronto"].complete_when[0].npc_id == "sacerdote"
+    assert by_id["pista"].complete_when == []

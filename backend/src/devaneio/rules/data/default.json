@@ -4,41 +4,153 @@
   "name": "Devaneio Básico",
   "description": "Sistema mínimo: 2d6 + atributo contra uma dificuldade. Atributos de 1 a 5.",
   "attributes": [
-    {"id": "FOR", "name": "Força", "description": "Vigor físico: golpes, esforço, resistência."},
-    {"id": "AGI", "name": "Agilidade", "description": "Reflexos, precisão, furtividade."},
-    {"id": "MEN", "name": "Mente", "description": "Raciocínio, memória, percepção."},
-    {"id": "PRE", "name": "Presença", "description": "Carisma, vontade, intimidação."}
+    {
+      "id": "FOR",
+      "name": "Força",
+      "description": "Vigor físico: golpes, esforço, resistência."
+    },
+    {
+      "id": "AGI",
+      "name": "Agilidade",
+      "description": "Reflexos, precisão, furtividade."
+    },
+    {
+      "id": "MEN",
+      "name": "Mente",
+      "description": "Raciocínio, memória, percepção."
+    },
+    {
+      "id": "PRE",
+      "name": "Presença",
+      "description": "Carisma, vontade, intimidação."
+    }
   ],
   "difficulties": [
-    {"id": "facil", "name": "Fácil", "value": 7},
-    {"id": "normal", "name": "Normal", "value": 9},
-    {"id": "dificil", "name": "Difícil", "value": 11},
-    {"id": "heroica", "name": "Heroica", "value": 13}
+    {
+      "id": "facil",
+      "name": "Fácil",
+      "value": 7
+    },
+    {
+      "id": "normal",
+      "name": "Normal",
+      "value": 9
+    },
+    {
+      "id": "dificil",
+      "name": "Difícil",
+      "value": 11
+    },
+    {
+      "id": "heroica",
+      "name": "Heroica",
+      "value": 13
+    }
   ],
   "skills": [
-    {"id": "lutar", "name": "Lutar", "formula": "2d6 + FOR", "description": "Combate corpo a corpo."},
-    {"id": "resistir", "name": "Resistir", "formula": "2d6 + FOR", "description": "Aguentar dor, veneno, cansaço."},
-    {"id": "furtividade", "name": "Furtividade", "formula": "2d6 + AGI", "description": "Mover-se sem ser notado."},
-    {"id": "atirar", "name": "Atirar", "formula": "2d6 + AGI", "description": "Ataques à distância."},
-    {"id": "investigar", "name": "Investigar", "formula": "2d6 + MEN", "description": "Procurar pistas, perceber detalhes."},
-    {"id": "saber", "name": "Saber", "formula": "2d6 + MEN", "description": "Conhecimento, lembrar fatos."},
-    {"id": "persuadir", "name": "Persuadir", "formula": "2d6 + PRE", "description": "Convencer, negociar, enganar."},
-    {"id": "intimidar", "name": "Intimidar", "formula": "2d6 + PRE", "description": "Impor-se pela ameaça ou presença."}
+    {
+      "id": "lutar",
+      "name": "Lutar",
+      "formula": "2d6 + FOR",
+      "description": "Combate corpo a corpo."
+    },
+    {
+      "id": "resistir",
+      "name": "Resistir",
+      "formula": "2d6 + FOR",
+      "description": "Aguentar dor, veneno, cansaço."
+    },
+    {
+      "id": "furtividade",
+      "name": "Furtividade",
+      "formula": "2d6 + AGI",
+      "description": "Mover-se sem ser notado."
+    },
+    {
+      "id": "atirar",
+      "name": "Atirar",
+      "formula": "2d6 + AGI",
+      "description": "Ataques à distância."
+    },
+    {
+      "id": "investigar",
+      "name": "Investigar",
+      "formula": "2d6 + MEN",
+      "description": "Procurar pistas, perceber detalhes."
+    },
+    {
+      "id": "saber",
+      "name": "Saber",
+      "formula": "2d6 + MEN",
+      "description": "Conhecimento, lembrar fatos."
+    },
+    {
+      "id": "persuadir",
+      "name": "Persuadir",
+      "formula": "2d6 + PRE",
+      "description": "Convencer, negociar, enganar."
+    },
+    {
+      "id": "intimidar",
+      "name": "Intimidar",
+      "formula": "2d6 + PRE",
+      "description": "Impor-se pela ameaça ou presença."
+    }
   ],
   "weapons": [
-    {"id": "punhos", "name": "Punhos", "damage": "1 + FOR", "skill": "lutar"},
-    {"id": "adaga", "name": "Adaga", "damage": "1d4 + FOR", "skill": "lutar"},
-    {"id": "espada", "name": "Espada", "damage": "1d6 + FOR", "skill": "lutar"},
-    {"id": "arco", "name": "Arco", "damage": "1d6 + AGI", "skill": "atirar"},
-    {"id": "cajado", "name": "Cajado", "damage": "1d6", "skill": "lutar"}
+    {
+      "id": "punhos",
+      "name": "Punhos",
+      "damage": "1 + FOR",
+      "skill": "lutar"
+    },
+    {
+      "id": "adaga",
+      "name": "Adaga",
+      "damage": "1d4 + FOR",
+      "skill": "lutar"
+    },
+    {
+      "id": "espada",
+      "name": "Espada",
+      "damage": "1d6 + FOR",
+      "skill": "lutar"
+    },
+    {
+      "id": "arco",
+      "name": "Arco",
+      "damage": "1d6 + AGI",
+      "skill": "atirar"
+    },
+    {
+      "id": "cajado",
+      "name": "Cajado",
+      "damage": "1d6",
+      "skill": "lutar"
+    }
   ],
   "modifiers": [
-    {"id": "vantagem", "name": "Vantagem", "value": 2},
-    {"id": "desvantagem", "name": "Desvantagem", "value": -2}
+    {
+      "id": "vantagem",
+      "name": "Vantagem",
+      "value": 2
+    },
+    {
+      "id": "desvantagem",
+      "name": "Desvantagem",
+      "value": -2
+    }
   ],
   "outcomes": {
     "critical_failure_margin": -5,
     "critical_success_margin": 5
+  },
+  "combat": {
+    "attack_difficulty": "normal",
+    "default_weapon": "punhos"
+  },
+  "dispositions": {
+    "hostile_below": -2
   },
   "max_hp": "6 + FOR * 2"
 }

@@ -46,6 +46,12 @@ def validate_rules(rules: RuleSystem) -> list[str]:
         if weapon.skill not in skill_ids:
             errors.append(f"weapon '{weapon.id}': habilidade '{weapon.skill}' não existe")
     check_formula("max_hp", rules.max_hp)
+
+    if rules.combat.attack_difficulty not in {x.id for x in rules.difficulties}:
+        errors.append(f"combat.attack_difficulty '{rules.combat.attack_difficulty}' não existe")
+    weapon_ids = {x.id for x in rules.weapons}
+    if rules.combat.default_weapon is not None and rules.combat.default_weapon not in weapon_ids:
+        errors.append(f"combat.default_weapon '{rules.combat.default_weapon}' não existe")
     return errors
 
 
@@ -79,8 +85,13 @@ def validate_campaign_against_rules(campaign: Campaign, rules: RuleSystem) -> li
     if campaign.rules_id != rules.id:
         errors.append(f"campanha pede o sistema '{campaign.rules_id}', mas o sistema é '{rules.id}'")
     declared = {a.id: a for a in rules.attributes}
+    weapon_ids = {w.id for w in rules.weapons}
     for npc in campaign.npcs:
         errors += _attribute_errors(f"npc '{npc.id}'", npc.attributes, declared, partial=True)
+        if npc.weapon_id is not None and npc.weapon_id not in weapon_ids:
+            errors.append(f"npc '{npc.id}': arma '{npc.weapon_id}' não existe no sistema")
+        elif npc.weapon_id is None and rules.combat.default_weapon is None:
+            errors.append(f"npc '{npc.id}' não tem arma e o sistema não define combat.default_weapon")
     return errors
 
 

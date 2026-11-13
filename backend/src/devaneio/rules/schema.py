@@ -101,6 +101,17 @@ class Outcomes(StrictModel):
         return self
 
 
+class Combat(StrictModel):
+    attack_difficulty: Id = Field(description="dificuldade dos ataques (jogadores e NPCs)")
+    default_weapon: Id | None = Field(
+        default=None, description="arma de quem não declara nenhuma (NPCs); None exige weapon_id"
+    )
+
+
+class Dispositions(StrictModel):
+    hostile_below: int = Field(description="NPC com disposition abaixo disto ataca o grupo")
+
+
 class RuleSystem(StrictModel):
     schema_version: Literal[1] = 1
     id: Id
@@ -112,4 +123,6 @@ class RuleSystem(StrictModel):
     weapons: list[Weapon] = []
     modifiers: list[Modifier] = []
     outcomes: Outcomes
+    combat: Combat
+    dispositions: Dispositions
     max_hp: Formula = Field(description="fórmula de max_hp na criação do personagem")

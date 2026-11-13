@@ -38,6 +38,7 @@ def test_npc_hp_comes_from_max_hp_formula(campaign, rules):
     assert (state.npcs["ferreiro"].hp, state.npcs["ferreiro"].max_hp) == (10, 10)
     assert (state.npcs["sacerdote"].hp, state.npcs["sacerdote"].max_hp) == (12, 12)
     assert all(n.alive for n in state.npcs.values())
+    assert (state.npcs["ferreiro"].disposition, state.npcs["sacerdote"].disposition) == (1, -3)
 
 
 def test_dice_in_max_hp_consume_the_state_rng(campaign, rules_data):

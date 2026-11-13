@@ -51,7 +51,8 @@
       "location_id": "vila",
       "secrets": [
         "sabe o caminho secreto para o altar"
-      ]
+      ],
+      "disposition": 1
     },
     {
       "id": "sacerdote",
@@ -65,14 +66,22 @@
       "attributes": {
         "FOR": 3,
         "PRE": 4
-      }
+      },
+      "disposition": -3,
+      "weapon_id": "adaga"
     }
   ],
   "beats": [
     {
       "id": "chegada",
       "title": "Chegada à vila",
-      "description": "Os aventureiros chegam a Pedra Alta e ouvem sobre os desaparecimentos."
+      "description": "Os aventureiros chegam a Pedra Alta e ouvem sobre os desaparecimentos.",
+      "complete_when": [
+        {
+          "kind": "at_location",
+          "location_id": "floresta"
+        }
+      ]
     },
     {
       "id": "pista",
@@ -80,6 +89,12 @@
       "description": "Algo nas ruínas aponta para o culto.",
       "requires": [
         "chegada"
+      ],
+      "activate_when": [
+        {
+          "kind": "at_location",
+          "location_id": "ruinas"
+        }
       ]
     },
     {
@@ -88,6 +103,18 @@
       "description": "O culto é desmascarado e o despertar, interrompido ou não.",
       "requires": [
         "pista"
+      ],
+      "activate_when": [
+        {
+          "kind": "at_location",
+          "location_id": "ruinas"
+        }
+      ],
+      "complete_when": [
+        {
+          "kind": "npc_down",
+          "npc_id": "sacerdote"
+        }
       ]
     }
   ]

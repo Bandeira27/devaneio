@@ -25,6 +25,8 @@ export interface RuleSystem {
   weapons?: Weapon[];
   modifiers?: Modifier[];
   outcomes: Outcomes;
+  combat: Combat;
+  dispositions: Dispositions;
   /**
    * fórmula de max_hp na criação do personagem
    */
@@ -84,4 +86,20 @@ export interface Outcomes {
    * margem >= este valor é sucesso crítico
    */
   critical_success_margin: number;
+}
+export interface Combat {
+  /**
+   * dificuldade dos ataques (jogadores e NPCs)
+   */
+  attack_difficulty: string;
+  /**
+   * arma de quem não declara nenhuma (NPCs); None exige weapon_id
+   */
+  default_weapon?: string | null;
+}
+export interface Dispositions {
+  /**
+   * NPC com disposition abaixo disto ataca o grupo
+   */
+  hostile_below: number;
 }

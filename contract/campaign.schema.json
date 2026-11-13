@@ -1,9 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
+    "AtLocation": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "at_location",
+          "type": "string"
+        },
+        "location_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "location_id"
+      ],
+      "title": "AtLocation",
+      "type": "object"
+    },
     "Beat": {
       "additionalProperties": false,
-      "description": "Marco da trama. `requires` lista marcos que precisam estar concluídos antes.",
+      "description": "Marco da trama. ``requires`` lista marcos que precisam estar concluídos antes.\n\n``activate_when``: condições para passar de pendente a ativo (além dos requisitos);\nvazia, ativa assim que os requisitos estiverem concluídos.\n``complete_when``: condições para concluir automaticamente; vazia, só conclui por ação\nexplícita (o mestre/jogador decide).",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -23,6 +42,64 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "activate_when": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "at_location": "#/$defs/AtLocation",
+                "beat_done": "#/$defs/BeatDone",
+                "npc_down": "#/$defs/NpcDown",
+                "turn_at_least": "#/$defs/TurnAtLeast"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/AtLocation"
+              },
+              {
+                "$ref": "#/$defs/NpcDown"
+              },
+              {
+                "$ref": "#/$defs/BeatDone"
+              },
+              {
+                "$ref": "#/$defs/TurnAtLeast"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "complete_when": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "at_location": "#/$defs/AtLocation",
+                "beat_done": "#/$defs/BeatDone",
+                "npc_down": "#/$defs/NpcDown",
+                "turn_at_least": "#/$defs/TurnAtLeast"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/AtLocation"
+              },
+              {
+                "$ref": "#/$defs/NpcDown"
+              },
+              {
+                "$ref": "#/$defs/BeatDone"
+              },
+              {
+                "$ref": "#/$defs/TurnAtLeast"
+              }
+            ]
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -30,6 +107,25 @@
         "title"
       ],
       "title": "Beat",
+      "type": "object"
+    },
+    "BeatDone": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "beat_done",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "beat_id"
+      ],
+      "title": "BeatDone",
       "type": "object"
     },
     "Faction": {
@@ -142,6 +238,22 @@
           },
           "default": {},
           "type": "object"
+        },
+        "disposition": {
+          "default": 0,
+          "type": "integer"
+        },
+        "weapon_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -149,6 +261,44 @@
         "name"
       ],
       "title": "Npc",
+      "type": "object"
+    },
+    "NpcDown": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "npc_down",
+          "type": "string"
+        },
+        "npc_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "npc_id"
+      ],
+      "title": "NpcDown",
+      "type": "object"
+    },
+    "TurnAtLeast": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "turn_at_least",
+          "type": "string"
+        },
+        "turn": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "turn"
+      ],
+      "title": "TurnAtLeast",
       "type": "object"
     }
   },

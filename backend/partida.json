@@ -1,0 +1,48 @@
+{
+  "save_version": 1,
+  "campaign_path": "../campaigns/sombra-do-vale.json",
+  "state": {
+    "state_version": 1,
+    "campaign_id": "sombra-do-vale",
+    "turn": 0,
+    "rng_seed": 4962788658674082,
+    "rng_draws": 0,
+    "current_location_id": "vila",
+    "characters": {},
+    "npcs": {
+      "ferreiro": {
+        "alive": true,
+        "hp": 10,
+        "max_hp": 10,
+        "attributes": {
+          "FOR": 2,
+          "AGI": 2,
+          "MEN": 2,
+          "PRE": 2
+        },
+        "disposition": 0,
+        "location_id": "vila"
+      },
+      "sacerdote": {
+        "alive": true,
+        "hp": 12,
+        "max_hp": 12,
+        "attributes": {
+          "FOR": 3,
+          "AGI": 2,
+          "MEN": 2,
+          "PRE": 4
+        },
+        "disposition": 0,
+        "location_id": "ruinas"
+      }
+    },
+    "beats": {
+      "chegada": "pending",
+      "pista": "pending",
+      "confronto": "pending"
+    },
+    "facts": [],
+    "events": []
+  }
+}

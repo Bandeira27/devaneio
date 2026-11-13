@@ -38,7 +38,11 @@ def initial_state(
         if max_hp < 1:
             raise EngineError(f"max_hp de '{npc.id}' deu {max_hp}; precisa ser >= 1")
         npcs[npc.id] = NpcState(
-            hp=max_hp, max_hp=max_hp, attributes=attributes, location_id=npc.location_id
+            hp=max_hp,
+            max_hp=max_hp,
+            attributes=attributes,
+            disposition=npc.disposition,
+            location_id=npc.location_id,
         )
 
     return GameState(
