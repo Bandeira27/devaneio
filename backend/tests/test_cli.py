@@ -73,8 +73,48 @@ def test_look_at_start(session):
     _, text = run(session, "olhar")
     assert text.startswith("Turno 0 — Vila de Pedra Alta (vila)")
     assert "Saídas: Floresta Cinzenta (floresta)" in text
-    assert "Aqui: Bram (ferreiro) hp 10/10" in text
+    assert "Aqui: Bram (ferreiro) hp 10/10\n" in text
+    assert "Marcos ativos: Chegada à vila" in text
     assert "Grupo: ninguém ainda" in text
+
+
+def test_new_game_starts_with_root_beats_active(session):
+    assert session.state.beats["chegada"].value == "active"
+    assert session.state.events[0].kind == "beat_activated"
+
+
+def test_beats_advance_after_player_actions(session):
+    session, text = run(session, 'entrar aria "Aria"', "ir floresta")
+    assert text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
+    session, text = run(session, "ir ruinas")
+    assert text.endswith("\nMarco ativado: A pista nas ruínas.")
+    _, look = run(session, "olhar")
+    assert "Irmão Vael (sacerdote) hp 12/12, hostil" in look
+    _, beats = run(session, "marcos")
+    assert beats == (
+        "[concluído] Chegada à vila (chegada)\n"
+        "[ativo] A pista nas ruínas (pista) (exige: chegada)\n"
+        "[pendente] Confronto com o culto (confronto) (exige: pista)"
+    )
+
+
+def test_manual_beat_commands(session):
+    session, text = run(session, 'entrar aria "Aria"', "ir floresta", "ir ruinas", "marco concluir pista")
+    assert text == "Marco concluído: A pista nas ruínas.\nMarco ativado: Confronto com o culto."
+    with pytest.raises(CommandError, match="está 'active', precisava estar 'pending'"):
+        execute(session, "marco ativar confronto")
+    with pytest.raises(CommandError, match="uso: marco"):
+        execute(session, "marco pular pista")
+
+
+def test_end_turn_runs_the_director(session):
+    session, text = run(session, 'entrar aria "Aria"', "ir floresta", "ir ruinas", "fim")
+    assert "Irmão Vael testa Lutar (2d6 + FOR) contra Normal 9:" in text
+    assert "Diretor: tensão" in text
+    assert text.endswith("Fim do turno 0. Começa o turno 1.")
+    assert session.state.turn == 1
+    kinds = [e.kind for e in session.state.events]
+    assert kinds[-2:] == ["director", "turn_end"] and "check" in kinds
 
 
 def test_join_then_look_and_sheet(session):
@@ -118,11 +158,14 @@ def test_empty_line_is_a_noop(session):
 
 def test_move_and_log(session):
     session, text = run(session, "ir floresta")
-    assert text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta."
+    assert text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
     session, look = run(session, "olhar")
     assert look.startswith("Turno 0 — Floresta Cinzenta (floresta)") and "Aqui: ninguém" in look
-    _, log = run(session, "log")
-    assert log == "[t0] O grupo vai de Vila de Pedra Alta para Floresta Cinzenta."
+    _, log = run(session, "log 2")
+    assert log == (
+        "[t0] O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\n"
+        "[t0] Marco concluído: Chegada à vila."
+    )
 
 
 def test_check_with_single_character_needs_no_prefix(session):
@@ -180,6 +223,12 @@ def test_attack_uses_the_weapon_skill(session):
     assert "Aria testa Atirar (2d6 + AGI) contra Normal 9" in text
 
 
+def test_attack_difficulty_comes_from_rules(session):
+    session.rules.combat.attack_difficulty = "heroica"
+    session, text = run(session, 'entrar aria "Aria"', "atacar espada ferreiro")
+    assert "contra Heroica 13" in text
+
+
 @pytest.mark.parametrize(
     "line, fragment",
     [
@@ -195,9 +244,9 @@ def test_attack_errors(session, line, fragment):
         execute(session, line)
 
 
-def test_end_turn(session):
+def test_end_turn_without_hostiles(session):
     session, text = run(session, "fim")
-    assert text == "Fim do turno 0. Começa o turno 1."
+    assert text == "Diretor: tensão 0.00; nada a fazer.\nFim do turno 0. Começa o turno 1."
     assert session.state.turn == 1
 
 
@@ -233,7 +282,9 @@ def test_end_to_end_through_the_process(tmp_path):
 
     data = json.loads(save.read_text(encoding="utf-8"))
     assert data["state"]["turn"] == 1 and data["state"]["current_location_id"] == "floresta"
-    assert [e["kind"] for e in data["state"]["events"]] == ["character_joined", "move", "turn_end"]
+    assert [e["kind"] for e in data["state"]["events"]] == [
+        "beat_activated", "character_joined", "move", "beat_done", "director", "turn_end",
+    ]
 
 
 def test_missing_save_file_is_a_clean_error(tmp_path):

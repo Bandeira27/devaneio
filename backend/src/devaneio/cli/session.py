@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from devaneio.engine import initial_state
+from devaneio.engine import advance_beats, initial_state
 from devaneio.rules import RuleSystem, load_builtin_rules, validate_campaign_against_rules
 from devaneio.rules import validate_state_against_rules
 from devaneio.schema import Campaign, GameState, StrictModel, load_campaign
@@ -38,12 +38,13 @@ class Session:
 
 
 def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> Session:
-    """Cria o estado inicial e grava. Semente aleatória (< 2**53, portável) se não for dada."""
+    """Cria o estado inicial (com os marcos iniciais já ativos) e grava. Semente aleatória
+    (< 2**53, portável) se não for dada."""
     campaign_path = Path(campaign_path).resolve()
     campaign, rules = _load_campaign_and_rules(campaign_path)
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
-    state = initial_state(campaign, rules, seed)
+    state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
     session = Session(campaign, rules, state, campaign_path, Path(save_path).resolve())
     save_game(session)
     return session

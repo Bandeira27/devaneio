@@ -12,19 +12,28 @@ from typing import Callable
 
 from devaneio.engine import (
     EngineError,
+    activate_beat,
     add_character,
+    advance_beats,
     apply_damage,
+    complete_beat,
     deal_damage,
-    end_turn,
+    fail_beat,
     move,
+    pass_turn,
     resolve_check,
 )
 from devaneio.rules import CheckOutcome
-from devaneio.schema import Character, GameState
+from devaneio.schema import BeatStatus, Character, GameState
 
 from .session import Session
 
-ATTACK_DIFFICULTY = "normal"
+BEAT_LABELS = {
+    BeatStatus.PENDING: "pendente",
+    BeatStatus.ACTIVE: "ativo",
+    BeatStatus.DONE: "concluído",
+    BeatStatus.FAILED: "falho",
+}
 
 HELP = """\
 Comandos (prefixe com `id:` para escolher o personagem quando houver mais de um):
@@ -32,11 +41,13 @@ Comandos (prefixe com `id:` para escolher o personagem quando houver mais de um)
   entrar <id> "<nome>" [FOR=3 AGI=1 ...] novo personagem; atributos omitidos usam o padrão
   ir <local>                             mover o grupo para um local conectado
   testar <habilidade> <dificuldade> [modificador]
-  atacar <arma> <alvo> [modificador]     teste da habilidade da arma contra Normal; acerto fere
+  atacar <arma> <alvo> [modificador]     teste da habilidade da arma; acerto fere
   ferir <alvo> <quantia> ["fonte"]       dano fixo (armadilha, queda...)
   ficha [id]                             atributos, hp e inventário
+  marcos                                 marcos da trama e seus estados
+  marco ativar|concluir|falhar <id>      mover um marco à mão (o diretor cuida dos gatilhos)
   log [n]                                últimos eventos (padrão 10)
-  fim                                    encerrar o turno
+  fim                                    encerrar o turno: o diretor age, NPCs hostis reagem
   ajuda                                  esta lista
   sair                                   fechar (a partida já está salva)"""
 
@@ -69,6 +80,9 @@ def execute(session: Session, line: str) -> tuple[Session, str]:
         raise CommandError(f"comando desconhecido '{name}'; digite 'ajuda'")
     try:
         new_state, text = handler(session, actor, args)
+        if new_state is not session.state and name != "fim":
+            new_state, beat_texts = advance_beats(new_state, session.campaign)
+            text = "\n".join([text, *beat_texts])
     except EngineError as exc:
         raise CommandError(str(exc)) from None
     return replace(session, state=new_state), text
@@ -93,13 +107,18 @@ def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     exits = ", ".join(f"{names[c]} ({c})" for c in here.connections) or "nenhuma"
     lines.append(f"Saídas: {exits}")
 
+    hostile_below = session.rules.dispositions.hostile_below
     present = [
         f"{npc_names[npc_id]} ({npc_id}) hp {npc.hp}/{npc.max_hp}"
-        + ("" if npc.alive else ", fora de combate")
+        + (", fora de combate" if not npc.alive else ", hostil" if npc.disposition < hostile_below else "")
         for npc_id, npc in state.npcs.items()
         if npc.location_id == here.id
     ]
     lines.append("Aqui: " + (", ".join(present) if present else "ninguém"))
+    titles = {b.id: b.title for b in campaign.beats}
+    active = [titles[b] for b, st in state.beats.items() if st is BeatStatus.ACTIVE]
+    if active:
+        lines.append("Marcos ativos: " + ", ".join(active))
 
     if state.characters:
         party = ", ".join(_char_line(c) for c in state.characters.values())
@@ -158,7 +177,8 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
 
     check = resolve_check(
         session.state, session.rules,
-        character_id=character.id, skill_id=weapon.skill, difficulty_id=ATTACK_DIFFICULTY,
+        character_id=character.id, skill_id=weapon.skill,
+        difficulty_id=session.rules.combat.attack_difficulty,
         modifier_id=args[2] if len(args) == 3 else None,
     )
     if check.outcome not in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS):
@@ -210,8 +230,25 @@ def _log(session: Session, actor: str | None, args: list[str]) -> tuple[GameStat
 
 
 def _end_turn(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
-    state = end_turn(session.state)
-    return state, f"Fim do turno {session.state.turn}. Começa o turno {state.turn}."
+    result = pass_turn(session.state, session.campaign, session.rules)
+    return result.state, result.text
+
+
+def _beats(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    lines = []
+    for beat in session.campaign.beats:
+        status = session.state.beats[beat.id]
+        requires = f" (exige: {', '.join(beat.requires)})" if beat.requires else ""
+        lines.append(f"[{BEAT_LABELS[status]}] {beat.title} ({beat.id}){requires}")
+    return session.state, "\n".join(lines)
+
+
+def _beat(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    actions = {"ativar": activate_beat, "concluir": complete_beat, "falhar": fail_beat}
+    if len(args) != 2 or args[0] not in actions:
+        raise CommandError("uso: marco ativar|concluir|falhar <id>")
+    result = actions[args[0]](session.state, session.campaign, beat_id=args[1])
+    return result.state, result.text
 
 
 COMMANDS: dict[str, Handler] = {
@@ -223,6 +260,8 @@ COMMANDS: dict[str, Handler] = {
     "atacar": _attack,
     "ferir": _hurt,
     "ficha": _sheet,
+    "marcos": _beats,
+    "marco": _beat,
     "log": _log,
     "fim": _end_turn,
 }
