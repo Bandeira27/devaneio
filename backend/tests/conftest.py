@@ -49,3 +49,20 @@ def campaign_data() -> dict:
 @pytest.fixture
 def campaign(campaign_data: dict) -> Campaign:
     return Campaign.model_validate(campaign_data)
+
+
+@pytest.fixture
+def rules_data() -> dict:
+    """Cópia fresca do sistema padrão como dict."""
+    import json
+
+    from devaneio.rules import builtin_rules_json
+
+    return json.loads(builtin_rules_json("default"))
+
+
+@pytest.fixture
+def rules(rules_data: dict):
+    from devaneio.rules import RuleSystem
+
+    return RuleSystem.model_validate(rules_data)
