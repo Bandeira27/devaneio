@@ -27,11 +27,13 @@ uv venv && uv pip install -e ".[dev]"
 .venv/bin/python -m devaneio.cli jogar partida.json
 ```
 
-Comandos: `olhar`, `entrar <id> "<nome>" [FOR=3 ...]`, `ir <local>`, `testar <habilidade>
+Comandos: `olhar`, `entrar <id> "<nome>" [FOR=3 ...] [+item ...]`, `ir <local>`, `testar <habilidade>
 <dificuldade> [modificador]`, `atacar <arma> <alvo> [modificador]`, `ferir <alvo> <quantia>`,
-`ficha`, `marcos`, `marco ativar|concluir|falhar <id>`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
+`curar <alvo> <quantia>`, `descansar`, `ficha`, `marcos`, `marco ativar|concluir|falhar <id>`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
 O arquivo da partida é salvo após cada ação e é a fonte da verdade. `atacar` compõe no CLI
-um `resolve_check` (habilidade da arma contra Normal) e, em acerto, um `deal_damage`.
+um `resolve_check` (habilidade da arma contra a dificuldade de ataque do sistema) e, em acerto, um `deal_damage`. A arma precisa estar no inventário; a arma padrão do sistema (`combat.default_weapon`) está sempre disponível.
+
+A partida termina em **vitória** (todos os marcos concluídos) ou **derrota** (todo o grupo com hp 0). O desfecho é derivado do estado por `game_status`; o motor não se recusa a agir, e o CLI trava as ações exceto consulta. `descansar` recupera hp pela fórmula `rest.heal`, só sem hostis vivos no local, e gasta o turno.
 
 ## Backend
 
@@ -83,6 +85,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 5: linha de comando (`devaneio.cli`) com partida em disco e interpretador de comandos puro; `Weapon.skill` no sistema de regras; campanha de exemplo em `campaigns/`.
 - Etapa 6: marcos como ações (`activate_beat`, `complete_beat`, `fail_beat`), condições declarativas na campanha (`activate_when`/`complete_when`) e o diretor de narrativa: avança marcos pelos gatilhos, faz NPCs hostis reagirem ao fim do turno e mede a tensão. `combat` e `dispositions` no sistema de regras; `disposition` e `weapon_id` no NPC.
 - Etapa 7: narração por gramáticas. Pacote `pt-br` (`backend/src/devaneio/narration/data/pt-br.json`, contrato em `contract/narration.schema.json`) no estilo Tracery; `Narrator.narrate(evento, índice, estado)` gera prosa na exibição, sem gravar no estado e sem consumir `rng_draws`. O CLI mostra a prosa e, abaixo, a linha mecânica entre colchetes.
+- Etapa 8: cura e descanso (`heal`, `rest`, com `rest.heal` no sistema de regras), `game_status` (vitória e derrota derivadas do estado, sem campo novo), inventário exigindo a arma em `atacar`, comandos `curar`, `descansar` e `entrar ... +item` no CLI.
 
 ## Motor
 
@@ -98,6 +101,7 @@ avançado e um `Event` no log. O estado de entrada nunca é alterado. O acerto d
 | `move` | campanha | `move` |
 | `resolve_check` | regras | `check` |
 | `deal_damage` / `apply_damage` | campanha (+ regras) | `damage` |
+| `heal` / `rest` | campanha (+ regras) | `heal` / `rest` |
 | `activate_beat` / `complete_beat` / `fail_beat` | campanha | `beat_activated` / `beat_done` / `beat_failed` |
 | `direct` / `pass_turn` | campanha, regras | `director` (+ os eventos das ações que dispara) |
 | `end_turn` | — | `turn_end` |
