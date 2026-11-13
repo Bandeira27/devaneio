@@ -1,0 +1,263 @@
+"""Interpretador de comandos: função pura de (sessão, linha) para (nova sessão, texto).
+
+O loop interativo só lê, chama ``execute`` e imprime. Tudo que o jogador pode fazer passa
+por aqui, então os testes cobrem o jogo inteiro sem terminal.
+"""
+
+from __future__ import annotations
+
+import shlex
+from dataclasses import replace
+from typing import Callable
+
+from devaneio.engine import (
+    EngineError,
+    add_character,
+    apply_damage,
+    deal_damage,
+    end_turn,
+    move,
+    resolve_check,
+)
+from devaneio.rules import CheckOutcome
+from devaneio.schema import Character, GameState
+
+from .session import Session
+
+ATTACK_DIFFICULTY = "normal"
+
+HELP = """\
+Comandos (prefixe com `id:` para escolher o personagem quando houver mais de um):
+  olhar                                  onde o grupo está, saídas, quem está aqui
+  entrar <id> "<nome>" [FOR=3 AGI=1 ...] novo personagem; atributos omitidos usam o padrão
+  ir <local>                             mover o grupo para um local conectado
+  testar <habilidade> <dificuldade> [modificador]
+  atacar <arma> <alvo> [modificador]     teste da habilidade da arma contra Normal; acerto fere
+  ferir <alvo> <quantia> ["fonte"]       dano fixo (armadilha, queda...)
+  ficha [id]                             atributos, hp e inventário
+  log [n]                                últimos eventos (padrão 10)
+  fim                                    encerrar o turno
+  ajuda                                  esta lista
+  sair                                   fechar (a partida já está salva)"""
+
+
+class CommandError(ValueError):
+    """Comando inválido ou recusado pelo motor. O estado não muda."""
+
+
+Handler = Callable[[Session, "str | None", list[str]], "tuple[GameState, str]"]
+
+
+def execute(session: Session, line: str) -> tuple[Session, str]:
+    try:
+        tokens = shlex.split(line)
+    except ValueError as exc:
+        raise CommandError(f"aspas desbalanceadas: {exc}") from None
+    if not tokens:
+        return session, ""
+
+    actor: str | None = None
+    if tokens[0].endswith(":") and len(tokens[0]) > 1:
+        actor = tokens[0][:-1]
+        tokens = tokens[1:]
+        if not tokens:
+            raise CommandError("prefixo sem comando")
+
+    name, args = tokens[0].lower(), tokens[1:]
+    handler = COMMANDS.get(name)
+    if handler is None:
+        raise CommandError(f"comando desconhecido '{name}'; digite 'ajuda'")
+    try:
+        new_state, text = handler(session, actor, args)
+    except EngineError as exc:
+        raise CommandError(str(exc)) from None
+    return replace(session, state=new_state), text
+
+
+# --- comandos ------------------------------------------------------------------
+
+
+def _help(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    return session.state, HELP
+
+
+def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    state, campaign = session.state, session.campaign
+    here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
+    names = {loc.id: loc.name for loc in campaign.locations}
+    npc_names = {n.id: n.name for n in campaign.npcs}
+
+    lines = [f"Turno {state.turn} — {here.name} ({here.id})"]
+    if here.description:
+        lines.append(here.description)
+    exits = ", ".join(f"{names[c]} ({c})" for c in here.connections) or "nenhuma"
+    lines.append(f"Saídas: {exits}")
+
+    present = [
+        f"{npc_names[npc_id]} ({npc_id}) hp {npc.hp}/{npc.max_hp}"
+        + ("" if npc.alive else ", fora de combate")
+        for npc_id, npc in state.npcs.items()
+        if npc.location_id == here.id
+    ]
+    lines.append("Aqui: " + (", ".join(present) if present else "ninguém"))
+
+    if state.characters:
+        party = ", ".join(_char_line(c) for c in state.characters.values())
+    else:
+        party = 'ninguém ainda (use: entrar <id> "<nome>" [FOR=3 ...])'
+    lines.append("Grupo: " + party)
+    return state, "\n".join(lines)
+
+
+def _join(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) < 2:
+        raise CommandError('uso: entrar <id> "<nome>" [FOR=3 AGI=1 ...]')
+    char_id, name, *attr_tokens = args
+    attributes: dict[str, int] = {}
+    for token in attr_tokens:
+        key, sep, value = token.partition("=")
+        if not sep or not value.lstrip("-").isdigit():
+            raise CommandError(f"atributo inválido '{token}'; use NOME=valor")
+        attributes[key] = int(value)
+    result = add_character(
+        session.state, session.rules, character_id=char_id, name=name, attributes=attributes
+    )
+    return result.state, result.text
+
+
+def _go(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) != 1:
+        raise CommandError("uso: ir <local>")
+    result = move(session.state, session.campaign, to_location_id=args[0])
+    return result.state, result.text
+
+
+def _check(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) not in (2, 3):
+        raise CommandError("uso: testar <habilidade> <dificuldade> [modificador]")
+    character = _actor(session, actor)
+    result = resolve_check(
+        session.state, session.rules,
+        character_id=character.id, skill_id=args[0], difficulty_id=args[1],
+        modifier_id=args[2] if len(args) == 3 else None,
+    )
+    return result.state, result.text
+
+
+def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) not in (2, 3):
+        raise CommandError("uso: atacar <arma> <alvo> [modificador]")
+    weapon_id, target_id = args[0], args[1]
+    character = _actor(session, actor)
+    weapon = next((w for w in session.rules.weapons if w.id == weapon_id), None)
+    if weapon is None:
+        raise CommandError(f"arma '{weapon_id}' não existe no sistema de regras")
+    target_kind = _target_kind(session.state, target_id)
+    if target_kind == "character" and target_id == character.id:
+        raise CommandError("atacar a si mesmo não é permitido")
+
+    check = resolve_check(
+        session.state, session.rules,
+        character_id=character.id, skill_id=weapon.skill, difficulty_id=ATTACK_DIFFICULTY,
+        modifier_id=args[2] if len(args) == 3 else None,
+    )
+    if check.outcome not in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS):
+        return check.state, f"{check.text}\nO ataque não acerta."
+    damage = deal_damage(
+        check.state, session.campaign, session.rules,
+        attacker_kind="character", attacker_id=character.id, weapon_id=weapon_id,
+        target_kind=target_kind, target_id=target_id,
+    )
+    return damage.state, f"{check.text}\n{damage.text}"
+
+
+def _hurt(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) not in (2, 3) or not args[1].lstrip("-").isdigit():
+        raise CommandError('uso: ferir <alvo> <quantia> ["fonte"]')
+    target_id = args[0]
+    result = apply_damage(
+        session.state, session.campaign,
+        target_kind=_target_kind(session.state, target_id), target_id=target_id,
+        amount=int(args[1]), source=args[2] if len(args) == 3 else "dano",
+    )
+    return result.state, result.text
+
+
+def _sheet(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) > 1:
+        raise CommandError("uso: ficha [id]")
+    character = _actor(session, args[0] if args else actor)
+    attrs = ", ".join(f"{k} {v}" for k, v in character.attributes.items())
+    inventory = ", ".join(character.inventory) or "vazio"
+    return session.state, (
+        f"{character.name} ({character.id})\n"
+        f"hp {character.hp}/{character.max_hp}\n"
+        f"{attrs}\n"
+        f"Inventário: {inventory}"
+    )
+
+
+def _log(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    count = 10
+    if args:
+        if len(args) != 1 or not args[0].isdigit():
+            raise CommandError("uso: log [n]")
+        count = int(args[0])
+    events = session.state.events[-count:] if count else []
+    if not events:
+        return session.state, "Nenhum evento ainda."
+    return session.state, "\n".join(f"[t{e.turn}] {e.text}" for e in events)
+
+
+def _end_turn(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    state = end_turn(session.state)
+    return state, f"Fim do turno {session.state.turn}. Começa o turno {state.turn}."
+
+
+COMMANDS: dict[str, Handler] = {
+    "ajuda": _help,
+    "olhar": _look,
+    "entrar": _join,
+    "ir": _go,
+    "testar": _check,
+    "atacar": _attack,
+    "ferir": _hurt,
+    "ficha": _sheet,
+    "log": _log,
+    "fim": _end_turn,
+}
+
+
+# --- apoio ---------------------------------------------------------------------
+
+
+def _actor(session: Session, actor: str | None) -> Character:
+    characters = session.state.characters
+    if actor is not None:
+        character = characters.get(actor)
+        if character is None:
+            raise CommandError(f"personagem '{actor}' não está na partida")
+        return character
+    if not characters:
+        raise CommandError('nenhum personagem na partida; use: entrar <id> "<nome>"')
+    if len(characters) == 1:
+        return next(iter(characters.values()))
+    ids = ", ".join(characters)
+    raise CommandError(f"há vários personagens ({ids}); prefixe o comando com `id:`")
+
+
+def _target_kind(state: GameState, target_id: str) -> str:
+    is_char, is_npc = target_id in state.characters, target_id in state.npcs
+    if is_char and is_npc:
+        raise CommandError(f"'{target_id}' é personagem e NPC ao mesmo tempo; ids ambíguos")
+    if is_char:
+        return "character"
+    if is_npc:
+        return "npc"
+    raise CommandError(f"alvo '{target_id}' não está na partida")
+
+
+def _char_line(c: Character) -> str:
+    attrs = " ".join(f"{k} {v}" for k, v in c.attributes.items())
+    down = ", fora de combate" if c.hp == 0 else ""
+    return f"{c.name} ({c.id}) hp {c.hp}/{c.max_hp}{down} | {attrs}"
