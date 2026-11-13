@@ -86,6 +86,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 6: marcos como ações (`activate_beat`, `complete_beat`, `fail_beat`), condições declarativas na campanha (`activate_when`/`complete_when`) e o diretor de narrativa: avança marcos pelos gatilhos, faz NPCs hostis reagirem ao fim do turno e mede a tensão. `combat` e `dispositions` no sistema de regras; `disposition` e `weapon_id` no NPC.
 - Etapa 7: narração por gramáticas. Pacote `pt-br` (`backend/src/devaneio/narration/data/pt-br.json`, contrato em `contract/narration.schema.json`) no estilo Tracery; `Narrator.narrate(evento, índice, estado)` gera prosa na exibição, sem gravar no estado e sem consumir `rng_draws`. O CLI mostra a prosa e, abaixo, a linha mecânica entre colchetes.
 - Etapa 8: cura e descanso (`heal`, `rest`, com `rest.heal` no sistema de regras), `game_status` (vitória e derrota derivadas do estado, sem campo novo), inventário exigindo a arma em `atacar`, comandos `curar`, `descansar` e `entrar ... +item` no CLI.
+- Etapa 9: LLM opcional (`devaneio.llm`). Interpreta texto livre do jogador em ações validadas pelo motor e narra os eventos em prosa, com a gramática como fallback.
 
 ## Motor
 
@@ -120,6 +121,38 @@ futuro. O diretor nunca inventa texto; só dispara ações do motor.
 Condições disponíveis nos marcos: `at_location`, `npc_down`, `beat_done`, `turn_at_least`.
 Um marco sem `complete_when` só conclui por ação explícita (`marco concluir <id>` no CLI).
 
+## LLM (opcional)
+
+O jogo funciona inteiro sem LLM. Quando configurado, ele faz dois papéis, e **só propõe**:
+
+1. **Interpreta texto livre.** Uma linha que não começa por comando conhecido ("tento convencer
+   o ferreiro", "vou até a floresta") vai ao modelo com o contexto da partida e um catálogo de
+   ids. Ele responde um JSON com até 3 ações (`check`, `attack`, `move`, `rest`) e, opcionalmente,
+   uma fala. Cada ação vira um comando do CLI e passa pelas mesmas funções e validações do
+   motor. É tudo ou nada: se alguma falhar, nada é aplicado, o erro volta ao modelo como
+   feedback e há uma segunda tentativa; depois disso o jogador vê o erro e o estado não muda. O
+   modelo escolhe habilidade e dificuldade, mas nunca rola dados nem decide dano. Dano e cura de
+   quantia arbitrária e mudanças diretas de marcos ficam de fora do que ele pode propor. Ids são
+   slugs validados, então a proposta não consegue injetar outro comando.
+2. **Narra.** Um parágrafo de prosa por ação, abaixo do qual saem as linhas mecânicas. A prosa
+   é só exibição e nunca volta ao estado; se o modelo falhar ou responder fora do formato, o
+   CLI cai na gramática e avisa.
+
+Configuração, só por variáveis de ambiente (nada é gravado em partida, campanha ou repositório):
+
+```bash
+export DEVANEIO_LLM_BASE_URL=http://localhost:11434/v1   # qualquer servidor no formato OpenAI chat/completions
+export DEVANEIO_LLM_MODEL=nome-do-modelo
+export DEVANEIO_LLM_API_KEY=...                          # opcional (modelos locais costumam dispensar)
+export DEVANEIO_LLM_TIMEOUT=60                           # opcional, em segundos
+```
+
+`jogar --sem-llm` ignora a configuração. **Privacidade:** com LLM ligado, o contexto da partida
+(local, grupo, NPCs presentes com seus segredos, marcos ativos, eventos recentes) é enviado ao
+servidor configurado, e o CLI avisa na abertura. A chave só viaja no cabeçalho da requisição. O
+cliente usa só a biblioteca padrão; pede `response_format: json_object` e, se o servidor recusar
+(HTTP 400/422), repete sem o campo e valida o JSON por conta própria.
+
 ## Narração
 
 A narração é uma camada de exibição: o estado guarda só o texto mecânico de cada evento, e
@@ -132,4 +165,4 @@ reproduzível, e sem tocar na aleatoriedade do jogo. Pacotes são validados na c
 referência precisa ser regra ou variável do tipo de evento. Quando houver LLM, ele entra por
 este mesmo contrato: evento entra, prosa sai.
 
-Sem LLM, sem multiplayer, sem interface gráfica.
+Sem multiplayer, sem interface gráfica.
