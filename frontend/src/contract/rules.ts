@@ -27,6 +27,7 @@ export interface RuleSystem {
   outcomes: Outcomes;
   combat: Combat;
   dispositions: Dispositions;
+  rest: Rest;
   /**
    * fórmula de max_hp na criação do personagem
    */
@@ -102,4 +103,10 @@ export interface Dispositions {
    * NPC com disposition abaixo disto ataca o grupo
    */
   hostile_below: number;
+}
+export interface Rest {
+  /**
+   * hp recuperado por personagem ao descansar
+   */
+  heal: string;
 }

@@ -87,6 +87,11 @@ def test_npc_weapon_is_checked_against_rules(campaign_data, rules_data):
     ]
 
 
+def test_rest_formula_is_checked(rules_data):
+    rules_data["rest"]["heal"] = "1d6 + VIG"
+    assert errors_of(rules_data) == ["rest.heal: fórmula usa atributo 'VIG', que não existe"]
+
+
 def test_weapon_skill_must_exist(rules_data):
     rules_data["weapons"][0]["skill"] = "voar"
     assert errors_of(rules_data) == ["weapon 'punhos': habilidade 'voar' não existe"]

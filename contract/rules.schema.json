@@ -142,6 +142,20 @@
       "title": "Outcomes",
       "type": "object"
     },
+    "Rest": {
+      "additionalProperties": false,
+      "properties": {
+        "heal": {
+          "description": "hp recuperado por personagem ao descansar",
+          "type": "string"
+        }
+      },
+      "required": [
+        "heal"
+      ],
+      "title": "Rest",
+      "type": "object"
+    },
     "Skill": {
       "additionalProperties": false,
       "description": "Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no\ninterpretador para 'o atributo da habilidade'.",
@@ -264,6 +278,9 @@
     "dispositions": {
       "$ref": "#/$defs/Dispositions"
     },
+    "rest": {
+      "$ref": "#/$defs/Rest"
+    },
     "max_hp": {
       "description": "fórmula de max_hp na criação do personagem",
       "type": "string"
@@ -278,6 +295,7 @@
     "outcomes",
     "combat",
     "dispositions",
+    "rest",
     "max_hp"
   ],
   "title": "RuleSystem",

@@ -112,6 +112,10 @@ class Dispositions(StrictModel):
     hostile_below: int = Field(description="NPC com disposition abaixo disto ataca o grupo")
 
 
+class Rest(StrictModel):
+    heal: Formula = Field(description="hp recuperado por personagem ao descansar")
+
+
 class RuleSystem(StrictModel):
     schema_version: Literal[1] = 1
     id: Id
@@ -125,4 +129,5 @@ class RuleSystem(StrictModel):
     outcomes: Outcomes
     combat: Combat
     dispositions: Dispositions
+    rest: Rest
     max_hp: Formula = Field(description="fórmula de max_hp na criação do personagem")

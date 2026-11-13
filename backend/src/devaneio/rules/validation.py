@@ -46,6 +46,7 @@ def validate_rules(rules: RuleSystem) -> list[str]:
         if weapon.skill not in skill_ids:
             errors.append(f"weapon '{weapon.id}': habilidade '{weapon.skill}' não existe")
     check_formula("max_hp", rules.max_hp)
+    check_formula("rest.heal", rules.rest.heal)
 
     if rules.combat.attack_difficulty not in {x.id for x in rules.difficulties}:
         errors.append(f"combat.attack_difficulty '{rules.combat.attack_difficulty}' não existe")

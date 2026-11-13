@@ -152,5 +152,8 @@
   "dispositions": {
     "hostile_below": -2
   },
+  "rest": {
+    "heal": "1d6 + FOR"
+  },
   "max_hp": "6 + FOR * 2"
 }
