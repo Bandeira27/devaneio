@@ -16,6 +16,7 @@ from .actions import (
 from .client import ChatClient, OpenAiCompatClient
 from .config import LlmConfig
 from .errors import LlmError
+from .narration import narrate_with_llm
 from .prompts import build_context, build_messages, feedback_message
 
 __all__ = [
@@ -35,6 +36,7 @@ __all__ = [
     "build_context",
     "build_messages",
     "feedback_message",
+    "narrate_with_llm",
     "parse_proposal",
     "to_command",
 ]
