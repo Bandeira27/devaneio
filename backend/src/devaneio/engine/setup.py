@@ -8,6 +8,7 @@ from devaneio.rng import Rng
 from devaneio.rules import ExpressionError, RuleSystem, evaluate, parse
 from devaneio.schema import BeatStatus, Campaign, Character, GameState, NpcState
 
+from .attributes import resolve_attributes
 from .errors import EngineError
 
 
@@ -22,15 +23,14 @@ def initial_state(
     marcos é o diretor de narrativa).
 
     Se a fórmula de max_hp tiver dados, os sorteios saem do mesmo Rng do estado e
-    ``rng_draws`` reflete isso. Assume campanha e sistema já validados.
+    ``rng_draws`` reflete isso. Atributo de NPC inválido para o sistema é ``EngineError``.
     """
     rng = Rng(rng_seed)
-    defaults = {a.id: a.default for a in rules.attributes}
     max_hp_formula = parse(rules.max_hp)
 
     npcs: dict[str, NpcState] = {}
     for npc in campaign.npcs:
-        attributes = {**defaults, **npc.attributes}
+        attributes = resolve_attributes(rules, npc.attributes, f"npc '{npc.id}'")
         try:
             max_hp = evaluate(max_hp_formula, attributes, rng).total
         except ExpressionError as exc:
