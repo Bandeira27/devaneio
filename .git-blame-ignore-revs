@@ -1,0 +1,4 @@
+# Commits de formatação em massa, ignorados pelo git blame.
+# Uso local: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# style: formatar o backend com ruff format
+fa6e263f57cd1876f33d56fce2ef3d773ef6fe7e
