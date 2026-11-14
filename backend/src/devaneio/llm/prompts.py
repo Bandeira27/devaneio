@@ -22,6 +22,12 @@ Regras:
 - No máximo {MAX_ACTIONS} ações, na ordem em que acontecem.
 - Se o jogador só conversa, observa ou não precisa de mecânica, devolva "actions" vazio e
   responda em "say" (até 3 frases).
+- "say" é dito ANTES de o sistema resolver as ações: escreva só intenção, fala ou ambiente. NUNCA
+  diga se a ação acertou, falhou, quanto de dano causou ou como terminou; quem narra o resultado
+  é o sistema, depois.
+- Se o jogador cita uma arma que o personagem não tem, NÃO recuse o ataque: use uma arma de
+  "armas_do_personagem" (os punhos sempre estão disponíveis) e proponha a ação normalmente.
+- Em falas de NPC, use só o que consta em "descricao" e no contexto; não invente fatos novos.
 - Não revele "segredos" de NPCs a menos que o jogador os descubra por uma ação bem-sucedida.
 
 Ações permitidas:

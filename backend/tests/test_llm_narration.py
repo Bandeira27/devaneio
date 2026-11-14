@@ -31,6 +31,13 @@ def test_narrates_a_batch_of_events(campaign, state):
     assert "- Aria testa Furtividade: sucesso\n- O grupo vai para a floresta." in user["content"]
 
 
+def test_system_prompt_keeps_notes_and_attributes_out_of_the_prose():
+    # Modelos pequenos narravam "Marco concluído" como fato do mundo e liam FOR/AGI como personalidade.
+    assert 'começam com "Marco"' in NARRATOR_SYSTEM
+    assert "Não cite valores de atributos" in NARRATOR_SYSTEM
+    assert "traço de personalidade" in NARRATOR_SYSTEM
+
+
 @pytest.mark.parametrize(
     ("raw", "fragment"),
     [

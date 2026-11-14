@@ -67,3 +67,15 @@ def test_feedback_lists_every_problem():
     msg = feedback_message(["a", "b"])
     assert msg["role"] == "user"
     assert "- a\n- b" in msg["content"]
+
+
+def test_say_must_not_announce_the_outcome():
+    # A fala é gerada antes da rolagem: se descrevesse o desfecho, o motor a desmentiria.
+    assert "ANTES de o sistema resolver" in PROPOSER_SYSTEM
+    assert "NUNCA" in PROPOSER_SYSTEM
+    assert "acertou, falhou" in PROPOSER_SYSTEM
+
+
+def test_missing_weapon_falls_back_instead_of_refusing():
+    # Visto no qwen 4B: sem a arma citada, ele recusava o ataque em vez de usar os punhos.
+    assert "NÃO recuse o ataque" in PROPOSER_SYSTEM
