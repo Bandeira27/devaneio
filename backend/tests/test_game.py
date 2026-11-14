@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -9,6 +10,7 @@ from devaneio.game import (
     CommandError,
     GameError,
     GameOverError,
+    TableMeta,
     execute,
     format_output,
     is_command,
@@ -74,6 +76,61 @@ def test_new_game_rejects_campaign_incompatible_with_rules(tmp_path):
     bad.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(GameError, match="atributo 'XIS'"):
         new_game(bad, tmp_path / "p.json", seed=1)
+
+
+def test_save_is_atomic_and_leaves_no_temp_file(session, monkeypatch):
+    session, _ = run(session, 'entrar aria "Aria"')
+    before = session.save_path.read_text(encoding="utf-8")
+
+    def fail(_src, _dst):
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr("devaneio.game.session.os.replace", fail)
+    with pytest.raises(OSError, match="disco cheio"):
+        save_game(session)
+    assert session.save_path.read_text(encoding="utf-8") == before
+    assert list(session.save_path.parent.glob(".partida-*")) == []
+    monkeypatch.undo()
+    save_game(session)
+    assert list(session.save_path.parent.glob(".partida-*")) == []
+    assert load_game(session.save_path).state == session.state
+
+
+def test_table_is_preserved_by_a_solo_session(session):
+    table = TableMeta.model_validate(
+        {
+            "invite_hash": "abc",
+            "players": {"p1": {"name": "Ana", "role": "host", "token_hash": "h"}},
+            "acted": {"aria": 0},
+        }
+    )
+    save_game(replace(session, table=table))
+    loaded = load_game(session.save_path)
+    assert loaded.table == table
+    loaded, _ = run(loaded, 'entrar aria "Aria"', "ir floresta")
+    save_game(loaded)
+    data = json.loads(session.save_path.read_text(encoding="utf-8"))
+    assert data["table"]["players"]["p1"]["name"] == "Ana"
+    assert data["table"]["acted"] == {"aria": 0}
+    assert load_game(session.save_path).table == table
+
+
+def test_save_without_table_writes_null(session):
+    data = json.loads(session.save_path.read_text(encoding="utf-8"))
+    assert data["table"] is None
+
+
+def test_campaign_root_restricts_where_the_campaign_may_live(session, tmp_path):
+    assert load_game(session.save_path, campaign_root=CAMPAIGN_PATH.parent).campaign.id == (
+        session.campaign.id
+    )
+    with pytest.raises(GameError, match="fora da pasta permitida"):
+        load_game(session.save_path, campaign_root=tmp_path)
+    data = json.loads(session.save_path.read_text(encoding="utf-8"))
+    data["campaign_path"] = "../../" + data["campaign_path"]
+    session.save_path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(GameError, match="fora da pasta permitida"):
+        load_game(session.save_path, campaign_root=tmp_path)
 
 
 # --- comandos -----------------------------------------------------------------

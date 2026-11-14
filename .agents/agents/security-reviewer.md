@@ -32,8 +32,8 @@ Camadas e contrato → `architecture-guardian`; qualidade geral → `code-review
    `urlopen`). Foque no que ele não vê: fluxo de dado não confiável, semântica da allow-list.
 2. Trace cada caminho de texto externo (resposta do LLM, arquivo de partida/campanha, variável de ambiente) até
    onde ele é usado. Cite o caminho no achado.
-3. Conhecido e aceito: `load_game` resolve `campaign_path` sem restringir `..` (risco baixo, ver rule 05, item 10).
-   Não o reporte como novo; reporte se o padrão aparecer em código novo.
+3. Conhecido e aceito: no CLI, `load_game` resolve `campaign_path` sem restringir `..` (risco baixo, ver rule 05,
+   item 10). Não o reporte como novo; reporte código que sirva partidas a terceiros sem `campaign_root=`.
 4. Prove o que afirma: uma proposta de LLM forjada, num teste ou script curto, que mostre o efeito.
    Sem prova, é `nota`, não `bloqueia`.
 

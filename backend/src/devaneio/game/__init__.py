@@ -14,6 +14,7 @@ from .commands import (
 from .freeform import FreeformResult, run_freeform
 from .output import format_output, status_banner
 from .session import GameError, Session, load_game, new_game, save_game
+from .table import Player, TableMeta
 
 __all__ = [
     "COMMANDS",
@@ -22,7 +23,9 @@ __all__ = [
     "FreeformResult",
     "GameError",
     "GameOverError",
+    "Player",
     "Session",
+    "TableMeta",
     "execute",
     "format_output",
     "is_command",
