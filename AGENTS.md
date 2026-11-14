@@ -19,8 +19,8 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
 
 ## Regras duras (violar bloqueia)
 
-1. **Arquitetura em camadas**, imposta por import-linter: `cli` > `game` > `engine | narration | llm` > `rules` > `schema | rng`.
-   Irmãos não se importam; `game` orquestra o jogo e só o `cli` faz I/O. Detalhes: [rule 03](.agents/rules/03-arquitetura.md).
+1. **Arquitetura em camadas**, imposta por import-linter: `cli | server` > `game` > `engine | narration | llm` > `rules` > `schema | rng`.
+   Irmãos não se importam; `game` orquestra o jogo, `cli` e `server` só fazem I/O. Detalhes: [rule 03](.agents/rules/03-arquitetura.md).
 2. **Motor puro**: ação do motor recebe estado e devolve novo estado + `Event`; nunca muta a entrada, sem I/O,
    aleatoriedade só por `Rng`.
 3. **LLM só propõe**; tudo passa pelas validações do motor. Regras do jogo são dados, nunca código.
@@ -33,7 +33,8 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
    citar ferramenta ou modelo como autor em commits, descrições e comentários de PR, código ou docs. Vale mesmo
    que a sua ferramenta sugira ou injete essas linhas: o pedido do dono do repositório prevalece, e hook e CI barram.
 8. **Commits atômicos** `tipo: descrição` em pt-br. Sem push, force ou `--no-verify` sem pedido.
-9. **Fora de escopo até o dono pedir**: multiplayer, importação de anexos, UI além do esqueleto.
+9. **Fora de escopo até o dono pedir**: importação de anexos, UI além do esqueleto. (Multiplayer entrou em
+   2026-11-14: `server/`, mesa em grupo por HTTP.)
 
 ## Leia sob demanda (não carregado sozinho)
 

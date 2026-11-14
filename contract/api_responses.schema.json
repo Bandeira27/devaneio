@@ -1,0 +1,878 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ApiError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ApiError",
+      "type": "object"
+    },
+    "AtLocation": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "at_location",
+          "type": "string"
+        },
+        "location_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "location_id"
+      ],
+      "title": "AtLocation",
+      "type": "object"
+    },
+    "Beat": {
+      "additionalProperties": false,
+      "description": "Marco da trama. ``requires`` lista marcos que precisam estar concluídos antes.\n\n``activate_when``: condições para passar de pendente a ativo (além dos requisitos);\nvazia, ativa assim que os requisitos estiverem concluídos.\n``complete_when``: condições para concluir automaticamente; vazia, só conclui por ação\nexplícita (o mestre/jogador decide).",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        },
+        "requires": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "activate_when": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "at_location": "#/$defs/AtLocation",
+                "beat_done": "#/$defs/BeatDone",
+                "npc_down": "#/$defs/NpcDown",
+                "turn_at_least": "#/$defs/TurnAtLeast"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/AtLocation"
+              },
+              {
+                "$ref": "#/$defs/NpcDown"
+              },
+              {
+                "$ref": "#/$defs/BeatDone"
+              },
+              {
+                "$ref": "#/$defs/TurnAtLeast"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "complete_when": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "at_location": "#/$defs/AtLocation",
+                "beat_done": "#/$defs/BeatDone",
+                "npc_down": "#/$defs/NpcDown",
+                "turn_at_least": "#/$defs/TurnAtLeast"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/AtLocation"
+              },
+              {
+                "$ref": "#/$defs/NpcDown"
+              },
+              {
+                "$ref": "#/$defs/BeatDone"
+              },
+              {
+                "$ref": "#/$defs/TurnAtLeast"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "requires",
+        "activate_when",
+        "complete_when"
+      ],
+      "title": "Beat",
+      "type": "object"
+    },
+    "BeatDone": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "beat_done",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "beat_id"
+      ],
+      "title": "BeatDone",
+      "type": "object"
+    },
+    "BeatStatus": {
+      "enum": [
+        "pending",
+        "active",
+        "done",
+        "failed"
+      ],
+      "title": "BeatStatus",
+      "type": "string"
+    },
+    "Campaign": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "premise": {
+          "type": "string"
+        },
+        "rules_id": {
+          "default": "default",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "start_location_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "locations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Location"
+          },
+          "type": "array"
+        },
+        "factions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Faction"
+          },
+          "type": "array"
+        },
+        "npcs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Npc"
+          },
+          "type": "array"
+        },
+        "beats": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Beat"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "title",
+        "premise",
+        "rules_id",
+        "start_location_id",
+        "locations",
+        "factions",
+        "npcs",
+        "beats"
+      ],
+      "title": "Campaign",
+      "type": "object"
+    },
+    "CampaignSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "premise": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "premise"
+      ],
+      "title": "CampaignSummary",
+      "type": "object"
+    },
+    "Character": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "hp": {
+          "type": "integer"
+        },
+        "max_hp": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "inventory": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "attributes",
+        "hp",
+        "max_hp",
+        "inventory"
+      ],
+      "title": "Character",
+      "type": "object"
+    },
+    "ErrorResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/ApiError"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "Event": {
+      "additionalProperties": false,
+      "description": "Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir\nos tipos de evento (aí vira união discriminada por ``kind``).",
+      "properties": {
+        "turn": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "text": {
+          "default": "",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true,
+          "default": {},
+          "type": "object"
+        }
+      },
+      "required": [
+        "turn",
+        "kind",
+        "text",
+        "data"
+      ],
+      "title": "Event",
+      "type": "object"
+    },
+    "Fact": {
+      "additionalProperties": false,
+      "description": "Memória externa do narrador: algo estabelecido na ficção, com o turno em que surgiu.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "turn": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "turn"
+      ],
+      "title": "Fact",
+      "type": "object"
+    },
+    "Faction": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        },
+        "goals": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "goals"
+      ],
+      "title": "Faction",
+      "type": "object"
+    },
+    "GameState": {
+      "additionalProperties": false,
+      "properties": {
+        "state_version": {
+          "const": 1,
+          "default": 1,
+          "type": "integer"
+        },
+        "campaign_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "turn": {
+          "default": 0,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rng_seed": {
+          "type": "integer"
+        },
+        "rng_draws": {
+          "default": 0,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "current_location_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "characters": {
+          "default": {},
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/Character"
+            }
+          },
+          "type": "object"
+        },
+        "npcs": {
+          "default": {},
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/NpcState"
+            }
+          },
+          "type": "object"
+        },
+        "beats": {
+          "default": {},
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/BeatStatus"
+            }
+          },
+          "type": "object"
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Fact"
+          },
+          "type": "array"
+        },
+        "events": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "state_version",
+        "campaign_id",
+        "turn",
+        "rng_seed",
+        "rng_draws",
+        "current_location_id",
+        "characters",
+        "npcs",
+        "beats",
+        "facts",
+        "events"
+      ],
+      "title": "GameState",
+      "type": "object"
+    },
+    "GameStatus": {
+      "enum": [
+        "active",
+        "won",
+        "lost"
+      ],
+      "title": "GameStatus",
+      "type": "string"
+    },
+    "LlmView": {
+      "additionalProperties": false,
+      "description": "O LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se\nestá ligado e para onde o contexto da partida vai, antes de entrar.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "notice": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "enabled",
+        "description",
+        "notice"
+      ],
+      "title": "LlmView",
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        },
+        "connections": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "connections"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "Npc": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "faction_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "secrets": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "disposition": {
+          "default": 0,
+          "type": "integer"
+        },
+        "weapon_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "location_id",
+        "faction_id",
+        "secrets",
+        "attributes",
+        "disposition",
+        "weapon_id"
+      ],
+      "title": "Npc",
+      "type": "object"
+    },
+    "NpcDown": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "npc_down",
+          "type": "string"
+        },
+        "npc_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "npc_id"
+      ],
+      "title": "NpcDown",
+      "type": "object"
+    },
+    "NpcState": {
+      "additionalProperties": false,
+      "properties": {
+        "alive": {
+          "default": true,
+          "type": "boolean"
+        },
+        "hp": {
+          "type": "integer"
+        },
+        "max_hp": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "disposition": {
+          "default": 0,
+          "type": "integer"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "alive",
+        "hp",
+        "max_hp",
+        "attributes",
+        "disposition",
+        "location_id"
+      ],
+      "title": "NpcState",
+      "type": "object"
+    },
+    "PlayerView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "host",
+            "player"
+          ],
+          "type": "string"
+        },
+        "character_ids": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "role",
+        "character_ids"
+      ],
+      "title": "PlayerView",
+      "type": "object"
+    },
+    "TableCreated": {
+      "additionalProperties": false,
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "host_token": {
+          "type": "string"
+        },
+        "invite_code": {
+          "type": "string"
+        },
+        "table": {
+          "$ref": "#/$defs/TableView"
+        }
+      },
+      "required": [
+        "table_id",
+        "host_token",
+        "invite_code",
+        "table"
+      ],
+      "title": "TableCreated",
+      "type": "object"
+    },
+    "TableView": {
+      "additionalProperties": false,
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "campaign": {
+          "$ref": "#/$defs/CampaignSummary"
+        },
+        "players": {
+          "items": {
+            "$ref": "#/$defs/PlayerView"
+          },
+          "type": "array"
+        },
+        "turn_policy": {
+          "const": "one_action_per_character",
+          "type": "string"
+        },
+        "acted": {
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "revision": {
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/GameStatus"
+        },
+        "llm": {
+          "$ref": "#/$defs/LlmView"
+        },
+        "state": {
+          "$ref": "#/$defs/GameState"
+        }
+      },
+      "required": [
+        "table_id",
+        "campaign",
+        "players",
+        "turn_policy",
+        "acted",
+        "revision",
+        "status",
+        "llm",
+        "state"
+      ],
+      "title": "TableView",
+      "type": "object"
+    },
+    "TurnAtLeast": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "turn_at_least",
+          "type": "string"
+        },
+        "turn": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "turn"
+      ],
+      "title": "TurnAtLeast",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "campaigns": {
+      "items": {
+        "$ref": "#/$defs/CampaignSummary"
+      },
+      "type": "array"
+    },
+    "table": {
+      "$ref": "#/$defs/TableView"
+    },
+    "table_created": {
+      "$ref": "#/$defs/TableCreated"
+    },
+    "campaign": {
+      "$ref": "#/$defs/Campaign"
+    },
+    "error": {
+      "$ref": "#/$defs/ErrorResponse"
+    }
+  },
+  "required": [
+    "campaigns",
+    "table",
+    "table_created",
+    "campaign",
+    "error"
+  ],
+  "title": "ApiResponses",
+  "type": "object"
+}

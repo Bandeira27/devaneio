@@ -27,6 +27,28 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `save_game` escreve de forma atômica (temporário na mesma pasta + `os.replace`).
 11. **Privacidade**: com LLM ligado, o contexto da partida (inclusive segredos de NPCs presentes) vai ao servidor
     configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e o README.
+    Na mesa em grupo, o LLM é o do processo do servidor (ambiente de quem o roda) e `TableView.llm.notice` diz a
+    todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo.
+
+## Servidor da mesa (`server/`)
+
+12. **Campanha só por id do catálogo** (`Catalog`, pasta configurada na subida); o id da mesa vindo da URL é
+    validado pelo formato que o próprio servidor gera (`^[a-f0-9]{16}$`) e o caminho resolvido precisa ficar
+    dentro da pasta de dados antes de qualquer `open`. `load_game` recebe `campaign_root=`.
+13. **Tokens e convite**: `secrets.token_urlsafe` (32 e 12 bytes), só hash sha256 no arquivo, comparação com
+    `hmac.compare_digest` percorrendo todos os jogadores; o token em claro é devolvido uma vez, na criação.
+    `log_request` registra método, rota e status: nunca cabeçalho, corpo nem query string.
+14. **HTTP na stdlib**: corpo até 64 KiB (`413` antes de ler), `Content-Length` obrigatório (`411`),
+    `Transfer-Encoding` recusado, só `application/json` (`415`; é também a defesa contra CSRF nas rotas sem
+    token), timeout de socket, `Cache-Control: no-store`, bind `127.0.0.1` por padrão com aviso em `0.0.0.0`.
+15. **Só `CommandError` e `ApiFailure` têm mensagem exposta.** Partida ilegível (`GameError`, `ValidationError`,
+    `OSError`) vira `500 {"code": "internal"}` com traceback só no stderr: a mensagem original cita caminhos e
+    trechos do arquivo. Segredos de NPC em `GET .../campaign` só para o anfitrião. `LlmConfig.host` e
+    `description` nunca trazem usuário e senha da URL.
+16. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
+    hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
+    sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
+    convite: por isso ele tem ~72 bits.
 
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 

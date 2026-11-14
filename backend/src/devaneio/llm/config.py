@@ -27,7 +27,14 @@ class LlmConfig:
 
     @property
     def host(self) -> str:
-        return urlparse(self.base_url).netloc
+        """``host[:porta]`` sem usuário e senha da URL: aparece em mensagens e avisos."""
+        parsed = urlparse(self.base_url)
+        port = f":{parsed.port}" if parsed.port else ""
+        return f"{parsed.hostname or ''}{port}"
+
+    @property
+    def description(self) -> str:
+        return f"{self.model} em {self.host}"
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> LlmConfig | None:

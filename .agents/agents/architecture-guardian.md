@@ -11,7 +11,7 @@ Você protege a arquitetura existente contra erosão e improviso. Leia
 
 ## Escopo (você é o dono)
 
-- Camadas: `cli` > `game` > `engine | narration | llm` > `rules` > `schema | rng`; irmãos não se importam.
+- Camadas: `cli | server` > `game` > `engine | narration | llm` > `rules` > `schema | rng`; irmãos não se importam.
 - Pureza do motor: ação recebe estado e devolve novo estado + `Event`; sem mutação da entrada, I/O, relógio, `random`.
 - Contrato único: modelos Pydantic → `contract/` → tipos TS; nada escrito à mão.
 - Decisões fixas (LLM só propõe, regras são dados, estado JSON puro, narração é exibição).

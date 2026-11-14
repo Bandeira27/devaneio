@@ -17,18 +17,22 @@ from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode
 from .narration import NarrationPack
 from .rules import RuleSystem
 from .schema import Campaign, GameState
+from .server.models import ApiRequests, ApiResponses
 
 # <raiz>/backend/src/devaneio/export_schema.py -> <raiz>/contract
 DEFAULT_OUT = Path(__file__).resolve().parents[3] / "contract"
 
-# Campaign, RuleSystem e NarrationPack são documentos de ENTRADA (autorados por pessoas): modo "validation", campos com
-# default são opcionais. GameState é SAÍDA do motor: modo "serialization", todo campo está
-# sempre presente, e os tipos TypeScript do cliente não ficam cheios de opcionais.
+# Campaign, RuleSystem, NarrationPack e as requisições da API são documentos de ENTRADA
+# (autorados por pessoas ou pelo cliente): modo "validation", campos com default são
+# opcionais. GameState e as respostas da API são SAÍDA: modo "serialization", todo campo
+# está sempre presente, e os tipos TypeScript do cliente não ficam cheios de opcionais.
 SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
     "campaign.schema.json": (Campaign, "validation"),
     "rules.schema.json": (RuleSystem, "validation"),
     "narration.schema.json": (NarrationPack, "validation"),
     "game_state.schema.json": (GameState, "serialization"),
+    "api_requests.schema.json": (ApiRequests, "validation"),
+    "api_responses.schema.json": (ApiResponses, "serialization"),
 }
 
 

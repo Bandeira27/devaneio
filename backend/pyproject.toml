@@ -97,12 +97,12 @@ root_package = "devaneio"
 
 # Dependências só apontam para baixo. engine, narration e llm são irmãos e não se
 # importam entre si (llm não conhece o motor: game traduz a proposta em comandos).
-# game orquestra o jogo; cli é só I/O por cima dele. Ver .agents/rules/03-arquitetura.md.
+# game orquestra o jogo; cli e server são só I/O por cima dele e não se importam. Ver .agents/rules/03-arquitetura.md.
 [[tool.importlinter.contracts]]
 name = "Camadas do Devaneio"
 type = "layers"
 layers = [
-    "devaneio.cli",
+    "devaneio.cli | devaneio.server",
     "devaneio.game",
     "devaneio.engine | devaneio.narration | devaneio.llm",
     "devaneio.rules",

@@ -45,7 +45,7 @@ class OpenAiCompatClient:
 
     @property
     def description(self) -> str:
-        return f"{self.config.model} em {self.config.host}"
+        return self.config.description
 
     def complete(
         self,

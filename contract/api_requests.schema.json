@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "CreateTableRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "host_name": {
+          "maxLength": 40,
+          "minLength": 1,
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740992,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "campaign_id",
+        "host_name"
+      ],
+      "title": "CreateTableRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "create_table": {
+      "$ref": "#/$defs/CreateTableRequest"
+    }
+  },
+  "required": [
+    "create_table"
+  ],
+  "title": "ApiRequests",
+  "type": "object"
+}

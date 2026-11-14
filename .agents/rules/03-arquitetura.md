@@ -3,8 +3,8 @@
 ## Camadas (verificadas por import-linter, `scripts/check`)
 
 ```
-cli                            I/O de terminal (laço interativo) por cima de game
-game                           orquestração: partida em disco, comandos, texto livre, saída
+cli | server                   I/O (terminal; HTTP com a política da mesa) por cima de game; não se importam
+game                           orquestração: partida em disco, comandos, texto livre, saída, mesa
 engine | narration | llm       irmãos: não se importam entre si
 rules                          sistema de regras e expressões (dados interpretados)
 schema | rng                   modelos Pydantic e gerador reprodutível
@@ -12,7 +12,8 @@ schema | rng                   modelos Pydantic e gerador reprodutível
 
 Dependências só apontam para baixo. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
 e passa por `execute()` (`game/commands.py`), reaproveitando as validações. `export_schema.py` é ferramenta de
-build, no topo.
+build, no topo: importa `server.models` para exportar o contrato da API, e `server/__init__.py` não reexporta o
+adaptador HTTP (`server/http.py`), para a ferramenta de build não carregar `http.server`.
 Se uma mudança parece exigir quebrar o contrato de camadas, o desenho está errado ou a decisão é do dono:
 pare e pergunte, não ajuste o contrato.
 
@@ -22,8 +23,9 @@ pare e pergunte, não ajuste o contrato.
 |---|---|
 | ação que altera o estado do jogo | `engine/` (função pura; skill `add-engine-action`) |
 | composição de ações para um comando (`atacar` = check + dano) | `game/commands.py` |
-| modelo persistido fora do contrato (`SaveFile`) | `game/` |
+| modelo persistido fora do contrato (`SaveFile`, `TableMeta`) | `game/` |
 | leitura e impressão no terminal | `cli/` |
+| rota HTTP, política da mesa (quem age, tokens, limites), modelo de requisição/resposta | `server/` |
 | campo ou modelo de dados | `schema/` ou `rules/schema.py`, depois regenerar o contrato |
 | fórmula, dificuldade, arma, habilidade | arquivo de regras (`rules/data/default.json`), não código |
 | texto de narração | pacote pt-br (`narration/data/pt-br.json`), regra `tipo.variante` |
@@ -41,7 +43,7 @@ pare e pergunte, não ajuste o contrato.
 
 ## Dependências
 
-- Runtime hoje: **só `pydantic`**. O cliente LLM usa a biblioteca padrão por decisão. Nova dependência de runtime
+- Runtime hoje: **só `pydantic`**. O cliente LLM e o servidor HTTP (`http.server`) usam a biblioteca padrão por decisão. Nova dependência de runtime
   exige: necessidade que a stdlib não cobre, alternativa considerada, custo de manutenção, e **aprovação do dono**.
 - Dependência de desenvolvimento só entra se for usada por `scripts/check`. Intervalos de versão seguem
   `pyproject.toml`/`package.json`; o `ruff` é fixado na versão menor porque o formatador muda entre menores.

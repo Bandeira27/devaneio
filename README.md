@@ -1,6 +1,6 @@
 # Devaneio
 
-Mesa de RPG com um mestre de IA, jogável sozinho ou em grupo (por turnos).
+Mesa de RPG com um mestre de IA, jogável sozinho (linha de comando) ou em grupo (API HTTP, por turnos).
 
 ## Princípios
 
@@ -13,9 +13,9 @@ Mesa de RPG com um mestre de IA, jogável sozinho ou em grupo (por turnos).
 ## Estrutura
 
 ```
-backend/    Python (Pydantic v2, pytest) — esquema, motor, orquestração (game), CLI
+backend/    Python (Pydantic v2, pytest) — esquema, motor, orquestração (game), CLI e servidor da mesa
 frontend/   TypeScript strict — cliente fino (por enquanto só esqueleto)
-contract/   JSON Schema gerado a partir do backend
+contract/   JSON Schema gerado a partir do backend (dados do jogo e API)
 ```
 
 ## Jogar (linha de comando)
@@ -34,6 +34,41 @@ O arquivo da partida é salvo (de forma atômica) após cada ação e é a fonte
 um `resolve_check` (habilidade da arma contra a dificuldade de ataque do sistema) e, em acerto, um `deal_damage`. A arma precisa estar no inventário; a arma padrão do sistema (`combat.default_weapon`) está sempre disponível.
 
 A partida termina em **vitória** (todos os marcos concluídos) ou **derrota** (todo o grupo com hp 0). O desfecho é derivado do estado por `game_status`; o motor não se recusa a agir, e `game/commands.py` trava as ações exceto consulta. `descansar` recupera hp pela fórmula `rest.heal`, só sem hostis vivos no local, e gasta o turno.
+
+## Jogar em grupo (API HTTP)
+
+Uma **mesa** é uma partida normal (mesmo arquivo, mesmo motor) com jogadores identificados por token. O
+servidor usa só a biblioteca padrão e escuta em `127.0.0.1` por padrão.
+
+```bash
+cd backend
+.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --sem-llm
+curl -s localhost:8765/campaigns
+curl -s -X POST localhost:8765/tables -H 'Content-Type: application/json' \
+     -d '{"campaign_id": "sombra-do-vale", "host_name": "Ana"}'          # 201: table_id, host_token, invite_code, table
+curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
+```
+
+| Rota | Auth | Resposta |
+|---|---|---|
+| `GET /campaigns` | — | `[{id, title, premise}]` do catálogo (`--campanhas`) |
+| `POST /tables` `{campaign_id, host_name, seed?}` | — | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui |
+| `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
+| `GET /tables/{id}/campaign` | Bearer | a campanha; segredos de NPC só para o anfitrião |
+
+Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token, 404 mesa/campanha/rota,
+409 limite de mesas, 411/413/415 corpo, 500 genérico). O contrato da API está em `contract/api_requests.schema.json`
+(validation) e `contract/api_responses.schema.json` (serialization), de onde saem `frontend/src/contract/api_*.ts`.
+
+Cada mesa é um arquivo `<table_id>.json` em `--dados`, no mesmo formato do CLI mais o campo `table` (jogadores com
+hash do token, hash do convite, quem já agiu no turno). O CLI abre esse arquivo e preserva a mesa, mas **não jogue
+a mesma partida no CLI com o servidor aberto**: não há bloqueio entre processos. `--host 0.0.0.0` expõe HTTP em
+claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a conexão ao recusar um corpo e não
+limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado no ambiente do servidor,
+`table.llm.notice` avisa todos os jogadores de que o texto e o estado da partida vão a esse servidor.
+
+Entrada de jogadores por convite, comandos por HTTP com uma ação principal por personagem por turno, long-poll
+e texto livre pelo LLM são as próximas etapas.
 
 ## Backend
 
@@ -104,6 +139,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 7: narração por gramáticas. Pacote `pt-br` (`backend/src/devaneio/narration/data/pt-br.json`, contrato em `contract/narration.schema.json`) no estilo Tracery; `Narrator.narrate(evento, índice, estado)` gera prosa na exibição, sem gravar no estado e sem consumir `rng_draws`. O CLI mostra a prosa e, abaixo, a linha mecânica entre colchetes.
 - Etapa 8: cura e descanso (`heal`, `rest`, com `rest.heal` no sistema de regras), `game_status` (vitória e derrota derivadas do estado, sem campo novo), inventário exigindo a arma em `atacar`, comandos `curar`, `descansar` e `entrar ... +item` no CLI.
 - Etapa 9: LLM opcional (`devaneio.llm`). Interpreta texto livre do jogador em ações validadas pelo motor e narra os eventos em prosa, com a gramática como fallback.
+- Etapa 10: pacote `game` extraído do CLI; mesa no arquivo de partida (`SaveFile.table`), escrita atômica, `load_game(campaign_root=)`; servidor HTTP (`devaneio.server`, só stdlib) que cria uma mesa a partir do catálogo de campanhas e devolve o estado a quem tem o token.
 
 ## Motor
 
@@ -192,4 +228,4 @@ reproduzível, e sem tocar na aleatoriedade do jogo. Pacotes são validados na c
 referência precisa ser regra ou variável do tipo de evento. Quando houver LLM, ele entra por
 este mesmo contrato: evento entra, prosa sai.
 
-Sem multiplayer, sem interface gráfica.
+Sem interface gráfica.
