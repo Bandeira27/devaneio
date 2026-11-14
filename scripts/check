@@ -37,6 +37,7 @@ run "mypy" in_dir backend .venv/bin/mypy
 run "import-linter" in_dir backend .venv/bin/lint-imports
 
 # --- políticas do repositório (stdlib; exigem python3 >= 3.11 por causa de tomllib) --
+run "governança" python3 scripts/check_governance.py
 run "supressões" python3 scripts/check_suppressions.py
 if [[ $FAST -eq 0 ]]; then
     run "atribuição" python3 scripts/check_attribution.py
