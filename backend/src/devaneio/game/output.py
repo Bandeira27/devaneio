@@ -1,4 +1,4 @@
-"""Saída do CLI: prosa do narrador e, abaixo, a linha mecânica entre colchetes."""
+"""Saída da partida (o CLI mostra): prosa do narrador e, abaixo, a linha mecânica entre colchetes."""
 
 from __future__ import annotations
 

@@ -3,10 +3,17 @@
 Nada aqui é terminal nem HTTP: ``cli`` e um servidor são clientes deste pacote.
 """
 
-from .commands import COMMANDS, READ_ONLY, CommandError, execute, is_command
+from .commands import (
+    COMMANDS,
+    READ_ONLY,
+    CommandError,
+    GameOverError,
+    execute,
+    is_command,
+)
 from .freeform import FreeformResult, run_freeform
 from .output import format_output, status_banner
-from .session import GameError, SaveFile, Session, load_game, new_game, save_game
+from .session import GameError, Session, load_game, new_game, save_game
 
 __all__ = [
     "COMMANDS",
@@ -14,7 +21,7 @@ __all__ = [
     "CommandError",
     "FreeformResult",
     "GameError",
-    "SaveFile",
+    "GameOverError",
     "Session",
     "execute",
     "format_output",

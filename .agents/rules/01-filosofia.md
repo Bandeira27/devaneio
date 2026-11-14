@@ -28,7 +28,7 @@ diferentes) e cria uma abstração cheia de parâmetros para agradar três chama
 extensão reais (pacote de narração, sistema de regras como dado). Liskov e segregação de interfaces quase não
 aparecem num código de funções puras e dataclasses: **não invente hierarquias** só para satisfazê-los.
 
-**Separation of Concerns.** O motor decide, o CLI orquestra, a narração apresenta, o LLM propõe.
+**Separation of Concerns.** O motor decide, `game` orquestra, o CLI mostra, a narração apresenta, o LLM propõe.
 *Atrapalha* quando vira camada que só repassa chamada, sem responsabilidade própria.
 
 **Composição sobre herança.** Prefira funções, dataclasses e `Protocol`. Herança só para especializar exceção

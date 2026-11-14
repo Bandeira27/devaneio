@@ -4,7 +4,15 @@ from dataclasses import replace
 import pytest
 
 from conftest import CAMPAIGN_PATH
-from devaneio.game import CommandError, execute, format_output, is_command, new_game, run_freeform
+from devaneio.game import (
+    CommandError,
+    GameOverError,
+    execute,
+    format_output,
+    is_command,
+    new_game,
+    run_freeform,
+)
 from devaneio.llm import LlmError
 from fakes import ScriptedClient
 
@@ -183,8 +191,9 @@ def test_llm_error_becomes_a_command_error(base):
 def test_refused_after_the_game_ended(base):
     session, _ = execute(base, "ferir aria 99")
     session, client = with_llm(session, reply(MOVE))
-    with pytest.raises(CommandError, match="a partida terminou"):
+    with pytest.raises(GameOverError, match="a partida terminou") as info:
         run_freeform(session, "vou")
+    assert info.value.status.value == "lost"
     assert client.calls == []
 
 

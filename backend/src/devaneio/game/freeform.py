@@ -7,7 +7,6 @@ não muda.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
 from devaneio.engine import GameStatus, game_status
@@ -20,12 +19,11 @@ from devaneio.llm import (
     to_command,
 )
 
-from .commands import STATUS_LABELS, CommandError, execute, resolve_actor
+from .commands import CommandError, GameOverError, execute, resolve_actor, split_actor
 from .session import Session
 
 MAX_ATTEMPTS = 2
 PROPOSER_TEMPERATURE = 0.2
-_ACTOR_PREFIX = re.compile(r"^([a-z0-9][a-z0-9_-]*):\s+(.+)$", re.S)
 
 
 @dataclass(frozen=True)
@@ -36,18 +34,20 @@ class FreeformResult:
 
 
 def run_freeform(session: Session, text: str) -> FreeformResult:
-    """``CommandError`` se não der para aplicar; nesse caso ``session`` segue intacta."""
+    """``CommandError`` se não der para aplicar (``GameOverError`` se a partida acabou);
+    nesse caso ``session`` segue intacta."""
     if session.llm is None:
         raise CommandError("o LLM não está configurado")
     status = game_status(session.state)
     if status is not GameStatus.ACTIVE:
-        raise CommandError(f"a partida terminou ({STATUS_LABELS[status]})")
+        raise GameOverError(status)
 
-    text = text.strip()
-    actor_id = None
-    match = _ACTOR_PREFIX.match(text)
-    if match and match.group(1) in session.state.characters:
-        actor_id, text = match.group(1), match.group(2)
+    # Prefixo ``id:`` só conta se for um personagem da partida; senão é parte do texto.
+    actor_id, rest = split_actor(text)
+    if actor_id in session.state.characters and rest:
+        text = rest
+    else:
+        actor_id, text = None, text.strip()
     character = resolve_actor(session, actor_id)
 
     messages = build_messages(session.campaign, session.rules, session.state, character.id, text)

@@ -70,43 +70,66 @@ class CommandError(ValueError):
     """Comando inválido ou recusado pelo motor. O estado não muda."""
 
 
+class GameOverError(CommandError):
+    """A partida já terminou e o comando não é de consulta. O estado não muda."""
+
+    def __init__(self, status: GameStatus) -> None:
+        super().__init__(
+            f"a partida terminou ({STATUS_LABELS[status]}); "
+            f"só é possível: {', '.join(sorted(READ_ONLY))}"
+        )
+        self.status = status
+
+
 Handler = Callable[[Session, "str | None", list[str]], "tuple[GameState, str]"]
 
 
-def is_command(line: str) -> bool:
-    """A primeira palavra (depois de um `id:` opcional) é um comando conhecido? Sem shlex,
-    para que aspas soltas em texto livre não escondam um comando."""
-    parts = line.split()
-    if parts and parts[0].endswith(":") and len(parts[0]) > 1:
-        parts = parts[1:]
-    return bool(parts) and parts[0].lower() in COMMANDS
+def split_actor(line: str) -> tuple[str | None, str]:
+    """Separa o prefixo ``id:`` (primeira palavra, sem aspas) do resto da linha.
+
+    É o único analisador do prefixo: comandos, texto livre e quem orquestra por cima
+    (CLI, servidor) usam esta regra. Sem shlex, para que aspas soltas em texto livre não
+    escondam um comando, e para que ``'id:'`` entre aspas não seja prefixo.
+    """
+    parts = line.split(maxsplit=1)
+    head, rest = (parts[0], parts[1].strip()) if len(parts) == 2 else (line.strip(), "")
+    if head.endswith(":") and len(head) > 1:
+        return head[:-1], rest
+    return None, line.strip()
 
 
-def execute(session: Session, line: str) -> tuple[Session, str]:
+def parse_line(line: str) -> tuple[str | None, str, list[str]]:
+    """``(ator, comando em minúsculas, argumentos)`` de uma linha não vazia; ``CommandError``
+    se as aspas não fecham ou se o prefixo vem sem comando."""
+    actor, rest = split_actor(line)
     try:
-        tokens = shlex.split(line)
+        tokens = shlex.split(rest)
     except ValueError as exc:
         raise CommandError(f"aspas desbalanceadas: {exc}") from None
     if not tokens:
+        raise CommandError("prefixo sem comando" if actor else "linha vazia")
+    return actor, tokens[0].lower(), tokens[1:]
+
+
+def is_command(line: str) -> bool:
+    """A primeira palavra (depois de um ``id:`` opcional) é um comando conhecido?"""
+    _, rest = split_actor(line)
+    first = rest.split(maxsplit=1)
+    return bool(first) and first[0].lower() in COMMANDS
+
+
+def execute(session: Session, line: str) -> tuple[Session, str]:
+    """``GameOverError`` (uma ``CommandError``) se a partida acabou e o comando não é de
+    consulta; ``CommandError`` para qualquer outra recusa. Linha vazia não faz nada."""
+    if not line.strip():
         return session, ""
-
-    actor: str | None = None
-    if tokens[0].endswith(":") and len(tokens[0]) > 1:
-        actor = tokens[0][:-1]
-        tokens = tokens[1:]
-        if not tokens:
-            raise CommandError("prefixo sem comando")
-
-    name, args = tokens[0].lower(), tokens[1:]
+    actor, name, args = parse_line(line)
     handler = COMMANDS.get(name)
     if handler is None:
         raise CommandError(f"comando desconhecido '{name}'; digite 'ajuda'")
     status = game_status(session.state)
     if status is not GameStatus.ACTIVE and name not in READ_ONLY:
-        raise CommandError(
-            f"a partida terminou ({STATUS_LABELS[status]}); "
-            f"só é possível: {', '.join(sorted(READ_ONLY))}"
-        )
+        raise GameOverError(status)
     try:
         new_state, text = handler(session, actor, args)
         if new_state is not session.state and name != "fim":

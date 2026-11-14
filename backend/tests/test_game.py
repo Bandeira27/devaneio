@@ -8,13 +8,16 @@ from devaneio.game import (
     COMMANDS,
     CommandError,
     GameError,
+    GameOverError,
     execute,
     format_output,
+    is_command,
     load_game,
     new_game,
     save_game,
     status_banner,
 )
+from devaneio.game.commands import parse_line, split_actor
 from devaneio.rules import CheckOutcome
 
 
@@ -168,6 +171,58 @@ def test_empty_line_is_a_noop(session):
     same, text = execute(session, "   ")
     assert same is session
     assert text == ""
+
+
+@pytest.mark.parametrize(
+    ("line", "actor", "rest"),
+    [
+        ("aria: testar lutar normal", "aria", "testar lutar normal"),
+        ("  aria:   testar lutar  ", "aria", "testar lutar"),
+        ("aria:\ttestar lutar", "aria", "testar lutar"),
+        ("testar lutar normal", None, "testar lutar normal"),
+        ("'aria:' testar lutar", None, "'aria:' testar lutar"),
+        ("aria:", "aria", ""),
+        (":", None, ":"),
+        ("digo: olá, Bram", "digo", "olá, Bram"),
+    ],
+)
+def test_split_actor_takes_only_a_bare_first_word(line, actor, rest):
+    assert split_actor(line) == (actor, rest)
+
+
+def test_parse_line_lowercases_the_command_and_keeps_quoted_args():
+    assert parse_line('aria: ENTRAR aria "Aria Luz" FOR=3') == (
+        "aria",
+        "entrar",
+        ["aria", "Aria Luz", "FOR=3"],
+    )
+    assert parse_line("olhar") == (None, "olhar", [])
+    with pytest.raises(CommandError, match="linha vazia"):
+        parse_line("   ")
+    with pytest.raises(CommandError, match="prefixo sem comando"):
+        parse_line("aria:")
+
+
+def test_quoted_prefix_is_not_an_actor(session):
+    session, _ = run(session, 'entrar aria "Aria"')
+    with pytest.raises(CommandError, match="comando desconhecido 'aria:'"):
+        execute(session, "'aria:' testar lutar normal")
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        ("olhar", True),
+        ("aria: Testar lutar normal", True),
+        ('aria: entrar x "aspas soltas', True),
+        ("tento convencer o ferreiro", False),
+        ("bram: olá", False),
+        ("", False),
+        ("aria:", False),
+    ],
+)
+def test_is_command_uses_the_same_prefix_rule(line, expected):
+    assert is_command(line) is expected
 
 
 def test_move_and_log(session):
@@ -364,8 +419,11 @@ def test_defeat_locks_actions_and_olhar_says_so(session):
     session, _ = run(session, 'entrar aria "Aria"', "ferir aria 99")
     assert "DERROTA" in status_banner(before, session.state)
     assert status_banner(session.state, session.state) == ""
-    with pytest.raises(CommandError, match="a partida terminou \\(derrota: todo o grupo caiu\\)"):
+    with pytest.raises(GameOverError, match="a partida terminou \\(derrota: todo o grupo caiu\\)"):
         execute(session, "ir floresta")
+    with pytest.raises(GameOverError) as info:
+        execute(session, "fim")
+    assert info.value.status.value == "lost"
     for allowed in ("olhar", "ficha", "marcos", "log", "ajuda"):
         run(session, allowed)
     _, look = run(session, "olhar")

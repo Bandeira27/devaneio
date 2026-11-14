@@ -30,10 +30,10 @@ uv venv && uv pip install -e ".[dev]"
 Comandos: `olhar`, `entrar <id> "<nome>" [FOR=3 ...] [+item ...]`, `ir <local>`, `testar <habilidade>
 <dificuldade> [modificador]`, `atacar <arma> <alvo> [modificador]`, `ferir <alvo> <quantia>`,
 `curar <alvo> <quantia>`, `descansar`, `ficha`, `marcos`, `marco ativar|concluir|falhar <id>`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
-O arquivo da partida é salvo após cada ação e é a fonte da verdade. `atacar` compõe no CLI
+O arquivo da partida é salvo após cada ação e é a fonte da verdade. `atacar` compõe em `game/commands.py`
 um `resolve_check` (habilidade da arma contra a dificuldade de ataque do sistema) e, em acerto, um `deal_damage`. A arma precisa estar no inventário; a arma padrão do sistema (`combat.default_weapon`) está sempre disponível.
 
-A partida termina em **vitória** (todos os marcos concluídos) ou **derrota** (todo o grupo com hp 0). O desfecho é derivado do estado por `game_status`; o motor não se recusa a agir, e o CLI trava as ações exceto consulta. `descansar` recupera hp pela fórmula `rest.heal`, só sem hostis vivos no local, e gasta o turno.
+A partida termina em **vitória** (todos os marcos concluídos) ou **derrota** (todo o grupo com hp 0). O desfecho é derivado do estado por `game_status`; o motor não se recusa a agir, e `game/commands.py` trava as ações exceto consulta. `descansar` recupera hp pela fórmula `rest.heal`, só sem hostis vivos no local, e gasta o turno.
 
 ## Backend
 
