@@ -1,7 +1,7 @@
 """Interpretador de comandos: função pura de (sessão, linha) para (nova sessão, texto).
 
-O loop interativo só lê, chama ``execute`` e imprime. Tudo que o jogador pode fazer passa
-por aqui, então os testes cobrem o jogo inteiro sem terminal.
+Quem chama (o laço do CLI, um servidor) só lê, chama ``execute`` e mostra. Tudo que o jogador
+pode fazer passa por aqui, então os testes cobrem o jogo inteiro sem terminal.
 """
 
 from __future__ import annotations

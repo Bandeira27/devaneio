@@ -26,7 +26,7 @@ from devaneio.schema import (
 )
 
 
-class CliError(ValueError):
+class GameError(ValueError):
     """Problema ao criar ou abrir uma partida (arquivo incoerente, campanha incompatível)."""
 
 
@@ -74,7 +74,7 @@ def load_game(save_path: Path) -> Session:
         data.state, rules
     )
     if errors:
-        raise CliError(_joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
+        raise GameError(_joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
     return Session(
         campaign, rules, data.state, campaign_path, save_path, _narrator(campaign, rules)
     )
@@ -95,7 +95,7 @@ def _load_campaign_and_rules(campaign_path: Path) -> tuple[Campaign, RuleSystem]
     rules = load_builtin_rules(campaign.rules_id)
     errors = validate_campaign_against_rules(campaign, rules)
     if errors:
-        raise CliError(_joined(f"campanha '{campaign.id}' incompatível com '{rules.id}'", errors))
+        raise GameError(_joined(f"campanha '{campaign.id}' incompatível com '{rules.id}'", errors))
     return campaign, rules
 
 

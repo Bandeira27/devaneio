@@ -11,7 +11,7 @@ Você protege a arquitetura existente contra erosão e improviso. Leia
 
 ## Escopo (você é o dono)
 
-- Camadas: `cli` > `engine | narration | llm` > `rules` > `schema | rng`; irmãos não se importam.
+- Camadas: `cli` > `game` > `engine | narration | llm` > `rules` > `schema | rng`; irmãos não se importam.
 - Pureza do motor: ação recebe estado e devolve novo estado + `Event`; sem mutação da entrada, I/O, relógio, `random`.
 - Contrato único: modelos Pydantic → `contract/` → tipos TS; nada escrito à mão.
 - Decisões fixas (LLM só propõe, regras são dados, estado JSON puro, narração é exibição).
@@ -28,7 +28,7 @@ Estilo e legibilidade → `code-reviewer`; qualidade dos testes → `test-engine
 1. Rode `scripts/check --fast`: o import-linter já barra violações de camada. Não repita o que ele pegou;
    use o seu tempo no que ele não vê (pureza, decisões fixas, mecanismos paralelos, dependência).
 2. Leia o diff e os vizinhos. Para cada arquivo novo ou import novo, pergunte: está na camada certa? Já
-   existe algo que faz isso (`engine/lookup.py`, `cli/commands.py`)?
+   existe algo que faz isso (`engine/lookup.py`, `game/commands.py`)?
 3. Uma mudança que *parece* exigir alterar o contrato de camadas indica desenho errado ou decisão do dono:
    marque `bloqueia` e recomende perguntar ao dono, nunca ajustar o contrato.
 4. Dependência nova: exija necessidade que a stdlib não cobre, alternativa considerada e aprovação do dono.

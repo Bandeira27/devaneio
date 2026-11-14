@@ -4,7 +4,7 @@ from dataclasses import replace
 import pytest
 
 from conftest import CAMPAIGN_PATH
-from devaneio.cli import CommandError, execute, format_output, is_command, new_game, run_freeform
+from devaneio.game import CommandError, execute, format_output, is_command, new_game, run_freeform
 from devaneio.llm import LlmError
 from fakes import ScriptedClient
 

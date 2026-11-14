@@ -13,7 +13,7 @@ Mesa de RPG com um mestre de IA, jogável sozinho ou em grupo (por turnos).
 ## Estrutura
 
 ```
-backend/    Python (Pydantic v2, pytest) — esquema, motor, validação
+backend/    Python (Pydantic v2, pytest) — esquema, motor, orquestração (game), CLI
 frontend/   TypeScript strict — cliente fino (por enquanto só esqueleto)
 contract/   JSON Schema gerado a partir do backend
 ```
@@ -64,7 +64,7 @@ scripts/check                         # tudo: + testes com cobertura, Prettier, 
 
 `scripts/check` é a única definição dos portões; hooks e o CI (`.github/workflows/ci.yml`, Python 3.10 e 3.12) rodam
 o mesmo script. Ferramentas: ruff (lint e formato), mypy estrito, import-linter (camadas
-`cli > engine | narration | llm > rules > schema | rng`), pytest com piso de cobertura, Prettier e `tsc`.
+`cli > game > engine | narration | llm > rules > schema | rng`), pytest com piso de cobertura, Prettier e `tsc`.
 
 As instruções para qualquer IA ou pessoa estão em [`AGENTS.md`](AGENTS.md) (regras duras, mapa de leitura,
 papéis de revisão) e [`.agents/`](.agents/README.md) (rules, skills, subagentes e a matriz de compatibilidade
@@ -99,7 +99,7 @@ A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, 
 - Etapa 2: interpretador de expressões, esquema do sistema de regras com o sistema padrão, RNG reprodutível e `resolve_check` (teste de habilidade que gera novo estado e evento).
 - Etapa 3: NPCs com atributos (parciais na campanha, completados pelos defaults do sistema) e `hp` pela fórmula de `max_hp`; `deal_damage` (arma rolada com os atributos do atacante), `apply_damage` (quantia fixa) e `end_turn`. hp tem piso em 0: personagem fica fora de combate, morte é decisão narrativa; NPC fica `alive=false`.
 - Etapa 4: `add_character` (atributos parciais completados pelo sistema, hp pela fórmula) e `move` (o grupo anda junto, só por `connections`). Com isso uma partida mínima dá a volta: criar, andar, testar, ferir, encerrar turno.
-- Etapa 5: linha de comando (`devaneio.cli`) com partida em disco e interpretador de comandos puro; `Weapon.skill` no sistema de regras; campanha de exemplo em `campaigns/`.
+- Etapa 5: linha de comando (`devaneio.cli`) com partida em disco e interpretador de comandos puro (hoje em `devaneio.game`); `Weapon.skill` no sistema de regras; campanha de exemplo em `campaigns/`.
 - Etapa 6: marcos como ações (`activate_beat`, `complete_beat`, `fail_beat`), condições declarativas na campanha (`activate_when`/`complete_when`) e o diretor de narrativa: avança marcos pelos gatilhos, faz NPCs hostis reagirem ao fim do turno e mede a tensão. `combat` e `dispositions` no sistema de regras; `disposition` e `weapon_id` no NPC.
 - Etapa 7: narração por gramáticas. Pacote `pt-br` (`backend/src/devaneio/narration/data/pt-br.json`, contrato em `contract/narration.schema.json`) no estilo Tracery; `Narrator.narrate(evento, índice, estado)` gera prosa na exibição, sem gravar no estado e sem consumir `rng_draws`. O CLI mostra a prosa e, abaixo, a linha mecânica entre colchetes.
 - Etapa 8: cura e descanso (`heal`, `rest`, com `rest.heal` no sistema de regras), `game_status` (vitória e derrota derivadas do estado, sem campo novo), inventário exigindo a arma em `atacar`, comandos `curar`, `descansar` e `entrar ... +item` no CLI.

@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: Revisa segurança do Devaneio: fronteira de confiança do LLM (allow-list, injeção de comando ou id), segredos, caminhos de arquivo, desserialização, chamadas de rede e dependências. Acionar em mudanças em llm/, cli/, carga ou escrita de arquivos, subprocess/urlopen ou dependências. Somente leitura.
+description: Revisa segurança do Devaneio: fronteira de confiança do LLM (allow-list, injeção de comando ou id), segredos, caminhos de arquivo, desserialização, chamadas de rede e dependências. Acionar em mudanças em llm/, game/, cli/, carga ou escrita de arquivos, subprocess/urlopen ou dependências. Somente leitura.
 tools: Read, Grep, Glob, Bash
 ---
 

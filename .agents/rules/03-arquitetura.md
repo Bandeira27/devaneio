@@ -3,14 +3,16 @@
 ## Camadas (verificadas por import-linter, `scripts/check`)
 
 ```
-cli                            único que junta tudo (comandos, partida em disco, I/O)
+cli                            I/O de terminal (laço interativo) por cima de game
+game                           orquestração: partida em disco, comandos, texto livre, saída
 engine | narration | llm       irmãos: não se importam entre si
 rules                          sistema de regras e expressões (dados interpretados)
 schema | rng                   modelos Pydantic e gerador reprodutível
 ```
 
-Dependências só apontam para baixo. `llm/` não conhece o motor: a proposta do modelo vira **comandos do CLI**
-e passa por `execute()`, reaproveitando as validações. `export_schema.py` é ferramenta de build, no topo.
+Dependências só apontam para baixo. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
+e passa por `execute()` (`game/commands.py`), reaproveitando as validações. `export_schema.py` é ferramenta de
+build, no topo.
 Se uma mudança parece exigir quebrar o contrato de camadas, o desenho está errado ou a decisão é do dono:
 pare e pergunte, não ajuste o contrato.
 
@@ -19,7 +21,9 @@ pare e pergunte, não ajuste o contrato.
 | É... | Vai em |
 |---|---|
 | ação que altera o estado do jogo | `engine/` (função pura; skill `add-engine-action`) |
-| composição de ações para um comando (`atacar` = check + dano) | `cli/commands.py` |
+| composição de ações para um comando (`atacar` = check + dano) | `game/commands.py` |
+| modelo persistido fora do contrato (`SaveFile`) | `game/` |
+| leitura e impressão no terminal | `cli/` |
 | campo ou modelo de dados | `schema/` ou `rules/schema.py`, depois regenerar o contrato |
 | fórmula, dificuldade, arma, habilidade | arquivo de regras (`rules/data/default.json`), não código |
 | texto de narração | pacote pt-br (`narration/data/pt-br.json`), regra `tipo.variante` |

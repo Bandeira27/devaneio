@@ -18,7 +18,7 @@ O que `ruff`, `ruff format` e `mypy --strict` já cobrem **não é repetido aqui
 - Um erro de domínio por pacote (`EngineError`, `LlmError`, `ExpressionError`), mensagem em pt-br, e
   `raise NovoErro(...) from exc` ao traduzir outro.
 - Reuso: antes de escrever, procure a função existente (`engine/lookup.py`, `engine/errors.py`,
-  `cli/commands.py`). Siga o padrão do vizinho; não crie um segundo mecanismo para a mesma coisa.
+  `game/commands.py`). Siga o padrão do vizinho; não crie um segundo mecanismo para a mesma coisa.
 - Documentação de módulo curta (primeira linha: o que o módulo é; depois, só o que não é óbvio).
 
 ## Tamanho e complexidade são indicadores, não limites
@@ -28,7 +28,7 @@ excessiva, módulo acima de ~400 linhas ou com mais de um motivo de mudança, as
 Nenhum deles é regra: não há portão automático para isso (`PLR0912/0915` ficam fora do `scripts/check`).
 
 Ao cruzar um sinal, **primeiro avalie se há problema real** de coesão ou legibilidade. Um despachante de
-comandos, uma tabela ou uma sequência linear coesa pode ser longa e estar certa (`cli/commands.py`, 366 linhas,
+comandos, uma tabela ou uma sequência linear coesa pode ser longa e estar certa (`game/commands.py`, 366 linhas,
 é um caso a avaliar, não a dividir por reflexo). Só proponha refatorar se conseguir dizer **qual responsabilidade
 se mistura** ou **o que fica difícil de ler ou testar**. Dividir apenas para mover linhas de arquivo é proibido
 como objetivo. Refatoração motivada por indicador vira commit próprio, separado de mudança de comportamento.

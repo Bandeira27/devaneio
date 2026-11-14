@@ -11,13 +11,21 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from devaneio.game import (
+    CommandError,
+    GameError,
+    Session,
+    execute,
+    format_output,
+    is_command,
+    load_game,
+    new_game,
+    run_freeform,
+    save_game,
+    status_banner,
+)
 from devaneio.llm import LlmConfig, LlmError, OpenAiCompatClient
 from devaneio.schema import CampaignIntegrityError
-
-from .commands import CommandError, execute, is_command
-from .freeform import run_freeform
-from .output import format_output, status_banner
-from .session import CliError, Session, load_game, new_game, save_game
 
 QUIT = ("sair", "quit", "exit")
 
@@ -53,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
         return _play(session)
     except FileNotFoundError as exc:
         print(f"erro: arquivo não encontrado: {exc.filename}", file=sys.stderr)
-    except (ValidationError, CampaignIntegrityError, CliError, LlmError) as exc:
+    except (ValidationError, CampaignIntegrityError, GameError, LlmError) as exc:
         print(f"erro: {exc}", file=sys.stderr)
     return 1
 

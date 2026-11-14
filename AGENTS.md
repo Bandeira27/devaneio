@@ -19,8 +19,8 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
 
 ## Regras duras (violar bloqueia)
 
-1. **Arquitetura em camadas**, imposta por import-linter: `cli` > `engine | narration | llm` > `rules` > `schema | rng`.
-   Irmãos não se importam; só o `cli` junta tudo. Detalhes: [rule 03](.agents/rules/03-arquitetura.md).
+1. **Arquitetura em camadas**, imposta por import-linter: `cli` > `game` > `engine | narration | llm` > `rules` > `schema | rng`.
+   Irmãos não se importam; `game` orquestra o jogo e só o `cli` faz I/O. Detalhes: [rule 03](.agents/rules/03-arquitetura.md).
 2. **Motor puro**: ação do motor recebe estado e devolve novo estado + `Event`; nunca muta a entrada, sem I/O,
    aleatoriedade só por `Rng`.
 3. **LLM só propõe**; tudo passa pelas validações do motor. Regras do jogo são dados, nunca código.

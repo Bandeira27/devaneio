@@ -6,7 +6,7 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
 
 1. **O LLM só propõe.** A proposta (`Proposal`, até 3 ações) tem allow-list: `check`, `attack`, `move`, `rest`.
    Dano e cura arbitrários e mudanças diretas de marcos ficam **fora**. Não ampliar a allow-list sem o dono.
-2. **Toda proposta vira comando do CLI** e passa por `execute()`, reaproveitando as validações do motor.
+2. **Toda proposta vira linha de comando** e passa por `execute()` (`game/commands.py`), reaproveitando as validações do motor.
    Tudo ou nada: se uma ação falha, nada é aplicado. O modelo nunca rola dados nem decide dano.
 3. **Ids são slugs validados**, então uma proposta não consegue injetar outro comando nem escapar do formato.
    Qualquer texto do modelo que vire argumento passa por validação antes de montar a linha de comando.
@@ -27,7 +27,7 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
 11. **Privacidade**: com LLM ligado, o contexto da partida (inclusive segredos de NPCs presentes) vai ao servidor
     configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e o README.
 
-## Checklist ao mexer em `llm/`, `cli/` ou carga de arquivos
+## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 
 - O que o modelo pode fazer mudou? Atualize a allow-list *e* o teste que a prova.
 - Há caminho novo de texto externo até o motor, o shell, um arquivo ou um log?
