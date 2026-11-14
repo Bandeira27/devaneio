@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Portões completos antes de cada push.
+exec "$(git rev-parse --show-toplevel)/scripts/check"

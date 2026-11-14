@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Portões rápidos antes de cada commit. Ativar com: git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/check" --fast

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Única definição dos portões de qualidade. Hook, CI e pessoas rodam este mesmo script.
+#   scripts/check          completo (antes de push e no CI)
+#   scripts/check --fast   só o que é rápido (pre-commit): estático, arquitetura, governança
+# Variável opcional CHECK_BASE: ref git usada como base nas comparações (padrão: origin/main).
+set -uo pipefail
+
+cd "$(dirname "$0")/.."
+FAST=0
+[[ "${1:-}" == "--fast" ]] && FAST=1
+
+VENV_BIN="backend/.venv/bin"
+if [[ ! -x "$VENV_BIN/ruff" ]]; then
+    echo "ambiente do backend ausente. Rode: (cd backend && uv venv && uv pip install -e '.[dev]')" >&2
+    exit 2
+fi
+
+FAILED=()
+run() {
+    local name="$1"
+    shift
+    printf '\n=== %s\n' "$name"
+    if ! "$@"; then
+        FAILED+=("$name")
+    fi
+}
+in_dir() {
+    local dir="$1"
+    shift
+    (cd "$dir" && "$@")
+}
+
+# --- backend ---------------------------------------------------------------------
+run "ruff check" in_dir backend .venv/bin/ruff check . ../scripts --config pyproject.toml
+run "ruff format" in_dir backend .venv/bin/ruff format --check . ../scripts --config pyproject.toml
+run "mypy" in_dir backend .venv/bin/mypy
+run "import-linter" in_dir backend .venv/bin/lint-imports
+
+# --- políticas do repositório (stdlib; exigem python3 >= 3.11 por causa de tomllib) --
+run "supressões" python3 scripts/check_suppressions.py
+if [[ $FAST -eq 0 ]]; then
+    run "atribuição" python3 scripts/check_attribution.py
+fi
+
+HAS_NODE=0
+if [[ -d frontend/node_modules ]]; then
+    HAS_NODE=1
+else
+    printf '\n=== frontend\n!!! SKIP: frontend/node_modules ausente (rode: cd frontend && npm install).\n!!! Prettier, tsc e contrato NÃO foram verificados.\n'
+fi
+
+if [[ $HAS_NODE -eq 1 ]]; then
+    run "prettier" in_dir frontend npx --no-install prettier --check .
+fi
+
+if [[ $FAST -eq 0 ]]; then
+    run "pytest + cobertura" in_dir backend .venv/bin/pytest -q --cov --cov-report=term:skip-covered
+    if [[ $HAS_NODE -eq 1 ]]; then
+        run "tsc" in_dir frontend npm run --silent typecheck
+        run "contrato em dia" bash scripts/check_contract.sh
+    fi
+fi
+
+printf '\n'
+if [[ ${#FAILED[@]} -gt 0 ]]; then
+    printf 'FALHOU: %s\n' "${FAILED[*]}" >&2
+    exit 1
+fi
+echo "OK: todos os portões passaram."

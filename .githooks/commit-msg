@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Rejeita mensagem com atribuição de IA (Co-Authored-By, "Generated with ...", etc.).
+exec python3 "$(git rev-parse --show-toplevel)/scripts/check_attribution.py" --message-file "$1"
