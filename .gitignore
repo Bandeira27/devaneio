@@ -25,3 +25,9 @@ node_modules/
 # Partidas salvas localmente
 partida*.json
 *.save.json
+
+# Caches e relatórios das ferramentas de qualidade
+.coverage
+.mypy_cache/
+.ruff_cache/
+htmlcov/
