@@ -58,6 +58,8 @@ class FakeLlmServer:
 class ScriptedClient:
     """Cliente falso: devolve respostas em ordem; uma Exception na fila é levantada."""
 
+    description = "cliente falso"
+
     def __init__(self, *replies):
         self.replies = list(replies)
         self.calls: list[dict] = []

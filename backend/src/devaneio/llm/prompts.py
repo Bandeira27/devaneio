@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from devaneio.rules import RuleSystem
 from devaneio.schema import Campaign, GameState
@@ -34,7 +35,9 @@ Formato da resposta (exemplo; use os ids do catálogo da partida):
 """
 
 
-def build_context(campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str) -> dict:
+def build_context(
+    campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str
+) -> dict[str, Any]:
     here = next(l for l in campaign.locations if l.id == state.current_location_id)
     names = {l.id: l.name for l in campaign.locations}
     static = {n.id: n for n in campaign.npcs}

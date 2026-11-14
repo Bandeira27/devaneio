@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from devaneio.rng import Rng
 from devaneio.rules import DiceRoll, ExpressionError, RuleSystem, evaluate, parse
-from devaneio.schema import Campaign, Event, GameState
+from devaneio.schema import Campaign, Character, Event, GameState, NpcState
 
 from .errors import EngineError
 from .lookup import combatant
@@ -109,7 +109,7 @@ def apply_damage(
 
 def _hit(
     state: GameState,
-    target_kind: str,
+    target_kind: TargetKind,
     target_id: str,
     amount: int,
     *,
@@ -119,6 +119,7 @@ def _hit(
     data: dict[str, Any],
 ) -> DamageResult:
     new_state = state.model_copy(deep=True)
+    target: Character | NpcState
     if target_kind == "character":
         target = new_state.characters[target_id]
         if target.hp <= 0:
@@ -132,8 +133,8 @@ def _hit(
     hp_after = max(0, hp_before - amount)
     target.hp = hp_after
     incapacitated = hp_after == 0
-    if incapacitated and target_kind == "npc":
-        target.alive = False  # type: ignore[union-attr]
+    if incapacitated and isinstance(target, NpcState):
+        target.alive = False
 
     text = f"{text}, hp {hp_before} → {hp_after}" + (", fora de combate" if incapacitated else "")
     new_state.rng_draws = rng_draws
@@ -155,7 +156,7 @@ def _hit(
     )
     return DamageResult(
         state=new_state,
-        target_kind=target_kind,  # type: ignore[arg-type]
+        target_kind=target_kind,
         target_id=target_id,
         amount=amount,
         hp_before=hp_before,

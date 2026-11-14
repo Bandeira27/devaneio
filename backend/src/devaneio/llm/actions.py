@@ -59,7 +59,7 @@ class Proposal(_Loose):
 
     @field_validator("say", mode="before")
     @classmethod
-    def _none_is_empty(cls, value):
+    def _none_is_empty(cls, value: object) -> object:
         return "" if value is None else value
 
 

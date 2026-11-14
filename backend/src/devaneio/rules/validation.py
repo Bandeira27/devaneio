@@ -10,7 +10,7 @@ from devaneio.schema.campaign import Campaign
 from devaneio.schema.game_state import GameState
 
 from .expression import identifiers, parse
-from .schema import RuleSystem
+from .schema import Attribute, RuleSystem
 
 
 class RulesIntegrityError(ValueError):
@@ -112,7 +112,7 @@ def validate_state_against_rules(state: GameState, rules: RuleSystem) -> list[st
 
 
 def _attribute_errors(
-    who: str, attributes: dict[str, int], declared: dict, partial: bool = False
+    who: str, attributes: dict[str, int], declared: dict[str, Attribute], partial: bool = False
 ) -> list[str]:
     errors: list[str] = []
     if not partial:

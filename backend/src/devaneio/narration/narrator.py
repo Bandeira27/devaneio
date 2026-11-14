@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 from devaneio.rng import Rng
 from devaneio.rules import RuleSystem
-from devaneio.schema import Campaign, Event, GameState
+from devaneio.schema import Campaign, Event, GameState, Location
 
 from .grammar import Grammar
 from .pack import NarrationPack
@@ -156,10 +156,8 @@ class Narrator:
         weapon = next((w for w in self.rules.weapons if w.id == weapon_id), None)
         return weapon.name if weapon else str(weapon_id)
 
-    def _location(self, location_id: str | None):
+    def _location(self, location_id: str | None) -> Location:
         loc = next((l for l in self.campaign.locations if l.id == location_id), None)
         if loc is None:
-            from devaneio.schema import Location
-
             return Location(id=location_id or "x", name=str(location_id), description="")
         return loc

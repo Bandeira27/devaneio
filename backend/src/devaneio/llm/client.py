@@ -11,13 +11,16 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from typing import Mapping, Protocol, Sequence
+from typing import Any, Mapping, Protocol, Sequence
 
 from .config import LlmConfig
 from .errors import LlmError
 
 
 class ChatClient(Protocol):
+    @property
+    def description(self) -> str: ...
+
     def complete(
         self,
         messages: Sequence[Mapping[str, str]],
@@ -50,7 +53,7 @@ class OpenAiCompatClient:
         json_mode: bool = False,
         temperature: float | None = None,
     ) -> str:
-        payload: dict = {
+        payload: dict[str, Any] = {
             "model": self.config.model,
             "messages": [dict(m) for m in messages],
             "temperature": self.temperature if temperature is None else temperature,
@@ -68,7 +71,7 @@ class OpenAiCompatClient:
         except _HttpStatus as exc:
             raise LlmError(f"o servidor respondeu HTTP {exc.status}: {exc.detail}") from None
 
-    def _post(self, payload: dict) -> str:
+    def _post(self, payload: dict[str, Any]) -> str:
         url = self.config.base_url.rstrip("/") + "/chat/completions"
         headers = {"Content-Type": "application/json", "User-Agent": "devaneio"}
         if self.config.api_key:

@@ -13,6 +13,7 @@ from typing import Callable
 from devaneio.engine import (
     EngineError,
     GameStatus,
+    TargetKind,
     activate_beat,
     add_character,
     advance_beats,
@@ -375,7 +376,7 @@ def resolve_actor(session: Session, actor: str | None) -> Character:
     raise CommandError(f"há vários personagens ({ids}); prefixe o comando com `id:`")
 
 
-def _target_kind(state: GameState, target_id: str) -> str:
+def _target_kind(state: GameState, target_id: str) -> TargetKind:
     is_char, is_npc = target_id in state.characters, target_id in state.npcs
     if is_char and is_npc:
         raise CommandError(f"'{target_id}' é personagem e NPC ao mesmo tempo; ids ambíguos")

@@ -18,7 +18,7 @@ from devaneio.schema import CampaignIntegrityError
 from .commands import CommandError, execute, is_command
 from .freeform import run_freeform
 from .output import format_output, status_banner
-from .session import CliError, load_game, new_game, save_game
+from .session import CliError, Session, load_game, new_game, save_game
 
 QUIT = ("sair", "quit", "exit")
 
@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     return 1
 
 
-def _play(session) -> int:
+def _play(session: Session) -> int:
     print(f"{session.campaign.title}\n{session.campaign.premise}\n")
     session, text = execute(session, "olhar")
     print(text)
@@ -78,7 +78,8 @@ def _play(session) -> int:
         if line.strip().lower() in QUIT:
             break
         before = session.state
-        say, commands = "", ()
+        say = ""
+        commands: tuple[str, ...] = ()
         try:
             if session.llm is not None and line.strip() and not is_command(line):
                 result = run_freeform(session, line)

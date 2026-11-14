@@ -7,10 +7,11 @@ combate" não está morto). NPC com ``alive=False`` não é curado: morte de NPC
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from devaneio.rng import Rng
 from devaneio.rules import ExpressionError, RuleSystem, evaluate, parse
-from devaneio.schema import Campaign, Event, GameState
+from devaneio.schema import Campaign, Character, Event, GameState, NpcState
 
 from .damage import TargetKind
 from .errors import EngineError
@@ -87,7 +88,7 @@ def rest(state: GameState, campaign: Campaign, rules: RuleSystem) -> RestResult:
     formula = parse(rules.rest.heal)
     new_state = state.model_copy(deep=True)
     healed: dict[str, tuple[int, int]] = {}
-    details: dict[str, dict] = {}
+    details: dict[str, dict[str, Any]] = {}
     for char in hurt:
         try:
             rolled = evaluate(formula, char.attributes, rng)
@@ -114,8 +115,9 @@ def rest(state: GameState, campaign: Campaign, rules: RuleSystem) -> RestResult:
     return RestResult(new_state, healed, text)
 
 
-def _raise_hp(state: GameState, kind: str, who_id: str, amount: int) -> tuple[int, int]:
+def _raise_hp(state: GameState, kind: TargetKind, who_id: str, amount: int) -> tuple[int, int]:
     """Aplica a cura no estado (mutando-o) e devolve (hp antes, hp depois)."""
+    target: Character | NpcState
     if kind == "character":
         target = state.characters[who_id]
     else:
