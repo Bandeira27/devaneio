@@ -18,7 +18,7 @@ ATTRS = {"FOR": 2, "AGI": 1}
 
 
 @pytest.mark.parametrize(
-    "text, total",
+    ("text", "total"),
     [
         ("3", 3),
         ("3 + 4", 7),
@@ -51,7 +51,8 @@ def test_dice_consume_rng_in_order_and_report_values():
     result = roll("2d6 + 1d4 + FOR", ATTRS, rng)
     assert [v for r in result.rolls for v in r.values] == expected
     assert result.total == sum(expected) + 2
-    assert result.rolls[0].dice == "2d6" and result.rolls[1].dice == "1d4"
+    assert result.rolls[0].dice == "2d6"
+    assert result.rolls[1].dice == "1d4"
     assert rng.draws == 3
 
 

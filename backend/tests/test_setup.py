@@ -21,7 +21,9 @@ def test_initial_state_is_coherent(campaign, rules, hero):
     state = initial_state(campaign, rules, 42, [hero])
     assert validate_against_campaign(state, campaign) == []
     assert validate_state_against_rules(state, rules) == []
-    assert state.turn == 0 and state.rng_draws == 0 and state.rng_seed == 42
+    assert state.turn == 0
+    assert state.rng_draws == 0
+    assert state.rng_seed == 42
     assert state.current_location_id == campaign.start_location_id
     assert set(state.npcs) == {"ferreiro", "sacerdote"}
     assert state.npcs["sacerdote"].location_id == "ruinas"

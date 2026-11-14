@@ -36,7 +36,7 @@ def test_lost_only_when_everyone_is_down(state, campaign):
 
 def test_won_when_every_beat_is_done(state, campaign):
     s = state.model_copy(deep=True)
-    s.beats = {b: BeatStatus.DONE for b in s.beats}
+    s.beats = dict.fromkeys(s.beats, BeatStatus.DONE)
     assert game_status(s) is GameStatus.WON
     s.beats["pista"] = BeatStatus.FAILED
     assert game_status(s) is GameStatus.ACTIVE
@@ -44,7 +44,7 @@ def test_won_when_every_beat_is_done(state, campaign):
 
 def test_victory_beats_defeat(state, campaign):
     s = down(down(state, campaign, "aria"), campaign, "zed")
-    s.beats = {b: BeatStatus.DONE for b in s.beats}
+    s.beats = dict.fromkeys(s.beats, BeatStatus.DONE)
     assert game_status(s) is GameStatus.WON
 
 

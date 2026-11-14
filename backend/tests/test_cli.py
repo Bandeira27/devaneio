@@ -1,10 +1,10 @@
 import json
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
+from conftest import CAMPAIGN_PATH
 from devaneio.cli import (
     CliError,
     CommandError,
@@ -15,10 +15,9 @@ from devaneio.cli import (
     save_game,
     status_banner,
 )
+from devaneio.cli.commands import COMMANDS
 from devaneio.engine import resolve_check
 from devaneio.rules import CheckOutcome
-
-from conftest import CAMPAIGN_PATH
 
 
 @pytest.fixture
@@ -41,7 +40,8 @@ def test_new_game_writes_save_with_relative_campaign_path(session, tmp_path):
     data = json.loads((tmp_path / "partida.json").read_text(encoding="utf-8"))
     assert data["save_version"] == 1
     assert (tmp_path / data["campaign_path"]).resolve() == CAMPAIGN_PATH
-    assert data["state"]["rng_seed"] == 7 and data["state"]["turn"] == 0
+    assert data["state"]["rng_seed"] == 7
+    assert data["state"]["turn"] == 0
     assert session.rules.id == "default"
 
 
@@ -128,7 +128,8 @@ def test_end_turn_runs_the_director(session):
     assert text.endswith("Fim do turno 0. Começa o turno 1.")
     assert session.state.turn == 1
     kinds = [e.kind for e in session.state.events]
-    assert kinds[-2:] == ["director", "turn_end"] and "check" in kinds
+    assert kinds[-2:] == ["director", "turn_end"]
+    assert "check" in kinds
 
 
 def test_join_then_look_and_sheet(session):
@@ -141,7 +142,7 @@ def test_join_then_look_and_sheet(session):
 
 
 @pytest.mark.parametrize(
-    "line, fragment",
+    ("line", "fragment"),
     [
         ("entrar aria", "uso: entrar"),
         ('entrar aria "Aria" FOR', "atributo inválido 'FOR'"),
@@ -167,7 +168,8 @@ def test_command_errors_do_not_change_state(session, line, fragment):
 
 def test_empty_line_is_a_noop(session):
     same, text = execute(session, "   ")
-    assert same is session and text == ""
+    assert same is session
+    assert text == ""
 
 
 def test_move_and_log(session):
@@ -177,7 +179,8 @@ def test_move_and_log(session):
         == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
     )
     session, look = run(session, "olhar")
-    assert look.startswith("Turno 0 — Floresta Cinzenta (floresta)") and "Aqui: ninguém" in look
+    assert look.startswith("Turno 0 — Floresta Cinzenta (floresta)")
+    assert "Aqui: ninguém" in look
     _, log = run(session, "log 2")
     assert log == (
         "[t0] O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\n"
@@ -228,11 +231,13 @@ def test_attack_hits_or_misses_according_to_the_check(tmp_path):
         after, text = run(session, "atacar espada sacerdote")
         hp = after.state.npcs["sacerdote"].hp
         if predicted.outcome in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS):
-            assert hp < 12 and "Aria ataca Irmão Vael com Espada" in text
+            assert hp < 12
+            assert "Aria ataca Irmão Vael com Espada" in text
             assert [e.kind for e in after.state.events[-2:]] == ["check", "damage"]
             seen.add("hit")
         else:
-            assert hp == 12 and text.endswith("O ataque não acerta.")
+            assert hp == 12
+            assert text.endswith("O ataque não acerta.")
             assert after.state.events[-1].kind == "check"
             seen.add("miss")
     assert seen == {"hit", "miss"}
@@ -250,7 +255,7 @@ def test_attack_difficulty_comes_from_rules(session):
 
 
 @pytest.mark.parametrize(
-    "line, fragment",
+    ("line", "fragment"),
     [
         ("atacar canhao ferreiro", "arma 'canhao' não existe"),
         ("atacar espada aria", "atacar a si mesmo"),
@@ -271,8 +276,6 @@ def test_end_turn_without_hostiles(session):
 
 
 def test_help_lists_every_command(session):
-    from devaneio.cli.commands import COMMANDS
-
     _, text = run(session, "ajuda")
     for name in COMMANDS:
         assert f"  {name}" in text
@@ -311,13 +314,16 @@ def test_end_to_end_through_the_process(tmp_path):
         text=True,
     )
     out = played.stdout
-    assert "A Sombra do Vale" in out and "Turno 0 — Vila de Pedra Alta" in out
+    assert "A Sombra do Vale" in out
+    assert "Turno 0 — Vila de Pedra Alta" in out
     assert "Aria entra na aventura" in out
     assert "erro: comando desconhecido 'pular'" in out
-    assert "  [Fim do turno 0]" in out and "  [Diretor: tensão 0.00; nada a fazer.]" in out
+    assert "  [Fim do turno 0]" in out
+    assert "  [Diretor: tensão 0.00; nada a fazer.]" in out
 
     data = json.loads(save.read_text(encoding="utf-8"))
-    assert data["state"]["turn"] == 1 and data["state"]["current_location_id"] == "floresta"
+    assert data["state"]["turn"] == 1
+    assert data["state"]["current_location_id"] == "floresta"
     assert [e["kind"] for e in data["state"]["events"]] == [
         "beat_activated",
         "character_joined",
@@ -333,8 +339,10 @@ def test_missing_save_file_is_a_clean_error(tmp_path):
         [sys.executable, "-m", "devaneio.cli", "jogar", str(tmp_path / "nada.json")],
         capture_output=True,
         text=True,
+        check=False,
     )
-    assert result.returncode == 1 and "arquivo não encontrado" in result.stderr
+    assert result.returncode == 1
+    assert "arquivo não encontrado" in result.stderr
 
 
 # --- narração na saída ----------------------------------------------------------
@@ -346,7 +354,8 @@ def test_format_output_narrates_new_events_with_mechanical_line(session):
     out = format_output(session.narrator, before, after.state, text)
     lines = out.split("\n")
     assert len(lines) == 2
-    assert "Aria" in lines[0] and lines[0] != text
+    assert "Aria" in lines[0]
+    assert lines[0] != text
     assert lines[1] == "  [Aria entra na aventura (FOR 3, AGI 1, MEN 2, PRE 2; hp 12).]".replace(
         "AGI 1", "AGI 2"
     )
@@ -384,7 +393,9 @@ def test_end_to_end_output_is_narrated(tmp_path):
     assert "  [O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.]" in played.stdout
     assert "  [Marco concluído: Chegada à vila.]" in played.stdout
     prose = [
-        l for l in played.stdout.split("\n") if "Floresta Cinzenta" in l and not l.startswith("  [")
+        line
+        for line in played.stdout.split("\n")
+        if "Floresta Cinzenta" in line and not line.startswith("  [")
     ]
     assert prose  # a linha narrada cita o destino
 
@@ -393,7 +404,7 @@ def test_end_to_end_output_is_narrated(tmp_path):
 
 
 def test_join_with_items_and_sheet(session):
-    session, text = run(session, 'entrar aria "Aria" FOR=3 +espada +arco')
+    session, _ = run(session, 'entrar aria "Aria" FOR=3 +espada +arco')
     assert session.state.characters["aria"].inventory == ["espada", "arco"]
     _, sheet = run(session, "ficha")
     assert sheet.endswith("Inventário: espada, arco")
@@ -426,8 +437,10 @@ def test_heal_command(session):
 def test_rest_command_heals_and_spends_the_turn(session):
     session, _ = run(session, 'entrar aria "Aria"', "ferir aria 6")
     session, text = run(session, "descansar")
-    assert text.startswith("O grupo descansa: Aria +") and "Fim do turno 0" in text
-    assert session.state.turn == 1 and session.state.characters["aria"].hp > 4
+    assert text.startswith("O grupo descansa: Aria +")
+    assert "Fim do turno 0" in text
+    assert session.state.turn == 1
+    assert session.state.characters["aria"].hp > 4
     kinds = [e.kind for e in session.state.events]
     assert kinds[-3:] == ["rest", "director", "turn_end"]
     with pytest.raises(CommandError, match="uso: descansar"):

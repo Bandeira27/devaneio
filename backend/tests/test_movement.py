@@ -11,12 +11,15 @@ def state(campaign, rules):
 
 def test_move_to_connected_location(state, campaign):
     result = move(state, campaign, to_location_id="floresta")
-    assert state.current_location_id == "vila" and state.events == []
+    assert state.current_location_id == "vila"
+    assert state.events == []
     assert result.state.current_location_id == "floresta"
     assert (result.from_location_id, result.to_location_id) == ("vila", "floresta")
     assert result.text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta."
     event = result.state.events[0]
-    assert event.kind == "move" and event.turn == 0 and event.text == result.text
+    assert event.kind == "move"
+    assert event.turn == 0
+    assert event.text == result.text
     assert event.data == {"from_location_id": "vila", "to_location_id": "floresta"}
     assert validate_against_campaign(result.state, campaign) == []
 

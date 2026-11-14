@@ -11,7 +11,8 @@ def state(campaign, rules) -> GameState:
 
 def test_activate_then_complete(state, campaign):
     a = activate_beat(state, campaign, beat_id="chegada")
-    assert state.beats["chegada"] is BeatStatus.PENDING and state.events == []
+    assert state.beats["chegada"] is BeatStatus.PENDING
+    assert state.events == []
     assert a.state.beats["chegada"] is BeatStatus.ACTIVE
     assert a.text == "Marco ativado: Chegada à vila."
     assert a.state.events[-1].kind == "beat_activated"
@@ -48,7 +49,7 @@ def test_failed_requirement_blocks(state, campaign):
 
 
 @pytest.mark.parametrize(
-    "action, fragment",
+    ("action", "fragment"),
     [
         (complete_beat, "está 'pending', precisava estar 'active'"),
         (fail_beat, "está 'pending', precisava estar 'active'"),

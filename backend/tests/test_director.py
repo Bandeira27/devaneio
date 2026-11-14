@@ -61,7 +61,8 @@ def test_advance_activates_root_beat_only(state, campaign):
         "confronto": BeatStatus.PENDING,
     }
     again, texts2 = advance_beats(after, campaign)
-    assert texts2 == () and again == after
+    assert texts2 == ()
+    assert again == after
 
 
 def test_beats_follow_the_journey(state, campaign):
@@ -93,7 +94,8 @@ def test_no_hostiles_in_the_village(state, campaign, rules):
     assert result.tension == 0.0
     assert result.text.endswith("Diretor: tensão 0.00; 1 ação(ões).")
     event = result.state.events[-1]
-    assert event.kind == "director" and event.data == {
+    assert event.kind == "director"
+    assert event.data == {
         "tension": 0.0,
         "actions": list(result.actions),
     }
@@ -140,7 +142,8 @@ def test_every_hostile_outcome_shows_up_over_seeds(campaign, rules):
             hits += 1
         else:
             misses += 1
-    assert hits and misses
+    assert hits
+    assert misses
 
 
 def test_dead_or_friendly_npcs_do_not_attack(state, campaign, rules):

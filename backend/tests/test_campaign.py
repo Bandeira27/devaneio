@@ -40,7 +40,7 @@ def test_duplicate_ids_are_reported(campaign_data, collection):
 
 
 @pytest.mark.parametrize(
-    "mutate, fragment",
+    ("mutate", "fragment"),
     [
         (lambda d: d["locations"][0]["connections"].append("nada"), "conecta a 'nada'"),
         (lambda d: d["npcs"][0].__setitem__("location_id", "nada"), "está em 'nada'"),
@@ -67,7 +67,8 @@ def test_direct_cycle_between_beats(campaign_data):
     errors = errors_of(campaign_data)
     assert len(errors) == 1
     assert errors[0].startswith("ciclo entre marcos:")
-    assert "chegada" in errors[0] and "pista" in errors[0]
+    assert "chegada" in errors[0]
+    assert "pista" in errors[0]
 
 
 def test_indirect_cycle_between_beats(campaign_data):
@@ -128,7 +129,7 @@ def test_load_campaign_raises_with_full_error_list(campaign_data):
 
 
 @pytest.mark.parametrize(
-    "cond, fragment",
+    ("cond", "fragment"),
     [
         ({"kind": "at_location", "location_id": "lua"}, "local 'lua' não existe"),
         ({"kind": "npc_down", "npc_id": "ninguem"}, "npc 'ninguem' não existe"),
@@ -139,11 +140,9 @@ def test_load_campaign_raises_with_full_error_list(campaign_data):
 def test_condition_references_are_checked(campaign_data, cond, fragment):
     campaign_data["beats"][1]["complete_when"] = [cond]
     errors = errors_of(campaign_data)
-    assert (
-        len(errors) == 1
-        and errors[0].startswith("marco 'pista', complete_when: ")
-        and fragment in errors[0]
-    )
+    assert len(errors) == 1
+    assert errors[0].startswith("marco 'pista', complete_when: ")
+    assert fragment in errors[0]
 
 
 def test_unknown_condition_kind_is_a_structural_error(campaign_data):

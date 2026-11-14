@@ -16,7 +16,7 @@ class FakeLlmServer:
         self.respond = respond
         self.requests: list[dict] = []
 
-    def __enter__(self) -> "FakeLlmServer":
+    def __enter__(self) -> FakeLlmServer:
         outer = self
 
         class Handler(BaseHTTPRequestHandler):

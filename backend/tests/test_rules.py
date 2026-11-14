@@ -46,7 +46,7 @@ def test_duplicate_ids_are_reported(rules_data, collection):
 
 
 @pytest.mark.parametrize(
-    "mutate, fragment",
+    ("mutate", "fragment"),
     [
         (
             lambda d: d["skills"][0].__setitem__("formula", "2d6 + SOR"),
@@ -63,7 +63,8 @@ def test_duplicate_ids_are_reported(rules_data, collection):
 def test_unknown_attribute_in_formula_is_reported(rules_data, mutate, fragment):
     mutate(rules_data)
     errors = errors_of(rules_data)
-    assert len(errors) == 1 and fragment in errors[0]
+    assert len(errors) == 1
+    assert fragment in errors[0]
 
 
 def test_combat_references_must_exist(rules_data):
@@ -75,8 +76,6 @@ def test_combat_references_must_exist(rules_data):
 
 
 def test_npc_weapon_is_checked_against_rules(campaign_data, rules_data):
-    from devaneio.schema import Campaign
-
     campaign_data["npcs"][1]["weapon_id"] = "canhao"
     campaign = Campaign.model_validate(campaign_data)
     rules = RuleSystem.model_validate(rules_data)
@@ -119,7 +118,7 @@ def test_attribute_default_must_be_within_range(rules_data):
         RuleSystem.model_validate(rules_data)
 
 
-@pytest.mark.parametrize("cf, cs", [(0, 5), (-5, 0), (3, 5), (-5, -1)])
+@pytest.mark.parametrize(("cf", "cs"), [(0, 5), (-5, 0), (3, 5), (-5, -1)])
 def test_outcome_thresholds_must_bracket_zero(rules_data, cf, cs):
     rules_data["outcomes"] = {"critical_failure_margin": cf, "critical_success_margin": cs}
     with pytest.raises(ValidationError):

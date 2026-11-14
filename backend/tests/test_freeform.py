@@ -3,10 +3,9 @@ from dataclasses import replace
 
 import pytest
 
+from conftest import CAMPAIGN_PATH
 from devaneio.cli import CommandError, execute, format_output, is_command, new_game, run_freeform
 from devaneio.llm import LlmError
-
-from conftest import CAMPAIGN_PATH
 from fakes import ScriptedClient
 
 
@@ -38,7 +37,7 @@ def kinds(session):
 
 
 @pytest.mark.parametrize(
-    "line, expected",
+    ("line", "expected"),
     [
         ("ir floresta", True),
         ("IR floresta", True),
@@ -71,7 +70,9 @@ def test_proposal_runs_through_the_engine(base):
     assert result.session.state.current_location_id == "floresta"
     assert result.session.state.rng_draws == 2  # a rolagem é do motor, não do modelo
     call = client.calls[0]
-    assert call["json_mode"] is True and call["temperature"] == 0.2 and len(client.calls) == 1
+    assert call["json_mode"] is True
+    assert call["temperature"] == 0.2
+    assert len(client.calls) == 1
     assert "APENAS com um objeto JSON" in call["messages"][0]["content"]
     assert call["messages"][1]["content"].endswith(
         "JOGADOR (Aria): tento passar sem ser vista e sigo para a floresta"
@@ -82,7 +83,8 @@ def test_proposal_runs_through_the_engine(base):
 def test_say_only_changes_nothing(base):
     session, _ = with_llm(base, reply(say="Bram resmunga e volta à bigorna."))
     result = run_freeform(session, "pergunto a Bram sobre o irmão dele")
-    assert result.say == "Bram resmunga e volta à bigorna." and result.commands == ()
+    assert result.say == "Bram resmunga e volta à bigorna."
+    assert result.commands == ()
     assert result.session.state == base.state
 
 
@@ -97,10 +99,12 @@ def test_markdown_fenced_reply_is_accepted(base):
 def test_invalid_json_is_retried_with_feedback(base):
     session, client = with_llm(base, "não sei o que fazer", reply(MOVE))
     result = run_freeform(session, "vou")
-    assert result.session.state.current_location_id == "floresta" and len(client.calls) == 2
+    assert result.session.state.current_location_id == "floresta"
+    assert len(client.calls) == 2
     retry = client.calls[1]["messages"]
     assert retry[-2] == {"role": "assistant", "content": "não sei o que fazer"}
-    assert retry[-1]["role"] == "user" and "recusada" in retry[-1]["content"]
+    assert retry[-1]["role"] == "user"
+    assert "recusada" in retry[-1]["content"]
     assert "não contém um objeto JSON" in retry[-1]["content"]
 
 
@@ -110,16 +114,18 @@ def test_engine_refusal_is_fed_back(base):
     result = run_freeform(session, "tento voar")
     assert result.commands == ("testar furtividade normal",)
     feedback = client.calls[1]["messages"][-1]["content"]
-    assert "ação 'testar voar normal' recusada" in feedback and "habilidade 'voar'" in feedback
+    assert "ação 'testar voar normal' recusada" in feedback
+    assert "habilidade 'voar'" in feedback
 
 
 def test_two_failures_give_up_and_leave_the_session_untouched(base):
     session, client = with_llm(base, "lixo", reply({"kind": "move", "to": "lua"}))
     with pytest.raises(
-        CommandError, match="o mestre \\(LLM\\) não propôs uma ação válida.*local 'lua'"
+        CommandError, match=r"o mestre \(LLM\) não propôs uma ação válida.*local 'lua'"
     ):
         run_freeform(session, "vou à lua")
-    assert len(client.calls) == 2 and session.state == base.state
+    assert len(client.calls) == 2
+    assert session.state == base.state
 
 
 def test_all_or_nothing(base):
@@ -127,7 +133,8 @@ def test_all_or_nothing(base):
     broken = reply(MOVE, {"kind": "attack", "weapon": "arco", "target": "ferreiro"})
     session, client = with_llm(base, broken, reply(say="Melhor não."))
     result = run_freeform(session, "fujo e atiro")
-    assert result.session.state.current_location_id == "vila" and result.commands == ()
+    assert result.session.state.current_location_id == "vila"
+    assert result.commands == ()
     assert "Aria não tem 'arco'" in client.calls[1]["messages"][-1]["content"]
 
 
@@ -142,7 +149,8 @@ def test_ids_cannot_inject_commands(base):
 def test_too_many_actions_are_refused(base):
     session, client = with_llm(base, reply(*[{"kind": "rest"}] * 4), reply(say="calma"))
     result = run_freeform(session, "faço muita coisa")
-    assert result.commands == () and "actions" in client.calls[1]["messages"][-1]["content"]
+    assert result.commands == ()
+    assert "actions" in client.calls[1]["messages"][-1]["content"]
 
 
 # --- ator, estado da partida, erros ------------------------------------------------
@@ -207,6 +215,5 @@ def test_format_output_falls_back_to_the_grammar_with_a_note(base):
         base.narrator, base.state, after.state, text, ScriptedClient(LlmError("fora do ar"))
     )
     assert "(narração por LLM indisponível: fora do ar; usei a gramática)" in out
-    assert (
-        "Floresta Cinzenta" in out.split("\n")[0] and "  [Marco concluído: Chegada à vila.]" in out
-    )
+    assert "Floresta Cinzenta" in out.split("\n")[0]
+    assert "  [Marco concluído: Chegada à vila.]" in out

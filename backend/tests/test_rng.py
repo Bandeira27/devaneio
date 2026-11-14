@@ -36,9 +36,9 @@ def test_roll_is_within_range_and_covers_all_faces():
 
 
 def test_invalid_arguments():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="pelo menos 1 lado"):
         Rng(1).roll(0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="negativo"):
         Rng(1, draws=-1)
 
 

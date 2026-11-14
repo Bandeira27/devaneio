@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from devaneio.rules import RuleSystem, builtin_rules_json
 from devaneio.schema import Campaign
 
 CAMPAIGN_PATH = Path(__file__).resolve().parents[2] / "campaigns" / "sombra-do-vale.json"
@@ -25,17 +26,11 @@ def campaign(campaign_data: dict) -> Campaign:
 @pytest.fixture
 def rules_data() -> dict:
     """Cópia fresca do sistema padrão como dict."""
-    import json
-
-    from devaneio.rules import builtin_rules_json
-
     return json.loads(builtin_rules_json("default"))
 
 
 @pytest.fixture
 def rules(rules_data: dict):
-    from devaneio.rules import RuleSystem
-
     return RuleSystem.model_validate(rules_data)
 
 

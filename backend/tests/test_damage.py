@@ -29,20 +29,25 @@ def hit(state, campaign, **kw):
 
 def test_apply_damage_is_pure_and_logs(state, campaign):
     result = hit(state, campaign, amount=3)
-    assert state.characters["aria"].hp == 10 and state.events == []
+    assert state.characters["aria"].hp == 10
+    assert state.events == []
     assert (result.hp_before, result.hp_after, result.amount) == (10, 7, 3)
     assert result.state.characters["aria"].hp == 7
     assert result.incapacitated is False
     assert result.text == "Aria sofre 3 de dano (armadilha), hp 10 → 7"
     event = result.state.events[0]
-    assert event.kind == "damage" and event.turn == 0 and event.text == result.text
-    assert event.data["source"] == "armadilha" and event.data["hp_after"] == 7
+    assert event.kind == "damage"
+    assert event.turn == 0
+    assert event.text == result.text
+    assert event.data["source"] == "armadilha"
+    assert event.data["hp_after"] == 7
     assert result.state.rng_draws == state.rng_draws
 
 
 def test_damage_floors_at_zero_and_incapacitates(state, campaign):
     result = hit(state, campaign, amount=25)
-    assert result.hp_after == 0 and result.incapacitated
+    assert result.hp_after == 0
+    assert result.incapacitated
     assert result.text.endswith("hp 10 → 0, fora de combate")
     assert "aria" in result.state.characters  # ninguém some do estado
 
@@ -58,11 +63,12 @@ def test_npc_at_zero_hp_is_no_longer_alive(state, campaign):
 
 def test_zero_damage_is_allowed(state, campaign):
     result = hit(state, campaign, amount=0)
-    assert result.hp_after == 10 and not result.incapacitated
+    assert result.hp_after == 10
+    assert not result.incapacitated
 
 
 @pytest.mark.parametrize(
-    "kw, fragment",
+    ("kw", "fragment"),
     [
         ({"amount": -1}, "não pode ser negativo"),
         ({"amount": 1, "target_id": "ninguem"}, "personagem 'ninguem'"),
@@ -110,7 +116,8 @@ def test_deal_damage_rolls_weapon_with_attacker_attributes(state, campaign, rule
         f"Aria ataca Irmão Vael com Espada (1d6 + FOR): 1d6 [{die}] → {result.amount} de dano, hp 12 → "
     )
     data = result.state.events[0].data
-    assert data["attacker_id"] == "aria" and data["weapon_id"] == "espada"
+    assert data["attacker_id"] == "aria"
+    assert data["weapon_id"] == "espada"
     assert data["rolls"] == [{"dice": "1d6", "values": [die]}]
 
 
@@ -126,7 +133,8 @@ def test_npc_can_attack_with_its_own_attributes(state, campaign, rules):
         target_id="aria",
     )
     assert result.amount == 1 + 3  # punhos: 1 + FOR, sacerdote FOR 3
-    assert result.rolls == () and result.state.rng_draws == 0
+    assert result.rolls == ()
+    assert result.state.rng_draws == 0
     assert result.text == "Irmão Vael ataca Aria com Punhos (1 + FOR): → 4 de dano, hp 10 → 6"
 
 
@@ -161,7 +169,8 @@ def test_check_then_damage_share_one_rng_sequence(state, campaign, rules):
     rng = Rng(SEED)
     expected = [rng.roll(6), rng.roll(6), rng.roll(6)]
     assert list(check.rolls[0].values) + list(dmg.rolls[0].values) == expected
-    assert dmg.state.rng_draws == 3 and [e.kind for e in dmg.state.events] == ["check", "damage"]
+    assert dmg.state.rng_draws == 3
+    assert [e.kind for e in dmg.state.events] == ["check", "damage"]
 
 
 def test_state_after_damage_roundtrips(state, campaign, rules):

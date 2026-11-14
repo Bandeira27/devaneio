@@ -3,7 +3,7 @@ import pytest
 from devaneio.engine import EngineError, add_character, initial_state
 from devaneio.rng import Rng
 from devaneio.rules import RuleSystem, validate_state_against_rules
-from devaneio.schema import GameState, validate_against_campaign
+from devaneio.schema import Campaign, GameState, validate_against_campaign
 
 
 @pytest.fixture
@@ -20,7 +20,8 @@ def test_add_character_fills_defaults_and_hp(state, rules, campaign):
         attributes={"FOR": 3, "AGI": 1},
         inventory=["espada"],
     )
-    assert state.characters == {} and state.events == []
+    assert state.characters == {}
+    assert state.events == []
     char = result.character
     assert char.attributes == {"FOR": 3, "AGI": 1, "MEN": 2, "PRE": 2}
     assert (char.hp, char.max_hp) == (12, 12)  # 6 + FOR * 2
@@ -28,7 +29,8 @@ def test_add_character_fills_defaults_and_hp(state, rules, campaign):
     assert result.state.characters["aria"] == char
     assert result.text == "Aria entra na aventura (FOR 3, AGI 1, MEN 2, PRE 2; hp 12)."
     event = result.state.events[0]
-    assert event.kind == "character_joined" and event.data["max_hp"] == 12
+    assert event.kind == "character_joined"
+    assert event.data["max_hp"] == 12
     assert validate_state_against_rules(result.state, rules) == []
     assert validate_against_campaign(result.state, campaign) == []
     assert result.state.rng_draws == 0
@@ -54,7 +56,8 @@ def test_invalid_attributes_are_reported_together(state, rules):
     msg = str(info.value)
     assert msg.startswith("personagem 'x': ")
     assert "atributo 'XIS' não existe no sistema" in msg
-    assert "FOR = 9 fora de [1, 5]" in msg and "AGI = 0 fora de [1, 5]" in msg
+    assert "FOR = 9 fora de [1, 5]" in msg
+    assert "AGI = 0 fora de [1, 5]" in msg
 
 
 def test_invalid_id_is_an_engine_error(state, rules):
@@ -85,8 +88,6 @@ def test_max_hp_below_one(state, rules_data):
 
 
 def test_initial_state_rejects_invalid_npc_attributes(campaign_data, rules):
-    from devaneio.schema import Campaign
-
     campaign_data["npcs"][0]["attributes"] = {"FOR": 7}
     with pytest.raises(EngineError, match="npc 'ferreiro': FOR = 7 fora de \\[1, 5\\]"):
         initial_state(Campaign.model_validate(campaign_data), rules, 1)

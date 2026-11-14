@@ -35,9 +35,12 @@ def test_heal_is_pure_capped_and_logged(state, campaign):
     assert (r.hp_before, r.hp_after, r.amount) == (4, 7, 3)
     assert r.text == "Aria recupera 3 de vida (poção), hp 4 → 7"
     event = r.state.events[-1]
-    assert event.kind == "heal" and event.data["hp_after"] == 7 and event.data["source"] == "poção"
+    assert event.kind == "heal"
+    assert event.data["hp_after"] == 7
+    assert event.data["source"] == "poção"
     big = heal(s, campaign, target_kind="character", target_id="aria", amount=99, source="milagre")
-    assert big.hp_after == 12 and big.amount == 8
+    assert big.hp_after == 12
+    assert big.amount == 8
 
 
 def test_heal_revives_a_downed_character(state, campaign):
@@ -50,14 +53,15 @@ def test_heal_revives_a_downed_character(state, campaign):
 def test_heal_npc_alive_but_not_dead(state, campaign):
     s = hurt(state, campaign, "ferreiro", 4, kind="npc")
     r = heal(s, campaign, target_kind="npc", target_id="ferreiro", amount=2, source="curandeira")
-    assert r.state.npcs["ferreiro"].hp == 8 and r.text.startswith("Bram recupera 2")
+    assert r.state.npcs["ferreiro"].hp == 8
+    assert r.text.startswith("Bram recupera 2")
     dead = hurt(state, campaign, "ferreiro", 99, kind="npc")
     with pytest.raises(EngineError, match="está morto"):
         heal(dead, campaign, target_kind="npc", target_id="ferreiro", amount=5, source="x")
 
 
 @pytest.mark.parametrize(
-    "kw, fragment",
+    ("kw", "fragment"),
     [
         ({"amount": 0}, "precisa ser positiva"),
         ({"amount": -2}, "precisa ser positiva"),
@@ -84,8 +88,10 @@ def test_rest_heals_each_hurt_character_with_the_system_formula(state, campaign,
     }
     assert r.state.rng_draws == s.rng_draws + 2
     event = r.state.events[-1]
-    assert event.kind == "rest" and set(event.data["healed"]) == {"aria", "zed"}
-    assert r.text.startswith("O grupo descansa: Aria +") and "Zed +" in r.text
+    assert event.kind == "rest"
+    assert set(event.data["healed"]) == {"aria", "zed"}
+    assert r.text.startswith("O grupo descansa: Aria +")
+    assert "Zed +" in r.text
     assert validate_against_campaign(r.state, campaign) == []
     assert rest(s, campaign, rules) == r  # determinístico
 
@@ -93,7 +99,8 @@ def test_rest_heals_each_hurt_character_with_the_system_formula(state, campaign,
 def test_rest_skips_those_at_full_hp(state, campaign, rules):
     s = hurt(state, campaign, "zed", 5)
     r = rest(s, campaign, rules)
-    assert set(r.healed) == {"zed"} and r.state.rng_draws == s.rng_draws + 1
+    assert set(r.healed) == {"zed"}
+    assert r.state.rng_draws == s.rng_draws + 1
 
 
 def test_rest_revives_the_downed(state, campaign, rules):

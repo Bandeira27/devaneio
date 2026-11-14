@@ -51,7 +51,8 @@ def test_tolerates_text_around_and_markdown_fences():
 
 def test_say_only_and_null_say():
     assert parse_proposal('{"actions": [], "say": "Bram te observa."}').say == "Bram te observa."
-    assert parse_proposal('{"say": null}').say == "" and parse_proposal("{}").actions == []
+    assert parse_proposal('{"say": null}').say == ""
+    assert parse_proposal("{}").actions == []
 
 
 def test_extra_fields_are_ignored():
@@ -60,7 +61,7 @@ def test_extra_fields_are_ignored():
 
 
 @pytest.mark.parametrize(
-    "raw, fragment",
+    ("raw", "fragment"),
     [
         ("sem json nenhum", "não contém um objeto JSON"),
         ('{"actions": [', "JSON inválido"),

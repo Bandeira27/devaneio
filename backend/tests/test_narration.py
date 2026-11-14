@@ -4,16 +4,18 @@ import pytest
 from pydantic import ValidationError
 
 from devaneio.engine import (
+    activate_beat,
     add_character,
     advance_beats,
     apply_damage,
-    complete_beat,
     deal_damage,
     fail_beat,
+    heal,
     initial_state,
     move,
     pass_turn,
     resolve_check,
+    rest,
 )
 from devaneio.narration import (
     EVENT_VARIABLES,
@@ -74,7 +76,8 @@ def played(campaign, rules):
 
 
 def test_builtin_pack_is_coherent(pack):
-    assert pack.id == "pt-br" and validate_pack(pack) == []
+    assert pack.id == "pt-br"
+    assert validate_pack(pack) == []
     for kind in EVENT_VARIABLES:
         assert any(k == kind or k.startswith(f"{kind}.") for k in pack.rules), kind
 
@@ -117,15 +120,18 @@ def test_every_event_kind_gets_prose(narrator, played):
     }
     for i, event in enumerate(played.events):
         text = narrator.narrate(event, i, played)
-        assert text and text != event.text, (event.kind, text)
-        assert "#" not in text and "  " not in text
+        assert text, event.kind
+        assert text != event.text, (event.kind, text)
+        assert "#" not in text
+        assert "  " not in text
 
 
 def test_narration_is_deterministic_and_does_not_touch_the_state(narrator, played):
     before = played.model_copy(deep=True)
     once = narrator.narrate_all(played)
     twice = narrator.narrate_all(played)
-    assert once == twice and played == before
+    assert once == twice
+    assert played == before
 
 
 def test_narration_varies_with_seed_and_index(narrator, played):
@@ -143,21 +149,22 @@ def test_names_come_from_campaign_state_and_rules(narrator, played):
     i, joined = by_kind["character_joined"]
     assert "Aria" in narrator.narrate(joined, i, played)
     i, mv = by_kind["move"]
-    assert "Vila de Pedra Alta" in narrator.narrate(
-        mv, i, played
-    ) and "Floresta Cinzenta" in narrator.narrate(mv, i, played)
+    assert "Vila de Pedra Alta" in narrator.narrate(mv, i, played)
+    assert "Floresta Cinzenta" in narrator.narrate(mv, i, played)
     i, chk = by_kind["check"]
     assert "Investigar" in narrator.narrate(chk, i, played)
     i, dmg = by_kind["damage"]
     text = narrator.narrate(dmg, i, played)
-    assert "Irmão Vael" in text and "Espada" in text
+    assert "Irmão Vael" in text
+    assert "Espada" in text
     i, beat = by_kind["beat_done"]
     assert "Chegada à vila" in narrator.narrate(beat, i, played)
 
 
 def test_rule_keys_follow_variants(narrator, campaign, rules, played):
     keys = [narrator.rule_key(e, played) for e in played.events]
-    assert "damage.golpe" in keys and "damage.fonte" in keys
+    assert "damage.golpe" in keys
+    assert "damage.fonte" in keys
     check = next(e for e in played.events if e.kind == "check")
     assert narrator.rule_key(check, played) == f"check.{check.data['outcome']}"
     director = next(e for e in played.events if e.kind == "director")
@@ -192,8 +199,6 @@ def test_unknown_event_kind_falls_back_to_mechanical_text(narrator, played):
 
 def test_failed_beat_is_narrated(narrator, campaign, rules):
     s = initial_state(campaign, rules, 1)
-    from devaneio.engine import activate_beat
-
     s = fail_beat(
         activate_beat(s, campaign, beat_id="chegada").state, campaign, beat_id="chegada"
     ).state
@@ -201,15 +206,16 @@ def test_failed_beat_is_narrated(narrator, campaign, rules):
 
 
 def test_heal_and_rest_are_narrated(narrator, campaign, rules, played):
-    from devaneio.engine import heal, rest
-
     s = apply_damage(
         played, campaign, target_kind="character", target_id="aria", amount=3, source="x"
     ).state
     healed = heal(s, campaign, target_kind="character", target_id="aria", amount=2, source="poção")
     i = len(healed.state.events) - 1
     prose = narrator.narrate(healed.state.events[i], i, healed.state)
-    assert "Aria" in prose and "poção" in prose and prose != healed.text and "#" not in prose
+    assert "Aria" in prose
+    assert "poção" in prose
+    assert prose != healed.text
+    assert "#" not in prose
 
     cleared = apply_damage(
         healed.state, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x"
@@ -217,4 +223,6 @@ def test_heal_and_rest_are_narrated(narrator, campaign, rules, played):
     rested = rest(cleared, campaign, rules)
     j = len(rested.state.events) - 1
     prose = narrator.narrate(rested.state.events[j], j, rested.state)
-    assert "Aria (+" in prose and prose != rested.text and "#" not in prose
+    assert "Aria (+" in prose
+    assert prose != rested.text
+    assert "#" not in prose

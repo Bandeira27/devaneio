@@ -21,7 +21,8 @@ def test_expansion_is_deterministic_for_a_given_rng():
     a = g.expand("frase", v, Rng(3))
     b = g.expand("frase", v, Rng(3))
     assert a == b
-    assert a.startswith(("Aria ", "Sem hesitar, Aria ")) and "o culto" in a
+    assert a.startswith(("Aria ", "Sem hesitar, Aria "))
+    assert "o culto" in a
 
 
 def test_different_rngs_eventually_pick_different_options():

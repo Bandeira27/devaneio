@@ -97,7 +97,7 @@ def test_unknown_fields_are_rejected(state, mutate):
 
 
 @pytest.mark.parametrize(
-    "mutate, fragment",
+    ("mutate", "fragment"),
     [
         (lambda s: setattr(s, "campaign_id", "outra"), "referencia campanha 'outra'"),
         (lambda s: setattr(s, "current_location_id", "nada"), "current_location_id 'nada'"),
