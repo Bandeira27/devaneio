@@ -54,6 +54,23 @@ npm run types        # gera src/contract/*.ts a partir de ../contract/*.json
 npm run typecheck
 ```
 
+## Qualidade e governança
+
+```bash
+git config core.hooksPath .githooks   # uma vez: pre-commit rápido, pre-push completo, commit-msg
+scripts/check --fast                  # lint, formato, tipos, camadas, supressões
+scripts/check                         # tudo: + testes com cobertura, Prettier, tsc, contrato em dia
+```
+
+`scripts/check` é a única definição dos portões; hooks e o CI (`.github/workflows/ci.yml`, Python 3.10 e 3.12) rodam
+o mesmo script. Ferramentas: ruff (lint e formato), mypy estrito, import-linter (camadas
+`cli > engine | narration | llm > rules > schema | rng`), pytest com piso de cobertura, Prettier e `tsc`.
+
+As instruções para qualquer IA ou pessoa estão em [`AGENTS.md`](AGENTS.md) (regras duras, mapa de leitura,
+papéis de revisão) e [`.agents/`](.agents/README.md) (rules, skills, subagentes e a matriz de compatibilidade
+entre ferramentas). Nenhuma atribuição de IA em commits, PRs ou código, e nenhuma supressão de verificação sem
+justificativa: ambos são aplicados por máquina.
+
 ## Sistema de regras
 
 Um sistema é um arquivo JSON (`contract/rules.schema.json`) com atributos, dificuldades,
