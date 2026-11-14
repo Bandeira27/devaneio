@@ -14,6 +14,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7",
+    "pytest-cov>=5",
+    # O formatador do ruff muda entre versões menores: fixar a menor evita diff espúrio.
+    "ruff>=0.17,<0.18",
+    "mypy>=1.13",
+    "import-linter>=2.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -24,3 +29,65 @@ devaneio = ["rules/data/*.json", "narration/data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["devaneio"]
+branch = true
+
+[tool.coverage.report]
+# Catraca: o piso só sobe. Medido em 94% (linhas e ramos) na adoção.
+fail_under = 92
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src"]
+plugins = ["pydantic.mypy"]
+# Toda supressão precisa citar o código do erro (política: .agents/rules/07-qualidade-e-supressoes.md).
+enable_error_code = ["ignore-without-code"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade (mantém o código moderno dentro de py310)
+    "SIM",      # simplificações
+    "C4",       # comprehensions
+    "RUF",      # regras próprias do ruff (inclui RUF100: noqa sem efeito)
+    "PT",       # boas práticas de pytest
+    "PL",       # pylint
+    "S",        # bandit (segurança)
+    "ARG",      # argumentos não usados
+    "BLE",      # captura cega de exceção (ver rule 02: só em fronteira, com justificativa)
+    "PGH",      # noqa / type: ignore sem código
+    "TRY002", "TRY203", "TRY300", "TRY400",  # só as regras de captura de exceção
+]
+ignore = [
+    "E501",     # o formatador cuida do comprimento; linhas longas restantes são strings
+    "PLR2004",  # valores literais são normais num motor de regras (limiares, dados)
+    "PLR0913",  # funções do motor usam parâmetros keyword-only (`*,`), padrão do projeto
+    "PLR0911", "PLR0912", "PLR0915",  # tamanho e complexidade são indicadores, não portões (rule 02)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Campos de modelo Pydantic com default mutável (`list[Id] = []`) são seguros: o Pydantic
+# copia o default a cada instância. Trocar por default_factory alteraria o contrato gerado.
+"src/devaneio/schema/*.py" = ["RUF012"]
+"src/devaneio/rules/schema.py" = ["RUF012"]
+"tests/*" = [
+    "S101",     # assert é o mecanismo do pytest
+    "S603", "S607",  # os testes do CLI executam o próprio interpretador em subprocesso
+    "ARG001",   # fixtures pedidas só pelo efeito
+]
+
+[tool.ruff.lint.pylint]
+allow-magic-value-types = ["str", "bytes", "int"]
