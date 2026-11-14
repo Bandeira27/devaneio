@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "types": "json2ts -i ../contract/campaign.schema.json -o src/contract/campaign.ts && json2ts -i ../contract/rules.schema.json -o src/contract/rules.ts && json2ts -i ../contract/narration.schema.json -o src/contract/narration.ts && json2ts -i ../contract/game_state.schema.json -o src/contract/game_state.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "json-schema-to-typescript": "^16.0.0",
+    "prettier": "^3.10.1",
     "typescript": "^7.0.2"
   }
 }
