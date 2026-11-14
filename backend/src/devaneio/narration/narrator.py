@@ -157,7 +157,7 @@ class Narrator:
         return weapon.name if weapon else str(weapon_id)
 
     def _location(self, location_id: str | None) -> Location:
-        loc = next((l for l in self.campaign.locations if l.id == location_id), None)
+        loc = next((c for c in self.campaign.locations if c.id == location_id), None)
         if loc is None:
             return Location(id=location_id or "x", name=str(location_id), description="")
         return loc

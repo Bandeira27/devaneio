@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Iterable, Mapping, TypeVar
+from typing import Protocol, TypeVar
 
 from devaneio.rng import Rng
 from devaneio.rules import (
@@ -72,13 +73,13 @@ def resolve_check(
     return _resolve(
         state,
         rules,
-        "character",
-        character_id,
-        character.name,
-        character.attributes,
-        skill_id,
-        difficulty_id,
-        modifier_id,
+        actor_kind="character",
+        actor_id=character_id,
+        actor_name=character.name,
+        attributes=character.attributes,
+        skill_id=skill_id,
+        difficulty_id=difficulty_id,
+        modifier_id=modifier_id,
     )
 
 
@@ -95,13 +96,22 @@ def npc_check(
     """Teste de um NPC, com os atributos do estado e o nome da campanha."""
     name, attributes, _ = combatant(state, campaign, "npc", npc_id)
     return _resolve(
-        state, rules, "npc", npc_id, name, attributes, skill_id, difficulty_id, modifier_id
+        state,
+        rules,
+        actor_kind="npc",
+        actor_id=npc_id,
+        actor_name=name,
+        attributes=attributes,
+        skill_id=skill_id,
+        difficulty_id=difficulty_id,
+        modifier_id=modifier_id,
     )
 
 
 def _resolve(
     state: GameState,
     rules: RuleSystem,
+    *,
     actor_kind: str,
     actor_id: str,
     actor_name: str,
@@ -169,11 +179,16 @@ def _resolve(
     )
 
 
-T = TypeVar("T")
+class _HasId(Protocol):
+    @property
+    def id(self) -> str: ...
+
+
+T = TypeVar("T", bound=_HasId)
 
 
 def _find(items: Iterable[T], item_id: str, label: str) -> T:
     for item in items:
-        if getattr(item, "id") == item_id:
+        if item.id == item_id:
             return item
     raise EngineError(f"{label} '{item_id}' não existe no sistema de regras")

@@ -7,7 +7,8 @@ levantar um erro, e aqui queremos reportar todos de uma vez.
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -111,7 +112,7 @@ def _beat_cycles(beats: list[Beat]) -> list[str]:
         graph[beat.id] += [r for r in beat.requires if r in graph and r != beat.id]
 
     WHITE, GRAY, BLACK = 0, 1, 2
-    color = {node: WHITE for node in graph}
+    color = dict.fromkeys(graph, WHITE)
     stack: list[str] = []
     cycles: list[str] = []
 
@@ -122,7 +123,7 @@ def _beat_cycles(beats: list[Beat]) -> list[str]:
             if color[nxt] == WHITE:
                 visit(nxt)
             elif color[nxt] == GRAY:
-                cycle = stack[stack.index(nxt) :] + [nxt]
+                cycle = [*stack[stack.index(nxt) :], nxt]
                 cycles.append("ciclo entre marcos: " + " -> ".join(cycle))
         stack.pop()
         color[node] = BLACK

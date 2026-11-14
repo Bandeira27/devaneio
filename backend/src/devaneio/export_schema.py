@@ -36,7 +36,7 @@ class _NoFieldTitles(GenerateJsonSchema):
     """Sem ``title`` por campo: o gerador de tipos TS transformaria cada um em um alias
     ruidoso (``Id1``, ``Turn2``). Títulos de modelo (Character, Fact...) continuam."""
 
-    def field_title_should_be_set(self, schema: object) -> bool:
+    def field_title_should_be_set(self, schema: object) -> bool:  # noqa: ARG002 — assinatura herdada de GenerateJsonSchema
         return False
 
 

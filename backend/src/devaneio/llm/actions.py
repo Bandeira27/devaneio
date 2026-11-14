@@ -8,7 +8,7 @@ números) e qualquer mudança direta de marcos, que é do diretor.
 from __future__ import annotations
 
 import json
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
@@ -48,7 +48,7 @@ class RestAction(_Loose):
 
 
 Action = Annotated[
-    Union[CheckAction, AttackAction, MoveAction, RestAction], Field(discriminator="kind")
+    CheckAction | AttackAction | MoveAction | RestAction, Field(discriminator="kind")
 ]
 
 

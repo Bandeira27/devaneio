@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterable
 from importlib import resources
-from typing import Any, Iterable
+from typing import Any
 
 from devaneio.schema.campaign import Campaign
 from devaneio.schema.game_state import GameState

@@ -11,10 +11,19 @@ from typing import Literal
 from devaneio.engine import advance_beats, initial_state
 from devaneio.llm import ChatClient
 from devaneio.narration import Narrator, load_builtin_pack
-from devaneio.rules import RuleSystem, load_builtin_rules, validate_campaign_against_rules
-from devaneio.rules import validate_state_against_rules
-from devaneio.schema import Campaign, GameState, StrictModel, load_campaign
-from devaneio.schema import validate_against_campaign
+from devaneio.rules import (
+    RuleSystem,
+    load_builtin_rules,
+    validate_campaign_against_rules,
+    validate_state_against_rules,
+)
+from devaneio.schema import (
+    Campaign,
+    GameState,
+    StrictModel,
+    load_campaign,
+    validate_against_campaign,
+)
 
 
 class CliError(ValueError):

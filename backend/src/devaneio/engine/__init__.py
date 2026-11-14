@@ -50,7 +50,7 @@ __all__ = [
     "move",
     "npc_check",
     "pass_turn",
-    "rest",
     "resolve_check",
+    "rest",
     "tension",
 ]

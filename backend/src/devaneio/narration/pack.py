@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from importlib import resources
-from typing import Annotated, Any, Iterable, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import Field
 

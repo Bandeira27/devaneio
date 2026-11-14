@@ -7,8 +7,8 @@ por aqui, então os testes cobrem o jogo inteiro sem terminal.
 from __future__ import annotations
 
 import shlex
+from collections.abc import Callable
 from dataclasses import replace
-from typing import Callable
 
 from devaneio.engine import (
     EngineError,
@@ -120,11 +120,11 @@ def execute(session: Session, line: str) -> tuple[Session, str]:
 # --- comandos ------------------------------------------------------------------
 
 
-def _help(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _help(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
     return session.state, HELP
 
 
-def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _look(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
     state, campaign = session.state, session.campaign
     here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
     names = {loc.id: loc.name for loc in campaign.locations}
@@ -166,7 +166,7 @@ def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     return state, "\n".join(lines)
 
 
-def _join(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _join(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) < 2:
         raise CommandError('uso: entrar <id> "<nome>" [FOR=3 ...] [+item ...]')
     char_id, name, *attr_tokens = args
@@ -193,7 +193,7 @@ def _join(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     return result.state, result.text
 
 
-def _go(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _go(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) != 1:
         raise CommandError("uso: ir <local>")
     result = move(session.state, session.campaign, to_location_id=args[0])
@@ -254,7 +254,7 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
     return damage.state, f"{check.text}\n{damage.text}"
 
 
-def _hurt(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _hurt(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) not in (2, 3) or not args[1].lstrip("-").isdigit():
         raise CommandError('uso: ferir <alvo> <quantia> ["fonte"]')
     target_id = args[0]
@@ -269,7 +269,7 @@ def _hurt(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     return result.state, result.text
 
 
-def _heal(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _heal(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) not in (2, 3) or not args[1].lstrip("-").isdigit():
         raise CommandError('uso: curar <alvo> <quantia> ["fonte"]')
     target_id = args[0]
@@ -284,7 +284,7 @@ def _heal(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     return result.state, result.text
 
 
-def _rest(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _rest(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if args:
         raise CommandError("uso: descansar")
     rested = rest(session.state, session.campaign, session.rules)
@@ -306,7 +306,7 @@ def _sheet(session: Session, actor: str | None, args: list[str]) -> tuple[GameSt
     )
 
 
-def _log(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _log(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     count = 10
     if args:
         if len(args) != 1 or not args[0].isdigit():
@@ -318,12 +318,12 @@ def _log(session: Session, actor: str | None, args: list[str]) -> tuple[GameStat
     return session.state, "\n".join(f"[t{e.turn}] {e.text}" for e in events)
 
 
-def _end_turn(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _end_turn(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
     result = pass_turn(session.state, session.campaign, session.rules)
     return result.state, result.text
 
 
-def _beats(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _beats(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
     lines = []
     for beat in session.campaign.beats:
         status = session.state.beats[beat.id]
@@ -332,7 +332,7 @@ def _beats(session: Session, actor: str | None, args: list[str]) -> tuple[GameSt
     return session.state, "\n".join(lines)
 
 
-def _beat(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _beat(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
     actions = {"ativar": activate_beat, "concluir": complete_beat, "falhar": fail_beat}
     if len(args) != 2 or args[0] not in actions:
         raise CommandError("uso: marco ativar|concluir|falhar <id>")

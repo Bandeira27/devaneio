@@ -11,7 +11,8 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from typing import Any, Mapping, Protocol, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Protocol
 
 from .config import LlmConfig
 from .errors import LlmError
@@ -76,11 +77,14 @@ class OpenAiCompatClient:
         headers = {"Content-Type": "application/json", "User-Agent": "devaneio"}
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"
-        request = urllib.request.Request(
+        # O esquema http(s) já foi validado em LlmConfig (config.py), antes de chegar aqui.
+        request = urllib.request.Request(  # noqa: S310 — esquema http(s) validado em LlmConfig
             url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST"
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.config.timeout) as response:
+            with urllib.request.urlopen(  # noqa: S310 — esquema http(s) validado em LlmConfig
+                request, timeout=self.config.timeout
+            ) as response:
                 raw = response.read()
         except urllib.error.HTTPError as exc:
             raise _HttpStatus(exc.code, _snippet(exc)) from None

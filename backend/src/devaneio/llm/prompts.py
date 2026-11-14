@@ -38,8 +38,8 @@ Formato da resposta (exemplo; use os ids do catálogo da partida):
 def build_context(
     campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str
 ) -> dict[str, Any]:
-    here = next(l for l in campaign.locations if l.id == state.current_location_id)
-    names = {l.id: l.name for l in campaign.locations}
+    here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
+    names = {loc.id: loc.name for loc in campaign.locations}
     static = {n.id: n for n in campaign.npcs}
     actor = state.characters[actor_id]
 

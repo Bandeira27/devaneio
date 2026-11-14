@@ -9,7 +9,7 @@ nos templates: só texto e referências.
 from __future__ import annotations
 
 import re
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from devaneio.rng import Rng
 

@@ -7,7 +7,7 @@ gramática se der erro.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from devaneio.schema import Campaign, GameState
 
@@ -29,7 +29,7 @@ Regras:
 def build_narration_messages(
     campaign: Campaign, state: GameState, event_texts: Sequence[str]
 ) -> list[dict[str, str]]:
-    here = next((l for l in campaign.locations if l.id == state.current_location_id), None)
+    here = next((loc for loc in campaign.locations if loc.id == state.current_location_id), None)
     place = f"{here.name}. {here.description}" if here else state.current_location_id
     party = ", ".join(c.name for c in state.characters.values()) or "ninguém"
     events = "\n".join(f"- {t}" for t in event_texts)

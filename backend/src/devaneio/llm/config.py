@@ -6,8 +6,8 @@ A chave nunca é gravada em arquivo de partida, campanha ou repositório, e não
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Mapping
 from urllib.parse import urlparse
 
 from .errors import LlmError
@@ -30,7 +30,7 @@ class LlmConfig:
         return urlparse(self.base_url).netloc
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str]) -> "LlmConfig | None":
+    def from_env(cls, env: Mapping[str, str]) -> LlmConfig | None:
         """``None`` se URL base ou modelo faltam (LLM desligado). Valor malformado é erro."""
         base_url = env.get(ENV_BASE_URL, "").strip()
         model = env.get(ENV_MODEL, "").strip()

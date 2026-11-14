@@ -33,7 +33,7 @@ def format_output(
             note = f"(narração por LLM indisponível: {exc}; usei a gramática)"
 
     lines: list[str] = []
-    for index, event in zip(indexes, events):
+    for index, event in zip(indexes, events, strict=True):
         lines.append(narrator.narrate(event, index, after))
         lines.append(f"  [{event.text}]")
     if note:

@@ -15,8 +15,8 @@ Gramática::
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping, Union
 
 from devaneio.rng import Rng
 
@@ -49,17 +49,17 @@ class Attr:
 
 @dataclass(frozen=True)
 class Neg:
-    operand: "Node"
+    operand: Node
 
 
 @dataclass(frozen=True)
 class BinOp:
     op: str  # "+", "-", "*"
-    left: "Node"
-    right: "Node"
+    left: Node
+    right: Node
 
 
-Node = Union[Num, Dice, Attr, Neg, BinOp]
+Node = Num | Dice | Attr | Neg | BinOp
 
 
 # --- Tokenizador -----------------------------------------------------------------

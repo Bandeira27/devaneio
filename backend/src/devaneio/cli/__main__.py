@@ -6,11 +6,10 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from pydantic import ValidationError
-
-from dataclasses import replace
 
 from devaneio.llm import LlmConfig, LlmError, OpenAiCompatClient
 from devaneio.schema import CampaignIntegrityError

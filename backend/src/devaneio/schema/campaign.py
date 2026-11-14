@@ -1,6 +1,6 @@
 """Campanha: conteúdo estático que não muda durante a partida."""
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -61,9 +61,7 @@ class TurnAtLeast(StrictModel):
     turn: int = Field(ge=0)
 
 
-Condition = Annotated[
-    Union[AtLocation, NpcDown, BeatDone, TurnAtLeast], Field(discriminator="kind")
-]
+Condition = Annotated[AtLocation | NpcDown | BeatDone | TurnAtLeast, Field(discriminator="kind")]
 
 
 class Beat(StrictModel):
