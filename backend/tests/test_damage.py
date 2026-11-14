@@ -10,8 +10,12 @@ SEED = 99
 @pytest.fixture
 def state(campaign, rules) -> GameState:
     hero = Character(
-        id="aria", name="Aria", attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
-        hp=10, max_hp=10, inventory=["espada"],
+        id="aria",
+        name="Aria",
+        attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
+        hp=10,
+        max_hp=10,
+        inventory=["espada"],
     )
     return initial_state(campaign, rules, SEED, [hero])
 
@@ -88,16 +92,23 @@ def test_npc_in_state_but_not_in_campaign(state, campaign):
 
 def test_deal_damage_rolls_weapon_with_attacker_attributes(state, campaign, rules):
     result = deal_damage(
-        state, campaign, rules,
-        attacker_kind="character", attacker_id="aria", weapon_id="espada",
-        target_kind="npc", target_id="sacerdote",
+        state,
+        campaign,
+        rules,
+        attacker_kind="character",
+        attacker_id="aria",
+        weapon_id="espada",
+        target_kind="npc",
+        target_id="sacerdote",
     )
     die = Rng(SEED).roll(6)
     assert [v for r in result.rolls for v in r.values] == [die]
     assert result.amount == die + 2  # 1d6 + FOR da Aria
     assert (result.hp_before, result.hp_after) == (12, 12 - result.amount)
     assert result.state.rng_draws == 1
-    assert result.text.startswith(f"Aria ataca Irmão Vael com Espada (1d6 + FOR): 1d6 [{die}] → {result.amount} de dano, hp 12 → ")
+    assert result.text.startswith(
+        f"Aria ataca Irmão Vael com Espada (1d6 + FOR): 1d6 [{die}] → {result.amount} de dano, hp 12 → "
+    )
     data = result.state.events[0].data
     assert data["attacker_id"] == "aria" and data["weapon_id"] == "espada"
     assert data["rolls"] == [{"dice": "1d6", "values": [die]}]
@@ -105,9 +116,14 @@ def test_deal_damage_rolls_weapon_with_attacker_attributes(state, campaign, rule
 
 def test_npc_can_attack_with_its_own_attributes(state, campaign, rules):
     result = deal_damage(
-        state, campaign, rules,
-        attacker_kind="npc", attacker_id="sacerdote", weapon_id="punhos",
-        target_kind="character", target_id="aria",
+        state,
+        campaign,
+        rules,
+        attacker_kind="npc",
+        attacker_id="sacerdote",
+        weapon_id="punhos",
+        target_kind="character",
+        target_id="aria",
     )
     assert result.amount == 1 + 3  # punhos: 1 + FOR, sacerdote FOR 3
     assert result.rolls == () and result.state.rng_draws == 0
@@ -117,18 +133,30 @@ def test_npc_can_attack_with_its_own_attributes(state, campaign, rules):
 def test_deal_damage_unknown_weapon(state, campaign, rules):
     with pytest.raises(EngineError, match="arma 'canhao'"):
         deal_damage(
-            state, campaign, rules,
-            attacker_kind="character", attacker_id="aria", weapon_id="canhao",
-            target_kind="npc", target_id="ferreiro",
+            state,
+            campaign,
+            rules,
+            attacker_kind="character",
+            attacker_id="aria",
+            weapon_id="canhao",
+            target_kind="npc",
+            target_id="ferreiro",
         )
 
 
 def test_check_then_damage_share_one_rng_sequence(state, campaign, rules):
-    check = resolve_check(state, rules, character_id="aria", skill_id="lutar", difficulty_id="normal")
+    check = resolve_check(
+        state, rules, character_id="aria", skill_id="lutar", difficulty_id="normal"
+    )
     dmg = deal_damage(
-        check.state, campaign, rules,
-        attacker_kind="character", attacker_id="aria", weapon_id="espada",
-        target_kind="npc", target_id="ferreiro",
+        check.state,
+        campaign,
+        rules,
+        attacker_kind="character",
+        attacker_id="aria",
+        weapon_id="espada",
+        target_kind="npc",
+        target_id="ferreiro",
     )
     rng = Rng(SEED)
     expected = [rng.roll(6), rng.roll(6), rng.roll(6)]
@@ -138,9 +166,14 @@ def test_check_then_damage_share_one_rng_sequence(state, campaign, rules):
 
 def test_state_after_damage_roundtrips(state, campaign, rules):
     result = deal_damage(
-        state, campaign, rules,
-        attacker_kind="character", attacker_id="aria", weapon_id="espada",
-        target_kind="npc", target_id="ferreiro",
+        state,
+        campaign,
+        rules,
+        attacker_kind="character",
+        attacker_id="aria",
+        weapon_id="espada",
+        target_kind="npc",
+        target_id="ferreiro",
     )
     again = GameState.model_validate_json(result.state.model_dump_json())
     assert again == result.state

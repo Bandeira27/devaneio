@@ -18,7 +18,9 @@ def state(campaign, rules):
 
 
 def down(state, campaign, who):
-    return apply_damage(state, campaign, target_kind="character", target_id=who, amount=99, source="x").state
+    return apply_damage(
+        state, campaign, target_kind="character", target_id=who, amount=99, source="x"
+    ).state
 
 
 def test_active_by_default(state, campaign, rules):

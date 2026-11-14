@@ -61,7 +61,9 @@ class TurnAtLeast(StrictModel):
     turn: int = Field(ge=0)
 
 
-Condition = Annotated[Union[AtLocation, NpcDown, BeatDone, TurnAtLeast], Field(discriminator="kind")]
+Condition = Annotated[
+    Union[AtLocation, NpcDown, BeatDone, TurnAtLeast], Field(discriminator="kind")
+]
 
 
 class Beat(StrictModel):

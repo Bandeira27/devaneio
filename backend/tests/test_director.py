@@ -39,7 +39,9 @@ def test_conditions(state, campaign):
     assert holds(AtLocation(kind="at_location", location_id="vila"), state)
     assert not holds(AtLocation(kind="at_location", location_id="ruinas"), state)
     assert not holds(NpcDown(kind="npc_down", npc_id="ferreiro"), state)
-    down = apply_damage(state, campaign, target_kind="npc", target_id="ferreiro", amount=99, source="x").state
+    down = apply_damage(
+        state, campaign, target_kind="npc", target_id="ferreiro", amount=99, source="x"
+    ).state
     assert holds(NpcDown(kind="npc_down", npc_id="ferreiro"), down)
     assert not holds(NpcDown(kind="npc_down", npc_id="fantasma"), state)
     assert not holds(BeatDone(kind="beat_done", beat_id="chegada"), state)
@@ -53,7 +55,11 @@ def test_conditions(state, campaign):
 def test_advance_activates_root_beat_only(state, campaign):
     after, texts = advance_beats(state, campaign)
     assert texts == ("Marco ativado: Chegada à vila.",)
-    assert after.beats == {"chegada": BeatStatus.ACTIVE, "pista": BeatStatus.PENDING, "confronto": BeatStatus.PENDING}
+    assert after.beats == {
+        "chegada": BeatStatus.ACTIVE,
+        "pista": BeatStatus.PENDING,
+        "confronto": BeatStatus.PENDING,
+    }
     again, texts2 = advance_beats(after, campaign)
     assert texts2 == () and again == after
 
@@ -70,7 +76,9 @@ def test_beats_follow_the_journey(state, campaign):
     s = complete_beat(s, campaign, beat_id="pista").state
     s, texts = advance_beats(s, campaign)
     assert texts == ("Marco ativado: Confronto com o culto.",)
-    s = apply_damage(s, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x").state
+    s = apply_damage(
+        s, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x"
+    ).state
     s, texts = advance_beats(s, campaign)
     assert texts == ("Marco concluído: Confronto com o culto.",)
     assert set(s.beats.values()) == {BeatStatus.DONE}
@@ -85,7 +93,10 @@ def test_no_hostiles_in_the_village(state, campaign, rules):
     assert result.tension == 0.0
     assert result.text.endswith("Diretor: tensão 0.00; 1 ação(ões).")
     event = result.state.events[-1]
-    assert event.kind == "director" and event.data == {"tension": 0.0, "actions": list(result.actions)}
+    assert event.kind == "director" and event.data == {
+        "tension": 0.0,
+        "actions": list(result.actions),
+    }
     assert state.events[-1].kind == "character_joined"  # pureza
 
 
@@ -95,11 +106,15 @@ def test_hostile_priest_attacks_at_the_ruins(state, campaign, rules):
     rng = Rng(SEED, draws=s.rng_draws)
     rng.roll(1)  # sorteio do alvo (um só alvo, ainda assim um sorteio)
     predicted = npc_check(
-        s.model_copy(update={"rng_draws": rng.draws}), campaign, rules,
-        npc_id="sacerdote", skill_id="lutar", difficulty_id="normal",
+        s.model_copy(update={"rng_draws": rng.draws}),
+        campaign,
+        rules,
+        npc_id="sacerdote",
+        skill_id="lutar",
+        difficulty_id="normal",
     )
     result = direct(s, campaign, rules)
-    kinds = [e.kind for e in result.state.events[len(s.events):]]
+    kinds = [e.kind for e in result.state.events[len(s.events) :]]
     assert result.actions[0] == predicted.text
     assert result.actions[0].startswith("Irmão Vael testa Lutar (2d6 + FOR) contra Normal 9:")
     if predicted.outcome in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS):
@@ -130,7 +145,9 @@ def test_every_hostile_outcome_shows_up_over_seeds(campaign, rules):
 
 def test_dead_or_friendly_npcs_do_not_attack(state, campaign, rules):
     s = at(state, campaign, "floresta", "ruinas")
-    s = apply_damage(s, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x").state
+    s = apply_damage(
+        s, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x"
+    ).state
     result = direct(s, campaign, rules)
     assert all("ataca" not in a for a in result.actions)
     assert result.tension == 0.0
@@ -138,18 +155,24 @@ def test_dead_or_friendly_npcs_do_not_attack(state, campaign, rules):
 
 def test_nobody_standing(state, campaign, rules):
     s = at(state, campaign, "floresta", "ruinas")
-    s = apply_damage(s, campaign, target_kind="character", target_id="aria", amount=99, source="x").state
+    s = apply_damage(
+        s, campaign, target_kind="character", target_id="aria", amount=99, source="x"
+    ).state
     result = direct(s, campaign, rules)
     assert "Irmão Vael não encontra ninguém de pé para atacar." in result.actions
-    assert all(e.kind != "check" for e in result.state.events[len(s.events):])
+    assert all(e.kind != "check" for e in result.state.events[len(s.events) :])
 
 
 def test_tension_formula(state, campaign, rules):
     s = at(state, campaign, "floresta", "ruinas")  # hostil presente: 0.3 * min(1, 1/2) = 0.15
     assert tension(s, rules) == 0.15
-    half = apply_damage(s, campaign, target_kind="character", target_id="aria", amount=6, source="x").state
+    half = apply_damage(
+        s, campaign, target_kind="character", target_id="aria", amount=6, source="x"
+    ).state
     assert tension(half, rules) == 0.35  # + 0.4 * 0.5
-    down = apply_damage(s, campaign, target_kind="character", target_id="aria", amount=12, source="x").state
+    down = apply_damage(
+        s, campaign, target_kind="character", target_id="aria", amount=12, source="x"
+    ).state
     assert tension(down, rules) == 0.75  # 0.4 * 1 + 0.15 + 0.2 * 1
     assert tension(state, rules) == 0.0
 

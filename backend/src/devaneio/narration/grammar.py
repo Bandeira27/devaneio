@@ -41,7 +41,9 @@ class Grammar:
         são conferidas sem variáveis.
         """
         roots: dict[str, set[str]] = (
-            {k: set(v) for k, v in variables.items()} if variables else {k: set() for k in self.rules}
+            {k: set(v) for k, v in variables.items()}
+            if variables
+            else {k: set() for k in self.rules}
         )
         problems: set[str] = set()
         reached: set[str] = set()
@@ -50,7 +52,9 @@ class Grammar:
                 continue
             refs, visited = self._closure(root)
             reached |= visited
-            problems |= {f"{root}: #{ref}#" for ref in refs if ref not in self.rules and ref not in allowed}
+            problems |= {
+                f"{root}: #{ref}#" for ref in refs if ref not in self.rules and ref not in allowed
+            }
         for orphan in set(self.rules) - reached:
             refs, _ = self._closure(orphan)
             problems |= {f"{orphan}: #{ref}#" for ref in refs if ref not in self.rules}

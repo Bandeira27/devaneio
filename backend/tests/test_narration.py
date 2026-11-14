@@ -45,12 +45,27 @@ def played(campaign, rules):
     s = add_character(s, rules, character_id="aria", name="Aria", attributes={"FOR": 3}).state
     s, _ = advance_beats(move(s, campaign, to_location_id="floresta").state, campaign)
     s, _ = advance_beats(move(s, campaign, to_location_id="ruinas").state, campaign)
-    s = resolve_check(s, rules, character_id="aria", skill_id="investigar", difficulty_id="normal").state
-    s = deal_damage(
-        s, campaign, rules, attacker_kind="character", attacker_id="aria", weapon_id="espada",
-        target_kind="npc", target_id="sacerdote",
+    s = resolve_check(
+        s, rules, character_id="aria", skill_id="investigar", difficulty_id="normal"
     ).state
-    s = apply_damage(s, campaign, target_kind="character", target_id="aria", amount=2, source="armadilha do altar").state
+    s = deal_damage(
+        s,
+        campaign,
+        rules,
+        attacker_kind="character",
+        attacker_id="aria",
+        weapon_id="espada",
+        target_kind="npc",
+        target_id="sacerdote",
+    ).state
+    s = apply_damage(
+        s,
+        campaign,
+        target_kind="character",
+        target_id="aria",
+        amount=2,
+        source="armadilha do altar",
+    ).state
     s = pass_turn(s, campaign, rules).state  # diretor + turn_end (+ marcos)
     return s
 
@@ -90,7 +105,16 @@ def test_pack_structure_errors():
 
 def test_every_event_kind_gets_prose(narrator, played):
     kinds = {e.kind for e in played.events}
-    assert kinds >= {"character_joined", "move", "beat_done", "beat_activated", "check", "damage", "director", "turn_end"}
+    assert kinds >= {
+        "character_joined",
+        "move",
+        "beat_done",
+        "beat_activated",
+        "check",
+        "damage",
+        "director",
+        "turn_end",
+    }
     for i, event in enumerate(played.events):
         text = narrator.narrate(event, i, played)
         assert text and text != event.text, (event.kind, text)
@@ -109,7 +133,7 @@ def test_narration_varies_with_seed_and_index(narrator, played):
     texts = {narrator.narrate(event, i, played) for i in range(12)}
     assert len(texts) > 1
     other = played.model_copy(update={"rng_seed": played.rng_seed + 1})
-    assert {narrator.narrate(event, i, other) for i in range(12)} != set() 
+    assert {narrator.narrate(event, i, other) for i in range(12)} != set()
 
 
 def test_names_come_from_campaign_state_and_rules(narrator, played):
@@ -119,7 +143,9 @@ def test_names_come_from_campaign_state_and_rules(narrator, played):
     i, joined = by_kind["character_joined"]
     assert "Aria" in narrator.narrate(joined, i, played)
     i, mv = by_kind["move"]
-    assert "Vila de Pedra Alta" in narrator.narrate(mv, i, played) and "Floresta Cinzenta" in narrator.narrate(mv, i, played)
+    assert "Vila de Pedra Alta" in narrator.narrate(
+        mv, i, played
+    ) and "Floresta Cinzenta" in narrator.narrate(mv, i, played)
     i, chk = by_kind["check"]
     assert "Investigar" in narrator.narrate(chk, i, played)
     i, dmg = by_kind["damage"]
@@ -135,8 +161,14 @@ def test_rule_keys_follow_variants(narrator, campaign, rules, played):
     check = next(e for e in played.events if e.kind == "check")
     assert narrator.rule_key(check, played) == f"check.{check.data['outcome']}"
     director = next(e for e in played.events if e.kind == "director")
-    assert narrator.rule_key(director, played) in ("director.calmo", "director.tenso", "director.critico")
-    s = apply_damage(played, campaign, target_kind="character", target_id="aria", amount=99, source="queda").state
+    assert narrator.rule_key(director, played) in (
+        "director.calmo",
+        "director.tenso",
+        "director.critico",
+    )
+    s = apply_damage(
+        played, campaign, target_kind="character", target_id="aria", amount=99, source="queda"
+    ).state
     assert narrator.rule_key(s.events[-1], s) == "damage.fonte_queda"
     assert "Aria" in narrator.narrate(s.events[-1], len(s.events) - 1, s)
 
@@ -145,7 +177,11 @@ def test_director_variant_by_tension(narrator, played):
     low = Event(turn=0, kind="director", text="x", data={"tension": 0.1, "actions": []})
     mid = Event(turn=0, kind="director", text="x", data={"tension": 0.4, "actions": []})
     high = Event(turn=0, kind="director", text="x", data={"tension": 0.9, "actions": []})
-    assert [narrator.rule_key(e, played) for e in (low, mid, high)] == ["director.calmo", "director.tenso", "director.critico"]
+    assert [narrator.rule_key(e, played) for e in (low, mid, high)] == [
+        "director.calmo",
+        "director.tenso",
+        "director.critico",
+    ]
     assert "Ruínas do Templo" in narrator.narrate(high, 0, played)
 
 
@@ -158,20 +194,26 @@ def test_failed_beat_is_narrated(narrator, campaign, rules):
     s = initial_state(campaign, rules, 1)
     from devaneio.engine import activate_beat
 
-    s = fail_beat(activate_beat(s, campaign, beat_id="chegada").state, campaign, beat_id="chegada").state
+    s = fail_beat(
+        activate_beat(s, campaign, beat_id="chegada").state, campaign, beat_id="chegada"
+    ).state
     assert "Chegada à vila" in narrator.narrate(s.events[-1], len(s.events) - 1, s)
 
 
 def test_heal_and_rest_are_narrated(narrator, campaign, rules, played):
     from devaneio.engine import heal, rest
 
-    s = apply_damage(played, campaign, target_kind="character", target_id="aria", amount=3, source="x").state
+    s = apply_damage(
+        played, campaign, target_kind="character", target_id="aria", amount=3, source="x"
+    ).state
     healed = heal(s, campaign, target_kind="character", target_id="aria", amount=2, source="poção")
     i = len(healed.state.events) - 1
     prose = narrator.narrate(healed.state.events[i], i, healed.state)
     assert "Aria" in prose and "poção" in prose and prose != healed.text and "#" not in prose
 
-    cleared = apply_damage(healed.state, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x").state
+    cleared = apply_damage(
+        healed.state, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x"
+    ).state
     rested = rest(cleared, campaign, rules)
     j = len(rested.state.events) - 1
     prose = narrator.narrate(rested.state.events[j], j, rested.state)

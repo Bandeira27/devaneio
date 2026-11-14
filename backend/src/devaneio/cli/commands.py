@@ -141,7 +141,13 @@ def _look(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
     hostile_below = session.rules.dispositions.hostile_below
     present = [
         f"{npc_names[npc_id]} ({npc_id}) hp {npc.hp}/{npc.max_hp}"
-        + (", fora de combate" if not npc.alive else ", hostil" if npc.disposition < hostile_below else "")
+        + (
+            ", fora de combate"
+            if not npc.alive
+            else ", hostil"
+            if npc.disposition < hostile_below
+            else ""
+        )
         for npc_id, npc in state.npcs.items()
         if npc.location_id == here.id
     ]
@@ -176,8 +182,12 @@ def _join(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
             raise CommandError(f"atributo inválido '{token}'; use NOME=valor")
         attributes[key] = int(value)
     result = add_character(
-        session.state, session.rules, character_id=char_id, name=name,
-        attributes=attributes, inventory=inventory,
+        session.state,
+        session.rules,
+        character_id=char_id,
+        name=name,
+        attributes=attributes,
+        inventory=inventory,
     )
     return result.state, result.text
 
@@ -194,8 +204,11 @@ def _check(session: Session, actor: str | None, args: list[str]) -> tuple[GameSt
         raise CommandError("uso: testar <habilidade> <dificuldade> [modificador]")
     character = resolve_actor(session, actor)
     result = resolve_check(
-        session.state, session.rules,
-        character_id=character.id, skill_id=args[0], difficulty_id=args[1],
+        session.state,
+        session.rules,
+        character_id=character.id,
+        skill_id=args[0],
+        difficulty_id=args[1],
         modifier_id=args[2] if len(args) == 3 else None,
     )
     return result.state, result.text
@@ -218,17 +231,24 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
         raise CommandError(f"{character.name} não tem '{weapon_id}' no inventário{extra}")
 
     check = resolve_check(
-        session.state, session.rules,
-        character_id=character.id, skill_id=weapon.skill,
+        session.state,
+        session.rules,
+        character_id=character.id,
+        skill_id=weapon.skill,
         difficulty_id=session.rules.combat.attack_difficulty,
         modifier_id=args[2] if len(args) == 3 else None,
     )
     if check.outcome not in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS):
         return check.state, f"{check.text}\nO ataque não acerta."
     damage = deal_damage(
-        check.state, session.campaign, session.rules,
-        attacker_kind="character", attacker_id=character.id, weapon_id=weapon_id,
-        target_kind=target_kind, target_id=target_id,
+        check.state,
+        session.campaign,
+        session.rules,
+        attacker_kind="character",
+        attacker_id=character.id,
+        weapon_id=weapon_id,
+        target_kind=target_kind,
+        target_id=target_id,
     )
     return damage.state, f"{check.text}\n{damage.text}"
 
@@ -238,9 +258,12 @@ def _hurt(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
         raise CommandError('uso: ferir <alvo> <quantia> ["fonte"]')
     target_id = args[0]
     result = apply_damage(
-        session.state, session.campaign,
-        target_kind=_target_kind(session.state, target_id), target_id=target_id,
-        amount=int(args[1]), source=args[2] if len(args) == 3 else "dano",
+        session.state,
+        session.campaign,
+        target_kind=_target_kind(session.state, target_id),
+        target_id=target_id,
+        amount=int(args[1]),
+        source=args[2] if len(args) == 3 else "dano",
     )
     return result.state, result.text
 
@@ -250,9 +273,12 @@ def _heal(session: Session, actor: str | None, args: list[str]) -> tuple[GameSta
         raise CommandError('uso: curar <alvo> <quantia> ["fonte"]')
     target_id = args[0]
     result = heal(
-        session.state, session.campaign,
-        target_kind=_target_kind(session.state, target_id), target_id=target_id,
-        amount=int(args[1]), source=args[2] if len(args) == 3 else "cura",
+        session.state,
+        session.campaign,
+        target_kind=_target_kind(session.state, target_id),
+        target_id=target_id,
+        amount=int(args[1]),
+        source=args[2] if len(args) == 3 else "cura",
     )
     return result.state, result.text
 

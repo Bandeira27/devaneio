@@ -144,7 +144,9 @@ class _Parser:
             count = int(count_text) if count_text else 1
             sides = int(sides_text)
             if not 1 <= count <= MAX_DICE_COUNT:
-                raise ExpressionError(f"{tok.text}: quantidade de dados fora de 1..{MAX_DICE_COUNT}")
+                raise ExpressionError(
+                    f"{tok.text}: quantidade de dados fora de 1..{MAX_DICE_COUNT}"
+                )
             if not 2 <= sides <= MAX_DICE_SIDES:
                 raise ExpressionError(f"{tok.text}: lados fora de 2..{MAX_DICE_SIDES}")
             return Dice(count, sides)

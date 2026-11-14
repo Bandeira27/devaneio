@@ -34,9 +34,7 @@ def main(argv: list[str] | None = None) -> int:
 
     play = sub.add_parser("jogar", help="abre uma partida salva")
     play.add_argument("partida", type=Path)
-    play.add_argument(
-        "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
-    )
+    play.add_argument("--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente")
 
     args = parser.parse_args(argv)
     try:

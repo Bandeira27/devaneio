@@ -34,9 +34,7 @@ Formato da resposta (exemplo; use os ids do catálogo da partida):
 """
 
 
-def build_context(
-    campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str
-) -> dict:
+def build_context(campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str) -> dict:
     here = next(l for l in campaign.locations if l.id == state.current_location_id)
     names = {l.id: l.name for l in campaign.locations}
     static = {n.id: n for n in campaign.npcs}
@@ -99,7 +97,9 @@ def build_context(
             "dificuldades": [
                 {"id": d.id, "nome": d.name, "valor": d.value} for d in rules.difficulties
             ],
-            "modificadores": [{"id": m.id, "nome": m.name, "valor": m.value} for m in rules.modifiers],
+            "modificadores": [
+                {"id": m.id, "nome": m.name, "valor": m.value} for m in rules.modifiers
+            ],
             "armas_do_personagem": weapons,
             "saidas": list(here.connections),
             "alvos": targets,

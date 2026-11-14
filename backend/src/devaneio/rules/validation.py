@@ -84,7 +84,9 @@ def validate_campaign_against_rules(campaign: Campaign, rules: RuleSystem) -> li
     """A campanha pede este sistema e os atributos parciais dos NPCs existem nele."""
     errors: list[str] = []
     if campaign.rules_id != rules.id:
-        errors.append(f"campanha pede o sistema '{campaign.rules_id}', mas o sistema é '{rules.id}'")
+        errors.append(
+            f"campanha pede o sistema '{campaign.rules_id}', mas o sistema é '{rules.id}'"
+        )
     declared = {a.id: a for a in rules.attributes}
     weapon_ids = {w.id for w in rules.weapons}
     for npc in campaign.npcs:
@@ -92,7 +94,9 @@ def validate_campaign_against_rules(campaign: Campaign, rules: RuleSystem) -> li
         if npc.weapon_id is not None and npc.weapon_id not in weapon_ids:
             errors.append(f"npc '{npc.id}': arma '{npc.weapon_id}' não existe no sistema")
         elif npc.weapon_id is None and rules.combat.default_weapon is None:
-            errors.append(f"npc '{npc.id}' não tem arma e o sistema não define combat.default_weapon")
+            errors.append(
+                f"npc '{npc.id}' não tem arma e o sistema não define combat.default_weapon"
+            )
     return errors
 
 
@@ -137,4 +141,3 @@ __all__ = [
     "validate_rules",
     "validate_state_against_rules",
 ]
-

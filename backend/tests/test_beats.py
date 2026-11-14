@@ -33,12 +33,16 @@ def test_fail(state, campaign):
 def test_requirements_must_be_done(state, campaign):
     with pytest.raises(EngineError, match="marco 'pista' exige concluídos: chegada"):
         activate_beat(state, campaign, beat_id="pista")
-    done = complete_beat(activate_beat(state, campaign, beat_id="chegada").state, campaign, beat_id="chegada").state
+    done = complete_beat(
+        activate_beat(state, campaign, beat_id="chegada").state, campaign, beat_id="chegada"
+    ).state
     assert activate_beat(done, campaign, beat_id="pista").state.beats["pista"] is BeatStatus.ACTIVE
 
 
 def test_failed_requirement_blocks(state, campaign):
-    failed = fail_beat(activate_beat(state, campaign, beat_id="chegada").state, campaign, beat_id="chegada").state
+    failed = fail_beat(
+        activate_beat(state, campaign, beat_id="chegada").state, campaign, beat_id="chegada"
+    ).state
     with pytest.raises(EngineError, match="exige concluídos: chegada"):
         activate_beat(failed, campaign, beat_id="pista")
 

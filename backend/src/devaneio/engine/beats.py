@@ -54,13 +54,17 @@ def _beat(state: GameState, campaign: Campaign, beat_id: str) -> Beat:
 def _expect(state: GameState, beat_id: str, status: BeatStatus) -> None:
     current = state.beats[beat_id]
     if current is not status:
-        raise EngineError(f"marco '{beat_id}' está '{current.value}', precisava estar '{status.value}'")
+        raise EngineError(
+            f"marco '{beat_id}' está '{current.value}', precisava estar '{status.value}'"
+        )
 
 
 def _set(state: GameState, beat: Beat, status: BeatStatus, kind: str, text: str) -> BeatResult:
     new_state = state.model_copy(deep=True)
     new_state.beats[beat.id] = status
     new_state.events.append(
-        Event(turn=state.turn, kind=kind, text=text, data={"beat_id": beat.id, "status": status.value})
+        Event(
+            turn=state.turn, kind=kind, text=text, data={"beat_id": beat.id, "status": status.value}
+        )
     )
     return BeatResult(new_state, beat.id, status, text)

@@ -71,7 +71,9 @@ def test_direct_cycle_between_beats(campaign_data):
 
 
 def test_indirect_cycle_between_beats(campaign_data):
-    campaign_data["beats"][0]["requires"] = ["confronto"]  # chegada -> confronto -> pista -> chegada
+    campaign_data["beats"][0]["requires"] = [
+        "confronto"
+    ]  # chegada -> confronto -> pista -> chegada
     errors = errors_of(campaign_data)
     assert errors == ["ciclo entre marcos: chegada -> confronto -> pista -> chegada"]
 
@@ -137,7 +139,11 @@ def test_load_campaign_raises_with_full_error_list(campaign_data):
 def test_condition_references_are_checked(campaign_data, cond, fragment):
     campaign_data["beats"][1]["complete_when"] = [cond]
     errors = errors_of(campaign_data)
-    assert len(errors) == 1 and errors[0].startswith("marco 'pista', complete_when: ") and fragment in errors[0]
+    assert (
+        len(errors) == 1
+        and errors[0].startswith("marco 'pista', complete_when: ")
+        and fragment in errors[0]
+    )
 
 
 def test_unknown_condition_kind_is_a_structural_error(campaign_data):

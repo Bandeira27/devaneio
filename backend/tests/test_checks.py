@@ -12,8 +12,11 @@ SEED = 2024
 @pytest.fixture
 def state(campaign, rules) -> GameState:
     hero = Character(
-        id="aria", name="Aria", attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
-        hp=10, max_hp=10,
+        id="aria",
+        name="Aria",
+        attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
+        hp=10,
+        max_hp=10,
     )
     return initial_state(campaign, rules, SEED, [hero])
 
@@ -97,7 +100,10 @@ def test_resulting_state_roundtrips_and_stays_coherent(state, rules, campaign):
     ],
 )
 def test_classify_outcome(margin, outcome):
-    assert classify_outcome(margin, Outcomes(critical_failure_margin=-5, critical_success_margin=5)) is outcome
+    assert (
+        classify_outcome(margin, Outcomes(critical_failure_margin=-5, critical_success_margin=5))
+        is outcome
+    )
 
 
 def test_every_degree_is_reachable_with_default_rules(state, rules):
@@ -146,7 +152,9 @@ def test_npc_check_uses_npc_attributes_and_campaign_name(state, campaign, rules)
 
 def test_npc_check_unknown_npc(state, campaign, rules):
     with pytest.raises(EngineError, match="npc 'ninguem' não está no estado"):
-        npc_check(state, campaign, rules, npc_id="ninguem", skill_id="lutar", difficulty_id="normal")
+        npc_check(
+            state, campaign, rules, npc_id="ninguem", skill_id="lutar", difficulty_id="normal"
+        )
 
 
 def test_character_check_reports_actor(state, rules):

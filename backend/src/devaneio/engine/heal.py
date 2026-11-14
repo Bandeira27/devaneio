@@ -108,7 +108,9 @@ def rest(state: GameState, campaign: Campaign, rules: RuleSystem) -> RestResult:
     ]
     text = "O grupo descansa: " + ", ".join(parts)
     new_state.rng_draws = rng.draws
-    new_state.events.append(Event(turn=state.turn, kind="rest", text=text, data={"healed": details}))
+    new_state.events.append(
+        Event(turn=state.turn, kind="rest", text=text, data={"healed": details})
+    )
     return RestResult(new_state, healed, text)
 
 

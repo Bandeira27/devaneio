@@ -94,7 +94,10 @@ def test_new_game_starts_with_root_beats_active(session):
 
 def test_beats_advance_after_player_actions(session):
     session, text = run(session, 'entrar aria "Aria"', "ir floresta")
-    assert text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
+    assert (
+        text
+        == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
+    )
     session, text = run(session, "ir ruinas")
     assert text.endswith("\nMarco ativado: A pista nas ruínas.")
     _, look = run(session, "olhar")
@@ -108,7 +111,9 @@ def test_beats_advance_after_player_actions(session):
 
 
 def test_manual_beat_commands(session):
-    session, text = run(session, 'entrar aria "Aria"', "ir floresta", "ir ruinas", "marco concluir pista")
+    session, text = run(
+        session, 'entrar aria "Aria"', "ir floresta", "ir ruinas", "marco concluir pista"
+    )
     assert text == "Marco concluído: A pista nas ruínas.\nMarco ativado: Confronto com o culto."
     with pytest.raises(CommandError, match="está 'active', precisava estar 'pending'"):
         execute(session, "marco ativar confronto")
@@ -167,7 +172,10 @@ def test_empty_line_is_a_noop(session):
 
 def test_move_and_log(session):
     session, text = run(session, "ir floresta")
-    assert text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
+    assert (
+        text
+        == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
+    )
     session, look = run(session, "olhar")
     assert look.startswith("Turno 0 — Floresta Cinzenta (floresta)") and "Aqui: ninguém" in look
     _, log = run(session, "log 2")
@@ -211,8 +219,11 @@ def test_attack_hits_or_misses_according_to_the_check(tmp_path):
         session = new_game(CAMPAIGN_PATH, tmp_path / f"p{seed}.json", seed=seed)
         session, _ = run(session, 'entrar aria "Aria" FOR=3 +espada', "ir floresta", "ir ruinas")
         predicted = resolve_check(
-            session.state, session.rules,
-            character_id="aria", skill_id="lutar", difficulty_id="normal",
+            session.state,
+            session.rules,
+            character_id="aria",
+            skill_id="lutar",
+            difficulty_id="normal",
         )
         after, text = run(session, "atacar espada sacerdote")
         hp = after.state.npcs["sacerdote"].hp
@@ -273,15 +284,31 @@ def test_help_lists_every_command(session):
 def test_end_to_end_through_the_process(tmp_path):
     save = tmp_path / "partida.json"
     created = subprocess.run(
-        [sys.executable, "-m", "devaneio.cli", "nova", str(CAMPAIGN_PATH), str(save), "--seed", "3"],
-        check=True, capture_output=True, text=True,
+        [
+            sys.executable,
+            "-m",
+            "devaneio.cli",
+            "nova",
+            str(CAMPAIGN_PATH),
+            str(save),
+            "--seed",
+            "3",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
     assert "Partida criada: A Sombra do Vale (seed 3)" in created.stdout
 
-    script = "\n".join(['entrar aria "Aria" FOR=3', "ir floresta", "pular", "fim", "log", "sair"]) + "\n"
+    script = (
+        "\n".join(['entrar aria "Aria" FOR=3', "ir floresta", "pular", "fim", "log", "sair"]) + "\n"
+    )
     played = subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
-        input=script, check=True, capture_output=True, text=True,
+        input=script,
+        check=True,
+        capture_output=True,
+        text=True,
     )
     out = played.stdout
     assert "A Sombra do Vale" in out and "Turno 0 — Vila de Pedra Alta" in out
@@ -292,14 +319,20 @@ def test_end_to_end_through_the_process(tmp_path):
     data = json.loads(save.read_text(encoding="utf-8"))
     assert data["state"]["turn"] == 1 and data["state"]["current_location_id"] == "floresta"
     assert [e["kind"] for e in data["state"]["events"]] == [
-        "beat_activated", "character_joined", "move", "beat_done", "director", "turn_end",
+        "beat_activated",
+        "character_joined",
+        "move",
+        "beat_done",
+        "director",
+        "turn_end",
     ]
 
 
 def test_missing_save_file_is_a_clean_error(tmp_path):
     result = subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(tmp_path / "nada.json")],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 1 and "arquivo não encontrado" in result.stderr
 
@@ -314,7 +347,9 @@ def test_format_output_narrates_new_events_with_mechanical_line(session):
     lines = out.split("\n")
     assert len(lines) == 2
     assert "Aria" in lines[0] and lines[0] != text
-    assert lines[1] == "  [Aria entra na aventura (FOR 3, AGI 1, MEN 2, PRE 2; hp 12).]".replace("AGI 1", "AGI 2")
+    assert lines[1] == "  [Aria entra na aventura (FOR 3, AGI 1, MEN 2, PRE 2; hp 12).]".replace(
+        "AGI 1", "AGI 2"
+    )
 
 
 def test_format_output_keeps_plain_text_when_nothing_happened(session):
@@ -325,16 +360,32 @@ def test_format_output_keeps_plain_text_when_nothing_happened(session):
 def test_end_to_end_output_is_narrated(tmp_path):
     save = tmp_path / "partida.json"
     subprocess.run(
-        [sys.executable, "-m", "devaneio.cli", "nova", str(CAMPAIGN_PATH), str(save), "--seed", "3"],
-        check=True, capture_output=True, text=True,
+        [
+            sys.executable,
+            "-m",
+            "devaneio.cli",
+            "nova",
+            str(CAMPAIGN_PATH),
+            str(save),
+            "--seed",
+            "3",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
     played = subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
-        input="ir floresta\nsair\n", check=True, capture_output=True, text=True,
+        input="ir floresta\nsair\n",
+        check=True,
+        capture_output=True,
+        text=True,
     )
     assert "  [O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.]" in played.stdout
     assert "  [Marco concluído: Chegada à vila.]" in played.stdout
-    prose = [l for l in played.stdout.split("\n") if "Floresta Cinzenta" in l and not l.startswith("  [")]
+    prose = [
+        l for l in played.stdout.split("\n") if "Floresta Cinzenta" in l and not l.startswith("  [")
+    ]
     assert prose  # a linha narrada cita o destino
 
 
@@ -352,7 +403,9 @@ def test_join_with_items_and_sheet(session):
 
 def test_attack_requires_the_weapon_in_the_inventory(session):
     session, _ = run(session, 'entrar aria "Aria" +espada')
-    with pytest.raises(CommandError, match="Aria não tem 'arco' no inventário \\(sempre disponível: punhos\\)"):
+    with pytest.raises(
+        CommandError, match="Aria não tem 'arco' no inventário \\(sempre disponível: punhos\\)"
+    ):
         execute(session, "atacar arco ferreiro")
     _, text = run(session, "atacar espada ferreiro")
     assert "Aria testa Lutar" in text
@@ -407,7 +460,9 @@ def test_defeat_locks_actions_and_olhar_says_so(session):
 
 
 def test_victory_when_the_last_beat_closes(session):
-    session, _ = run(session, 'entrar aria "Aria" +espada', "ir floresta", "ir ruinas", "marco concluir pista")
+    session, _ = run(
+        session, 'entrar aria "Aria" +espada', "ir floresta", "ir ruinas", "marco concluir pista"
+    )
     before = session.state
     session, _ = run(session, "ferir sacerdote 99")
     assert all(s.value == "done" for s in session.state.beats.values())
@@ -425,13 +480,26 @@ def test_help_mentions_the_new_commands(session):
 def test_end_to_end_banner_and_lock(tmp_path):
     save = tmp_path / "partida.json"
     subprocess.run(
-        [sys.executable, "-m", "devaneio.cli", "nova", str(CAMPAIGN_PATH), str(save), "--seed", "1"],
-        check=True, capture_output=True, text=True,
+        [
+            sys.executable,
+            "-m",
+            "devaneio.cli",
+            "nova",
+            str(CAMPAIGN_PATH),
+            str(save),
+            "--seed",
+            "1",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
     played = subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
         input='entrar aria "Aria"\nferir aria 99\nir floresta\nsair\n',
-        check=True, capture_output=True, text=True,
+        check=True,
+        capture_output=True,
+        text=True,
     )
     assert "*** DERROTA: todo o grupo caiu." in played.stdout
     assert "erro: a partida terminou" in played.stdout

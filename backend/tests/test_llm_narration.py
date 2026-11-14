@@ -9,12 +9,16 @@ from fakes import ScriptedClient
 
 @pytest.fixture
 def state(campaign, rules):
-    return add_character(initial_state(campaign, rules, 1), rules, character_id="aria", name="Aria").state
+    return add_character(
+        initial_state(campaign, rules, 1), rules, character_id="aria", name="Aria"
+    ).state
 
 
 def test_narrates_a_batch_of_events(campaign, state):
     client = ScriptedClient("  Aria avança\n pela trilha,  e a névoa a engole.  ")
-    out = narrate_with_llm(client, campaign, state, ["Aria testa Furtividade: sucesso", "O grupo vai para a floresta."])
+    out = narrate_with_llm(
+        client, campaign, state, ["Aria testa Furtividade: sucesso", "O grupo vai para a floresta."]
+    )
     assert out == "Aria avança pela trilha, e a névoa a engole."
     call = client.calls[0]
     assert call["json_mode"] is False and call["temperature"] == 0.8

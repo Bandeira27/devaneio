@@ -9,8 +9,11 @@ from devaneio.schema import BeatStatus, Character, validate_against_campaign
 @pytest.fixture
 def hero() -> Character:
     return Character(
-        id="aria", name="Aria", attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
-        hp=10, max_hp=10,
+        id="aria",
+        name="Aria",
+        attributes={"FOR": 2, "AGI": 3, "MEN": 1, "PRE": 2},
+        hp=10,
+        max_hp=10,
     )
 
 
@@ -46,7 +49,10 @@ def test_dice_in_max_hp_consume_the_state_rng(campaign, rules_data):
     rules = RuleSystem.model_validate(rules_data)
     state = initial_state(campaign, rules, 7)
     rng = Rng(7)
-    expected = [rng.roll(6) + 2, rng.roll(6) + 3]  # ferreiro FOR 2, sacerdote FOR 3 (ordem da campanha)
+    expected = [
+        rng.roll(6) + 2,
+        rng.roll(6) + 3,
+    ]  # ferreiro FOR 2, sacerdote FOR 3 (ordem da campanha)
     assert [state.npcs["ferreiro"].max_hp, state.npcs["sacerdote"].max_hp] == expected
     assert state.rng_draws == 2
     assert initial_state(campaign, rules, 7) == state

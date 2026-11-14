@@ -70,8 +70,15 @@ def resolve_check(
     if character is None:
         raise EngineError(f"personagem '{character_id}' não está no estado")
     return _resolve(
-        state, rules, "character", character_id, character.name, character.attributes,
-        skill_id, difficulty_id, modifier_id,
+        state,
+        rules,
+        "character",
+        character_id,
+        character.name,
+        character.attributes,
+        skill_id,
+        difficulty_id,
+        modifier_id,
     )
 
 
@@ -87,7 +94,9 @@ def npc_check(
 ) -> CheckResult:
     """Teste de um NPC, com os atributos do estado e o nome da campanha."""
     name, attributes, _ = combatant(state, campaign, "npc", npc_id)
-    return _resolve(state, rules, "npc", npc_id, name, attributes, skill_id, difficulty_id, modifier_id)
+    return _resolve(
+        state, rules, "npc", npc_id, name, attributes, skill_id, difficulty_id, modifier_id
+    )
 
 
 def _resolve(

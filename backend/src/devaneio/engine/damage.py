@@ -96,8 +96,14 @@ def apply_damage(
     target_name = combatant(state, campaign, target_kind, target_id)[0]
     text = f"{target_name} sofre {amount} de dano ({source})"
     return _hit(
-        state, target_kind, target_id, amount,
-        rolls=(), rng_draws=state.rng_draws, text=text, data={"source": source},
+        state,
+        target_kind,
+        target_id,
+        amount,
+        rolls=(),
+        rng_draws=state.rng_draws,
+        text=text,
+        data={"source": source},
     )
 
 

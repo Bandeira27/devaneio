@@ -48,8 +48,14 @@ def test_duplicate_ids_are_reported(rules_data, collection):
 @pytest.mark.parametrize(
     "mutate, fragment",
     [
-        (lambda d: d["skills"][0].__setitem__("formula", "2d6 + SOR"), "skill 'lutar': fórmula usa atributo 'SOR'"),
-        (lambda d: d["weapons"][0].__setitem__("damage", "1d4 + XIS"), "weapon 'punhos': fórmula usa atributo 'XIS'"),
+        (
+            lambda d: d["skills"][0].__setitem__("formula", "2d6 + SOR"),
+            "skill 'lutar': fórmula usa atributo 'SOR'",
+        ),
+        (
+            lambda d: d["weapons"][0].__setitem__("damage", "1d4 + XIS"),
+            "weapon 'punhos': fórmula usa atributo 'XIS'",
+        ),
         (lambda d: d.__setitem__("max_hp", "6 + VIG * 2"), "max_hp: fórmula usa atributo 'VIG'"),
     ],
     ids=["skill", "weapon", "max_hp"],
@@ -136,7 +142,10 @@ def test_attribute_ids_are_uppercase_identifiers(rules_data, bad):
 
 @pytest.mark.parametrize(
     "mutate",
-    [lambda d: d.__setitem__("dice", "2d6"), lambda d: d["skills"][0].__setitem__("attribute", "FOR")],
+    [
+        lambda d: d.__setitem__("dice", "2d6"),
+        lambda d: d["skills"][0].__setitem__("attribute", "FOR"),
+    ],
     ids=["root", "skill"],
 )
 def test_unknown_fields_are_rejected(rules_data, mutate):
@@ -185,7 +194,10 @@ def test_campaign_matching_rules_has_no_errors(campaign, rules):
 
 def test_campaign_against_rules_reports_each_problem(campaign_data, rules):
     campaign_data["rules_id"] = "outro"
-    campaign_data["npcs"][1]["attributes"] = {"FOR": 7, "XIS": 1}  # parcial é permitido, inválido não
+    campaign_data["npcs"][1]["attributes"] = {
+        "FOR": 7,
+        "XIS": 1,
+    }  # parcial é permitido, inválido não
     errors = validate_campaign_against_rules(Campaign.model_validate(campaign_data), rules)
     assert errors == [
         "campanha pede o sistema 'outro', mas o sistema é 'default'",

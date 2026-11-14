@@ -39,4 +39,3 @@ def validate_against_campaign(state: GameState, campaign: Campaign) -> list[str]
         errors.append(f"marco '{beat_id}' da campanha não tem estado")
 
     return errors
-

@@ -40,9 +40,7 @@ class Attribute(StrictModel):
     @model_validator(mode="after")
     def _default_within_range(self) -> "Attribute":
         if not self.min <= self.default <= self.max:
-            raise ValueError(
-                f"default ({self.default}) fora do intervalo [{self.min}, {self.max}]"
-            )
+            raise ValueError(f"default ({self.default}) fora do intervalo [{self.min}, {self.max}]")
         return self
 
 

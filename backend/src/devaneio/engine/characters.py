@@ -47,7 +47,11 @@ def add_character(
 
     try:
         character = Character(
-            id=character_id, name=name, attributes=full, hp=max_hp, max_hp=max_hp,
+            id=character_id,
+            name=name,
+            attributes=full,
+            hp=max_hp,
+            max_hp=max_hp,
             inventory=list(inventory),
         )
     except ValidationError as exc:

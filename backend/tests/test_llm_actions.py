@@ -24,7 +24,12 @@ def test_all_action_kinds_and_commands():
     raw = json.dumps(
         {
             "actions": [
-                {"kind": "check", "skill": "furtividade", "difficulty": "dificil", "modifier": "vantagem"},
+                {
+                    "kind": "check",
+                    "skill": "furtividade",
+                    "difficulty": "dificil",
+                    "modifier": "vantagem",
+                },
                 {"kind": "attack", "weapon": "espada", "target": "sacerdote"},
                 {"kind": "move", "to": "floresta"},
             ]
@@ -62,8 +67,14 @@ def test_extra_fields_are_ignored():
         ('{"actions": [{"kind": "dance"}]}', "actions.0"),
         ('{"actions": [{"kind": "check", "skill": "x"}]}', "difficulty"),
         ('{"actions": [{"kind": "move"}]}', "actions.0.move.to"),
-        ('{"actions": [{"kind": "rest"}, {"kind": "rest"}, {"kind": "rest"}, {"kind": "rest"}]}', "actions"),
-        ('{"actions": [{"kind": "move", "to": "Floresta Cinzenta"}]}', "String should match pattern"),
+        (
+            '{"actions": [{"kind": "rest"}, {"kind": "rest"}, {"kind": "rest"}, {"kind": "rest"}]}',
+            "actions",
+        ),
+        (
+            '{"actions": [{"kind": "move", "to": "Floresta Cinzenta"}]}',
+            "String should match pattern",
+        ),
     ],
 )
 def test_invalid_proposals(raw, fragment):

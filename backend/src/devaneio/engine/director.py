@@ -66,8 +66,10 @@ def advance_beats(state: GameState, campaign: Campaign) -> tuple[GameState, tupl
         changed = False
         for beat in campaign.beats:
             status = state.beats.get(beat.id)
-            if status is BeatStatus.ACTIVE and beat.complete_when and all(
-                holds(c, state) for c in beat.complete_when
+            if (
+                status is BeatStatus.ACTIVE
+                and beat.complete_when
+                and all(holds(c, state) for c in beat.complete_when)
             ):
                 result = complete_beat(state, campaign, beat_id=beat.id)
             elif (
@@ -114,16 +116,25 @@ def hostile_reactions(
         state = state.model_copy(update={"rng_draws": rng.draws})
 
         check = npc_check(
-            state, campaign, rules,
-            npc_id=npc.id, skill_id=weapon.skill, difficulty_id=rules.combat.attack_difficulty,
+            state,
+            campaign,
+            rules,
+            npc_id=npc.id,
+            skill_id=weapon.skill,
+            difficulty_id=rules.combat.attack_difficulty,
         )
         state = check.state
         texts.append(check.text)
         if check.outcome in HIT:
             damage = deal_damage(
-                state, campaign, rules,
-                attacker_kind="npc", attacker_id=npc.id, weapon_id=weapon.id,
-                target_kind="character", target_id=target_id,
+                state,
+                campaign,
+                rules,
+                attacker_kind="npc",
+                attacker_id=npc.id,
+                weapon_id=weapon.id,
+                target_kind="character",
+                target_id=target_id,
             )
             state = damage.state
             texts.append(damage.text)

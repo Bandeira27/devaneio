@@ -63,13 +63,19 @@ def test_proposal_runs_through_the_engine(base):
     result = run_freeform(session, "tento passar sem ser vista e sigo para a floresta")
     assert result.commands == ("testar furtividade normal", "ir floresta")
     assert result.say == "Você some entre as sombras."
-    assert kinds(result.session)[-3:] == ["check", "move", "beat_done"]  # o diretor concluiu o marco
+    assert kinds(result.session)[-3:] == [
+        "check",
+        "move",
+        "beat_done",
+    ]  # o diretor concluiu o marco
     assert result.session.state.current_location_id == "floresta"
     assert result.session.state.rng_draws == 2  # a rolagem é do motor, não do modelo
     call = client.calls[0]
     assert call["json_mode"] is True and call["temperature"] == 0.2 and len(client.calls) == 1
     assert "APENAS com um objeto JSON" in call["messages"][0]["content"]
-    assert call["messages"][1]["content"].endswith("JOGADOR (Aria): tento passar sem ser vista e sigo para a floresta")
+    assert call["messages"][1]["content"].endswith(
+        "JOGADOR (Aria): tento passar sem ser vista e sigo para a floresta"
+    )
     assert base.state.current_location_id == "vila"  # a sessão original não muda
 
 
@@ -109,7 +115,9 @@ def test_engine_refusal_is_fed_back(base):
 
 def test_two_failures_give_up_and_leave_the_session_untouched(base):
     session, client = with_llm(base, "lixo", reply({"kind": "move", "to": "lua"}))
-    with pytest.raises(CommandError, match="o mestre \\(LLM\\) não propôs uma ação válida.*local 'lua'"):
+    with pytest.raises(
+        CommandError, match="o mestre \\(LLM\\) não propôs uma ação válida.*local 'lua'"
+    ):
         run_freeform(session, "vou à lua")
     assert len(client.calls) == 2 and session.state == base.state
 
@@ -195,6 +203,10 @@ def test_format_output_uses_llm_prose_with_mechanical_lines(base):
 
 def test_format_output_falls_back_to_the_grammar_with_a_note(base):
     after, text = execute(base, "ir floresta")
-    out = format_output(base.narrator, base.state, after.state, text, ScriptedClient(LlmError("fora do ar")))
+    out = format_output(
+        base.narrator, base.state, after.state, text, ScriptedClient(LlmError("fora do ar"))
+    )
     assert "(narração por LLM indisponível: fora do ar; usei a gramática)" in out
-    assert "Floresta Cinzenta" in out.split("\n")[0] and "  [Marco concluído: Chegada à vila.]" in out
+    assert (
+        "Floresta Cinzenta" in out.split("\n")[0] and "  [Marco concluído: Chegada à vila.]" in out
+    )

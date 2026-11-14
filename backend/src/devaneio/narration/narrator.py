@@ -64,9 +64,15 @@ class Narrator:
                 "desfecho": str(d.get("outcome", "")),
             }
         if kind == "damage":
-            attacker = self._name(state, d.get("attacker_kind"), d.get("attacker_id")) if d.get("attacker_id") else ""
+            attacker = (
+                self._name(state, d.get("attacker_kind"), d.get("attacker_id"))
+                if d.get("attacker_id")
+                else ""
+            )
             weapon = self._weapon(d.get("weapon_id")) if d.get("weapon_id") else ""
-            variant = ("golpe" if attacker else "fonte") + ("_queda" if d.get("incapacitated") else "")
+            variant = ("golpe" if attacker else "fonte") + (
+                "_queda" if d.get("incapacitated") else ""
+            )
             return variant, {
                 "atacante": attacker,
                 "alvo": self._name(state, d.get("target_kind"), d.get("target_id")),

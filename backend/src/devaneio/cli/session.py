@@ -49,7 +49,9 @@ def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> S
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
     state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
-    session = Session(campaign, rules, state, campaign_path, Path(save_path).resolve(), _narrator(campaign, rules))
+    session = Session(
+        campaign, rules, state, campaign_path, Path(save_path).resolve(), _narrator(campaign, rules)
+    )
     save_game(session)
     return session
 
@@ -64,7 +66,9 @@ def load_game(save_path: Path) -> Session:
     )
     if errors:
         raise CliError(_joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
-    return Session(campaign, rules, data.state, campaign_path, save_path, _narrator(campaign, rules))
+    return Session(
+        campaign, rules, data.state, campaign_path, save_path, _narrator(campaign, rules)
+    )
 
 
 def save_game(session: Session) -> None:

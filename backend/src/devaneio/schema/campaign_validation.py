@@ -19,9 +19,7 @@ class CampaignIntegrityError(ValueError):
 
     def __init__(self, errors: Iterable[str]) -> None:
         self.errors = list(errors)
-        super().__init__(
-            "Campanha inconsistente:\n" + "\n".join(f"- {e}" for e in self.errors)
-        )
+        super().__init__("Campanha inconsistente:\n" + "\n".join(f"- {e}" for e in self.errors))
 
 
 def validate_campaign(campaign: Campaign) -> list[str]:
@@ -38,9 +36,7 @@ def validate_campaign(campaign: Campaign) -> list[str]:
     beat_ids = {x.id for x in campaign.beats}
 
     if campaign.start_location_id not in location_ids:
-        errors.append(
-            f"start_location_id '{campaign.start_location_id}' não existe em locations"
-        )
+        errors.append(f"start_location_id '{campaign.start_location_id}' não existe em locations")
 
     for loc in campaign.locations:
         for target in loc.connections:
@@ -99,11 +95,7 @@ def load_campaign(data: Any) -> Campaign:
 
 def _duplicates(collection: str, ids: Iterable[str]) -> list[str]:
     counts = Counter(ids)
-    return [
-        f"{collection}: id duplicado '{id_}' ({n} vezes)"
-        for id_, n in counts.items()
-        if n > 1
-    ]
+    return [f"{collection}: id duplicado '{id_}' ({n} vezes)" for id_, n in counts.items() if n > 1]
 
 
 def _beat_cycles(beats: list[Beat]) -> list[str]:
@@ -130,7 +122,7 @@ def _beat_cycles(beats: list[Beat]) -> list[str]:
             if color[nxt] == WHITE:
                 visit(nxt)
             elif color[nxt] == GRAY:
-                cycle = stack[stack.index(nxt):] + [nxt]
+                cycle = stack[stack.index(nxt) :] + [nxt]
                 cycles.append("ciclo entre marcos: " + " -> ".join(cycle))
         stack.pop()
         color[node] = BLACK

@@ -64,7 +64,11 @@ class ScriptedClient:
 
     def complete(self, messages, *, json_mode=False, temperature=None):
         self.calls.append(
-            {"messages": [dict(m) for m in messages], "json_mode": json_mode, "temperature": temperature}
+            {
+                "messages": [dict(m) for m in messages],
+                "json_mode": json_mode,
+                "temperature": temperature,
+            }
         )
         reply = self.replies.pop(0)
         if isinstance(reply, Exception):

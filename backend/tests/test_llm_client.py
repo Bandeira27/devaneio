@@ -32,7 +32,10 @@ def test_config_from_env_full_and_defaults():
         }
     )
     assert (cfg.base_url, cfg.model, cfg.timeout, cfg.host) == (
-        "http://localhost:11434/v1", "llama", 12.5, "localhost:11434",
+        "http://localhost:11434/v1",
+        "llama",
+        12.5,
+        "localhost:11434",
     )
     local = LlmConfig.from_env({"DEVANEIO_LLM_BASE_URL": "http://l/v1", "DEVANEIO_LLM_MODEL": "m"})
     assert local.api_key is None and local.timeout == 60.0
@@ -48,8 +51,22 @@ def test_config_hides_the_key_in_repr():
     [
         ({"DEVANEIO_LLM_BASE_URL": "ftp://x", "DEVANEIO_LLM_MODEL": "m"}, "inválida"),
         ({"DEVANEIO_LLM_BASE_URL": "localhost:1234", "DEVANEIO_LLM_MODEL": "m"}, "inválida"),
-        ({"DEVANEIO_LLM_BASE_URL": "http://x", "DEVANEIO_LLM_MODEL": "m", "DEVANEIO_LLM_TIMEOUT": "abc"}, "não é número"),
-        ({"DEVANEIO_LLM_BASE_URL": "http://x", "DEVANEIO_LLM_MODEL": "m", "DEVANEIO_LLM_TIMEOUT": "0"}, "positivo"),
+        (
+            {
+                "DEVANEIO_LLM_BASE_URL": "http://x",
+                "DEVANEIO_LLM_MODEL": "m",
+                "DEVANEIO_LLM_TIMEOUT": "abc",
+            },
+            "não é número",
+        ),
+        (
+            {
+                "DEVANEIO_LLM_BASE_URL": "http://x",
+                "DEVANEIO_LLM_MODEL": "m",
+                "DEVANEIO_LLM_TIMEOUT": "0",
+            },
+            "positivo",
+        ),
     ],
 )
 def test_config_rejects_malformed_values(env, fragment):
@@ -84,7 +101,11 @@ def test_json_mode_asks_for_json_object():
 
 def test_json_mode_is_retried_without_the_field_when_the_server_refuses_it():
     def respond(body):
-        return (400, {"error": "response_format não suportado"}) if "response_format" in body else (200, "{}")
+        return (
+            (400, {"error": "response_format não suportado"})
+            if "response_format" in body
+            else (200, "{}")
+        )
 
     with FakeLlmServer(respond) as server:
         out = client_for(server).complete(MESSAGES, json_mode=True)

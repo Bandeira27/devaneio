@@ -23,7 +23,9 @@ def state(campaign, rules) -> GameState:
 
 
 def hurt(state, campaign, who, amount, kind="character"):
-    return apply_damage(state, campaign, target_kind=kind, target_id=who, amount=amount, source="x").state
+    return apply_damage(
+        state, campaign, target_kind=kind, target_id=who, amount=amount, source="x"
+    ).state
 
 
 def test_heal_is_pure_capped_and_logged(state, campaign):
@@ -105,7 +107,11 @@ def test_rest_refused_cases(state, campaign, rules):
         rest(state, campaign, rules)
     with pytest.raises(EngineError, match="não há personagens"):
         rest(initial_state(campaign, rules, 1), campaign, rules)
-    at_ruins = move(move(hurt(state, campaign, "aria", 5), campaign, to_location_id="floresta").state, campaign, to_location_id="ruinas").state
+    at_ruins = move(
+        move(hurt(state, campaign, "aria", 5), campaign, to_location_id="floresta").state,
+        campaign,
+        to_location_id="ruinas",
+    ).state
     with pytest.raises(EngineError, match="Irmão Vael hostil por perto"):
         rest(at_ruins, campaign, rules)
     cleared = hurt(at_ruins, campaign, "sacerdote", 99, kind="npc")

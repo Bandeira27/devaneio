@@ -13,8 +13,12 @@ def state(campaign, rules):
 
 def test_add_character_fills_defaults_and_hp(state, rules, campaign):
     result = add_character(
-        state, rules, character_id="aria", name="Aria",
-        attributes={"FOR": 3, "AGI": 1}, inventory=["espada"],
+        state,
+        rules,
+        character_id="aria",
+        name="Aria",
+        attributes={"FOR": 3, "AGI": 1},
+        inventory=["espada"],
     )
     assert state.characters == {} and state.events == []
     char = result.character
@@ -44,7 +48,9 @@ def test_duplicate_id(state, rules):
 
 def test_invalid_attributes_are_reported_together(state, rules):
     with pytest.raises(EngineError) as info:
-        add_character(state, rules, character_id="x", name="X", attributes={"FOR": 9, "XIS": 1, "AGI": 0})
+        add_character(
+            state, rules, character_id="x", name="X", attributes={"FOR": 9, "XIS": 1, "AGI": 0}
+        )
     msg = str(info.value)
     assert msg.startswith("personagem 'x': ")
     assert "atributo 'XIS' não existe no sistema" in msg
@@ -65,7 +71,10 @@ def test_dice_in_max_hp_consume_state_rng(campaign, rules_data):
     rng = Rng(11, draws=4)
     assert result.character.max_hp == rng.roll(6) + rng.roll(6) + 3
     assert result.state.rng_draws == 6
-    assert add_character(state, rules, character_id="aria", name="Aria", attributes={"FOR": 3}) == result
+    assert (
+        add_character(state, rules, character_id="aria", name="Aria", attributes={"FOR": 3})
+        == result
+    )
 
 
 def test_max_hp_below_one(state, rules_data):

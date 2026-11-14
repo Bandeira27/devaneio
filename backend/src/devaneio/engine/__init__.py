@@ -4,7 +4,15 @@ from .beats import BeatResult, activate_beat, complete_beat, fail_beat
 from .characters import AddCharacterResult, add_character
 from .checks import CheckResult, classify_outcome, npc_check, resolve_check
 from .damage import DamageResult, TargetKind, apply_damage, deal_damage
-from .director import DirectorResult, advance_beats, direct, holds, hostile_reactions, pass_turn, tension
+from .director import (
+    DirectorResult,
+    advance_beats,
+    direct,
+    holds,
+    hostile_reactions,
+    pass_turn,
+    tension,
+)
 from .errors import EngineError
 from .heal import HealResult, RestResult, heal, rest
 from .movement import MoveResult, move

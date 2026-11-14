@@ -7,7 +7,9 @@ from conftest import CAMPAIGN_PATH
 from fakes import FakeLlmServer
 
 KEY = "chave-de-teste-123"
-PROPOSAL = json.dumps({"actions": [{"kind": "move", "to": "floresta"}], "say": "Seguindo pela trilha."})
+PROPOSAL = json.dumps(
+    {"actions": [{"kind": "move", "to": "floresta"}], "say": "Seguindo pela trilha."}
+)
 
 
 def respond(body):
@@ -21,8 +23,19 @@ def respond(body):
 def make_save(tmp_path):
     save = tmp_path / "partida.json"
     subprocess.run(
-        [sys.executable, "-m", "devaneio.cli", "nova", str(CAMPAIGN_PATH), str(save), "--seed", "3"],
-        check=True, capture_output=True, text=True,
+        [
+            sys.executable,
+            "-m",
+            "devaneio.cli",
+            "nova",
+            str(CAMPAIGN_PATH),
+            str(save),
+            "--seed",
+            "3",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
     return save
 
@@ -31,7 +44,10 @@ def play(save, stdin, env_extra, *flags):
     env = {**os.environ, **env_extra}
     return subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(save), *flags],
-        input=stdin, capture_output=True, text=True, env=env,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        env=env,
     )
 
 
@@ -59,10 +75,18 @@ def test_free_text_end_to_end(tmp_path):
     assert data["state"]["current_location_id"] == "floresta"
     assert [e["kind"] for e in data["state"]["events"]][-2:] == ["move", "beat_done"]
     # a chave só vai no cabeçalho da requisição: nunca para a saída nem para o arquivo
-    assert KEY not in out and KEY not in result.stderr and KEY not in save.read_text(encoding="utf-8")
+    assert (
+        KEY not in out and KEY not in result.stderr and KEY not in save.read_text(encoding="utf-8")
+    )
     assert {r["authorization"] for r in server.requests} == {f"Bearer {KEY}"}
-    proposals = [r for r in server.requests if "APENAS com um objeto JSON" in r["json"]["messages"][0]["content"]]
-    assert len(proposals) == 1 and len(server.requests) == 3  # 1 proposta + narração de `entrar` e do texto livre
+    proposals = [
+        r
+        for r in server.requests
+        if "APENAS com um objeto JSON" in r["json"]["messages"][0]["content"]
+    ]
+    assert (
+        len(proposals) == 1 and len(server.requests) == 3
+    )  # 1 proposta + narração de `entrar` e do texto livre
 
 
 def test_known_commands_never_reach_the_llm_for_interpretation(tmp_path):
