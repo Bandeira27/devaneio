@@ -10,6 +10,12 @@ Mesa de RPG com um mestre de IA, jogável sozinho (linha de comando) ou em grupo
 - **Regras são dados, não código.** Sistemas de regras são arquivos declarativos interpretados pelo motor. Código enviado pelo usuário nunca é executado.
 - **Contrato único.** Os modelos Pydantic geram o JSON Schema em `contract/`, de onde saem os tipos TypeScript.
 
+## Rumo
+
+O Devaneio caminha para uma **plataforma de campanhas extensível**: ações primitivas no motor e conteúdo, sistemas de
+regras e narrações do usuário por cima, para autores técnicos e não técnicos. A direção e a ordem de trabalho estão em
+[`docs/rumo-extensibilidade.md`](docs/rumo-extensibilidade.md); ainda não é escopo implementado.
+
 ## Estrutura
 
 ```
