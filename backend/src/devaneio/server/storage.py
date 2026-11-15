@@ -22,12 +22,19 @@ MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, res
 
 
 @dataclass
+class _Slot:
+    busy: bool = False  # uma chamada ao LLM desse tipo por vez por mesa
+    last: dict[str, float] = field(default_factory=dict)  # por chave, no relógio da mesa
+
+
+@dataclass
 class _Table:
     lock: threading.Lock = field(default_factory=threading.Lock)
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
-    saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
-    last_say: dict[str, float] = field(default_factory=dict)  # por jogador, no relógio da mesa
+    # Vagas de chamada ao LLM, uma por tipo ("say", "copilot"): cada uma tem a sua, então um tipo não
+    # segura o outro.
+    slots: dict[str, _Slot] = field(default_factory=dict)
     presentation: Presentation = field(default_factory=lambda: Presentation(0))
     changed: threading.Condition = field(init=False)
 
@@ -98,20 +105,36 @@ class Storage:
         table.version += 1
         table.changed.notify_all()
 
-    def enter_say(self, table_id: str) -> bool:
-        """Reserva a única chamada de texto livre da mesa; ``False`` se já há uma em curso
-        (cada uma custa chamadas ao LLM de quem roda o servidor)."""
+    def enter_slot(self, table_id: str, kind: str) -> bool:
+        """Reserva a única chamada ao LLM de um tipo na mesa; ``False`` se já há uma em curso (cada
+        uma custa chamadas ao LLM de quem roda o servidor)."""
         table = self._table(table_id)
         with self._registry:
-            if table.saying:
+            slot = table.slots.setdefault(kind, _Slot())
+            if slot.busy:
                 return False
-            table.saying = True
+            slot.busy = True
             return True
 
-    def leave_say(self, table_id: str) -> None:
+    def leave_slot(self, table_id: str, kind: str) -> None:
         table = self._table(table_id)
         with self._registry:
-            table.saying = False
+            table.slots.setdefault(kind, _Slot()).busy = False
+
+    def slot_cooldown_left(self, table_id: str, kind: str, key: str, cooldown: float) -> float:
+        """Segundos até ``key`` (o jogador, ou a mesa) poder pedir outra chamada deste tipo (0 se já
+        pode). Cada pedido custa chamadas ao LLM de quem roda o servidor."""
+        table = self._table(table_id)
+        with self._registry:
+            last = table.slots.setdefault(kind, _Slot()).last.get(key)
+            if last is None:
+                return 0.0
+            return max(0.0, cooldown - (self._clock() - last))
+
+    def mark_slot(self, table_id: str, kind: str, key: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.slots.setdefault(kind, _Slot()).last[key] = self._clock()
 
     def presentation(self, table_id: str) -> Presentation:
         """Narração e mural da mesa (em memória). Só para mesa existente: o id já foi validado."""
@@ -120,21 +143,6 @@ class Storage:
     def now(self) -> float:
         """O relógio monotônico da mesa: prazos de espera e intervalos usam este."""
         return self._clock()
-
-    def say_cooldown_left(self, table_id: str, player_id: str, cooldown: float) -> float:
-        """Segundos até o jogador poder pedir outro texto livre (0 se já pode). Cada pedido
-        custa chamadas ao LLM de quem roda o servidor: o intervalo vale por jogador."""
-        table = self._table(table_id)
-        with self._registry:
-            last = table.last_say.get(player_id)
-            if last is None:
-                return 0.0
-            return max(0.0, cooldown - (self._clock() - last))
-
-    def mark_say(self, table_id: str, player_id: str) -> None:
-        table = self._table(table_id)
-        with self._registry:
-            table.last_say[player_id] = self._clock()
 
     def waiting(self, table_id: str) -> int:
         """Quantas esperas de long-poll há agora na mesa."""

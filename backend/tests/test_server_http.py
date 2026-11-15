@@ -11,9 +11,11 @@ from itertools import count
 import pytest
 
 from conftest import CAMPAIGN_PATH
+from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.__main__ import main
 from devaneio.server.http import ApiServer, make_server
+from fakes import FakeLlmServer
 
 TOKENS = count(1)
 
@@ -684,3 +686,90 @@ def test_since_talk_must_be_a_non_negative_integer(client, value):
     table_id, _, _, bia, _ = play_setup(client)
     status, body, _ = client.call("GET", f"/tables/{table_id}/events?since_talk={value}", auth=bia)
     assert (status, body["error"]["code"]) == (400, "bad_request")
+
+
+def test_the_copilot_route_answers_the_host_only(tmp_path, issued):
+    with FakeLlmServer(lambda _body: (200, "Pense na floresta.")) as fake:
+        service = TableService(
+            Catalog(CAMPAIGN_PATH.parent),
+            Storage(tmp_path / "mesas", max_tables=5),
+            llm=LlmConfig(base_url=fake.base_url, model="m"),
+            copilot_cooldown=0,
+            token_source=lambda: issued.append(f"token-{next(TOKENS)}") or issued[-1],
+            invite_source=lambda: "convite",
+        )
+        server = make_server("127.0.0.1", 0, service)
+        thread = threading.Thread(
+            target=lambda: server.serve_forever(poll_interval=0.02), daemon=True
+        )
+        thread.start()
+        try:
+            http = Client(f"http://127.0.0.1:{server.server_address[1]}")
+            _, created, _ = create(http)
+            table, host = created["table_id"], created["host_token"]
+            _, joined, _ = http.call(
+                "POST",
+                f"/tables/{table}/players",
+                body={"invite_code": "convite", "name": "Bia"},
+            )
+            path = f"/tables/{table}/copilot"
+            status, body, headers = http.call("POST", path, body={"text": "e agora?"}, auth=host)
+            assert (status, body) == (200, {"text": "Pense na floresta."})
+            assert headers["Cache-Control"] == "no-store"
+            status, body, _ = http.call(
+                "POST", path, body={"text": "e agora?"}, auth=joined["token"]
+            )
+            assert (status, body["error"]["code"]) == (403, "forbidden")
+            status, body, _ = http.call("POST", path, body={"text": "x" * 600}, auth=host)
+            assert status == 400
+            status, _, _ = http.call("GET", path, auth=host)
+            assert status == 405
+        finally:
+            server.shutdown()
+            server.server_close()
+
+
+@pytest.mark.parametrize(("args", "expected"), [([], 5.0), (["--intervalo-copiloto", "12"], 12.0)])
+def test_the_copilot_interval_flag_reaches_the_service(tmp_path, monkeypatch, args, expected):
+    seen = []
+    monkeypatch.setattr(
+        "devaneio.server.__main__.TableService",
+        lambda *_a, **kw: seen.append(kw["copilot_cooldown"]),
+    )
+    monkeypatch.setattr(
+        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+    )
+    assert main(main_args(tmp_path, "--porta", "0", *args)) == 0
+    assert seen == [expected]
+
+
+@pytest.mark.parametrize(
+    ("headers", "raw", "status", "code"),
+    [
+        ({"Content-Type": "text/plain"}, b'{"text":"oi"}', 415, "unsupported_media_type"),
+        ({"Content-Type": "application/json"}, b"", 400, "bad_request"),
+        ({"Content-Type": "application/json"}, b'{"text":"oi","x":1}', 400, "bad_request"),
+        ({"Content-Type": "application/json"}, b'{"text":"a\\u0007b"}', 400, "bad_request"),
+    ],
+    ids=["content-type", "sem-corpo", "campo-extra", "controle"],
+)
+def test_the_copilot_route_validates_the_body_before_anything_else(
+    client, headers, raw, status, code
+):
+    table_id, _, host, _bia, _ = play_setup(client)
+    path = f"/tables/{table_id}/copilot"
+    got_status, body, _ = client.call("POST", path, raw=raw, headers=headers, auth=host)
+    assert (got_status, body["error"]["code"]) == (status, code)
+
+
+def test_the_copilot_route_without_content_type_is_415(client):
+    table_id, _, host, _bia, _ = play_setup(client)
+    conn = client.connection()
+    conn.putrequest("POST", f"/tables/{table_id}/copilot")
+    conn.putheader("Authorization", f"Bearer {host}")
+    conn.putheader("Content-Length", "13")
+    conn.endheaders(b'{"text":"oi"}')
+    response = conn.getresponse()
+    body = json.loads(response.read())
+    conn.close()
+    assert (response.status, body["error"]["code"]) == (415, "unsupported_media_type")

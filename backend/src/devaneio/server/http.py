@@ -23,6 +23,7 @@ from .errors import ApiFailure
 from .models import (
     ApiError,
     CommandRequest,
+    CopilotRequest,
     CreateTableRequest,
     ErrorResponse,
     JoinRequest,
@@ -82,6 +83,10 @@ class Handler(BaseHTTPRequestHandler):
         request = self._read_json(SayRequest)
         return 200, self.server.service.say(match.group(1), self._token(), request)
 
+    def _copilot(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(CopilotRequest)
+        return 200, self.server.service.copilot(match.group(1), self._token(), request)
+
     def _get_events(self, match: re.Match[str]) -> tuple[int, Payload]:
         since = self._query_int("since", default=0)
         since_talk = self._query_int("since_talk", default=0, max_digits=16)
@@ -100,6 +105,7 @@ class Handler(BaseHTTPRequestHandler):
         ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
         ("POST", re.compile(r"^/tables/([^/]+)/commands$"), _command),
         ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),
+        ("POST", re.compile(r"^/tables/([^/]+)/copilot$"), _copilot),
         ("GET", re.compile(r"^/tables/([^/]+)/events$"), _get_events),
     )
 

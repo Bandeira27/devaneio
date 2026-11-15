@@ -86,6 +86,12 @@ class SayRequest(StrictModel):
     revision: int = Field(ge=0)
 
 
+class CopilotRequest(StrictModel):
+    """Pergunta avulsa ao copiloto do anfitrião (sem estado: cada chamada leva o contexto atual)."""
+
+    text: CommandLine
+
+
 class CampaignSummary(StrictModel):
     id: Id
     title: str
@@ -305,6 +311,10 @@ class SayResult(CommandResult):
     commands: list[str]  # as ações que o LLM propôs e o motor aplicou
 
 
+class CopilotAnswer(StrictModel):
+    text: str  # só para o anfitrião que perguntou: nunca vai ao mural nem ao arquivo da mesa
+
+
 class TableJoined(StrictModel):
     player_id: Id
     token: str
@@ -325,6 +335,7 @@ class ApiRequests(StrictModel):
     join_table: JoinRequest
     command: CommandRequest
     say: SayRequest
+    copilot: CopilotRequest
 
 
 class ApiResponses(StrictModel):
@@ -334,6 +345,7 @@ class ApiResponses(StrictModel):
     table_joined: TableJoined
     command_result: CommandResult
     say_result: SayResult
+    copilot_answer: CopilotAnswer
     events: EventsView
     campaign: Campaign
     campaign_view: CampaignView

@@ -59,14 +59,15 @@ a informação**. Em ordem de valor:
 
 ### Copiloto do anfitrião
 
-Um assistente separado, só do anfitrião, com o contexto **privado** completo:
+Um assistente separado, só do anfitrião, com o contexto **privado** completo. Implementado (ver
+[`desenho-copiloto.md`](desenho-copiloto.md)): `POST /tables/{id}/copilot`, pergunta avulsa, sem estado.
 
 - **Não altera estado.** Responde, sugere o próximo marco, rascunha falas de NPC e avisa de risco de spoiler.
   Quem aplica é o anfitrião, pelos comandos de sempre ("o LLM só propõe").
 - Sua saída vai por um canal só do anfitrião e **nunca entra no mural de falas**.
 - Como o anfitrião configurou o LLM, o envio do contexto privado é aceitável; a mesa continua avisada de que o
   LLM existe.
-- Custa chamadas extras: precisa do mesmo cuidado de intervalo que o `/say` tem.
+- Custa chamadas extras: vaga e intervalo próprios, no mesmo espírito do `/say`.
 
 ## Ordem sugerida
 

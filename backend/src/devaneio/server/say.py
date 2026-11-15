@@ -8,7 +8,6 @@ grava só se a mesa continua como era, senão ``409`` e a tentativa se perde.
 
 from __future__ import annotations
 
-import math
 import sys
 from collections.abc import Callable
 from dataclasses import replace
@@ -33,6 +32,7 @@ from devaneio.game import (
 
 from . import policy
 from .errors import ApiFailure
+from .llm_gate import SAY, reserve
 from .models import SayRequest, SayResult
 from .storage import Storage
 from .turns import (
@@ -68,18 +68,11 @@ class SayDesk:
             table, player_id, player = authenticate(session, token)
             who, text = speaker(session.state, player, request.text)
             check_say(table, session.state, who, request.revision)
-        left = storage.say_cooldown_left(table_id, player_id, self._cooldown)
-        if left > 0:
-            raise ApiFailure(
-                429, "say_rate_limited", f"espere {math.ceil(left)} s para pedir outro texto livre"
-            )
-        if not storage.enter_say(table_id):
-            raise ApiFailure(409, "say_busy", "já há uma ação de texto livre em andamento")
-        storage.mark_say(table_id, player_id)  # conta mesmo se a proposta vier vazia ou falhar
+        reserve(storage, table_id, SAY, player_id, self._cooldown)
         try:
             return self._with_llm(table_id, path, (session, table, player, who, text))
         finally:
-            storage.leave_say(table_id)
+            storage.leave_slot(table_id, SAY.kind)
 
     def _with_llm(
         self,

@@ -405,3 +405,15 @@ def test_a_second_content_change_warns_again_after_a_save(service, created, caps
     stale()
     service.get_table(created.table_id, bearer(created.host_token))
     assert "mudou desde que esta partida foi salva" in capsys.readouterr().err
+
+
+def test_the_notice_tells_everyone_about_the_hosts_copilot(tmp_path):
+    config = LlmConfig(base_url="http://127.0.0.1:9/v1", model="m")
+    for secrets in (False, True):
+        service = make_service(tmp_path / str(secrets), llm=config, llm_secrets=secrets)
+        created = service.create_table(
+            CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
+        )
+        notice = service.get_table(created.table_id, created.host_token).llm.notice
+        assert "copiloto" in notice
+        assert "volta só ao anfitrião" in notice

@@ -10,6 +10,7 @@ export interface ApiRequests {
   join_table: JoinRequest;
   command: CommandRequest;
   say: SayRequest;
+  copilot: CopilotRequest;
 }
 export interface CreateTableRequest {
   campaign_id: string;
@@ -27,4 +28,10 @@ export interface CommandRequest {
 export interface SayRequest {
   text: string;
   revision: number;
+}
+/**
+ * Pergunta avulsa ao copiloto do anfitrião (sem estado: cada chamada leva o contexto atual).
+ */
+export interface CopilotRequest {
+  text: string;
 }

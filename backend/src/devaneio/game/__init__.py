@@ -3,7 +3,14 @@
 Nada aqui é terminal nem HTTP: ``cli`` e um servidor são clientes deste pacote.
 """
 
-from devaneio.llm import ChatClient, LlmConfig, LlmError
+from devaneio.llm import (
+    ChatClient,
+    CopilotContextTooLarge,
+    LlmConfig,
+    LlmError,
+    ask_copilot,
+    clean_text,
+)
 
 from .authoring import Finding, check_content
 from .commands import (
@@ -28,6 +35,7 @@ __all__ = [
     "READ_ONLY",
     "ChatClient",
     "CommandError",
+    "CopilotContextTooLarge",
     "Finding",
     "FreeformResult",
     "GameError",
@@ -39,7 +47,9 @@ __all__ = [
     "Role",
     "Session",
     "TableMeta",
+    "ask_copilot",
     "check_content",
+    "clean_text",
     "connect_llm",
     "execute",
     "format_output",

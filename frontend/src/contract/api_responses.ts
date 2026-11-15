@@ -22,6 +22,7 @@ export interface ApiResponses {
   table_joined: TableJoined;
   command_result: CommandResult;
   say_result: SayResult;
+  copilot_answer: CopilotAnswer;
   events: EventsView;
   campaign: Campaign;
   campaign_view: CampaignView;
@@ -218,6 +219,9 @@ export interface SayResult {
   turn_ended: boolean;
   say: string;
   commands: string[];
+}
+export interface CopilotAnswer {
+  text: string;
 }
 export interface EventsView {
   revision: number;

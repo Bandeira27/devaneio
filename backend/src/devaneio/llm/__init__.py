@@ -15,9 +15,16 @@ from .actions import (
 )
 from .client import ChatClient, OpenAiCompatClient
 from .config import LlmConfig
+from .copilot import (
+    CopilotContextTooLarge,
+    ask_copilot,
+    build_copilot_context,
+    build_copilot_messages,
+)
 from .errors import LlmError
 from .narration import narrate_with_llm
 from .prompts import build_context, build_messages, feedback_message
+from .text import clean_text
 
 __all__ = [
     "EXAMPLE_PROPOSAL",
@@ -26,6 +33,7 @@ __all__ = [
     "AttackAction",
     "ChatClient",
     "CheckAction",
+    "CopilotContextTooLarge",
     "LlmConfig",
     "LlmError",
     "MoveAction",
@@ -33,8 +41,12 @@ __all__ = [
     "Proposal",
     "ProposalError",
     "RestAction",
+    "ask_copilot",
     "build_context",
+    "build_copilot_context",
+    "build_copilot_messages",
     "build_messages",
+    "clean_text",
     "feedback_message",
     "narrate_with_llm",
     "parse_proposal",

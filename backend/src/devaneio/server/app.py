@@ -33,6 +33,7 @@ from devaneio.schema import Campaign
 
 from .auth import hash_secret, new_invite, new_token
 from .catalog import Catalog
+from .copilot import CopilotDesk
 from .errors import ApiFailure
 from .models import (
     TURN_POLICY,
@@ -40,6 +41,8 @@ from .models import (
     CampaignView,
     CommandRequest,
     CommandResult,
+    CopilotAnswer,
+    CopilotRequest,
     CreateTableRequest,
     EventsView,
     JoinRequest,
@@ -59,6 +62,7 @@ from .turns import apply, authenticate, events_view
 
 MAX_PLAYERS = 8
 SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
+COPILOT_COOLDOWN = 5.0  # segundos entre duas consultas ao copiloto da mesa
 
 
 class Cursor(NamedTuple):
@@ -73,7 +77,8 @@ LLM_NOTICE = (
     "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes{with_secrets}, "
     "marcos ativos, eventos que os jogadores veem) vão ao servidor de LLM configurado por quem "
     "roda esta mesa: {description}. {secrets_note}A fala e a narração que o LLM devolve voltam "
-    "aos jogadores."
+    "aos jogadores. O anfitrião também pode consultar um copiloto, que recebe a campanha inteira "
+    "(segredos, fatos ocultos e notas privadas inclusive); a resposta dele volta só ao anfitrião."
 )
 NOTICE_WITH_SECRETS = (", segredos dos NPCs, fatos ocultos e notas privadas da campanha", "")
 NOTICE_WITHOUT_SECRETS = ("", "Segredos, fatos ocultos e notas privadas não vão. ")
@@ -87,6 +92,7 @@ class TableService:
         *,
         llm: LlmConfig | None = None,
         say_cooldown: float = SAY_COOLDOWN,
+        copilot_cooldown: float = COPILOT_COOLDOWN,
         llm_secrets: bool = False,
         token_source: Callable[[], str] = new_token,
         invite_source: Callable[[], str] = new_invite,
@@ -100,6 +106,11 @@ class TableService:
         self._invite_source = invite_source
         self._say = (
             SayDesk(storage, llm, self.load_session, say_cooldown, llm_secrets)
+            if llm is not None
+            else None
+        )
+        self._copilot = (
+            CopilotDesk(storage, llm, self.load_session, copilot_cooldown)
             if llm is not None
             else None
         )
@@ -266,6 +277,17 @@ class TableService:
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         return self._say.run(table_id, path, token, request)
+
+    def copilot(self, table_id: str, token: str | None, request: CopilotRequest) -> CopilotAnswer:
+        """Consulta ao copiloto do anfitrião (ver ``copilot.CopilotDesk``)."""
+        if self._copilot is None:
+            raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
+        path = self.storage.path_for(table_id)
+        if path is None:
+            raise ApiFailure(404, "table_not_found", "mesa não encontrada")
+        if token is None:
+            raise ApiFailure(401, "unauthorized", "token ausente")
+        return self._copilot.run(table_id, path, token, request)
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
         session, table, player = self._open(table_id, token)
