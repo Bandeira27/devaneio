@@ -10,7 +10,8 @@ rules                          sistema de regras e expressões (dados interpreta
 schema | rng                   modelos Pydantic e gerador reprodutível
 ```
 
-Dependências só apontam para baixo. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
+Dependências só apontam para baixo. `game` reexporta o que `cli` e `server` precisam de `llm` (`LlmConfig`,
+`LlmError`, `ChatClient`): os dois só falam com `game`. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
 e passa por `execute()` (`game/commands.py`), reaproveitando as validações. `export_schema.py` é ferramenta de
 build, no topo: importa `server.models` para exportar o contrato da API, e `server/__init__.py` não reexporta o
 adaptador HTTP (`server/http.py`), para a ferramenta de build não carregar `http.server`.

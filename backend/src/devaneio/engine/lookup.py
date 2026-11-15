@@ -9,6 +9,13 @@ from .errors import EngineError
 KINDS = ("character", "npc")
 
 
+def npc_ids_at(state: GameState, location_id: str) -> frozenset[str]:
+    """Ids dos NPCs que estão num local. É o critério de "quem o grupo vê aqui": o ``olhar``, as
+    visões do jogador na mesa e o filtro do log usam esta função, então mudar o critério
+    (NPC escondido por um efeito, por exemplo) é mudar um lugar só."""
+    return frozenset(k for k, v in state.npcs.items() if v.location_id == location_id)
+
+
 def combatant(
     state: GameState, campaign: Campaign, kind: str, who_id: str
 ) -> tuple[str, dict[str, int], int]:

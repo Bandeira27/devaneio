@@ -44,6 +44,7 @@ def run_freeform(
     *,
     actor: str | None = None,
     allow: Callable[[Session, str], None] | None = None,
+    hide_events: frozenset[int] = frozenset(),
 ) -> FreeformResult:
     """``CommandError`` se não der para aplicar (``GameOverError`` se a partida acabou,
     ``LlmUnavailableError`` se o servidor de LLM falhou); nesse caso ``session`` segue intacta.
@@ -69,7 +70,9 @@ def run_freeform(
         text = text.strip()
     character = resolve_actor(session, actor)
 
-    messages = build_messages(session.campaign, session.rules, session.state, character.id, text)
+    messages = build_messages(
+        session.campaign, session.rules, session.state, character.id, text, hide_events=hide_events
+    )
     problems: list[str] = []
     for _ in range(MAX_ATTEMPTS):
         try:

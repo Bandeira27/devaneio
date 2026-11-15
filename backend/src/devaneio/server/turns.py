@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from devaneio.engine import GameStatus, game_status
+from devaneio.engine import GameStatus, game_status, npc_ids_at
 from devaneio.game import (
     CommandError,
     GameOverError,
@@ -26,8 +26,7 @@ from devaneio.schema import Campaign, GameState
 from . import policy
 from .auth import find_player
 from .errors import ApiFailure
-from .models import MAX_NAME, CommandRequest, CommandResult, EventView
-from .storage import Flavor
+from .models import MAX_NAME, CommandRequest, CommandResult, EventView, Flavor
 
 MAX_JOIN_ARGS = 30  # id, nome, atributos e itens do `entrar`
 
@@ -47,7 +46,7 @@ def prefixed(actor: str, rest: str) -> str:
 
 
 # Quem age ou sofre num evento: pares (tipo, id) nas chaves de ``Event.data``.
-_PARTICIPANTS = (
+PARTICIPANT_KEYS = (
     ("actor_kind", "actor_id"),
     ("attacker_kind", "attacker_id"),
     ("target_kind", "target_id"),
@@ -65,11 +64,11 @@ def hidden_events(state: GameState, campaign: Campaign) -> frozenset[int]:
     for index, event in enumerate(state.events):
         if event.kind == "move":
             here = str(event.data["to_location_id"])
-        for kind_key, id_key in _PARTICIPANTS:
+        for kind_key, id_key in PARTICIPANT_KEYS:
             if event.data.get(kind_key) != "npc":
                 continue
-            npc = state.npcs.get(str(event.data.get(id_key)))
-            if npc is not None and npc.location_id != here:
+            npc_id = str(event.data.get(id_key))
+            if npc_id in state.npcs and npc_id not in npc_ids_at(state, here):
                 hidden.add(index)
     return frozenset(hidden)
 
@@ -256,8 +255,8 @@ def check_target(state: GameState, player: Player, name: str, args: list[str]) -
     para o ataque não revelar nem ferir quem o ``olhar`` não mostra."""
     if name != "atacar" or player.role == "host" or len(args) < 2:
         return
-    npc = state.npcs.get(args[1])
-    if npc is not None and npc.location_id != state.current_location_id:
+    npc_id = args[1]
+    if npc_id in state.npcs and npc_id not in npc_ids_at(state, state.current_location_id):
         raise ApiFailure(422, "command_refused", f"alvo '{args[1]}' não está na partida")
 
 

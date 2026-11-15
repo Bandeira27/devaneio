@@ -7,16 +7,26 @@ Sobe a mesa em grupo. Por padrão escuta só em 127.0.0.1: com ``--host 0.0.0.0`
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import sys
 from pathlib import Path
 
-from devaneio.llm import LlmConfig, LlmError
+from devaneio.game import LlmConfig, LlmError
 
 from .app import SAY_COOLDOWN, TableService
 from .catalog import Catalog, CatalogError
 from .http import make_server
 from .storage import Storage
+
+
+def seconds(raw: str) -> float:
+    """Segundos finitos e não negativos: ``nan`` e valores negativos desligariam o limite, e
+    ``inf`` faria o servidor falhar na primeira conta."""
+    value = float(raw)
+    if not math.isfinite(value) or value < 0:
+        raise argparse.ArgumentTypeError(f"{raw!r} não é um número de segundos finito e >= 0")
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--intervalo-say",
-        type=float,
+        type=seconds,
         default=SAY_COOLDOWN,
         help="segundos mínimos entre dois textos livres do mesmo jogador (custo do LLM)",
     )

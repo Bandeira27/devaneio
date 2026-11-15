@@ -620,3 +620,35 @@ def test_main_warns_on_stderr_when_listening_outside_loopback(tmp_path, monkeypa
     assert "aviso: escutando em 192.0.2.10: HTTP em claro, inclusive tokens." in err
     assert "Devaneio: mesa em http://192.0.2.10:4242" in out
     assert [s.closed for s in servers] == [True]
+
+
+@pytest.mark.parametrize("value", ["nan", "-1", "inf", "x", "-inf"])
+def test_the_say_interval_flag_must_be_a_finite_non_negative_number(tmp_path, capsys, value):
+    with pytest.raises(SystemExit) as info:
+        main(
+            [
+                "--campanhas",
+                str(CAMPAIGN_PATH.parent),
+                "--dados",
+                str(tmp_path / "d"),
+                "--intervalo-say",
+                value,
+            ]
+        )
+    assert info.value.code == 2
+    assert "--intervalo-say" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("0", 0.0), ("2.5", 2.5), ("30", 30.0)])
+def test_the_say_interval_flag_reaches_the_service(tmp_path, monkeypatch, raw, expected):
+    seen = []
+
+    def spy(*_args, **kwargs):
+        seen.append(kwargs["say_cooldown"])
+
+    monkeypatch.setattr("devaneio.server.__main__.TableService", spy)
+    monkeypatch.setattr(
+        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+    )
+    assert main(main_args(tmp_path, "--porta", "0", "--intervalo-say", raw)) == 0
+    assert seen == [expected]

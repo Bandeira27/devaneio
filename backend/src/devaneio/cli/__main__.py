@@ -14,6 +14,8 @@ from pydantic import ValidationError
 from devaneio.game import (
     CommandError,
     GameError,
+    LlmConfig,
+    LlmError,
     Session,
     connect_llm,
     execute,
@@ -25,7 +27,6 @@ from devaneio.game import (
     save_game,
     status_banner,
 )
-from devaneio.llm import LlmConfig, LlmError
 from devaneio.schema import CampaignIntegrityError
 
 QUIT = ("sair", "quit", "exit")

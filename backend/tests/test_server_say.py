@@ -13,8 +13,14 @@ from devaneio.engine import GameStatus
 from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.http import make_server
-from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest, SayRequest
-from devaneio.server.storage import MAX_NARRATIONS, Flavor
+from devaneio.server.models import (
+    CommandRequest,
+    CreateTableRequest,
+    Flavor,
+    JoinRequest,
+    SayRequest,
+)
+from devaneio.server.storage import MAX_NARRATIONS
 from fakes import FakeLlmServer
 
 TOKENS = count(1)
@@ -726,3 +732,32 @@ def test_a_conversation_without_events_reaches_only_who_spoke(desk, script):
     assert result.say == "Bram sussurra um segredo."
     assert result.events == []
     assert all(e.speech is None for e in desk.events(caio))
+
+
+def test_the_prompt_never_carries_events_the_players_do_not_see(desk, script):
+    """A fala do mestre vai a todos: o modelo não pode ter visto o que só o anfitrião vê."""
+    desk.cmd(desk.host, 'entrar ana "Ana"')
+    bia = desk.player("Bia")
+    desk.cmd(desk.host, 'ferir sacerdote 2 "armadilha"')
+    script.proposals.append(proposal(CHECK, say="Cuidado."))
+    desk.say(bia, "tento")
+    prompt = script.proposer_calls()[0]["messages"][1]["content"]
+    assert "Irmão Vael" not in prompt
+
+
+def test_the_flavor_sits_on_the_first_visible_event_not_on_the_hidden_damage(desk, script):
+    """O ataque ao NPC escondido gera um teste (visível) e o dano (escondido): a fala e a
+    narração vão ao teste e o dano do NPC nunca as recebe, nem para o anfitrião."""
+    desk.cmd(desk.host, 'entrar ana "Ana" FOR=5')
+    bia = desk.player("Bia")
+    script.proposals.append(proposal(HIDDEN_ATTACK, say="Cuidado, Ana."))
+    result = desk.say(desk.host, "ataco o sacerdote")
+    assert [e.kind for e in result.events] == ["check", "damage"]
+    check, damage = result.events
+    assert check.speech == "Cuidado, Ana."
+    assert check.narration == "O vento muda de direção."
+    assert damage.speech is None
+    assert damage.narration is None
+    seen_by_bia = desk.events(bia, since=check.index)
+    assert [e.kind for e in seen_by_bia] == ["check"]
+    assert seen_by_bia[0].speech == "Cuidado, Ana."

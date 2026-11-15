@@ -19,6 +19,7 @@ from devaneio.game import (
     CommandError,
     GameError,
     GameOverError,
+    LlmConfig,
     Player,
     Role,
     Session,
@@ -27,7 +28,6 @@ from devaneio.game import (
     new_game,
     save_game,
 )
-from devaneio.llm import LlmConfig
 from devaneio.schema import Campaign
 
 from .auth import hash_secret, new_invite, new_token
@@ -82,7 +82,9 @@ class TableService:
         self.llm = llm
         self._token_source = token_source
         self._invite_source = invite_source
-        self._say = SayDesk(storage, llm, self._load, say_cooldown) if llm is not None else None
+        self._say = (
+            SayDesk(storage, llm, self.load_session, say_cooldown) if llm is not None else None
+        )
 
     # --- operações ---------------------------------------------------------------
 
@@ -118,7 +120,7 @@ class TableService:
         if path is None:
             raise ApiFailure(401, "invalid_invite", "convite inválido")
         with self.storage.lock(table_id):
-            session = self._load(path)
+            session = self.load_session(path)
             table = session.table
             if table is None or not hmac.compare_digest(
                 hash_secret(request.invite_code), table.invite_hash
@@ -210,7 +212,7 @@ class TableService:
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
-            session = self._load(path)
+            session = self.load_session(path)
             table, player_id, player = authenticate(session, token)
             try:
                 result, new_session, new_table = apply(session, table, player_id, player, request)
@@ -258,11 +260,11 @@ class TableService:
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
-            session = self._load(path)
+            session = self.load_session(path)
         table, _, player = authenticate(session, token)
         return session, table, player
 
-    def _load(self, path: Path) -> Session:
+    def load_session(self, path: Path) -> Session:
         try:
             return load_game(path, campaign_root=self.catalog.root)
         except (GameError, ValidationError, OSError) as exc:

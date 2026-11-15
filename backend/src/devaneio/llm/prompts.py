@@ -42,8 +42,15 @@ Formato da resposta (exemplo; use os ids do catálogo da partida):
 
 
 def build_context(
-    campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str
+    campaign: Campaign,
+    rules: RuleSystem,
+    state: GameState,
+    actor_id: str,
+    *,
+    hide_events: frozenset[int] = frozenset(),
 ) -> dict[str, Any]:
+    """``hide_events``: índices de eventos que não vão ao prompt (quem orquestra sabe quais os
+    jogadores não podem ver, e a fala do modelo pode chegar a todos)."""
     here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
     names = {loc.id: loc.name for loc in campaign.locations}
     static = {n.id: n for n in campaign.npcs}
@@ -100,7 +107,9 @@ def build_context(
             for b in campaign.beats
             if state.beats.get(b.id) is not None and state.beats[b.id].value == "active"
         ],
-        "eventos_recentes": [e.text for e in state.events[-5:]],
+        "eventos_recentes": [e.text for i, e in enumerate(state.events) if i not in hide_events][
+            -5:
+        ],
         "catalogo": {
             "habilidades": [{"id": s.id, "nome": s.name} for s in rules.skills],
             "dificuldades": [
@@ -117,9 +126,17 @@ def build_context(
 
 
 def build_messages(
-    campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str, player_text: str
+    campaign: Campaign,
+    rules: RuleSystem,
+    state: GameState,
+    actor_id: str,
+    player_text: str,
+    *,
+    hide_events: frozenset[int] = frozenset(),
 ) -> list[dict[str, str]]:
-    context = json.dumps(build_context(campaign, rules, state, actor_id), ensure_ascii=False)
+    context = json.dumps(
+        build_context(campaign, rules, state, actor_id, hide_events=hide_events), ensure_ascii=False
+    )
     name = state.characters[actor_id].name
     return [
         {"role": "system", "content": PROPOSER_SYSTEM},

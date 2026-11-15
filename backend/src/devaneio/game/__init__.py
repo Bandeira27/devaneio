@@ -3,6 +3,8 @@
 Nada aqui é terminal nem HTTP: ``cli`` e um servidor são clientes deste pacote.
 """
 
+from devaneio.llm import ChatClient, LlmConfig, LlmError
+
 from .commands import (
     COMMANDS,
     READ_ONLY,
@@ -21,10 +23,13 @@ from .table import Player, Role, TableMeta
 __all__ = [
     "COMMANDS",
     "READ_ONLY",
+    "ChatClient",
     "CommandError",
     "FreeformResult",
     "GameError",
     "GameOverError",
+    "LlmConfig",
+    "LlmError",
     "LlmUnavailableError",
     "Player",
     "Role",

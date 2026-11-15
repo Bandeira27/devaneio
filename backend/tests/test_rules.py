@@ -203,3 +203,12 @@ def test_campaign_against_rules_reports_each_problem(campaign_data, rules):
         "npc 'sacerdote' tem atributo 'XIS', que o sistema não declara",
         "npc 'sacerdote': FOR = 7 fora de [1, 5]",
     ]
+
+
+def test_fallen_can_act_comes_from_the_rules_data_and_defaults_to_false():
+    data = load_builtin_rules("default").model_dump(mode="json")
+    assert data["combat"]["fallen_can_act"] is False
+    del data["combat"]["fallen_can_act"]  # o campo é opcional: um arquivo antigo continua válido
+    assert RuleSystem.model_validate(data).combat.fallen_can_act is False
+    data["combat"]["fallen_can_act"] = True
+    assert RuleSystem.model_validate(data).combat.fallen_can_act is True

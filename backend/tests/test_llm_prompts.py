@@ -5,6 +5,7 @@ import pytest
 from devaneio.engine import add_character, initial_state, move
 from devaneio.llm import MAX_ACTIONS, build_context, build_messages, feedback_message
 from devaneio.llm.prompts import PROPOSER_SYSTEM
+from devaneio.schema import Event
 
 
 @pytest.fixture
@@ -79,3 +80,17 @@ def test_say_must_not_announce_the_outcome():
 def test_missing_weapon_falls_back_instead_of_refusing():
     # Visto no qwen 4B: sem a arma citada, ele recusava o ataque em vez de usar os punhos.
     assert "NÃO recuse o ataque" in PROPOSER_SYSTEM
+
+
+def test_hidden_events_stay_out_of_the_prompt_and_the_last_five_are_still_five(
+    campaign, rules, state
+):
+    events = [Event(turn=0, kind="x", text=f"evento {i}") for i in range(8)]
+    state = state.model_copy(update={"events": events})
+    assert build_context(campaign, rules, state, "aria")["eventos_recentes"] == [
+        f"evento {i}" for i in range(3, 8)
+    ]
+    shown = build_context(campaign, rules, state, "aria", hide_events=frozenset({5, 7}))
+    assert shown["eventos_recentes"] == ["evento 1", "evento 2", "evento 3", "evento 4", "evento 6"]
+    messages = build_messages(campaign, rules, state, "aria", "oi", hide_events=frozenset({7}))
+    assert "evento 7" not in messages[1]["content"]

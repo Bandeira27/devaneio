@@ -24,6 +24,7 @@ from devaneio.engine import (
     game_status,
     heal,
     move,
+    npc_ids_at,
     pass_turn,
     resolve_check,
     rest,
@@ -173,7 +174,7 @@ def _look(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameS
             else ""
         )
         for npc_id, npc in state.npcs.items()
-        if npc.location_id == here.id
+        if npc_id in npc_ids_at(state, here.id)
     ]
     lines.append("Aqui: " + (", ".join(present) if present else "ninguém"))
     titles = {b.id: b.title for b in campaign.beats}

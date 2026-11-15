@@ -7,10 +7,16 @@ from itertools import count
 import pytest
 
 from conftest import CAMPAIGN_PATH
-from devaneio.game import execute, new_game
+from devaneio.game import CommandError, execute, new_game
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
-from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest
-from devaneio.server.turns import hidden_events
+from devaneio.server.models import (
+    CampaignView,
+    CommandRequest,
+    CreateTableRequest,
+    JoinRequest,
+    PlayerStateView,
+)
+from devaneio.server.turns import PARTICIPANT_KEYS, events_view, hidden_events, hidden_for
 
 TOKENS = count(1)
 
@@ -149,3 +155,112 @@ def test_events_without_an_npc_are_never_hidden(session):
     state, _ = execute(session, "ir floresta")
     state, _ = execute(state, "bia: testar lutar normal")
     assert hidden_events(state.state, state.campaign) == frozenset()
+
+
+# --- a invariante contra eventos reais do motor ------------------------------------
+
+NPC_IDS = {"ferreiro", "sacerdote"}
+ID_KEYS = {id_key for _, id_key in PARTICIPANT_KEYS}
+
+
+def values(data):
+    """Todos os valores (folhas) de um ``Event.data``, com a chave de cada um."""
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, dict | list):
+                yield from values(value)
+            else:
+                yield key, value
+    elif isinstance(data, list):
+        for item in data:
+            yield from values(item)
+    else:
+        yield "", data
+
+
+@pytest.fixture
+def busy(tmp_path):
+    """Uma partida com os tipos de evento que citam NPC: dano, cura, teste e ataque do NPC,
+    ataque do personagem, descanso, marcos e movimento."""
+    base = new_game(CAMPAIGN_PATH, tmp_path / "p.json", seed=7)
+    state, _ = execute(base, 'entrar bia "Bia" FOR=5')
+    for line in (
+        'ferir sacerdote 2 "a"',
+        'curar sacerdote 1 "b"',
+        'ferir ferreiro 1 "c"',
+        "atacar punhos ferreiro",
+        "bia: atacar punhos ferreiro",
+        "ir floresta",
+        "ir ruinas",
+        "fim",
+        "fim",
+        'ferir bia 3 "d"',
+        "descansar",
+    ):
+        try:
+            state, _ = execute(state, line)
+        except CommandError:
+            continue  # o cenário só precisa gerar eventos; uma recusa do motor não importa
+    return state
+
+
+def test_every_npc_id_in_the_engine_events_sits_under_a_participant_key(busy):
+    """Se o motor passar a citar NPC em outra chave de ``data``, o filtro do log vazaria nome e
+    hp: este teste falha antes (o novo par entra em PARTICIPANT_KEYS)."""
+    kinds_seen = set()
+    for event in busy.state.events:
+        kinds_seen.add(event.kind)
+        for key, value in values(event.data):
+            if value in NPC_IDS:
+                assert key in ID_KEYS, f"{event.kind}: NPC '{value}' em data['{key}']"
+    assert {"damage", "heal", "check", "move", "director"} <= kinds_seen
+
+
+def test_an_event_that_names_a_hidden_npc_is_hidden(tmp_path):
+    base = new_game(CAMPAIGN_PATH, tmp_path / "p.json", seed=7)
+    state, _ = execute(base, 'entrar bia "Bia"')
+    for line in ('ferir sacerdote 5 "a"', 'curar sacerdote 2 "b"', 'ferir sacerdote 99 "c"'):
+        state, _ = execute(state, line)  # o grupo está na vila; o sacerdote, nas ruínas
+    hidden = hidden_events(state.state, state.campaign)
+    named = [i for i, e in enumerate(state.state.events) if "Irmão Vael" in e.text]
+    assert len(named) == 3
+    assert set(named) <= hidden
+
+
+# --- o que continua visível, o papel e as visões ------------------------------------
+
+
+def test_the_host_hides_nothing_and_events_view_needs_a_role(session):
+    state, _ = execute(session, 'ferir sacerdote 2 "a"')  # escondido do grupo, que está na vila
+    assert hidden_events(state.state, state.campaign) == {2}
+    assert hidden_for("host", state) == frozenset()
+    assert hidden_for("player", state) == {2}
+    host_indexes = [e.index for e in events_view(state, 0, role="host")]
+    player_indexes = [e.index for e in events_view(state, 0, role="player")]
+    assert 2 in host_indexes
+    assert 2 not in player_indexes
+    with pytest.raises(TypeError, match="role"):
+        events_view(state, 0)
+
+
+def test_npc_heal_rest_and_director_events_with_a_visible_npc_reach_the_player(session):
+    state, _ = execute(session, 'ferir ferreiro 2 "a"')
+    state, _ = execute(state, 'curar ferreiro 1 "b"')
+    state, _ = execute(state, 'ferir bia 3 "c"')
+    state, _ = execute(state, "descansar")
+    state, _ = execute(state, "ir floresta")
+    state, _ = execute(state, "ir ruinas")
+    state, _ = execute(state, "fim")  # o sacerdote hostil age: eventos de diretor
+    seen = {e.kind for e in events_view(state, 0, role="player")}
+    assert {"heal", "rest", "director"} <= seen
+    assert hidden_events(state.state, state.campaign) == frozenset()
+
+
+def test_player_views_list_the_npcs_of_the_current_location(session):
+    state = session.state
+    assert list(PlayerStateView.of(state, session.rules).npcs) == ["ferreiro"]
+    assert [n.id for n in CampaignView.of(session.campaign, state).npcs] == ["ferreiro"]
+    moved, _ = execute(session, "ir floresta")
+    moved, _ = execute(moved, "ir ruinas")
+    assert list(PlayerStateView.of(moved.state, moved.rules).npcs) == ["sacerdote"]
+    assert [n.id for n in CampaignView.of(moved.campaign, moved.state).npcs] == ["sacerdote"]

@@ -15,18 +15,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .models import Flavor
+
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
 MAX_NARRATIONS = 200  # narrações e falas guardadas por mesa; as mais antigas saem primeiro
-
-
-@dataclass(frozen=True)
-class Flavor:
-    """O que o LLM acrescentou a um evento (só exibição): o parágrafo de narração do lote e a
-    fala do mestre ou do NPC. Vive em memória e some ao reiniciar o servidor."""
-
-    narration: str | None = None
-    speech: str | None = None
 
 
 @dataclass

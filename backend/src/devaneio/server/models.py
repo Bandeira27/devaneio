@@ -8,11 +8,12 @@ JSON Schema por modo (validation e serialization). Nenhum modelo de ``game/table
 from __future__ import annotations
 
 import unicodedata
+from dataclasses import dataclass
 from typing import Annotated, Literal
 
 from pydantic import BeforeValidator, Field
 
-from devaneio.engine import GameStatus
+from devaneio.engine import GameStatus, npc_ids_at
 from devaneio.game import Role
 from devaneio.rules import RuleSystem
 from devaneio.schema import (
@@ -86,6 +87,15 @@ class SayRequest(StrictModel):
     revision: int = Field(ge=0)
 
 
+@dataclass(frozen=True)
+class Flavor:
+    """O que o LLM acrescentou a um evento (só exibição): o parágrafo de narração do lote e a
+    fala do mestre ou do NPC. Vive em memória e some ao reiniciar o servidor."""
+
+    narration: str | None = None
+    speech: str | None = None
+
+
 class CampaignSummary(StrictModel):
     id: Id
     title: str
@@ -135,7 +145,7 @@ class CampaignView(StrictModel):
     def of(cls, campaign: Campaign, state: GameState) -> CampaignView:
         names = {loc.id: loc.name for loc in campaign.locations}
         here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
-        present = {k for k, v in state.npcs.items() if v.location_id == here.id}
+        present = npc_ids_at(state, here.id)
         return cls(
             id=campaign.id,
             title=campaign.title,
@@ -215,7 +225,7 @@ class PlayerStateView(StrictModel):
                     hostile=v.disposition < hostile_below,
                 )
                 for k, v in state.npcs.items()
-                if v.location_id == here
+                if k in npc_ids_at(state, here)
             },
             beats={k: v for k, v in state.beats.items() if v is not BeatStatus.PENDING},
         )

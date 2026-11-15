@@ -16,8 +16,10 @@ from pathlib import Path
 
 from devaneio.engine import game_status
 from devaneio.game import (
+    ChatClient,
     CommandError,
     GameOverError,
+    LlmConfig,
     LlmUnavailableError,
     Player,
     Session,
@@ -28,12 +30,11 @@ from devaneio.game import (
     run_freeform,
     save_game,
 )
-from devaneio.llm import ChatClient, LlmConfig
 
 from . import policy
 from .errors import ApiFailure
-from .models import SayRequest, SayResult
-from .storage import Flavor, Storage
+from .models import Flavor, SayRequest, SayResult
+from .storage import Storage
 from .turns import (
     authenticate,
     authorize_proposal,
@@ -93,6 +94,7 @@ class SayDesk:
                 text,
                 actor=who,
                 allow=lambda working, line: authorize_proposal(player, working, line),
+                hide_events=hidden_events(session.state, session.campaign),
             )
         except GameOverError as exc:
             raise ApiFailure(409, "game_over", str(exc)) from None
