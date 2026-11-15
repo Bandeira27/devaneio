@@ -5,6 +5,7 @@ Nada aqui é terminal nem HTTP: ``cli`` e um servidor são clientes deste pacote
 
 from devaneio.llm import ChatClient, LlmConfig, LlmError
 
+from .authoring import Finding, check_content
 from .commands import (
     COMMANDS,
     READ_ONLY,
@@ -27,6 +28,7 @@ __all__ = [
     "READ_ONLY",
     "ChatClient",
     "CommandError",
+    "Finding",
     "FreeformResult",
     "GameError",
     "GameOverError",
@@ -37,6 +39,7 @@ __all__ = [
     "Role",
     "Session",
     "TableMeta",
+    "check_content",
     "connect_llm",
     "execute",
     "format_output",

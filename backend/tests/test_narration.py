@@ -20,6 +20,7 @@ from devaneio.engine import (
 )
 from devaneio.narration import (
     EVENT_VARIABLES,
+    EVENT_VARIANTS,
     NarrationIntegrityError,
     NarrationPack,
     Narrator,
@@ -298,3 +299,9 @@ def test_pack_extends_errors_are_clear():
 def test_a_file_without_extends_is_a_plain_pack():
     text = builtin_pack_json("pt-br")
     assert load_pack_extending(text, builtin_pack_dict).id == "pt-br"
+
+
+def test_the_narrator_only_uses_variants_the_table_knows(narrator, played):
+    for event in played.events:
+        variant, _ = narrator._prepare(event, played)
+        assert variant == "" or variant in EVENT_VARIANTS.get(event.kind, ()), event.kind

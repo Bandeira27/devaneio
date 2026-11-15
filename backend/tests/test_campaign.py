@@ -166,7 +166,7 @@ def test_unknown_condition_kind_is_a_structural_error(campaign_data):
 def test_example_campaign_has_triggers(campaign):
     by_id = {b.id: b for b in campaign.beats}
     assert by_id["chegada"].complete_when[0].location_id == "floresta"
-    assert by_id["confronto"].complete_when[0].npc_id == "sacerdote"
+    assert by_id["confronto"].complete_when[1].npc_id == "sacerdote"
     assert by_id["pista"].complete_when == []
 
 

@@ -30,6 +30,15 @@ EVENT_VARIABLES: dict[str, tuple[str, ...]] = {
 }
 
 
+# Variantes que o narrador escolhe por tipo de evento (regras "tipo.variante"). Um teste confere
+# que ``Narrator`` só usa estas; o aviso de autoria usa a mesma tabela.
+EVENT_VARIANTS: dict[str, tuple[str, ...]] = {
+    "check": ("critical_failure", "failure", "success", "critical_success"),
+    "damage": ("golpe", "golpe_queda", "fonte", "fonte_queda"),
+    "director": ("calmo", "tenso", "critico"),
+}
+
+
 class NarrationIntegrityError(ValueError):
     def __init__(self, errors: Iterable[str]) -> None:
         self.errors = list(errors)

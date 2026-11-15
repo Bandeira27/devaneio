@@ -9,7 +9,7 @@ nos templates: só texto e referências.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 
 from devaneio.rng import Rng
 
@@ -59,6 +59,13 @@ class Grammar:
             refs, _ = self._closure(orphan)
             problems |= {f"{orphan}: #{ref}#" for ref in refs if ref not in self.rules}
         return sorted(problems)
+
+    def reachable(self, roots: Iterable[str]) -> set[str]:
+        """Regras alcançáveis a partir das ``roots`` (elas incluídas, as que existem)."""
+        visited: set[str] = set()
+        for root in roots:
+            visited |= self._closure(root)[1]
+        return visited
 
     def _closure(self, root: str) -> tuple[set[str], set[str]]:
         """(referências alcançáveis a partir de root, regras visitadas)."""
