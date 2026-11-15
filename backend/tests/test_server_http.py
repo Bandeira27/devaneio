@@ -11,9 +11,11 @@ from itertools import count
 import pytest
 
 from conftest import CAMPAIGN_PATH
+from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.__main__ import main
 from devaneio.server.http import ApiServer, make_server
+from fakes import FakeLlmServer
 
 TOKENS = count(1)
 
@@ -684,3 +686,58 @@ def test_since_talk_must_be_a_non_negative_integer(client, value):
     table_id, _, _, bia, _ = play_setup(client)
     status, body, _ = client.call("GET", f"/tables/{table_id}/events?since_talk={value}", auth=bia)
     assert (status, body["error"]["code"]) == (400, "bad_request")
+
+
+def test_the_copilot_route_answers_the_host_only(tmp_path, issued):
+    with FakeLlmServer(lambda _body: (200, "Pense na floresta.")) as fake:
+        service = TableService(
+            Catalog(CAMPAIGN_PATH.parent),
+            Storage(tmp_path / "mesas", max_tables=5),
+            llm=LlmConfig(base_url=fake.base_url, model="m"),
+            copilot_cooldown=0,
+            token_source=lambda: issued.append(f"token-{next(TOKENS)}") or issued[-1],
+            invite_source=lambda: "convite",
+        )
+        server = make_server("127.0.0.1", 0, service)
+        thread = threading.Thread(
+            target=lambda: server.serve_forever(poll_interval=0.02), daemon=True
+        )
+        thread.start()
+        try:
+            http = Client(f"http://127.0.0.1:{server.server_address[1]}")
+            _, created, _ = create(http)
+            table, host = created["table_id"], created["host_token"]
+            _, joined, _ = http.call(
+                "POST",
+                f"/tables/{table}/players",
+                body={"invite_code": "convite", "name": "Bia"},
+            )
+            path = f"/tables/{table}/copilot"
+            status, body, headers = http.call("POST", path, body={"text": "e agora?"}, auth=host)
+            assert (status, body) == (200, {"text": "Pense na floresta."})
+            assert headers["Cache-Control"] == "no-store"
+            status, body, _ = http.call(
+                "POST", path, body={"text": "e agora?"}, auth=joined["token"]
+            )
+            assert (status, body["error"]["code"]) == (403, "forbidden")
+            status, body, _ = http.call("POST", path, body={"text": "x" * 600}, auth=host)
+            assert status == 400
+            status, _, _ = http.call("GET", path, auth=host)
+            assert status == 405
+        finally:
+            server.shutdown()
+            server.server_close()
+
+
+@pytest.mark.parametrize(("args", "expected"), [([], 5.0), (["--intervalo-copiloto", "12"], 12.0)])
+def test_the_copilot_interval_flag_reaches_the_service(tmp_path, monkeypatch, args, expected):
+    seen = []
+    monkeypatch.setattr(
+        "devaneio.server.__main__.TableService",
+        lambda *_a, **kw: seen.append(kw["copilot_cooldown"]),
+    )
+    monkeypatch.setattr(
+        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+    )
+    assert main(main_args(tmp_path, "--porta", "0", *args)) == 0
+    assert seen == [expected]

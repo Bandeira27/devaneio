@@ -21,6 +21,22 @@
       "title": "CommandRequest",
       "type": "object"
     },
+    "CopilotRequest": {
+      "additionalProperties": false,
+      "description": "Pergunta avulsa ao copiloto do anfitrião (sem estado: cada chamada leva o contexto atual).",
+      "properties": {
+        "text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "CopilotRequest",
+      "type": "object"
+    },
     "CreateTableRequest": {
       "additionalProperties": false,
       "properties": {
@@ -109,13 +125,17 @@
     },
     "say": {
       "$ref": "#/$defs/SayRequest"
+    },
+    "copilot": {
+      "$ref": "#/$defs/CopilotRequest"
     }
   },
   "required": [
     "create_table",
     "join_table",
     "command",
-    "say"
+    "say",
+    "copilot"
   ],
   "title": "ApiRequests",
   "type": "object"

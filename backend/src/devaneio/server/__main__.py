@@ -14,7 +14,7 @@ from pathlib import Path
 
 from devaneio.game import LlmConfig, LlmError
 
-from .app import SAY_COOLDOWN, TableService
+from .app import COPILOT_COOLDOWN, SAY_COOLDOWN, TableService
 from .catalog import Catalog, CatalogError
 from .http import make_server
 from .storage import Storage
@@ -49,6 +49,12 @@ def main(argv: list[str] | None = None) -> int:
         help="segundos mínimos entre dois textos livres do mesmo jogador (custo do LLM)",
     )
     parser.add_argument(
+        "--intervalo-copiloto",
+        type=seconds,
+        default=COPILOT_COOLDOWN,
+        help="segundos mínimos entre duas consultas ao copiloto do anfitrião (custo do LLM)",
+    )
+    parser.add_argument(
         "--segredos-no-llm",
         action="store_true",
         help="envia os segredos dos NPCs ao LLM da mesa (a fala dele chega a todos os jogadores)",
@@ -69,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
         Storage(args.dados, max_tables=args.max_mesas),
         llm=llm,
         say_cooldown=args.intervalo_say,
+        copilot_cooldown=args.intervalo_copiloto,
         llm_secrets=args.segredos_no_llm,
     )
     server = make_server(args.host, args.porta, service)

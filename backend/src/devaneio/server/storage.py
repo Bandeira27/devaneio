@@ -28,6 +28,8 @@ class _Table:
     waiters: int = 0
     saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
     last_say: dict[str, float] = field(default_factory=dict)  # por jogador, no relógio da mesa
+    copilot_busy: bool = False  # uma consulta ao copiloto por vez por mesa (vaga própria)
+    last_copilot: float | None = None  # relógio da mesa; só o anfitrião consulta, então um só valor
     presentation: Presentation = field(default_factory=lambda: Presentation(0))
     changed: threading.Condition = field(init=False)
 
@@ -112,6 +114,34 @@ class Storage:
         table = self._table(table_id)
         with self._registry:
             table.saying = False
+
+    def enter_copilot(self, table_id: str) -> bool:
+        """Reserva a única consulta ao copiloto da mesa; ``False`` se já há uma em curso. Vaga
+        independente da do texto livre: uma não segura a outra."""
+        table = self._table(table_id)
+        with self._registry:
+            if table.copilot_busy:
+                return False
+            table.copilot_busy = True
+            return True
+
+    def leave_copilot(self, table_id: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.copilot_busy = False
+
+    def copilot_cooldown_left(self, table_id: str, cooldown: float) -> float:
+        """Segundos até o anfitrião poder consultar o copiloto de novo (0 se já pode)."""
+        table = self._table(table_id)
+        with self._registry:
+            if table.last_copilot is None:
+                return 0.0
+            return max(0.0, cooldown - (self._clock() - table.last_copilot))
+
+    def mark_copilot(self, table_id: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.last_copilot = self._clock()
 
     def presentation(self, table_id: str) -> Presentation:
         """Narração e mural da mesa (em memória). Só para mesa existente: o id já foi validado."""

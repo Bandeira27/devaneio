@@ -443,6 +443,19 @@
       "title": "CommandResult",
       "type": "object"
     },
+    "CopilotAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "CopilotAnswer",
+      "type": "object"
+    },
     "ErrorResponse": {
       "additionalProperties": false,
       "properties": {
@@ -1448,6 +1461,9 @@
     "say_result": {
       "$ref": "#/$defs/SayResult"
     },
+    "copilot_answer": {
+      "$ref": "#/$defs/CopilotAnswer"
+    },
     "events": {
       "$ref": "#/$defs/EventsView"
     },
@@ -1468,6 +1484,7 @@
     "table_joined",
     "command_result",
     "say_result",
+    "copilot_answer",
     "events",
     "campaign",
     "campaign_view",
