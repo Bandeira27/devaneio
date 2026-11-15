@@ -7,6 +7,7 @@ from itertools import count
 import pytest
 
 from conftest import CAMPAIGN_PATH
+from devaneio.engine import reveal_fact
 from devaneio.game import load_game, new_game, save_game
 from devaneio.llm import LlmConfig
 from devaneio.schema import Campaign, GameState
@@ -162,10 +163,26 @@ def join(service, created, name="Bia", invite="convite-fixo"):
     return service.join_table(created.table_id, JoinRequest(invite_code=invite, name=name))
 
 
+def test_players_see_a_fact_only_after_it_is_revealed(service, created):
+    joined = join(service, created)
+    before = service.get_campaign(created.table_id, bearer(joined.token))
+    assert before.facts == []
+
+    session = load_game(service.storage.path_for(created.table_id))
+    revealed = reveal_fact(session.state, session.campaign, fact_id="ferreiro-segredo").state
+    save_game(replace(session, state=revealed))
+    after = service.get_campaign(created.table_id, bearer(joined.token))
+    assert [(f.id, f.text) for f in after.facts] == [
+        ("ferreiro-segredo", "Bram conhece o caminho secreto para o altar.")
+    ]
+    view = service.get_table(created.table_id, joined.token)
+    assert view.state.revealed_facts == {"ferreiro-segredo": 0}
+
+
 def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(service, created):
     campaign = service.get_campaign(created.table_id, bearer(created.host_token))
     assert isinstance(campaign, Campaign)
-    assert campaign.npcs[0].secrets == ["sabe o caminho secreto para o altar"]
+    assert campaign.facts[0].text == "Bram conhece o caminho secreto para o altar."
 
     joined = join(service, created)
     view = service.get_campaign(created.table_id, bearer(joined.token))
@@ -176,7 +193,9 @@ def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(serv
     assert [b.id for b in view.beats] == ["chegada"]  # os pendentes não aparecem
     dumped = view.model_dump_json()
     for hidden in (
-        "secrets",
+        "caminho secreto",
+        "líder do culto",
+        "private_notes",
         "goals",
         "complete_when",
         "sacerdote",
@@ -308,8 +327,8 @@ def test_by_default_the_notice_says_npc_secrets_do_not_go_to_the_llm(tmp_path):
         .table.llm
     )
     assert llm.secrets is False
-    assert "Os segredos dos NPCs não vão." in llm.notice
-    assert "com seus segredos" not in llm.notice
+    assert "Segredos, fatos ocultos e notas privadas não vão." in llm.notice
+    assert "fatos ocultos e notas privadas da campanha" not in llm.notice
 
 
 def test_when_the_host_opts_in_the_notice_says_the_secrets_go_and_the_speech_reaches_all(tmp_path):
@@ -320,8 +339,8 @@ def test_when_the_host_opts_in_the_notice_says_the_secrets_go_and_the_speech_rea
         .table.llm
     )
     assert llm.secrets is True
-    assert "NPCs presentes com seus segredos" in llm.notice
-    assert "Os segredos dos NPCs não vão." not in llm.notice
+    assert "fatos ocultos e notas privadas da campanha" in llm.notice
+    assert "Segredos, fatos ocultos e notas privadas não vão." not in llm.notice
 
 
 def test_without_an_llm_the_table_says_secrets_are_not_shared(tmp_path):

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from devaneio.engine import advance_beats, initial_state
+from devaneio.engine import advance_beats, initial_state, reveal_facts
 from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
 from devaneio.narration import Narrator, load_builtin_pack
 from devaneio.rules import (
@@ -70,6 +70,7 @@ def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> S
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
     state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
+    state, _ = reveal_facts(state, campaign)
     session = Session(
         campaign, rules, state, campaign_path, Path(save_path).resolve(), _narrator(campaign, rules)
     )

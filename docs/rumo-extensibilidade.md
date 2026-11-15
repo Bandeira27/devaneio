@@ -51,8 +51,8 @@ a informação**. Em ordem de valor:
 1. **Público e privado por campo.** Todo elemento tem campo público e notas privadas (generaliza `secrets`).
    Por padrão o LLM só recebe o público. O editor mostra uma **prévia do que o modelo vai ver**.
 2. **O motor decide as revelações.** Um segredo vira um `Fact` com condição de revelação (um teste bem-sucedido,
-   por exemplo). O motor o marca como revelado e só então ele entra no contexto de todos. Hoje a regra "não
-   revele segredos" depende de o modelo obedecer. O modelo `Fact` já existe no estado e está sem uso.
+   por exemplo). O motor o marca como revelado e só então ele entra no contexto de todos. Implementado: `Campaign.facts` com `reveal_when` e `GameState.revealed_facts`.
+   A regra "não revele" continua no prompt, mas deixou de ser a defesa principal.
 3. **Uma geração por plateia.** Jogadores recebem saída gerada só com contexto público.
 4. **Verificação da saída** contra segredos ainda não revelados, como defesa em profundidade (heurística).
 5. **Fala restrita** a falas escritas pelo autor: seguro, mas perde naturalidade.

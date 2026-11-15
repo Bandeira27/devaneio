@@ -11,27 +11,23 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from devaneio.rng import Rng
-from devaneio.rules import CheckOutcome, RuleSystem
+from devaneio.rules import RuleSystem
 from devaneio.schema import (
-    AtLocation,
-    BeatDone,
     BeatStatus,
     Campaign,
-    Condition,
     Event,
     GameState,
-    NpcDown,
-    TurnAtLeast,
 )
 
 from .beats import activate_beat, complete_beat
 from .checks import npc_check
+from .conditions import HIT, holds
 from .damage import deal_damage
 from .errors import EngineError
+from .reveal import reveal_facts
 from .turns import end_turn
 
 TENSION_WEIGHTS = {"hp_lost": 0.4, "hostiles": 0.3, "down": 0.2, "failed": 0.1}
-HIT = (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS)
 
 
 @dataclass(frozen=True)
@@ -40,20 +36,6 @@ class DirectorResult:
     tension: float
     actions: tuple[str, ...]
     text: str
-
-
-def holds(condition: Condition, state: GameState) -> bool:
-    """Uma condição declarativa vale neste estado?"""
-    if isinstance(condition, AtLocation):
-        return state.current_location_id == condition.location_id
-    if isinstance(condition, NpcDown):
-        npc = state.npcs.get(condition.npc_id)
-        return npc is not None and (not npc.alive or npc.hp == 0)
-    if isinstance(condition, BeatDone):
-        return state.beats.get(condition.beat_id) is BeatStatus.DONE
-    if isinstance(condition, TurnAtLeast):
-        return state.turn >= condition.turn
-    raise EngineError(f"condição desconhecida: {condition!r}")
 
 
 def advance_beats(state: GameState, campaign: Campaign) -> tuple[GameState, tuple[str, ...]]:
@@ -174,13 +156,15 @@ def tension(state: GameState, rules: RuleSystem) -> float:
 
 def direct(state: GameState, campaign: Campaign, rules: RuleSystem) -> DirectorResult:
     """Uma passada do diretor: marcos, reações hostis, marcos de novo (quedas de NPC
-    podem concluir algo), tensão, evento ``director``. Não muda o turno."""
+    podem concluir algo), revelação de fatos, tensão, evento ``director``. Não muda o turno."""
     actions: list[str] = []
     state, texts = advance_beats(state, campaign)
     actions += texts
     state, texts = hostile_reactions(state, campaign, rules)
     actions += texts
     state, texts = advance_beats(state, campaign)
+    actions += texts
+    state, texts = reveal_facts(state, campaign)
     actions += texts
 
     level = tension(state, rules)

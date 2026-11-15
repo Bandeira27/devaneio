@@ -38,4 +38,8 @@ def validate_against_campaign(state: GameState, campaign: Campaign) -> list[str]
     for beat_id in sorted(campaign_beats - set(state.beats)):
         errors.append(f"marco '{beat_id}' da campanha não tem estado")
 
+    campaign_facts = {x.id for x in campaign.facts}
+    for fact_id in sorted(set(state.revealed_facts) - campaign_facts):
+        errors.append(f"fato revelado '{fact_id}' não existe na campanha")
+
     return errors

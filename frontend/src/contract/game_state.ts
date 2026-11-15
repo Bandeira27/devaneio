@@ -27,7 +27,13 @@ export interface GameState {
   beats: {
     [k: string]: BeatStatus;
   };
-  facts: Fact[];
+  revealed_facts: {
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
+     */
+    [k: string]: number;
+  };
   events: Event[];
 }
 /**
@@ -57,14 +63,6 @@ export interface NpcState {
   };
   disposition: number;
   location_id: string | null;
-}
-/**
- * Memória externa do narrador: algo estabelecido na ficção, com o turno em que surgiu.
- */
-export interface Fact {
-  id: string;
-  text: string;
-  turn: number;
 }
 /**
  * Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir

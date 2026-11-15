@@ -25,6 +25,12 @@ def test_marcos_is_the_hosts_because_it_lists_pending_beats():
     assert policy.classify("ficha") == "read"
 
 
+def test_fatos_and_revelar_are_the_hosts_because_they_expose_hidden_facts():
+    assert "fatos" in READ_ONLY
+    assert policy.classify("fatos") == "host"
+    assert policy.classify("revelar") == "host"
+
+
 def _state(**hp: int) -> GameState:
     characters = {
         cid: {"id": cid, "name": cid.title(), "hp": value, "max_hp": 10}

@@ -5,7 +5,9 @@ from .campaign import (
     Beat,
     BeatDone,
     Campaign,
+    CheckPassed,
     Condition,
+    FactDef,
     Faction,
     Location,
     Npc,
@@ -14,7 +16,7 @@ from .campaign import (
 )
 from .campaign_validation import CampaignIntegrityError, load_campaign, validate_campaign
 from .common import Id, StrictModel
-from .game_state import BeatStatus, Character, Event, Fact, GameState, NpcState
+from .game_state import BeatStatus, Character, Event, GameState, NpcState
 from .state_validation import validate_against_campaign
 
 __all__ = [
@@ -25,9 +27,10 @@ __all__ = [
     "Campaign",
     "CampaignIntegrityError",
     "Character",
+    "CheckPassed",
     "Condition",
     "Event",
-    "Fact",
+    "FactDef",
     "Faction",
     "GameState",
     "Id",

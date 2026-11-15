@@ -26,6 +26,7 @@ EVENT_VARIABLES: dict[str, tuple[str, ...]] = {
     "beat_activated": ("marco", "descricao"),
     "beat_done": ("marco", "descricao"),
     "beat_failed": ("marco", "descricao"),
+    "reveal": ("fato",),
 }
 
 

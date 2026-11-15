@@ -82,7 +82,13 @@ export interface GameState {
   beats: {
     [k: string]: BeatStatus;
   };
-  facts: Fact[];
+  revealed_facts: {
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
+     */
+    [k: string]: number;
+  };
   events: Event[];
 }
 /**
@@ -117,14 +123,6 @@ export interface NpcState {
   location_id: string | null;
 }
 /**
- * Memória externa do narrador: algo estabelecido na ficção, com o turno em que surgiu.
- */
-export interface Fact {
-  id: string;
-  text: string;
-  turn: number;
-}
-/**
  * Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir
  * os tipos de evento (aí vira união discriminada por ``kind``).
  */
@@ -138,8 +136,8 @@ export interface Event {
 }
 /**
  * O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles
- * o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``) e
- * ``facts`` (memória do narrador, escrita com acesso aos segredos). NPCs só os do local
+ * o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``).
+ * ``revealed_facts`` vai inteiro: só tem fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local
  * atual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o
  * ``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em
  * ``of`` (e ``tests/test_server_models.py`` obriga a decidir).
@@ -157,6 +155,13 @@ export interface PlayerStateView {
   };
   beats: {
     [k: string]: BeatStatus;
+  };
+  revealed_facts: {
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
+     */
+    [k: string]: number;
   };
 }
 /**
@@ -242,18 +247,21 @@ export interface Campaign {
   factions: Faction[];
   npcs: Npc[];
   beats: Beat[];
+  facts: FactDef[];
 }
 export interface Location {
   id: string;
   name: string;
   description: string;
   connections: string[];
+  private_notes: string[];
 }
 export interface Faction {
   id: string;
   name: string;
   description: string;
   goals: string[];
+  private_notes: string[];
 }
 export interface Npc {
   id: string;
@@ -261,7 +269,7 @@ export interface Npc {
   description: string;
   location_id: string | null;
   faction_id: string | null;
-  secrets: string[];
+  private_notes: string[];
   attributes: {
     [k: string]: number;
   };
@@ -281,8 +289,9 @@ export interface Beat {
   title: string;
   description: string;
   requires: string[];
-  activate_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
-  complete_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
+  activate_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
+  complete_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
+  private_notes: string[];
 }
 export interface AtLocation {
   kind: "at_location";
@@ -301,8 +310,30 @@ export interface TurnAtLeast {
   turn: number;
 }
 /**
+ * Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
+ * Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.
+ */
+export interface CheckPassed {
+  kind: "check_passed";
+  skill_id: string;
+}
+/**
+ * Informação da campanha que começa privada (só o anfitrião sabe) e pode virar pública.
+ *
+ * ``about`` aponta um NPC, local, facção ou marco e serve só de rótulo de exibição.
+ * ``reveal_when``: o motor revela o fato quando todas as condições valem; vazia, só o
+ * anfitrião revela, por comando. O estado guarda apenas quais fatos já foram revelados.
+ */
+export interface FactDef {
+  id: string;
+  text: string;
+  about: string | null;
+  reveal_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
+}
+/**
  * A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
- * local atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos
+ * local atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos
+ * ocultos, ``private_notes``, facções, condições dos
  * marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
  * anfitrião, que recebe a ``Campaign`` inteira.
  */
@@ -313,6 +344,7 @@ export interface CampaignView {
   location: LocationView;
   npcs: NpcInfo[];
   beats: BeatInfo[];
+  facts: FactInfo[];
 }
 export interface LocationView {
   id: string;
@@ -331,6 +363,11 @@ export interface NpcInfo {
 export interface BeatInfo {
   id: string;
   title: string;
+}
+export interface FactInfo {
+  id: string;
+  text: string;
+  about: string | null;
 }
 export interface ErrorResponse {
   error: ApiError;

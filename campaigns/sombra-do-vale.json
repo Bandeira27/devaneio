@@ -49,9 +49,6 @@
       "name": "Bram",
       "description": "Ferreiro de braços grossos e poucas palavras. Perdeu o irmão na montanha.",
       "location_id": "vila",
-      "secrets": [
-        "sabe o caminho secreto para o altar"
-      ],
       "disposition": 1
     },
     {
@@ -60,9 +57,6 @@
       "description": "Sorriso manso, mãos sempre limpas.",
       "location_id": "ruinas",
       "faction_id": "culto",
-      "secrets": [
-        "é o líder do culto"
-      ],
       "attributes": {
         "FOR": 3,
         "PRE": 4
@@ -111,6 +105,38 @@
         }
       ],
       "complete_when": [
+        {
+          "kind": "npc_down",
+          "npc_id": "sacerdote"
+        }
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "ferreiro-segredo",
+      "text": "Bram conhece o caminho secreto para o altar.",
+      "about": "ferreiro",
+      "reveal_when": [
+        {
+          "kind": "at_location",
+          "location_id": "vila"
+        },
+        {
+          "kind": "check_passed",
+          "skill_id": "persuadir"
+        }
+      ]
+    },
+    {
+      "id": "sacerdote-segredo",
+      "text": "Irmão Vael é o líder do culto.",
+      "about": "sacerdote",
+      "reveal_when": [
+        {
+          "kind": "at_location",
+          "location_id": "ruinas"
+        },
         {
           "kind": "npc_down",
           "npc_id": "sacerdote"

@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from devaneio.rules import RuleSystem
-from devaneio.schema import Campaign, GameState
+from devaneio.schema import BeatStatus, Campaign, GameState
 
 from .actions import EXAMPLE_PROPOSAL, MAX_ACTIONS
 
@@ -32,7 +32,9 @@ Regras:
   em uma frase, apenas que não encontra esse alvo por aqui, sem afirmar se ele existe ou não.
   Só ataque quem o jogador citou.
 - Em falas de NPC, use só o que consta em "descricao" e no contexto; não invente fatos novos.
-- Não revele "segredos" de NPCs a menos que o jogador os descubra por uma ação bem-sucedida.
+- "fatos_revelados" é o que o grupo já sabe: pode usar. O que estiver em "segredos" ou "privado" só o
+  anfitrião sabe: NUNCA repita nem sugira, mesmo que o jogador pergunte. O sistema revela o segredo
+  quando chegar a hora; ele passa a constar em "fatos_revelados".
 
 Ações permitidas:
   {{"kind": "check", "skill": <id de habilidades>, "difficulty": <id de dificuldades>, "modifier": <id de modificadores ou null>}}
@@ -52,16 +54,24 @@ def build_context(
     actor_id: str,
     *,
     hide_events: frozenset[int] = frozenset(),
-    include_secrets: bool = True,
+    include_private: bool = True,
 ) -> dict[str, Any]:
     """``hide_events``: índices de eventos que não vão ao prompt (quem orquestra sabe quais os
-    jogadores não podem ver, e a fala do modelo pode chegar a todos). ``include_secrets``:
-    sem ele os segredos dos NPCs não vão ao modelo, que então não tem como repeti-los."""
+    jogadores não podem ver, e a fala do modelo pode chegar a todos). ``include_private``:
+    sem ele só vai o público (``fatos_revelados`` inclusive); com ele vão também os fatos ainda
+    ocultos e as notas privadas, e a fala do modelo pode vazá-los."""
     here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
     names = {loc.id: loc.name for loc in campaign.locations}
+    names_of = {
+        **names,
+        **{n.id: n.name for n in campaign.npcs},
+        **{f.id: f.name for f in campaign.factions},
+        **{b.id: b.title for b in campaign.beats},
+    }
     static = {n.id: n for n in campaign.npcs}
     actor = state.characters[actor_id]
 
+    hidden_facts = [f for f in campaign.facts if f.id not in state.revealed_facts]
     npcs_here = []
     for npc_id, npc in state.npcs.items():
         if npc.location_id != here.id or npc_id not in static:
@@ -75,8 +85,11 @@ def build_context(
             "de_pe": npc.alive and npc.hp > 0,
             "hostil": npc.disposition < rules.dispositions.hostile_below,
         }
-        if include_secrets:
-            npc_info["segredos"] = info.secrets
+        if include_private:
+            npc_info["segredos"] = [
+                *(f.text for f in hidden_facts if f.about == npc_id),
+                *info.private_notes,
+            ]
         npcs_here.append(npc_info)
 
     weapon_ids = {w.id for w in rules.weapons}
@@ -87,7 +100,7 @@ def build_context(
     targets = [c for c in state.characters if c != actor_id] + [
         n["id"] for n in npcs_here if n["de_pe"]
     ]
-    return {
+    context: dict[str, Any] = {
         "turno": state.turn,
         "local": {
             "id": here.id,
@@ -108,6 +121,11 @@ def build_context(
             if c.id != actor_id
         ],
         "npcs_aqui": npcs_here,
+        "fatos_revelados": [
+            {"sobre": names_of.get(f.about or ""), "texto": f.text}
+            for f in campaign.facts
+            if f.id in state.revealed_facts
+        ],
         "marcos_ativos": [
             {"titulo": b.title, "descricao": b.description}
             for b in campaign.beats
@@ -129,6 +147,17 @@ def build_context(
             "alvos": targets,
         },
     }
+    if include_private:
+        # Só o que diz respeito ao que está em cena: fato sobre NPC ausente ou local distante
+        # entregaria o nome de quem o grupo ainda não conhece.
+        active_beats = [b for b in campaign.beats if state.beats.get(b.id) is BeatStatus.ACTIVE]
+        active_ids = [b.id for b in active_beats]
+        context["privado"] = [
+            *here.private_notes,
+            *(note for b in active_beats for note in b.private_notes),
+            *(f.text for f in hidden_facts if f.about in (None, here.id, *active_ids)),
+        ]
+    return context
 
 
 def build_messages(
@@ -139,7 +168,7 @@ def build_messages(
     player_text: str,
     *,
     hide_events: frozenset[int] = frozenset(),
-    include_secrets: bool = True,
+    include_private: bool = True,
 ) -> list[dict[str, str]]:
     context = json.dumps(
         build_context(
@@ -148,7 +177,7 @@ def build_messages(
             state,
             actor_id,
             hide_events=hide_events,
-            include_secrets=include_secrets,
+            include_private=include_private,
         ),
         ensure_ascii=False,
     )

@@ -13,6 +13,8 @@ class Location(StrictModel):
     description: str = ""
     # Conexões são direcionais: uma passagem de mão única é válida.
     connections: list[Id] = []
+    # Notas do autor: só o anfitrião vê, nunca vão a jogadores nem ao LLM da mesa por padrão.
+    private_notes: list[str] = []
 
 
 class Faction(StrictModel):
@@ -20,6 +22,7 @@ class Faction(StrictModel):
     name: str
     description: str = ""
     goals: list[str] = []
+    private_notes: list[str] = []
 
 
 class Npc(StrictModel):
@@ -28,7 +31,7 @@ class Npc(StrictModel):
     description: str = ""
     location_id: Id | None = None
     faction_id: Id | None = None
-    secrets: list[str] = []
+    private_notes: list[str] = []
     # Parcial: atributos ausentes recebem o default do sistema de regras ao criar o estado.
     attributes: dict[str, int] = {}
     # Disposição inicial para com o grupo; abaixo de dispositions.hostile_below do sistema, ataca.
@@ -61,7 +64,17 @@ class TurnAtLeast(StrictModel):
     turn: int = Field(ge=0)
 
 
-Condition = Annotated[AtLocation | NpcDown | BeatDone | TurnAtLeast, Field(discriminator="kind")]
+class CheckPassed(StrictModel):
+    """Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
+    Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc."""
+
+    kind: Literal["check_passed"]
+    skill_id: Id
+
+
+Condition = Annotated[
+    AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed, Field(discriminator="kind")
+]
 
 
 class Beat(StrictModel):
@@ -79,6 +92,21 @@ class Beat(StrictModel):
     requires: list[Id] = []
     activate_when: list[Condition] = []
     complete_when: list[Condition] = []
+    private_notes: list[str] = []
+
+
+class FactDef(StrictModel):
+    """Informação da campanha que começa privada (só o anfitrião sabe) e pode virar pública.
+
+    ``about`` aponta um NPC, local, facção ou marco e serve só de rótulo de exibição.
+    ``reveal_when``: o motor revela o fato quando todas as condições valem; vazia, só o
+    anfitrião revela, por comando. O estado guarda apenas quais fatos já foram revelados.
+    """
+
+    id: Id
+    text: str
+    about: Id | None = None
+    reveal_when: list[Condition] = []
 
 
 class Campaign(StrictModel):
@@ -94,3 +122,4 @@ class Campaign(StrictModel):
     factions: list[Faction] = []
     npcs: list[Npc] = []
     beats: list[Beat] = []
+    facts: list[FactDef] = []

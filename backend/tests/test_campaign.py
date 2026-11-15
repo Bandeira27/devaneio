@@ -31,7 +31,7 @@ def test_load_campaign_accepts_json_text_and_dict(campaign_data, campaign):
     assert load_campaign(campaign.model_dump_json()) == campaign
 
 
-@pytest.mark.parametrize("collection", ["locations", "factions", "npcs", "beats"])
+@pytest.mark.parametrize("collection", ["locations", "factions", "npcs", "beats", "facts"])
 def test_duplicate_ids_are_reported(campaign_data, collection):
     campaign_data[collection].append(dict(campaign_data[collection][0]))
     dup = campaign_data[collection][0]["id"]
@@ -145,6 +145,18 @@ def test_condition_references_are_checked(campaign_data, cond, fragment):
     assert fragment in errors[0]
 
 
+def test_fact_about_an_unknown_element_is_reported(campaign_data):
+    campaign_data["facts"][0]["about"] = "ninguem"
+    errors = errors_of(campaign_data)
+    assert errors == ["fato 'ferreiro-segredo' fala de 'ninguem', que não existe"]
+
+
+def test_fact_reveal_conditions_are_checked_like_beats(campaign_data):
+    campaign_data["facts"][0]["reveal_when"] = [{"kind": "npc_down", "npc_id": "ninguem"}]
+    errors = errors_of(campaign_data)
+    assert errors == ["fato 'ferreiro-segredo', reveal_when: npc 'ninguem' não existe"]
+
+
 def test_unknown_condition_kind_is_a_structural_error(campaign_data):
     campaign_data["beats"][0]["activate_when"] = [{"kind": "full_moon"}]
     with pytest.raises(ValidationError):
@@ -156,3 +168,29 @@ def test_example_campaign_has_triggers(campaign):
     assert by_id["chegada"].complete_when[0].location_id == "floresta"
     assert by_id["confronto"].complete_when[0].npc_id == "sacerdote"
     assert by_id["pista"].complete_when == []
+
+
+def test_example_facts_are_revealed_by_conditions(campaign):
+    by_id = {f.id: f for f in campaign.facts}
+    assert [c.kind for c in by_id["ferreiro-segredo"].reveal_when] == [
+        "at_location",
+        "check_passed",
+    ]
+    assert [c.kind for c in by_id["sacerdote-segredo"].reveal_when] == ["at_location", "npc_down"]
+
+
+@pytest.mark.parametrize("about", ["vila", "culto", "sacerdote", "chegada"])
+def test_fact_about_any_known_element_is_valid(campaign_data, about):
+    campaign_data["facts"][0]["about"] = about
+    assert errors_of(campaign_data) == []
+
+
+def test_fact_reveal_conditions_reject_unknown_beat_and_location(campaign_data):
+    campaign_data["facts"][0]["reveal_when"] = [
+        {"kind": "beat_done", "beat_id": "nada"},
+        {"kind": "at_location", "location_id": "lugar"},
+    ]
+    assert errors_of(campaign_data) == [
+        "fato 'ferreiro-segredo', reveal_when: marco 'nada' não existe",
+        "fato 'ferreiro-segredo', reveal_when: local 'lugar' não existe",
+    ]

@@ -118,9 +118,16 @@ class BeatInfo(StrictModel):
     title: str
 
 
+class FactInfo(StrictModel):
+    id: Id
+    text: str
+    about: Id | None
+
+
 class CampaignView(StrictModel):
     """A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
-    local atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos
+    local atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos
+    ocultos, ``private_notes``, facções, condições dos
     marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
     anfitrião, que recebe a ``Campaign`` inteira."""
 
@@ -130,6 +137,7 @@ class CampaignView(StrictModel):
     location: LocationView
     npcs: list[NpcInfo]
     beats: list[BeatInfo]
+    facts: list[FactInfo]
 
     @classmethod
     def of(cls, campaign: Campaign, state: GameState) -> CampaignView:
@@ -151,6 +159,11 @@ class CampaignView(StrictModel):
                 BeatInfo(id=b.id, title=b.title)
                 for b in campaign.beats
                 if state.beats.get(b.id) not in (None, BeatStatus.PENDING)
+            ],
+            facts=[
+                FactInfo(id=f.id, text=f.text, about=f.about)
+                for f in campaign.facts
+                if f.id in state.revealed_facts
             ],
         )
 
@@ -184,8 +197,8 @@ class NpcView(StrictModel):
 
 class PlayerStateView(StrictModel):
     """O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles
-    o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``) e
-    ``facts`` (memória do narrador, escrita com acesso aos segredos). NPCs só os do local
+    o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``).
+    ``revealed_facts`` vai inteiro: só tem fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local
     atual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o
     ``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em
     ``of`` (e ``tests/test_server_models.py`` obriga a decidir)."""
@@ -197,6 +210,7 @@ class PlayerStateView(StrictModel):
     characters: dict[Id, Character]
     npcs: dict[Id, NpcView]
     beats: dict[Id, BeatStatus]
+    revealed_facts: dict[Id, int]
 
     @classmethod
     def of(cls, state: GameState, rules: RuleSystem) -> PlayerStateView:
@@ -219,6 +233,7 @@ class PlayerStateView(StrictModel):
                 if k in npc_ids_at(state, here)
             },
             beats={k: v for k, v in state.beats.items() if v is not BeatStatus.PENDING},
+            revealed_facts=state.revealed_facts,
         )
 
 
