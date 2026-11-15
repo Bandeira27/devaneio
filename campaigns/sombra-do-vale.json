@@ -49,9 +49,6 @@
       "name": "Bram",
       "description": "Ferreiro de braços grossos e poucas palavras. Perdeu o irmão na montanha.",
       "location_id": "vila",
-      "secrets": [
-        "sabe o caminho secreto para o altar"
-      ],
       "disposition": 1
     },
     {
@@ -60,9 +57,6 @@
       "description": "Sorriso manso, mãos sempre limpas.",
       "location_id": "ruinas",
       "faction_id": "culto",
-      "secrets": [
-        "é o líder do culto"
-      ],
       "attributes": {
         "FOR": 3,
         "PRE": 4
@@ -116,6 +110,18 @@
           "npc_id": "sacerdote"
         }
       ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "ferreiro-segredo",
+      "text": "sabe o caminho secreto para o altar",
+      "about": "ferreiro"
+    },
+    {
+      "id": "sacerdote-segredo",
+      "text": "é o líder do culto",
+      "about": "sacerdote"
     }
   ]
 }

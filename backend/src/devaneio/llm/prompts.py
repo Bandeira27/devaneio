@@ -76,7 +76,10 @@ def build_context(
             "hostil": npc.disposition < rules.dispositions.hostile_below,
         }
         if include_secrets:
-            npc_info["segredos"] = info.secrets
+            npc_info["segredos"] = [
+                *(f.text for f in campaign.facts if f.about == npc_id),
+                *info.private_notes,
+            ]
         npcs_here.append(npc_info)
 
     weapon_ids = {w.id for w in rules.weapons}

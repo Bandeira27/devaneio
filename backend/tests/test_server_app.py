@@ -165,7 +165,7 @@ def join(service, created, name="Bia", invite="convite-fixo"):
 def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(service, created):
     campaign = service.get_campaign(created.table_id, bearer(created.host_token))
     assert isinstance(campaign, Campaign)
-    assert campaign.npcs[0].secrets == ["sabe o caminho secreto para o altar"]
+    assert campaign.facts[0].text == "sabe o caminho secreto para o altar"
 
     joined = join(service, created)
     view = service.get_campaign(created.table_id, bearer(joined.token))
@@ -176,7 +176,9 @@ def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(serv
     assert [b.id for b in view.beats] == ["chegada"]  # os pendentes não aparecem
     dumped = view.model_dump_json()
     for hidden in (
-        "secrets",
+        "caminho secreto",
+        "líder do culto",
+        "private_notes",
         "goals",
         "complete_when",
         "sacerdote",

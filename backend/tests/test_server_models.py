@@ -7,7 +7,7 @@ from devaneio.schema import GameState
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest, PlayerStateView
 
 # O que um jogador comum nunca recebe de GameState, de propósito (ver PlayerStateView).
-HIDDEN_FROM_PLAYERS = {"rng_seed", "rng_draws", "events", "facts"}
+HIDDEN_FROM_PLAYERS = {"rng_seed", "rng_draws", "events"}
 
 
 def test_every_game_state_field_is_either_shown_or_hidden_on_purpose():

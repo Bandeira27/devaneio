@@ -51,14 +51,6 @@ class NpcState(StrictModel):
         return self
 
 
-class Fact(StrictModel):
-    """Memória externa do narrador: algo estabelecido na ficção, com o turno em que surgiu."""
-
-    id: Id
-    text: str
-    turn: int = Field(ge=0)
-
-
 class Event(StrictModel):
     """Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir
     os tipos de evento (aí vira união discriminada por ``kind``)."""
@@ -81,7 +73,8 @@ class GameState(StrictModel):
     characters: dict[Id, Character] = {}
     npcs: dict[Id, NpcState] = {}
     beats: dict[Id, BeatStatus] = {}
-    facts: list[Fact] = []
+    # Fato revelado -> turno da revelação. O texto vive na campanha (``Campaign.facts``).
+    revealed_facts: dict[Id, int] = {}
     events: list[Event] = []
 
     @model_validator(mode="after")
@@ -91,11 +84,6 @@ class GameState(StrictModel):
             for key, char in self.characters.items()
             if key != char.id
         ]
-        seen: set[str] = set()
-        for fact in self.facts:
-            if fact.id in seen:
-                errors.append(f"facts: id duplicado '{fact.id}'")
-            seen.add(fact.id)
         if errors:
             raise ValueError("; ".join(errors))
         return self

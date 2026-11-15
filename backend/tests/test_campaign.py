@@ -31,7 +31,7 @@ def test_load_campaign_accepts_json_text_and_dict(campaign_data, campaign):
     assert load_campaign(campaign.model_dump_json()) == campaign
 
 
-@pytest.mark.parametrize("collection", ["locations", "factions", "npcs", "beats"])
+@pytest.mark.parametrize("collection", ["locations", "factions", "npcs", "beats", "facts"])
 def test_duplicate_ids_are_reported(campaign_data, collection):
     campaign_data[collection].append(dict(campaign_data[collection][0]))
     dup = campaign_data[collection][0]["id"]
@@ -143,6 +143,18 @@ def test_condition_references_are_checked(campaign_data, cond, fragment):
     assert len(errors) == 1
     assert errors[0].startswith("marco 'pista', complete_when: ")
     assert fragment in errors[0]
+
+
+def test_fact_about_an_unknown_element_is_reported(campaign_data):
+    campaign_data["facts"][0]["about"] = "ninguem"
+    errors = errors_of(campaign_data)
+    assert errors == ["fato 'ferreiro-segredo' fala de 'ninguem', que não existe"]
+
+
+def test_fact_reveal_conditions_are_checked_like_beats(campaign_data):
+    campaign_data["facts"][0]["reveal_when"] = [{"kind": "npc_down", "npc_id": "ninguem"}]
+    errors = errors_of(campaign_data)
+    assert errors == ["fato 'ferreiro-segredo', reveal_when: npc 'ninguem' não existe"]
 
 
 def test_unknown_condition_kind_is_a_structural_error(campaign_data):

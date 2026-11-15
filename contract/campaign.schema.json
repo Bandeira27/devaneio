@@ -100,6 +100,13 @@
             ]
           },
           "type": "array"
+        },
+        "private_notes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -128,6 +135,66 @@
       "title": "BeatDone",
       "type": "object"
     },
+    "FactDef": {
+      "additionalProperties": false,
+      "description": "Informação da campanha que começa privada (só o anfitrião sabe) e pode virar pública.\n\n``about`` aponta um NPC, local, facção ou marco e serve só de rótulo de exibição.\n``reveal_when``: o motor revela o fato quando todas as condições valem; vazia, só o\nanfitrião revela, por comando. O estado guarda apenas quais fatos já foram revelados.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "about": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reveal_when": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "at_location": "#/$defs/AtLocation",
+                "beat_done": "#/$defs/BeatDone",
+                "npc_down": "#/$defs/NpcDown",
+                "turn_at_least": "#/$defs/TurnAtLeast"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/AtLocation"
+              },
+              {
+                "$ref": "#/$defs/NpcDown"
+              },
+              {
+                "$ref": "#/$defs/BeatDone"
+              },
+              {
+                "$ref": "#/$defs/TurnAtLeast"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "title": "FactDef",
+      "type": "object"
+    },
     "Faction": {
       "additionalProperties": false,
       "properties": {
@@ -143,6 +210,13 @@
           "type": "string"
         },
         "goals": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "private_notes": {
           "default": [],
           "items": {
             "type": "string"
@@ -175,6 +249,13 @@
           "default": [],
           "items": {
             "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "private_notes": {
+          "default": [],
+          "items": {
             "type": "string"
           },
           "type": "array"
@@ -225,7 +306,7 @@
           ],
           "default": null
         },
-        "secrets": {
+        "private_notes": {
           "default": [],
           "items": {
             "type": "string"
@@ -353,6 +434,13 @@
       "default": [],
       "items": {
         "$ref": "#/$defs/Beat"
+      },
+      "type": "array"
+    },
+    "facts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FactDef"
       },
       "type": "array"
     }

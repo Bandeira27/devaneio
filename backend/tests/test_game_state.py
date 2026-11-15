@@ -6,7 +6,6 @@ from devaneio.schema import (
     BeatStatus,
     Character,
     Event,
-    Fact,
     GameState,
     NpcState,
     validate_against_campaign,
@@ -31,7 +30,7 @@ def state(campaign, rules, hero) -> GameState:
 
 
 def test_json_roundtrip(state, campaign):
-    state.facts.append(Fact(id="culto-existe", text="O culto é real.", turn=0))
+    state.revealed_facts["ferreiro-segredo"] = 0
     state.events.append(Event(turn=0, kind="narration", text="Vocês chegam à vila.", data={"x": 1}))
     text = state.model_dump_json()
     again = GameState.model_validate_json(text)
@@ -62,14 +61,11 @@ def test_character_key_must_match_id(state, hero):
         GameState.model_validate(data)
 
 
-def test_duplicate_fact_ids_are_rejected(state):
-    data = state.model_dump()
-    data["facts"] = [
-        {"id": "f1", "text": "a", "turn": 0},
-        {"id": "f1", "text": "b", "turn": 1},
+def test_a_revealed_fact_missing_from_the_campaign_is_reported(state, campaign):
+    state.revealed_facts["inventado"] = 0
+    assert validate_against_campaign(state, campaign) == [
+        "fato revelado 'inventado' não existe na campanha"
     ]
-    with pytest.raises(ValidationError, match="facts: id duplicado 'f1'"):
-        GameState.model_validate(data)
 
 
 def test_invalid_beat_status_is_rejected(state):

@@ -84,30 +84,6 @@
       "title": "Event",
       "type": "object"
     },
-    "Fact": {
-      "additionalProperties": false,
-      "description": "Memória externa do narrador: algo estabelecido na ficção, com o turno em que surgiu.",
-      "properties": {
-        "id": {
-          "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "type": "string"
-        },
-        "text": {
-          "type": "string"
-        },
-        "turn": {
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "id",
-        "text",
-        "turn"
-      ],
-      "title": "Fact",
-      "type": "object"
-    },
     "NpcState": {
       "additionalProperties": false,
       "properties": {
@@ -213,12 +189,14 @@
       },
       "type": "object"
     },
-    "facts": {
-      "default": [],
-      "items": {
-        "$ref": "#/$defs/Fact"
+    "revealed_facts": {
+      "default": {},
+      "patternProperties": {
+        "^[a-z0-9][a-z0-9_-]*$": {
+          "type": "integer"
+        }
       },
-      "type": "array"
+      "type": "object"
     },
     "events": {
       "default": [],
@@ -238,7 +216,7 @@
     "characters",
     "npcs",
     "beats",
-    "facts",
+    "revealed_facts",
     "events"
   ],
   "title": "GameState",

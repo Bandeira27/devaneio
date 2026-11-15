@@ -8,11 +8,12 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
 
-from .campaign import AtLocation, Beat, BeatDone, Campaign, NpcDown
+from .campaign import AtLocation, Beat, BeatDone, Campaign, Condition, NpcDown
 
 
 class CampaignIntegrityError(ValueError):
@@ -60,21 +61,53 @@ def validate_campaign(campaign: Campaign) -> list[str]:
                 errors.append(f"marco '{beat.id}' requer '{req}', que não existe")
 
     npc_ids = {x.id for x in campaign.npcs}
+    known = _KnownIds(location_ids, npc_ids, beat_ids)
     for beat in campaign.beats:
         for field_name in ("activate_when", "complete_when"):
-            for cond in getattr(beat, field_name):
-                where = f"marco '{beat.id}', {field_name}"
-                if isinstance(cond, AtLocation) and cond.location_id not in location_ids:
-                    errors.append(f"{where}: local '{cond.location_id}' não existe")
-                elif isinstance(cond, NpcDown) and cond.npc_id not in npc_ids:
-                    errors.append(f"{where}: npc '{cond.npc_id}' não existe")
-                elif isinstance(cond, BeatDone):
-                    if cond.beat_id == beat.id:
-                        errors.append(f"{where}: depende da própria conclusão")
-                    elif cond.beat_id not in beat_ids:
-                        errors.append(f"{where}: marco '{cond.beat_id}' não existe")
+            errors += _condition_errors(
+                f"marco '{beat.id}', {field_name}",
+                getattr(beat, field_name),
+                known,
+                own_beat_id=beat.id,
+            )
+
+    errors += _duplicates("facts", (x.id for x in campaign.facts))
+    about_ids = location_ids | faction_ids | npc_ids | beat_ids
+    for fact in campaign.facts:
+        if fact.about is not None and fact.about not in about_ids:
+            errors.append(f"fato '{fact.id}' fala de '{fact.about}', que não existe")
+        errors += _condition_errors(f"fato '{fact.id}', reveal_when", fact.reveal_when, known)
 
     errors += _beat_cycles(campaign.beats)
+    return errors
+
+
+@dataclass(frozen=True)
+class _KnownIds:
+    locations: set[str]
+    npcs: set[str]
+    beats: set[str]
+
+
+def _condition_errors(
+    where: str,
+    conditions: Iterable[Condition],
+    known: _KnownIds,
+    own_beat_id: str | None = None,
+) -> list[str]:
+    """Referências das condições a ids que não existem. ``own_beat_id``: o marco dono da
+    condição, que não pode depender da própria conclusão."""
+    errors: list[str] = []
+    for cond in conditions:
+        if isinstance(cond, AtLocation) and cond.location_id not in known.locations:
+            errors.append(f"{where}: local '{cond.location_id}' não existe")
+        elif isinstance(cond, NpcDown) and cond.npc_id not in known.npcs:
+            errors.append(f"{where}: npc '{cond.npc_id}' não existe")
+        elif isinstance(cond, BeatDone):
+            if cond.beat_id == own_beat_id:
+                errors.append(f"{where}: depende da própria conclusão")
+            elif cond.beat_id not in known.beats:
+                errors.append(f"{where}: marco '{cond.beat_id}' não existe")
     return errors
 
 

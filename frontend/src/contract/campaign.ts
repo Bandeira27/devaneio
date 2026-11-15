@@ -16,18 +16,21 @@ export interface Campaign {
   factions?: Faction[];
   npcs?: Npc[];
   beats?: Beat[];
+  facts?: FactDef[];
 }
 export interface Location {
   id: string;
   name: string;
   description?: string;
   connections?: string[];
+  private_notes?: string[];
 }
 export interface Faction {
   id: string;
   name: string;
   description?: string;
   goals?: string[];
+  private_notes?: string[];
 }
 export interface Npc {
   id: string;
@@ -35,7 +38,7 @@ export interface Npc {
   description?: string;
   location_id?: string | null;
   faction_id?: string | null;
-  secrets?: string[];
+  private_notes?: string[];
   attributes?: {
     [k: string]: number;
   };
@@ -57,6 +60,7 @@ export interface Beat {
   requires?: string[];
   activate_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
   complete_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
+  private_notes?: string[];
 }
 export interface AtLocation {
   kind: "at_location";
@@ -73,4 +77,17 @@ export interface BeatDone {
 export interface TurnAtLeast {
   kind: "turn_at_least";
   turn: number;
+}
+/**
+ * Informação da campanha que começa privada (só o anfitrião sabe) e pode virar pública.
+ *
+ * ``about`` aponta um NPC, local, facção ou marco e serve só de rótulo de exibição.
+ * ``reveal_when``: o motor revela o fato quando todas as condições valem; vazia, só o
+ * anfitrião revela, por comando. O estado guarda apenas quais fatos já foram revelados.
+ */
+export interface FactDef {
+  id: string;
+  text: string;
+  about?: string | null;
+  reveal_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
 }
