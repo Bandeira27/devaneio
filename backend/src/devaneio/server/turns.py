@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from devaneio.engine import game_status
+from devaneio.engine import GameStatus, game_status
 from devaneio.game import (
     CommandError,
     GameOverError,
@@ -23,6 +23,7 @@ from devaneio.game import (
 from devaneio.schema import GameState
 
 from . import policy
+from .auth import find_player
 from .errors import ApiFailure
 from .models import MAX_NAME, CommandRequest, CommandResult, EventView
 
@@ -72,7 +73,8 @@ def apply(
     request: CommandRequest,
 ) -> tuple[CommandResult, Session, TableMeta]:
     state = session.state
-    plan = authorize(table, player, request, state)
+    plan = resolve(player, request.line, state)
+    check_turn(table, state, plan, request.revision)
     before = set(state.characters)
     new_session, text = execute(session, plan.line)
     new_table = table
@@ -92,39 +94,78 @@ def apply(
     return result, new_session, new_table
 
 
-def authorize(table: TableMeta, player: Player, request: CommandRequest, state: GameState) -> Plan:
-    """Decide se o jogador pode dar este comando agora e com qual linha final. Nada aqui
-    muda a mesa; qualquer recusa levanta antes de ``execute``. Comando que o jogo não
-    conhece (``kind`` ``None``) segue direto para o ``execute``, que o recusa com a
-    mensagem de sempre."""
-    actor, name, args = parse_line(request.line)
+def authenticate(session: Session, token: str) -> tuple[TableMeta, str, Player]:
+    """A mesa da partida e o jogador dono do token: 404 se a partida não é uma mesa, 401 se
+    o token não é de ninguém."""
+    table = session.table
+    if table is None:
+        raise ApiFailure(404, "table_not_found", "mesa não encontrada")
+    found = find_player(table, token)
+    if found is None:
+        raise ApiFailure(401, "unauthorized", "token inválido")
+    return table, found[0], found[1]
+
+
+def resolve(player: Player, line: str, state: GameState) -> Plan:
+    """Decide se o jogador pode dar este comando e com qual linha final: papel, personagem que
+    age, alvo visível, limites do ``entrar``. Não olha revisão nem turno (isso é ``check_turn``)
+    e não muda nada. Comando que o jogo não conhece (``kind`` ``None``) segue direto para o
+    ``execute``, que o recusa com a mensagem de sempre. A linha final é remontada com o
+    prefixo do personagem, e ``parse_line`` a lê de volta como (ator, comando) esperados:
+    classificação e motor usam o mesmo analisador."""
+    actor, name, args = parse_line(line)
     kind = policy.classify(name)
-    rest = split_actor(request.line)[1]
-    line, who = request.line, ""
+    rest = split_actor(line)[1]
+    final, who = line, ""
 
     if kind == "host" and player.role != "host":
         raise ApiFailure(403, "forbidden", f"'{name}' é um comando do anfitrião")
     if kind == "action":
         who = acting_character(player, actor)
         check_target(state, player, name, args)
-        line = prefixed(who, rest)
-        if parse_line(line)[:2] != (who, name):  # a linha remontada diz o mesmo
-            raise ApiFailure(400, "bad_request", "linha ambígua")
+        final = prefixed(who, rest)
     elif kind == "join":
         check_join(state, player, args)
-        line = rest
+        final = rest
     elif kind == "read" and actor is None and player.character_ids:
-        line = prefixed(player.character_ids[0], rest)  # `ficha` sem id mostra a sua
+        final = prefixed(player.character_ids[0], rest)  # `ficha` sem id mostra a sua
+    return Plan(kind, who, final)
 
-    if kind in ("action", "join", "host") and request.revision != len(state.events):
-        raise ApiFailure(
-            409,
-            "stale_revision",
-            f"a mesa está na revisão {len(state.events)}, não em {request.revision}: releia",
-        )
-    if kind == "action" and table.acted.get(who) == state.turn:
+
+def check_turn(table: TableMeta, state: GameState, plan: Plan, seen: int) -> None:
+    """O que depende do momento da mesa: a revisão que o cliente viu (só para quem muda a
+    partida) e uma ação principal por personagem por turno."""
+    if plan.kind in ("action", "join", "host") and seen != len(state.events):
+        raise _stale(state, seen)
+    if plan.kind == "action" and table.acted.get(plan.actor) == state.turn:
+        raise ApiFailure(409, "already_acted", f"'{plan.actor}' já agiu neste turno")
+
+
+def check_say(table: TableMeta, state: GameState, who: str, seen: int) -> None:
+    """Texto livre: revisão, partida em andamento e ação principal ainda não gasta."""
+    if seen != len(state.events):
+        raise _stale(state, seen)
+    status = game_status(state)
+    if status is not GameStatus.ACTIVE:
+        raise ApiFailure(409, "game_over", str(GameOverError(status)))
+    if table.acted.get(who) == state.turn:
         raise ApiFailure(409, "already_acted", f"'{who}' já agiu neste turno")
-    return Plan(kind, who, line)
+
+
+def _stale(state: GameState, seen: int) -> ApiFailure:
+    current = len(state.events)
+    return ApiFailure(
+        409, "stale_revision", f"a mesa está na revisão {current}, não em {seen}: releia"
+    )
+
+
+def speaker(state: GameState, player: Player, text: str) -> tuple[str, str]:
+    """Quem fala e o texto sem o prefixo ``id:``. Jogador comum fala pelo seu personagem
+    (prefixo alheio é 403); o anfitrião cita o personagem ou usa o seu, se for um só."""
+    named, rest = split_actor(text)
+    if named in state.characters and rest:
+        return acting_character(player, named), rest
+    return acting_character(player, None), text
 
 
 def close_turn_if_all_acted(
@@ -188,15 +229,15 @@ def check_join(state: GameState, player: Player, args: list[str]) -> None:
         raise ApiFailure(422, "command_refused", f"'{args[0]}' já é o id de um NPC")
 
 
-def authorize_proposal(table: TableMeta, player: Player, working: Session, line: str) -> None:
+def authorize_proposal(player: Player, working: Session, line: str) -> None:
     """Uma ação que o LLM propôs passa pela mesma política do jogador que falou: papel,
     dono do personagem, alvo visível. O que não é ação de jogo (leitura, ``entrar``) nem
-    existe como proposta. Recusa como ``CommandError``, que vira feedback ao modelo."""
+    existe como proposta. Recusa como ``CommandError``, que vira feedback ao modelo. Revisão
+    e turno já foram conferidos para o texto inteiro, não por ação."""
     _, name, _ = parse_line(line)
     if policy.classify(name) not in ("action", "host"):
         raise CommandError(f"'{name}' não é uma ação que o mestre possa propor")
-    request = CommandRequest(line=line, revision=len(working.state.events))
     try:
-        authorize(table, player, request, working.state)
+        resolve(player, line, working.state)
     except ApiFailure as exc:
         raise CommandError(exc.message) from None
