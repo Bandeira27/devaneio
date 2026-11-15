@@ -14,7 +14,8 @@ Mesa de RPG com um mestre de IA, jogável sozinho (linha de comando) ou em grupo
 
 O Devaneio caminha para uma **plataforma de campanhas extensível**: ações primitivas no motor e conteúdo, sistemas de
 regras e narrações do usuário por cima, para autores técnicos e não técnicos. A direção e a ordem de trabalho estão em
-[`docs/rumo-extensibilidade.md`](docs/rumo-extensibilidade.md); ainda não é escopo implementado.
+[`docs/rumo-extensibilidade.md`](docs/rumo-extensibilidade.md); o primeiro passo (visibilidade e revelações pelo motor,
+[`docs/desenho-visibilidade-revelacoes.md`](docs/desenho-visibilidade-revelacoes.md)) está implementado, o resto não.
 
 ## Estrutura
 
@@ -35,7 +36,7 @@ uv venv && uv pip install -e ".[dev]"
 
 Comandos: `olhar`, `entrar <id> "<nome>" [FOR=3 ...] [+item ...]`, `ir <local>`, `testar <habilidade>
 <dificuldade> [modificador]`, `atacar <arma> <alvo> [modificador]`, `ferir <alvo> <quantia>`,
-`curar <alvo> <quantia>`, `descansar`, `ficha`, `marcos`, `marco ativar|concluir|falhar <id>`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
+`curar <alvo> <quantia>`, `descansar`, `ficha`, `marcos`, `marco ativar|concluir|falhar <id>`, `fatos`, `revelar <id>`, `log`, `fim`, `ajuda`, `sair`. Com mais de um personagem, prefixe: `aria: testar lutar normal`.
 O arquivo da partida é salvo (de forma atômica) após cada ação e é a fonte da verdade. `atacar` compõe em `game/commands.py`
 um `resolve_check` (habilidade da arma contra a dificuldade de ataque do sistema) e, em acerto, um `deal_damage`. A arma precisa estar no inventário; a arma padrão do sistema (`combat.default_weapon`) está sempre disponível.
 
@@ -73,8 +74,8 @@ Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token
 Cada mesa é um arquivo `<table_id>.json` em `--dados`, no mesmo formato do CLI mais o campo `table` (jogadores com
 hash do token, hash do convite, quem já agiu no turno). O anfitrião (mestre) vê o `GameState` e a `Campaign`
 inteiros; um jogador comum vê só o que o `olhar` do CLI mostra: `PlayerStateView` (sem `rng_seed`/`rng_draws`, que tornariam
-o próximo sorteio previsível, sem o log com `data` nem `facts`; NPCs só os do local, só com vivo, hp e hostil; só os marcos
-que já começaram) e `CampaignView` (título, premissa, local com saídas, NPCs ali, marcos). `TableView.role` diz qual dos
+o próximo sorteio previsível, sem o log com `data`; com `revealed_facts`, só fatos já revelados; NPCs só os do local, só com vivo, hp e hostil; só os
+marcos que já começaram) e `CampaignView` (título, premissa, local com saídas, NPCs ali, marcos e fatos revelados). `TableView.role` diz qual dos
 dois ramos veio. Nomes de jogador são normalizados (NFKC) e recusam caracteres de controle ou invisíveis. O CLI abre esse arquivo e preserva a mesa, mas **não jogue
 a mesma partida no CLI com o servidor aberto**: não há bloqueio entre processos. `--host 0.0.0.0` expõe HTTP em
 claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a conexão ao recusar um corpo e não
@@ -121,9 +122,9 @@ manda o texto de um jogador ao LLM, que **só propõe** (as mesmas quatro açõe
 responde como alvo inexistente. A proposta inteira, de até 3 ações, gasta **uma** ação principal do personagem; sem
 ações (só conversa) nada é gravado e a ação não é gasta.
 
-- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida. **Por padrão os
-  segredos dos NPCs não vão ao LLM da mesa**, porque a fala dele chega a todos os jogadores e ele não pode repetir o
-  que não recebeu; `--segredos-no-llm` os envia (o aviso e `LlmView.secrets` passam a dizer isso), para o mestre de IA
+- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida. **Por padrão só o público vai ao LLM da mesa** (fatos já revelados inclusive; fatos ocultos e `private_notes`
+  ficam de fora), porque a fala dele chega a todos os jogadores e ele não pode repetir o
+  que não recebeu; `--segredos-no-llm` envia também o privado (o aviso e `LlmView.secrets` passam a dizer isso), para o mestre de IA
   jogar com o que cada NPC esconde. No CLI solo, o jogador é o mestre e os segredos continuam indo. O servidor nunca
   registra o texto do jogador.
 - **A chamada ao LLM roda fora do lock da mesa** (pode levar minutos): os comandos seguem passando, e a gravação só
@@ -142,8 +143,10 @@ ações (só conversa) nada é gravado e a ação não é gasta.
   Com `wait` e **sem** `since_talk` o mural antigo não conta como novidade (só falas posteriores à chamada acordam a
   espera): um cliente que não devolve `talk_seq` espera em vez de girar; para o histórico, chame com `wait=0`.
 - **Autoria de campanha:** `description` de NPC, de local e de marco vai ao LLM e pode chegar a todos pela fala; o que
-  ninguém pode saber vai em `secrets` (que, por padrão, não sai do servidor). Não ative um marco que conclui por
-  `npc_down` de um NPC que o grupo não vê: o título do marco concluído revela a queda dele.
+  ninguém pode saber vai em `facts` (revelado pelo motor, ver abaixo) ou em `private_notes` (nunca revelado); nenhum dos
+  dois sai do servidor por padrão. Não ative um marco que conclui por
+  `npc_down` de um NPC que o grupo não vê: o título do marco concluído revela a queda dele. O mesmo vale para um fato
+  revelado por `npc_down`: combine com `at_location` (o exemplo faz isso), senão o evento `reveal` entrega o nome.
 - A fala e a narração do LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos
   outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
 
@@ -237,6 +240,7 @@ avançado e um `Event` no log. O estado de entrada nunca é alterado. O acerto d
 | `heal` / `rest` | campanha (+ regras) | `heal` / `rest` |
 | `activate_beat` / `complete_beat` / `fail_beat` | campanha | `beat_activated` / `beat_done` / `beat_failed` |
 | `direct` / `pass_turn` | campanha, regras | `director` (+ os eventos das ações que dispara) |
+| `reveal_facts` / `reveal_fact` | campanha | `reveal` |
 | `end_turn` | — | `turn_end` |
 
 ## Diretor de narrativa
@@ -250,8 +254,19 @@ a partir de hp perdido, hostis presentes, caídos e marcos falhos) e registra um
 `director`. A tensão é derivada e, por enquanto, só observada: usá-la para ritmo é trabalho
 futuro. O diretor nunca inventa texto; só dispara ações do motor.
 
-Condições disponíveis nos marcos: `at_location`, `npc_down`, `beat_done`, `turn_at_least`.
+Condições disponíveis nos marcos e nos fatos: `at_location`, `npc_down`, `beat_done`, `turn_at_least` e
+`check_passed` (algum personagem passou num teste da habilidade; teste de NPC não conta).
 Um marco sem `complete_when` só conclui por ação explícita (`marco concluir <id>` no CLI).
+
+## Fatos e revelações
+
+O que o autor quer esconder vai em `Campaign.facts` (`id`, `text`, `about`, `reveal_when`) e em `private_notes`
+(local, facção, NPC e marco). `private_notes` nunca é público. Um fato começa oculto e **o motor decide quando ele se
+torna público**: quando todas as condições de `reveal_when` valem (checado ao fim do turno pelo diretor e depois de
+cada comando), ou quando o anfitrião usa `revelar <id>` (a única via de um fato sem condições). O estado guarda só
+`revealed_facts` (id → turno); o texto vive na campanha. `fatos` (anfitrião) lista todos; `olhar` mostra o que o grupo
+já sabe. O LLM sempre recebe os fatos revelados (`fatos_revelados`); os ocultos e as notas só com `include_private` e só os que dizem respeito ao que está em cena (NPCs presentes, o local, marcos ativos ou sem `about`)
+(solo, ou `--segredos-no-llm` na mesa). Desenho em [`docs/desenho-visibilidade-revelacoes.md`](docs/desenho-visibilidade-revelacoes.md).
 
 ## LLM (opcional)
 

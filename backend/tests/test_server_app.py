@@ -173,7 +173,7 @@ def test_players_see_a_fact_only_after_it_is_revealed(service, created):
     save_game(replace(session, state=revealed))
     after = service.get_campaign(created.table_id, bearer(joined.token))
     assert [(f.id, f.text) for f in after.facts] == [
-        ("ferreiro-segredo", "sabe o caminho secreto para o altar")
+        ("ferreiro-segredo", "Bram conhece o caminho secreto para o altar.")
     ]
     view = service.get_table(created.table_id, joined.token)
     assert view.state.revealed_facts == {"ferreiro-segredo": 0}
@@ -182,7 +182,7 @@ def test_players_see_a_fact_only_after_it_is_revealed(service, created):
 def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(service, created):
     campaign = service.get_campaign(created.table_id, bearer(created.host_token))
     assert isinstance(campaign, Campaign)
-    assert campaign.facts[0].text == "sabe o caminho secreto para o altar"
+    assert campaign.facts[0].text == "Bram conhece o caminho secreto para o altar."
 
     joined = join(service, created)
     view = service.get_campaign(created.table_id, bearer(joined.token))

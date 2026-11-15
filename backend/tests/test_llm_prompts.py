@@ -47,7 +47,7 @@ def test_context_at_the_ruins_shows_hostile_priest_and_secrets(campaign, rules, 
     priest = ctx["npcs_aqui"][0]
     assert priest["id"] == "sacerdote"
     assert priest["hostil"] is True
-    assert priest["segredos"] == ["é o líder do culto"]
+    assert priest["segredos"] == ["Irmão Vael é o líder do culto."]
     assert ctx["catalogo"]["armas_do_personagem"] == ["punhos"]
     assert ctx["eventos_recentes"][-1].startswith("O grupo vai de Floresta Cinzenta")
 
@@ -108,7 +108,7 @@ def test_secrets_can_be_left_out_of_the_prompt(campaign, rules, state):
     here = move(state, campaign, to_location_id="floresta").state
     ruins = move(here, campaign, to_location_id="ruinas").state
     with_secrets = build_context(campaign, rules, ruins, "aria")
-    assert with_secrets["npcs_aqui"][0]["segredos"] == ["é o líder do culto"]
+    assert with_secrets["npcs_aqui"][0]["segredos"] == ["Irmão Vael é o líder do culto."]
     without = build_context(campaign, rules, ruins, "aria", include_private=False)
     assert "segredos" not in without["npcs_aqui"][0]
     assert without["npcs_aqui"][0]["nome"] == "Irmão Vael"

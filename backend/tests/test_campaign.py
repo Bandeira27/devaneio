@@ -168,3 +168,12 @@ def test_example_campaign_has_triggers(campaign):
     assert by_id["chegada"].complete_when[0].location_id == "floresta"
     assert by_id["confronto"].complete_when[0].npc_id == "sacerdote"
     assert by_id["pista"].complete_when == []
+
+
+def test_example_facts_are_revealed_by_conditions(campaign):
+    by_id = {f.id: f for f in campaign.facts}
+    assert [c.kind for c in by_id["ferreiro-segredo"].reveal_when] == [
+        "at_location",
+        "check_passed",
+    ]
+    assert [c.kind for c in by_id["sacerdote-segredo"].reveal_when] == ["at_location", "npc_down"]
