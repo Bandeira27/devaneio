@@ -10,7 +10,7 @@ from devaneio.rng import Rng
 from devaneio.rules import RuleSystem
 from devaneio.schema import Campaign, Event, GameState, Location
 
-from .grammar import Grammar
+from .grammar import Grammar, GrammarError
 from .pack import NarrationPack
 
 _SALT = 0x9E3779B97F4A7C15
@@ -37,7 +37,10 @@ class Narrator:
         if key is None:
             return event.text
         rng = Rng(state.rng_seed ^ ((index + 1) * _SALT))
-        return " ".join(self.grammar.expand(key, variables, rng).split())
+        try:
+            return " ".join(self.grammar.expand(key, variables, rng).split())
+        except GrammarError:  # pacote que a validação não pegou: o jogo segue com o texto mecânico
+            return event.text
 
     def narrate_all(self, state: GameState) -> list[str]:
         return [self.narrate(e, i, state) for i, e in enumerate(state.events)]

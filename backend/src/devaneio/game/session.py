@@ -139,8 +139,10 @@ def content_hashes(rules: RuleSystem, pack: NarrationPack) -> ContentHashes:
 
 
 def _digest(model: RuleSystem | NarrationPack) -> str:
-    # Ordenado: reordenar chaves do JSON do autor não conta como mudança.
-    text = json.dumps(model.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
+    # Ordenado e sem defaults: reordenar chaves do JSON do autor, ou o projeto ganhar um campo
+    # novo com valor padrão, não conta como mudança.
+    dumped = model.model_dump(mode="json", exclude_defaults=True)
+    text = json.dumps(dumped, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 

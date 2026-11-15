@@ -132,7 +132,57 @@ def test_a_symlink_to_outside_the_campaign_folder_is_refused(folder, tmp_path_fa
     outside.write_text(json.dumps(good_rules()), encoding="utf-8")
     (folder / "sistemas").mkdir()
     (folder / "sistemas" / "meu-sistema.json").symlink_to(outside)
-    with pytest.raises(GameError, match="fora da pasta da campanha"):
+    with pytest.raises(GameError, match="aponta para fora de sistemas/"):
+        load(folder)
+
+
+def test_a_symlink_to_another_file_of_the_campaign_folder_is_refused_too(folder):
+    (folder / "sistemas").mkdir()
+    (folder / "sistemas" / "meu-sistema.json").symlink_to(folder / "campanha.json")
+    with pytest.raises(GameError, match="aponta para fora de sistemas/"):
+        load(folder)
+
+
+def test_deeply_nested_json_is_a_game_error_not_a_crash(folder):
+    write(folder, "sistemas", "meu-sistema", "[" * 100_000)
+    with pytest.raises(GameError, match="aninhado demais"):
+        load(folder)
+
+
+def test_the_error_names_where_and_what_but_not_the_value_in_the_file(folder):
+    write(folder, "sistemas", "meu-sistema", good_rules(id="SEGREDO-do-arquivo"))
+    with pytest.raises(GameError) as info:
+        load(folder)
+    assert "SEGREDO-do-arquivo" not in str(info.value)
+    assert "id:" in str(info.value)
+    assert "pydantic.dev" not in str(info.value)
+
+
+def test_the_size_cap_applies_to_what_is_read(folder, monkeypatch):
+    write(folder, "sistemas", "meu-sistema", good_rules())
+    monkeypatch.setattr("devaneio.game.content.MAX_CONTENT_BYTES", 10)
+    with pytest.raises(GameError, match="arquivo maior que"):
+        load(folder)
+
+
+def test_a_pack_that_explodes_when_expanded_is_refused_at_load(folder):
+    rules = {f"b{i}": [f"#b{i + 1}##b{i + 1}##b{i + 1}#"] for i in range(20)}
+    rules["b20"] = ["fim"]
+    write(folder, "sistemas", "meu-sistema", good_rules())
+    write(folder, "narracoes", "meu-estilo", good_pack(rules={**rules, "turn_end": ["#b0#"]}))
+    with pytest.raises(GameError, match=r"'turn_end' pode gerar até \d+ caracteres"):
+        load(folder)
+
+
+def test_a_cycle_between_rules_is_refused_at_load(folder):
+    write(folder, "sistemas", "meu-sistema", good_rules())
+    write(
+        folder,
+        "narracoes",
+        "meu-estilo",
+        good_pack(rules={"a": ["#b#"], "b": ["#a#"], "turn_end": ["#a#"]}),
+    )
+    with pytest.raises(GameError, match="ciclo entre regras: a -> b -> a"):
         load(folder)
 
 

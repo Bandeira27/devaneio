@@ -10,7 +10,7 @@ from pydantic import Field
 
 from devaneio.schema.common import Id, StrictModel
 
-from .grammar import Grammar
+from .grammar import MAX_EXPANDED_CHARS, Grammar
 
 # Variáveis que cada tipo de evento oferece aos templates. Regras cujo nome começa com o
 # tipo ("check.success", "move") só podem usar estas; auxiliares herdam das raízes.
@@ -62,7 +62,18 @@ def validate_pack(pack: NarrationPack) -> list[str]:
         for key in pack.rules
         if key.split(".")[0] in EVENT_VARIABLES
     }
-    return [f"referência indefinida em {problem}" for problem in grammar.undefined(roots)]
+    errors = [f"referência indefinida em {problem}" for problem in grammar.undefined(roots)]
+    cycles = grammar.cycles()
+    errors += [f"ciclo entre regras: {cycle}" for cycle in cycles]
+    if not cycles:  # sem ciclo o pior caso existe; com ciclo ele não tem fim
+        for key, variables in roots.items():
+            worst = grammar.worst_length(key, variables)
+            if worst > MAX_EXPANDED_CHARS:
+                errors.append(
+                    f"regra '{key}' pode gerar até {worst} caracteres (limite {MAX_EXPANDED_CHARS}): "
+                    "alguma regra se repete demais"
+                )
+    return errors
 
 
 def load_pack(data: Any) -> NarrationPack:

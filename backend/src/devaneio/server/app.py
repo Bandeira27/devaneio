@@ -300,11 +300,10 @@ class TableService:
             session = load_game(path, campaign_root=self.catalog.root)
         except (GameError, ValidationError, OSError) as exc:
             raise RuntimeError(f"partida ilegível: {path.name}") from exc
+        if not session.warnings:  # já salva com o conteúdo novo: um aviso futuro volta a valer
+            self._warned = {w for w in self._warned if w[0] != path.name}
         for warning in session.warnings:
-            if (
-                path.name,
-                warning,
-            ) not in self._warned:  # uma vez por mesa, até o próximo salvamento
+            if (path.name, warning) not in self._warned:  # uma vez por mesa, até salvar
                 self._warned.add((path.name, warning))
                 print(f"mesa {path.stem}: {warning}", file=sys.stderr)
         return session

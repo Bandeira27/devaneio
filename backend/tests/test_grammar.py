@@ -1,6 +1,7 @@
 import pytest
 
 from devaneio.narration import Grammar, GrammarError, referenced_symbols
+from devaneio.narration.grammar import MAX_EXPANSIONS
 from devaneio.rng import Rng
 
 RULES = {
@@ -73,3 +74,18 @@ def test_undefined_reports_unknown_references_with_transitive_variables():
     g2 = Grammar({"raiz": ["#aux#"], "outra": ["#aux#"], "aux": ["#var#"], "solta": ["#x#"]})
     assert g2.undefined({"raiz": ["var"], "outra": ["var"]}) == ["solta: #x#"]
     assert g2.undefined({"raiz": ["var"], "outra": []}) == ["outra: #var#", "solta: #x#"]
+
+
+def test_the_expansion_budget_stops_a_blow_up_at_runtime():
+    rules = {f"b{i}": [f"#b{i + 1}##b{i + 1}#"] for i in range(15)}
+    rules["b15"] = ["x"]
+    with pytest.raises(GrammarError, match=f"mais de {MAX_EXPANSIONS} passos"):
+        Grammar(rules).expand("b0", {}, Rng(1))
+
+
+def test_cycles_and_worst_length():
+    grammar = Grammar({"a": ["#b# #v#"], "b": ["oi"]})
+    assert grammar.cycles() == []
+    assert grammar.worst_length("a", {"v"}) == 2 + 1 + 100  # "oi" + " " + variável
+    assert Grammar({"a": ["#b#"], "b": ["#a#"]}).cycles() == ["a -> b -> a"]
+    assert Grammar({"a": ["#a#"]}).cycles() == ["a -> a"]

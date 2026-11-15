@@ -14,6 +14,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeVar
 
+from pydantic import ValidationError
+
 from devaneio.narration import (
     NarrationPack,
     builtin_pack_dict,
@@ -103,35 +105,54 @@ def _load(
         raise
     except ValueError as exc:
         origin = f"{folder.name}/{path.name}" if path is not None else "embutido"
-        raise GameError(f"{label} '{content_id}' ({origin}): {exc}") from None
+        raise GameError(f"{label} '{content_id}' ({origin}): {_explain(exc)}") from None
 
 
 def _author_file(label: str, content_id: str, folder: Path) -> Path | None:
-    path = folder / f"{content_id}.json"
-    if not path.is_file():
-        return None
-    resolved = path.resolve()
-    if not resolved.is_relative_to(folder.parent.resolve()):
-        raise GameError(f"{label} '{content_id}': o arquivo aponta para fora da pasta da campanha")
-    if resolved.stat().st_size > MAX_CONTENT_BYTES:
-        raise GameError(
-            f"{label} '{content_id}': arquivo maior que {MAX_CONTENT_BYTES // 1024} KiB"
-        )
+    try:
+        path = folder / f"{content_id}.json"
+        if not path.is_file():
+            return None
+        resolved = path.resolve()
+        if not resolved.is_relative_to(folder.resolve()):
+            raise GameError(f"{label} '{content_id}': o arquivo aponta para fora de {folder.name}/")
+    except OSError as exc:
+        raise GameError(f"{label} '{content_id}': não foi possível ler o arquivo") from exc
     return resolved
 
 
 def _read_json(label: str, path: Path) -> dict[str, Any]:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        with path.open("rb") as handle:
+            raw = handle.read(
+                MAX_CONTENT_BYTES + 1
+            )  # o teto vale para o que foi lido, não para o stat
+        if len(raw) > MAX_CONTENT_BYTES:
+            raise GameError(
+                f"{label} '{path.stem}': arquivo maior que {MAX_CONTENT_BYTES // 1024} KiB"
+            )
+        data = json.loads(raw.decode("utf-8"))
     except (OSError, UnicodeDecodeError) as exc:
         raise GameError(f"{label} '{path.stem}': não foi possível ler o arquivo") from exc
     except json.JSONDecodeError as exc:
         raise GameError(
             f"{label} '{path.stem}': JSON inválido na linha {exc.lineno}: {exc.msg}"
         ) from None
+    except RecursionError:
+        raise GameError(f"{label} '{path.stem}': JSON aninhado demais") from None
     if not isinstance(data, dict):
         raise GameError(f"{label} '{path.stem}': o arquivo precisa ser um objeto JSON")
     return data
+
+
+def _explain(exc: ValueError) -> str:
+    """Erro do Pydantic só com onde e o quê, sem o valor do arquivo (nem a URL de ajuda)."""
+    if isinstance(exc, ValidationError):
+        return "; ".join(
+            f"{'.'.join(str(part) for part in e['loc']) or 'arquivo'}: {e['msg']}"
+            for e in exc.errors(include_url=False, include_input=False)
+        )
+    return str(exc)
 
 
 def _not_found(label: str, content_id: str, folder: Path) -> GameError:

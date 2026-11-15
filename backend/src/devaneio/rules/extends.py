@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import copy
 import json
+from collections import Counter
 from collections.abc import Callable
 from typing import Any, Literal
+
+from pydantic import model_validator
 
 from devaneio.schema.common import Id, StrictModel
 
@@ -72,6 +75,23 @@ class RuleSystemExtension(StrictModel):
     dispositions: DispositionsPatch | None = None
     rest: RestPatch | None = None
     max_hp: Formula | None = None
+
+    @model_validator(mode="after")
+    def _explicit_values_are_usable(self) -> RuleSystemExtension:
+        """``null`` explícito não significa "herdar" (omitir é que herda); só ``default_weapon``,
+        dentro de ``combat``, usa ``null`` para limpar. Id repetido numa lista do filho seria um
+        item perdido em silêncio na mescla."""
+        errors = [
+            f"'{name}' não pode ser null (omita o campo para herdar do pai)"
+            for name in self.model_fields_set
+            if getattr(self, name) is None
+        ]
+        for key in LIST_KEYS:
+            counts = Counter(item.id for item in getattr(self, key) or [])
+            errors += [f"{key}: id repetido '{i}' ({n} vezes)" for i, n in counts.items() if n > 1]
+        if errors:
+            raise ValueError("; ".join(errors))
+        return self
 
 
 def merge_rules(parent: dict[str, Any], extension: dict[str, Any]) -> dict[str, Any]:

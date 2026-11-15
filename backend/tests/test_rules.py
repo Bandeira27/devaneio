@@ -297,3 +297,18 @@ def test_the_merged_system_is_checked_like_any_other():
     child = extension(skills=[{"id": "magia", "name": "Magia", "formula": "2d6 + SORTE"}])
     with pytest.raises(RulesIntegrityError, match="atributo 'SORTE'"):
         load_rules_extending(child, builtin_rules_dict)
+
+
+@pytest.mark.parametrize("field", ["attributes", "outcomes", "skills", "max_hp"])
+def test_a_null_in_an_extension_is_a_clear_error_not_a_crash(field):
+    with pytest.raises(ValidationError, match=f"'{field}' não pode ser null"):
+        load_rules_extending(extension(**{field: None}), builtin_rules_dict)
+
+
+def test_a_repeated_id_in_the_extension_list_is_an_error():
+    skills = [
+        {"id": "magia", "name": "A", "formula": "2d6"},
+        {"id": "magia", "name": "B", "formula": "2d6"},
+    ]
+    with pytest.raises(ValidationError, match=r"skills: id repetido 'magia' \(2 vezes\)"):
+        load_rules_extending(extension(skills=skills), builtin_rules_dict)
