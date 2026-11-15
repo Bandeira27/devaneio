@@ -16,6 +16,7 @@ from devaneio.engine import (
     pass_turn,
     resolve_check,
     rest,
+    reveal_fact,
 )
 from devaneio.narration import (
     EVENT_VARIABLES,
@@ -27,7 +28,7 @@ from devaneio.narration import (
     load_pack,
     validate_pack,
 )
-from devaneio.schema import Event
+from devaneio.schema import Event, FactDef
 
 
 @pytest.fixture
@@ -226,3 +227,11 @@ def test_heal_and_rest_are_narrated(narrator, campaign, rules, played):
     assert "Aria (+" in prose
     assert prose != rested.text
     assert "#" not in prose
+
+
+def test_a_reveal_event_gets_prose_with_the_fact_text(campaign, rules, pack):
+    with_fact = campaign.model_copy(update={"facts": [FactDef(id="culto", text="O culto é real.")]})
+    state = reveal_fact(initial_state(with_fact, rules, 8), with_fact, fact_id="culto").state
+    text = Narrator(with_fact, rules, pack).narrate(state.events[-1], len(state.events) - 1, state)
+    assert "O culto é real." in text
+    assert "#" not in text

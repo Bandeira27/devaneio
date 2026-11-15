@@ -124,6 +124,9 @@ class Narrator:
                 "marco": beat.title if beat else str(d.get("beat_id", "")),
                 "descricao": beat.description if beat else "",
             }
+        if kind == "reveal":
+            fact = next((f for f in self.campaign.facts if f.id == d.get("fact_id")), None)
+            return "", {"fato": fact.text if fact else ""}
         return "", {}
 
     # --- buscas com fallback para o id -----------------------------------------

@@ -99,6 +99,10 @@
       "Capítulo encerrado: #marco#. #descricao#",
       "#marco# chega ao fim. O que vem depois ainda não tem nome."
     ],
+    "reveal": [
+      "Algo vem à tona: #fato#",
+      "Uma verdade se mostra: #fato#"
+    ],
     "beat_failed": [
       "#marco# se perde. O que podia ter sido não será.",
       "Falha: #marco# escapa das mãos do grupo."

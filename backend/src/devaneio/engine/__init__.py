@@ -3,12 +3,12 @@
 from .beats import BeatResult, activate_beat, complete_beat, fail_beat
 from .characters import AddCharacterResult, add_character
 from .checks import CheckResult, classify_outcome, npc_check, resolve_check
+from .conditions import holds
 from .damage import DamageResult, TargetKind, apply_damage, deal_damage
 from .director import (
     DirectorResult,
     advance_beats,
     direct,
-    holds,
     hostile_reactions,
     pass_turn,
     tension,
@@ -17,6 +17,7 @@ from .errors import EngineError
 from .heal import HealResult, RestResult, heal, rest
 from .lookup import npc_ids_at, npc_locations
 from .movement import MoveResult, move
+from .reveal import RevealResult, reveal_fact, reveal_facts
 from .setup import initial_state
 from .status import GameStatus, game_status
 from .turns import end_turn
@@ -32,6 +33,7 @@ __all__ = [
     "HealResult",
     "MoveResult",
     "RestResult",
+    "RevealResult",
     "TargetKind",
     "activate_beat",
     "add_character",
@@ -55,5 +57,7 @@ __all__ = [
     "pass_turn",
     "resolve_check",
     "rest",
+    "reveal_fact",
+    "reveal_facts",
     "tension",
 ]

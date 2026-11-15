@@ -28,13 +28,15 @@ from devaneio.engine import (
     pass_turn,
     resolve_check,
     rest,
+    reveal_fact,
+    reveal_facts,
 )
 from devaneio.rules import CheckOutcome
 from devaneio.schema import BeatStatus, Character, GameState
 
 from .session import Session
 
-READ_ONLY = {"ajuda", "olhar", "ficha", "marcos", "log"}
+READ_ONLY = {"ajuda", "olhar", "ficha", "marcos", "fatos", "log"}
 STATUS_LABELS = {
     GameStatus.WON: "vitória: todos os marcos foram concluídos",
     GameStatus.LOST: "derrota: todo o grupo caiu",
@@ -61,6 +63,8 @@ Comandos (prefixe com `id:` para escolher o personagem quando houver mais de um)
   ficha [id]                             atributos, hp e inventário
   marcos                                 marcos da trama e seus estados
   marco ativar|concluir|falhar <id>      mover um marco à mão (o diretor cuida dos gatilhos)
+  fatos                                  fatos da campanha, revelados e ocultos
+  revelar <id>                           tornar um fato público (o diretor revela os que têm gatilho)
   log [n]                                últimos eventos (padrão 10)
   fim                                    encerrar o turno: o diretor age, NPCs hostis reagem
   ajuda                                  esta lista
@@ -135,7 +139,8 @@ def execute(session: Session, line: str) -> tuple[Session, str]:
         new_state, text = handler(session, actor, args)
         if new_state is not session.state and name != "fim":
             new_state, beat_texts = advance_beats(new_state, session.campaign)
-            text = "\n".join([text, *beat_texts])
+            new_state, reveal_texts = reveal_facts(new_state, session.campaign)
+            text = "\n".join([text, *beat_texts, *reveal_texts])
     except EngineError as exc:
         raise CommandError(str(exc)) from None
     return replace(session, state=new_state), text
@@ -375,6 +380,22 @@ def _beat(session: Session, _actor: str | None, args: list[str]) -> tuple[GameSt
     return result.state, result.text
 
 
+def _facts(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
+    lines = []
+    for fact in session.campaign.facts:
+        label = "revelado" if fact.id in session.state.revealed_facts else "oculto"
+        about = f" sobre {fact.about}" if fact.about else ""
+        lines.append(f"[{label}] {fact.text} ({fact.id}){about}")
+    return session.state, "\n".join(lines) or "Nenhum fato na campanha."
+
+
+def _reveal(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    if len(args) != 1:
+        raise CommandError("uso: revelar <id do fato>")
+    result = reveal_fact(session.state, session.campaign, fact_id=args[0])
+    return result.state, result.text
+
+
 COMMANDS: dict[str, Handler] = {
     "ajuda": _help,
     "olhar": _look,
@@ -388,6 +409,8 @@ COMMANDS: dict[str, Handler] = {
     "ficha": _sheet,
     "marcos": _beats,
     "marco": _beat,
+    "fatos": _facts,
+    "revelar": _reveal,
     "log": _log,
     "fim": _end_turn,
 }
