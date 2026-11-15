@@ -17,8 +17,9 @@ from urllib.parse import parse_qs, urlsplit
 
 from pydantic import BaseModel, ValidationError
 
-from .app import ApiFailure, TableService
+from .app import TableService
 from .auth import bearer_token
+from .errors import ApiFailure
 from .models import ApiError, CommandRequest, CreateTableRequest, ErrorResponse, JoinRequest
 
 MAX_BODY = 64 * 1024
