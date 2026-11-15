@@ -249,3 +249,64 @@ def test_an_old_save_without_content_opens_without_warnings(folder):
     save.write_text(json.dumps(data), encoding="utf-8")
     write(folder, "sistemas", "meu-sistema", good_rules(name="Mudou"))
     assert load_game(save).warnings == ()
+
+
+def test_an_unreadable_file_is_a_game_error_without_the_path(folder):
+    write(folder, "sistemas", "meu-sistema", good_rules())
+    target = folder / "sistemas" / "meu-sistema.json"
+    target.chmod(0)
+    try:
+        try:
+            target.read_bytes()
+        except PermissionError:
+            pass
+        else:
+            pytest.skip("o usuário ignora permissões de arquivo")
+        with pytest.raises(GameError, match="não foi possível ler o arquivo") as info:
+            load(folder)
+        assert str(folder) not in str(info.value)
+    finally:
+        target.chmod(0o644)
+
+
+def test_a_file_that_is_not_utf8_is_a_game_error(folder):
+    (folder / "sistemas").mkdir()
+    (folder / "sistemas" / "meu-sistema.json").write_bytes(b"\xff\xfe{}")
+    with pytest.raises(GameError, match="não foi possível ler o arquivo"):
+        load(folder)
+
+
+def test_a_failure_to_inspect_the_file_is_a_game_error(folder, monkeypatch):
+    write(folder, "sistemas", "meu-sistema", good_rules())
+
+    def boom(_self):
+        raise OSError("falhou")
+
+    monkeypatch.setattr("pathlib.Path.is_file", boom)
+    with pytest.raises(GameError, match="não foi possível ler o arquivo"):
+        load(folder)
+
+
+def test_a_broken_pack_file_names_the_file_in_portuguese(folder):
+    write(folder, "sistemas", "meu-sistema", good_rules())
+    write(folder, "narracoes", "meu-estilo", good_pack(rules={"move": ["#destinno#"]}))
+    with pytest.raises(GameError, match=r"'meu-estilo' \(narracoes/meu-estilo\.json\)"):
+        load(folder)
+
+
+def test_a_symlinked_parent_outside_the_folder_is_refused(folder, tmp_path_factory):
+    outside = tmp_path_factory.mktemp("fora") / "base.json"
+    base = builtin_rules_dict("default") | {"id": "base"}
+    outside.write_text(json.dumps(base), encoding="utf-8")
+    (folder / "sistemas").mkdir()
+    (folder / "sistemas" / "base.json").symlink_to(outside)
+    write(folder, "sistemas", "meu-sistema", good_rules(extends="base"))
+    with pytest.raises(GameError, match="aponta para fora de sistemas/"):
+        load(folder)
+
+
+def test_a_catalog_with_a_broken_system_names_the_campaign_file(folder):
+    write(folder, "sistemas", "meu-sistema", "{ quebrado")
+    write(folder, "narracoes", "meu-estilo", good_pack())
+    with pytest.raises(CatalogError, match=r"campanha 'campanha\.json' inválida.*JSON inválido"):
+        Catalog(folder)

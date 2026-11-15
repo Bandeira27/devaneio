@@ -89,3 +89,14 @@ def test_cycles_and_worst_length():
     assert grammar.worst_length("a", {"v"}) == 2 + 1 + 100  # "oi" + " " + variável
     assert Grammar({"a": ["#b#"], "b": ["#a#"]}).cycles() == ["a -> b -> a"]
     assert Grammar({"a": ["#a#"]}).cycles() == ["a -> a"]
+
+
+def test_a_shared_rule_reached_twice_is_not_a_cycle():
+    diamond = Grammar({"a": ["#b# #c#"], "b": ["#d#"], "c": ["#d#"], "d": ["x"]})
+    assert diamond.cycles() == []
+
+
+def test_worst_length_takes_the_longest_option_and_ignores_unknown_references():
+    grammar = Grammar({"a": ["curto", "bem mais longo #b#"], "b": ["xx", "y"]})
+    assert grammar.worst_length("a", set()) == len("bem mais longo ") + 2
+    assert Grammar({"a": ["oi #fora#"]}).worst_length("a", set()) == len("oi ")

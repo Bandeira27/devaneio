@@ -138,3 +138,33 @@ def test_verificar_reports_a_broken_campaign_without_a_traceback(tmp_path, campa
     assert result.returncode == 1
     assert "'nao-existe' não encontrado" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_replacing_a_valid_variant_does_not_warn():
+    assert not [w for w in lint(**{"check.success": ["ok"]}) if "variante" in w]
+
+
+def test_an_auxiliary_rule_reached_only_through_another_auxiliary_does_not_warn():
+    assert lint(fundo=["#folha#"], folha=["texto"], move=["#fundo#"]) == []
+
+
+def test_findings_of_rules_and_narration_come_together(campaign_data, rules):
+    data = builtin_pack_dict("pt-br")
+    data["rules"]["sobra"] = ["x"]
+    campaign_data["facts"][0]["reveal_when"] = [{"kind": "check_passed", "skill_id": "magia"}]
+    first, second = findings(campaign_data, rules, load_pack(data))
+    assert first.startswith("erro: fato 'ferreiro-segredo'")
+    assert second.startswith("aviso: narração 'pt-br': regra auxiliar 'sobra'")
+
+
+def test_verificar_reports_a_pack_warning_and_still_exits_0(tmp_path, campaign_data):
+    campaign_data["narration_id"] = "meu"
+    pack = builtin_pack_dict("pt-br") | {"id": "meu"}
+    pack["rules"]["sobra"] = ["x"]
+    (tmp_path / "narracoes").mkdir()
+    (tmp_path / "narracoes" / "meu.json").write_text(json.dumps(pack), encoding="utf-8")
+    path = tmp_path / "c.json"
+    path.write_text(json.dumps(campaign_data), encoding="utf-8")
+    result = run_verify(path)
+    assert result.returncode == 0
+    assert "aviso: narração 'meu': regra auxiliar 'sobra'" in result.stdout

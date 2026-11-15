@@ -312,3 +312,37 @@ def test_a_repeated_id_in_the_extension_list_is_an_error():
     ]
     with pytest.raises(ValidationError, match=r"skills: id repetido 'magia' \(2 vezes\)"):
         load_rules_extending(extension(skills=skills), builtin_rules_dict)
+
+
+def test_a_block_in_the_extension_changes_only_the_fields_it_declares(rules_data):
+    child = extension(
+        outcomes={"critical_failure_margin": -7},
+        dispositions={"hostile_below": 3},
+        rest={"heal": "1d4"},
+        combat={"fallen_can_act": True},
+    )
+    rules = load_rules_extending(child, builtin_rules_dict)
+    parent_outcomes = rules_data["outcomes"]
+    assert rules.outcomes.critical_failure_margin == -7
+    assert rules.outcomes.critical_success_margin == parent_outcomes["critical_success_margin"]
+    assert rules.dispositions.hostile_below == 3
+    assert rules.rest.heal == "1d4"
+    assert rules.combat.fallen_can_act is True
+    assert rules.combat.default_weapon == rules_data["combat"]["default_weapon"]
+    assert rules.combat.attack_difficulty == rules_data["combat"]["attack_difficulty"]
+
+
+def test_an_empty_list_in_the_extension_keeps_the_parent_items(rules_data):
+    rules = load_rules_extending(extension(skills=[], weapons=[]), builtin_rules_dict)
+    assert [s.id for s in rules.skills] == [s["id"] for s in rules_data["skills"]]
+    assert [w.id for w in rules.weapons] == [w["id"] for w in rules_data["weapons"]]
+
+
+def test_a_block_with_an_unknown_field_in_the_extension_is_rejected():
+    with pytest.raises(ValidationError, match="armadura"):
+        load_rules_extending(extension(combat={"armadura": 1}), builtin_rules_dict)
+
+
+def test_merge_rules_drops_extends_and_creates_a_block_missing_in_the_parent():
+    merged = merge_rules({"id": "p"}, {"extends": "p", "id": "f", "rest": {"heal": "1"}})
+    assert merged == {"id": "f", "rest": {"heal": "1"}}

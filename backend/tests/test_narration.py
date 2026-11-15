@@ -305,3 +305,26 @@ def test_the_narrator_only_uses_variants_the_table_knows(narrator, played):
     for event in played.events:
         variant, _ = narrator._prepare(event, played)
         assert variant == "" or variant in EVENT_VARIANTS.get(event.kind, ()), event.kind
+
+
+def test_a_pack_extension_without_language_or_rules_inherits_everything():
+    parent = builtin_pack_dict("pt-br")
+    child = load_pack_extending({"id": "meu", "extends": "pt-br"}, builtin_pack_dict)
+    assert child.language == parent["language"]
+    assert child.rules == parent["rules"]
+
+
+def test_a_pack_extension_cannot_empty_an_inherited_rule():
+    with pytest.raises(ValidationError):
+        load_pack_extending(pack_extension(rules={"move": []}), builtin_pack_dict)
+
+
+def test_a_null_language_in_a_pack_extension_is_rejected_not_inherited():
+    child = pack_extension(language=None)
+    with pytest.raises(ValueError, match="language"):
+        load_pack_extending(child, builtin_pack_dict)
+
+
+def test_merge_pack_drops_extends_and_creates_missing_rules():
+    merged = merge_pack({"id": "p"}, {"extends": "p", "id": "f", "rules": {"a": ["x"]}})
+    assert merged == {"id": "f", "rules": {"a": ["x"]}}
