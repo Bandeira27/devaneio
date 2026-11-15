@@ -21,3 +21,22 @@ def clean_text(text: str) -> str:
         if ch.isspace() or unicodedata.category(ch) not in _UNSAFE
     )
     return " ".join(kept.split())
+
+
+def clean_multiline(text: str, limit: int) -> str:
+    """Como ``clean_text``, mas mantém as quebras de linha (resposta longa para o anfitrião).
+    Controle, formatação e substitutos somem; tab e espaços repetidos viram um espaço; mais de uma
+    linha em branco seguida vira uma; corta em ``limit`` caracteres."""
+    lines: list[str] = []
+    for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        kept = "".join(
+            " " if ch.isspace() else ch
+            for ch in line
+            if ch.isspace() or unicodedata.category(ch) not in _UNSAFE
+        )
+        lines.append(" ".join(kept.split()))
+    result: list[str] = []
+    for line in lines:
+        if line or (result and result[-1]):
+            result.append(line)
+    return "\n".join(result).strip()[:limit]
