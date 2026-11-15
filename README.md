@@ -146,7 +146,8 @@ ações (só conversa) nada é gravado e a ação não é gasta.
   ninguém pode saber vai em `facts` (revelado pelo motor, ver abaixo) ou em `private_notes` (nunca revelado); nenhum dos
   dois sai do servidor por padrão. Não ative um marco que conclui por
   `npc_down` de um NPC que o grupo não vê: o título do marco concluído revela a queda dele. O mesmo vale para um fato
-  revelado por `npc_down`: combine com `at_location` (o exemplo faz isso), senão o evento `reveal` entrega o nome.
+  revelado por `npc_down`: combine com `at_location` (o exemplo faz isso), senão o evento `reveal` entrega o nome; e `about` aparece a todos quando o fato é revelado.
+  Campanhas e partidas anteriores a `facts` não carregam: troque `secrets` por `facts` (ver o documento de desenho).
 - A fala e a narração do LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos
   outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
 

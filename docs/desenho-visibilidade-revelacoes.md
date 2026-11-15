@@ -70,8 +70,21 @@ de `reveal_when` conferidas pela mesma função usada nos marcos.
 
 - A campanha de exemplo passa os dois segredos para fatos: o caminho do ferreiro revelado por um teste
   bem-sucedido no local, a identidade do sacerdote quando ele cai.
-- Partidas salvas antigas guardam `facts` no estado. O carregamento descarta esse campo quando vazio.
-  Campo `secrets` numa campanha antiga é erro de schema, com a mensagem do Pydantic.
+- **Quebra de compatibilidade, assumida**: partidas salvas com `facts` no estado e campanhas com `secrets` no NPC
+  deixam de carregar (o schema recusa campo desconhecido). Não há migração automática; o projeto ainda não tem
+  conteúdo publicado. Quem tem campanha própria troca cada `secrets` por um item de `facts` com `about`.
+
+## Limites conhecidos
+
+- `check_passed` olha o log inteiro: não exige que o teste tenha sido no local nem contra um NPC. O exemplo do
+  ferreiro (`at_location vila` mais `check_passed persuadir`) revela ao entrar na vila depois de persuadir
+  qualquer um em outro lugar. Alvo e local no teste ficam para quando houver ações declarativas.
+- `skill_id` de `check_passed` não é conferido contra o sistema de regras na carga: erro de digitação deixa o fato
+  sem revelar, sem aviso. Cabe ao validador de autoria do passo 2.
+- `about` é só rótulo e aparece a jogadores e ao LLM quando o fato é revelado. Apontar para um marco pendente ou
+  para um NPC que o grupo não conhece entrega o título ou o nome. Combine a revelação com o que o grupo já viu.
+- Para o LLM, fato oculto com `about` de facção nunca é enviado (só sem `about`, do local, de marco ativo ou de
+  NPC presente).
 
 ## Fora desta etapa
 

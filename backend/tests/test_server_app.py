@@ -327,8 +327,8 @@ def test_by_default_the_notice_says_npc_secrets_do_not_go_to_the_llm(tmp_path):
         .table.llm
     )
     assert llm.secrets is False
-    assert "Os segredos dos NPCs não vão." in llm.notice
-    assert "com seus segredos" not in llm.notice
+    assert "Segredos, fatos ocultos e notas privadas não vão." in llm.notice
+    assert "fatos ocultos e notas privadas da campanha" not in llm.notice
 
 
 def test_when_the_host_opts_in_the_notice_says_the_secrets_go_and_the_speech_reaches_all(tmp_path):
@@ -339,8 +339,8 @@ def test_when_the_host_opts_in_the_notice_says_the_secrets_go_and_the_speech_rea
         .table.llm
     )
     assert llm.secrets is True
-    assert "NPCs presentes com seus segredos" in llm.notice
-    assert "Os segredos dos NPCs não vão." not in llm.notice
+    assert "fatos ocultos e notas privadas da campanha" in llm.notice
+    assert "Segredos, fatos ocultos e notas privadas não vão." not in llm.notice
 
 
 def test_without_an_llm_the_table_says_secrets_are_not_shared(tmp_path):

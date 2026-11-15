@@ -117,3 +117,12 @@ def test_olhar_tells_what_the_group_already_knows(session):
     assert "Vocês sabem" not in execute(session, "olhar")[1]
     session, _ = execute(session, "revelar culto")
     assert "Vocês sabem: O culto é real." in execute(session, "olhar")[1]
+
+
+def test_a_new_game_already_reveals_facts_that_hold_at_the_start(tmp_path, campaign):
+    here = [AtLocation(kind="at_location", location_id=campaign.start_location_id)]
+    fact = FactDef(id="aqui", text="Já se sabe.", reveal_when=here)
+    path = tmp_path / "c.json"
+    path.write_text(campaign_with(campaign, fact).model_dump_json(), encoding="utf-8")
+    session = new_game(path, tmp_path / "p.json", seed=3)
+    assert "aqui" in session.state.revealed_facts

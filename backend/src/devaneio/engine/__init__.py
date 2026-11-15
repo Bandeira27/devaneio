@@ -3,7 +3,7 @@
 from .beats import BeatResult, activate_beat, complete_beat, fail_beat
 from .characters import AddCharacterResult, add_character
 from .checks import CheckResult, classify_outcome, npc_check, resolve_check
-from .conditions import holds
+from .conditions import HIT, holds
 from .damage import DamageResult, TargetKind, apply_damage, deal_damage
 from .director import (
     DirectorResult,
@@ -23,6 +23,7 @@ from .status import GameStatus, game_status
 from .turns import end_turn
 
 __all__ = [
+    "HIT",
     "AddCharacterResult",
     "BeatResult",
     "CheckResult",

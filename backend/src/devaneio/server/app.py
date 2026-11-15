@@ -74,8 +74,8 @@ LLM_NOTICE = (
     "roda esta mesa: {description}. {secrets_note}A fala e a narração que o LLM devolve voltam "
     "aos jogadores."
 )
-NOTICE_WITH_SECRETS = (" com seus segredos", "")
-NOTICE_WITHOUT_SECRETS = ("", "Os segredos dos NPCs não vão. ")
+NOTICE_WITH_SECRETS = (", segredos dos NPCs, fatos ocultos e notas privadas da campanha", "")
+NOTICE_WITHOUT_SECRETS = ("", "Segredos, fatos ocultos e notas privadas não vão. ")
 
 
 class TableService:

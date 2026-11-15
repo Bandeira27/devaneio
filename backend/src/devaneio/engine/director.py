@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from devaneio.rng import Rng
-from devaneio.rules import CheckOutcome, RuleSystem
+from devaneio.rules import RuleSystem
 from devaneio.schema import (
     BeatStatus,
     Campaign,
@@ -21,14 +21,13 @@ from devaneio.schema import (
 
 from .beats import activate_beat, complete_beat
 from .checks import npc_check
-from .conditions import holds
+from .conditions import HIT, holds
 from .damage import deal_damage
 from .errors import EngineError
 from .reveal import reveal_facts
 from .turns import end_turn
 
 TENSION_WEIGHTS = {"hp_lost": 0.4, "hostiles": 0.3, "down": 0.2, "failed": 0.1}
-HIT = (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS)
 
 
 @dataclass(frozen=True)

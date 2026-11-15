@@ -11,6 +11,7 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from devaneio.engine import (
+    HIT,
     EngineError,
     GameStatus,
     TargetKind,
@@ -31,7 +32,6 @@ from devaneio.engine import (
     reveal_fact,
     reveal_facts,
 )
-from devaneio.rules import CheckOutcome
 from devaneio.schema import BeatStatus, Character, GameState
 
 from .session import Session
@@ -282,7 +282,7 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
         difficulty_id=session.rules.combat.attack_difficulty,
         modifier_id=args[2] if len(args) == 3 else None,
     )
-    if check.outcome not in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS):
+    if check.outcome not in HIT:
         return check.state, f"{check.text}\nO ataque não acerta."
     damage = deal_damage(
         check.state,

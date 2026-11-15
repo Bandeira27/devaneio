@@ -16,7 +16,9 @@ from devaneio.schema import (
 
 from .errors import EngineError
 
-PASSED = frozenset(o.value for o in (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS))
+# Os graus em que um teste conta como passado (acerto, condição ``check_passed``).
+HIT = (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS)
+PASSED = frozenset(o.value for o in HIT)
 
 
 def holds(condition: Condition, state: GameState) -> bool:
