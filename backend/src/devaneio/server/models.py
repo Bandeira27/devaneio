@@ -81,6 +81,11 @@ class CommandRequest(StrictModel):
     revision: int = Field(ge=0)
 
 
+class SayRequest(StrictModel):
+    text: CommandLine
+    revision: int = Field(ge=0)
+
+
 class CampaignSummary(StrictModel):
     id: Id
     title: str
@@ -237,14 +242,17 @@ class TableCreated(StrictModel):
 
 
 class EventView(StrictModel):
-    """Evento do log para o cliente: sem ``data``. ``prose`` é a narração da gramática, que
-    é exibição e não volta ao estado."""
+    """Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
+    do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
+    livre, só no primeiro evento do lote (os outros ficam ``None``) e só enquanto o servidor
+    não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para todos."""
 
     index: int
     turn: int
     kind: str
     text: str
     prose: str
+    narration: str | None = None
 
 
 class EventsView(StrictModel):
@@ -258,6 +266,11 @@ class CommandResult(StrictModel):
     text: str
     status: GameStatus
     turn_ended: bool
+
+
+class SayResult(CommandResult):
+    say: str  # fala do mestre/NPC: só exibida e só para quem enviou o texto
+    commands: list[str]  # as ações que o LLM propôs e o motor aplicou
 
 
 class TableJoined(StrictModel):
@@ -279,6 +292,7 @@ class ApiRequests(StrictModel):
     create_table: CreateTableRequest
     join_table: JoinRequest
     command: CommandRequest
+    say: SayRequest
 
 
 class ApiResponses(StrictModel):
@@ -287,6 +301,7 @@ class ApiResponses(StrictModel):
     table_created: TableCreated
     table_joined: TableJoined
     command_result: CommandResult
+    say_result: SayResult
     events: EventsView
     campaign: Campaign
     campaign_view: CampaignView

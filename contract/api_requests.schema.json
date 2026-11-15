@@ -74,6 +74,26 @@
       ],
       "title": "JoinRequest",
       "type": "object"
+    },
+    "SayRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text",
+        "revision"
+      ],
+      "title": "SayRequest",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -86,12 +106,16 @@
     },
     "command": {
       "$ref": "#/$defs/CommandRequest"
+    },
+    "say": {
+      "$ref": "#/$defs/SayRequest"
     }
   },
   "required": [
     "create_table",
     "join_table",
-    "command"
+    "command",
+    "say"
   ],
   "title": "ApiRequests",
   "type": "object"

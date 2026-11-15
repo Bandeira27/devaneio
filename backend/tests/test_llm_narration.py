@@ -60,3 +60,14 @@ def test_client_errors_propagate(campaign, state):
 
 def test_limit_is_inclusive():
     assert clean_narration("x" * MAX_CHARS) == "x" * MAX_CHARS
+
+
+def test_control_and_invisible_characters_are_removed_from_the_prose():
+    raw = "Linha\n" + chr(0x1B) + "[2J com " + chr(0x202E) + "bidi" + chr(0x200B) + " e   espaços."
+    assert clean_narration(raw) == "Linha [2J com bidi e espaços."
+    with pytest.raises(LlmError, match="vazia"):
+        clean_narration(chr(0x1B) + chr(0x200B) + "  ")
+
+
+def test_line_breaks_between_words_stay_word_breaks():
+    assert clean_narration("um\ndois\ttrês\u2028quatro") == "um dois três quatro"

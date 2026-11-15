@@ -9,6 +9,7 @@ export interface ApiRequests {
   create_table: CreateTableRequest;
   join_table: JoinRequest;
   command: CommandRequest;
+  say: SayRequest;
 }
 export interface CreateTableRequest {
   campaign_id: string;
@@ -21,5 +22,9 @@ export interface JoinRequest {
 }
 export interface CommandRequest {
   line: string;
+  revision: number;
+}
+export interface SayRequest {
+  text: string;
   revision: number;
 }

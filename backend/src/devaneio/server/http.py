@@ -20,7 +20,14 @@ from pydantic import BaseModel, ValidationError
 from .app import TableService
 from .auth import bearer_token
 from .errors import ApiFailure
-from .models import ApiError, CommandRequest, CreateTableRequest, ErrorResponse, JoinRequest
+from .models import (
+    ApiError,
+    CommandRequest,
+    CreateTableRequest,
+    ErrorResponse,
+    JoinRequest,
+    SayRequest,
+)
 
 MAX_BODY = 64 * 1024
 MAX_WAIT = 30  # segundos de long-poll
@@ -71,6 +78,10 @@ class Handler(BaseHTTPRequestHandler):
         request = self._read_json(CommandRequest)
         return 200, self.server.service.run_command(match.group(1), self._token(), request)
 
+    def _say(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(SayRequest)
+        return 200, self.server.service.say(match.group(1), self._token(), request)
+
     def _get_events(self, match: re.Match[str]) -> tuple[int, Payload]:
         since = self._query_int("since", default=0)
         wait = self._query_int("wait", default=0)
@@ -85,6 +96,7 @@ class Handler(BaseHTTPRequestHandler):
         ("GET", re.compile(r"^/tables/([^/]+)/campaign$"), _get_campaign),
         ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
         ("POST", re.compile(r"^/tables/([^/]+)/commands$"), _command),
+        ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),
         ("GET", re.compile(r"^/tables/([^/]+)/events$"), _get_events),
     )
 

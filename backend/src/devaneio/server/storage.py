@@ -1,7 +1,9 @@
 """Onde as mesas vivem em disco e como o acesso a cada uma é serializado.
 
 O id da mesa é gerado aqui e validado de novo quando vem da URL: só o formato que o
-próprio servidor produz vira caminho, e sempre dentro da pasta de dados."""
+próprio servidor produz vira caminho, e sempre dentro da pasta de dados. O arquivo é a fonte
+única da verdade; em memória ficam só a coordenação (lock, versão, vagas) e os parágrafos de
+narração do LLM, que são exibição e somem ao reiniciar."""
 
 from __future__ import annotations
 
@@ -13,6 +15,7 @@ from pathlib import Path
 
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
+MAX_NARRATIONS = 200  # parágrafos de narração guardados por mesa; os mais antigos saem primeiro
 
 
 @dataclass
@@ -20,6 +23,8 @@ class _Table:
     lock: threading.Lock = field(default_factory=threading.Lock)
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
+    saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
+    prose: dict[int, str] = field(default_factory=dict)  # prosa do LLM por índice de evento
     changed: threading.Condition = field(init=False)
 
     def __post_init__(self) -> None:
@@ -75,6 +80,35 @@ class Storage:
         table = self._table(table_id)
         table.version += 1
         table.changed.notify_all()
+
+    def enter_say(self, table_id: str) -> bool:
+        """Reserva a única chamada de texto livre da mesa; ``False`` se já há uma em curso
+        (cada uma custa chamadas ao LLM de quem roda o servidor)."""
+        table = self._table(table_id)
+        with self._registry:
+            if table.saying:
+                return False
+            table.saying = True
+            return True
+
+    def leave_say(self, table_id: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.saying = False
+
+    def prose(self, table_id: str) -> dict[int, str]:
+        """Prosa do LLM guardada por índice de evento (só em memória: nunca vai ao arquivo, e
+        depois de reiniciar o servidor os eventos antigos voltam com a gramática)."""
+        table = self._table(table_id)
+        with self._registry:
+            return dict(table.prose)
+
+    def store_prose(self, table_id: str, prose: dict[int, str]) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.prose.update(prose)
+            while len(table.prose) > MAX_NARRATIONS:
+                del table.prose[next(iter(table.prose))]  # o dict guarda a ordem de inserção
 
     def enter_wait(self, table_id: str) -> bool:
         """Reserva uma vaga de espera; ``False`` se a mesa já tem ``MAX_WAITERS``."""

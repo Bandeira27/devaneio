@@ -7,6 +7,7 @@ não muda.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from devaneio.engine import GameStatus, game_status
@@ -26,6 +27,10 @@ MAX_ATTEMPTS = 2
 PROPOSER_TEMPERATURE = 0.2
 
 
+class LlmUnavailableError(CommandError):
+    """O servidor de LLM falhou (rede, HTTP, resposta fora do formato). O estado não muda."""
+
+
 @dataclass(frozen=True)
 class FreeformResult:
     session: Session
@@ -33,22 +38,36 @@ class FreeformResult:
     commands: tuple[str, ...]  # o que foi executado, sem o prefixo do ator
 
 
-def run_freeform(session: Session, text: str) -> FreeformResult:
-    """``CommandError`` se não der para aplicar (``GameOverError`` se a partida acabou);
-    nesse caso ``session`` segue intacta."""
+def run_freeform(
+    session: Session,
+    text: str,
+    *,
+    actor: str | None = None,
+    allow: Callable[[Session, str], None] | None = None,
+) -> FreeformResult:
+    """``CommandError`` se não der para aplicar (``GameOverError`` se a partida acabou,
+    ``LlmUnavailableError`` se o servidor de LLM falhou); nesse caso ``session`` segue intacta.
+
+    ``actor`` fixa o personagem (quem orquestra por cima já decidiu quem fala; o prefixo do
+    texto deixa de valer). ``allow(sessão, linha)`` roda antes de cada ação proposta, com a
+    sessão já avançada pelas ações anteriores, e recusa levantando ``CommandError``: a recusa
+    volta ao modelo como feedback, como qualquer outra."""
     if session.llm is None:
         raise CommandError("o LLM não está configurado")
     status = game_status(session.state)
     if status is not GameStatus.ACTIVE:
         raise GameOverError(status)
 
-    # Prefixo ``id:`` só conta se for um personagem da partida; senão é parte do texto.
-    actor_id, rest = split_actor(text)
-    if actor_id in session.state.characters and rest:
-        text = rest
+    if actor is None:
+        # Prefixo ``id:`` só conta se for um personagem da partida; senão é parte do texto.
+        actor, rest = split_actor(text)
+        if actor in session.state.characters and rest:
+            text = rest
+        else:
+            actor, text = None, text.strip()
     else:
-        actor_id, text = None, text.strip()
-    character = resolve_actor(session, actor_id)
+        text = text.strip()
+    character = resolve_actor(session, actor)
 
     messages = build_messages(session.campaign, session.rules, session.state, character.id, text)
     problems: list[str] = []
@@ -56,13 +75,15 @@ def run_freeform(session: Session, text: str) -> FreeformResult:
         try:
             raw = session.llm.complete(messages, json_mode=True, temperature=PROPOSER_TEMPERATURE)
         except LlmError as exc:
-            raise CommandError(f"o LLM falhou: {exc}") from None
+            raise LlmUnavailableError(f"o LLM falhou: {exc}") from None
         try:
             proposal = parse_proposal(raw)
             lines = [to_command(a, character.id) for a in proposal.actions]
             working = session
             for line in lines:
                 try:
+                    if allow is not None:
+                        allow(working, line)
                     working, _ = execute(working, line)
                 except CommandError as exc:
                     shown = line.split(": ", 1)[1]

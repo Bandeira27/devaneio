@@ -21,6 +21,7 @@ export interface ApiResponses {
   table_created: TableCreated;
   table_joined: TableJoined;
   command_result: CommandResult;
+  say_result: SayResult;
   events: EventsView;
   campaign: Campaign;
   campaign_view: CampaignView;
@@ -189,8 +190,10 @@ export interface CommandResult {
   turn_ended: boolean;
 }
 /**
- * Evento do log para o cliente: sem ``data``. ``prose`` é a narração da gramática, que
- * é exibição e não volta ao estado.
+ * Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
+ * do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
+ * livre, só no primeiro evento do lote (os outros ficam ``None``) e só enquanto o servidor
+ * não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para todos.
  */
 export interface EventView {
   index: number;
@@ -198,6 +201,16 @@ export interface EventView {
   kind: string;
   text: string;
   prose: string;
+  narration: string | null;
+}
+export interface SayResult {
+  revision: number;
+  events: EventView[];
+  text: string;
+  status: GameStatus;
+  turn_ended: boolean;
+  say: string;
+  commands: string[];
 }
 export interface EventsView {
   revision: number;

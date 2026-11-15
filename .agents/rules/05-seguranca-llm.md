@@ -73,7 +73,22 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     esperar, e a vaga é devolvida num `finally`. A versão da mesa é lida antes de carregar a visão, para uma gravação
     no meio não ser dormida. Risco aceito: um jogador autenticado pode ocupar as 16 vagas da própria mesa (os outros
     degradam para polling); o teto de threads é mesas × 16, e o servidor não limita conexões ociosas (sec-http-8).
-19. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
+19. **Texto livre na mesa (`POST .../say`)**: a chave existe só no ambiente do servidor e nunca sai em resposta,
+    log ou arquivo; o texto do jogador nunca é registrado e passa pelas regras de caracteres da linha (NFKC, sem
+    controle nem invisíveis). Cada linha que o LLM propõe passa por `authorize_proposal` (mesmo `authorize` do
+    jogador, com a sessão já avançada pelas ações anteriores) **antes** do `execute`, como feedback ao modelo; só
+    ações de jogo (`testar`, `atacar`, `ir`, e `descansar` para o anfitrião) existem como proposta. O ator é fixado
+    pelo servidor (`run_freeform(actor=)`), nunca pelo prefixo do texto. A chamada ao LLM roda fora do lock da mesa,
+    com uma chamada por vez por mesa, e a gravação confere que revisão e mesa não mudaram. A prosa do LLM é só
+    exibição: fica em memória, nunca no arquivo. Falha do servidor de LLM vira 502 genérico (o detalhe vai ao
+    stderr do operador, não ao jogador). Risco aceito: o LLM recebe os segredos dos NPCs presentes (o aviso diz) e a
+    `fala` que ele devolve pode, em tese, repeti-los a quem enviou o texto.
+    A fala e a prosa do LLM (`Proposal.say`, `clean_narration`) passam por `llm/text.clean_text` (sem controle,
+    formatação, bidi nem invisíveis; qualquer espaço vira um espaço): chegam à tela de outros jogadores.
+    Riscos aceitos: um jogador gasta chamadas do LLM do anfitrião com propostas vazias (só há um `say` por vez por
+    mesa, sem limite de taxa) e pode segurar esse único slot por até ~3 min (timeout × 2 tentativas + narração);
+    uma tentativa perdida por `409 stale_revision` também custa chamadas ao LLM.
+20. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
     convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da

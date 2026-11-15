@@ -55,6 +55,7 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 | `POST /tables` `{campaign_id, host_name, seed?}` | — | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui |
 | `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
 | `POST /tables/{id}/commands` `{line, revision}` | Bearer | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem) |
+| `POST /tables/{id}/say` `{text, revision}` | Bearer | texto livre: o LLM do anfitrião propõe ações e o servidor aplica; `SayResult` = `CommandResult` + `say` (fala do mestre, só para quem enviou) e `commands`. `409 llm_disabled` sem LLM |
 | `GET /tables/{id}/events?since=N&wait=S` | Bearer | `EventsView {revision, events}`: eventos de posição `N` em diante, cada um com `prose` da gramática e sem `data`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
 | `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
@@ -102,7 +103,28 @@ O cliente guarda o `revision` da última resposta e chama `GET /tables/{id}/even
 laço: a resposta volta assim que alguém grava um comando (ou vazia, com o mesmo `revision`, ao fim do prazo). Só
 gravação acorda quem espera: comando recusado ou de consulta não acorda ninguém. Cada mesa aceita até 16 esperas
 simultâneas; acima disso a resposta é imediata (o cliente deve esperar um pouco antes de tentar de novo). Uma espera
-ocupa uma thread do servidor por até 30 s. Texto livre pelo LLM é a próxima etapa.
+ocupa uma thread do servidor por até 30 s. 
+### Texto livre pelo LLM na mesa
+
+Com `DEVANEIO_LLM_*` no ambiente **do servidor** (nunca em requisição, resposta ou arquivo), `POST /tables/{id}/say`
+manda o texto de um jogador ao LLM, que **só propõe** (as mesmas quatro ações do CLI: `check`, `attack`, `move`,
+`rest`). Cada ação proposta passa pela mesma política do jogador que falou: um `rest` proposto para um jogador comum
+é recusado e volta ao modelo como feedback (duas tentativas, tudo ou nada), e um ataque a NPC que o jogador não vê
+responde como alvo inexistente. A proposta inteira, de até 3 ações, gasta **uma** ação principal do personagem; sem
+ações (só conversa) nada é gravado e a ação não é gasta.
+
+- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida (inclusive os
+  segredos dos NPCs presentes). O servidor nunca registra o texto do jogador.
+- **A chamada ao LLM roda fora do lock da mesa** (pode levar minutos): os comandos seguem passando, e a gravação só
+  acontece se a mesa não mudou nesse intervalo (senão `409 stale_revision`, e a tentativa se perde). Só uma chamada
+  de texto livre por vez por mesa (`409 say_busy`), porque cada uma custa chamadas ao LLM de quem roda o servidor.
+- **Narração:** o LLM escreve um parágrafo para o lote de eventos, guardado **só em memória** (os últimos 200 por
+  mesa): vem em `EventView.narration` no primeiro evento do lote (nos outros é `null`), igual para todos os jogadores, e
+  some ao reiniciar o servidor. `EventView.prose` é sempre a narração da gramática do próprio evento, então o cliente
+  mostra `narration` quando houver e `prose` no resto. Se o LLM falhar, `narration` fica `null`. A fala e a narração do
+  LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
+- **Limite conhecido:** a `fala` do mestre vai só para quem enviou o texto; os outros jogadores veem os eventos e a
+  narração, não a fala.
 
 ## Backend
 

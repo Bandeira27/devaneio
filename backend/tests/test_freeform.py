@@ -7,6 +7,7 @@ from conftest import CAMPAIGN_PATH
 from devaneio.game import (
     CommandError,
     GameOverError,
+    LlmUnavailableError,
     execute,
     format_output,
     is_command,
@@ -226,3 +227,57 @@ def test_format_output_falls_back_to_the_grammar_with_a_note(base):
     assert "(narração por LLM indisponível: fora do ar; usei a gramática)" in out
     assert "Floresta Cinzenta" in out.split("\n")[0]
     assert "  [Marco concluído: Chegada à vila.]" in out
+
+
+# --- ator fixo e allow --------------------------------------------------------------
+
+
+def test_a_fixed_actor_wins_over_a_prefix_in_the_text(base):
+    session, _ = execute(base, 'entrar zed "Zed"')
+    session, client = with_llm(session, reply(CHECK))
+    result = run_freeform(session, "aria: tento passar", actor="zed")
+    check = next(e for e in result.session.state.events if e.kind == "check")
+    assert check.data["actor_id"] == "zed"
+    assert client.calls[0]["messages"][1]["content"].endswith("JOGADOR (Zed): aria: tento passar")
+
+
+def test_allow_sees_each_line_with_the_session_already_advanced(base):
+    seen = []
+
+    def allow(working, line):
+        seen.append((working.state.current_location_id, line))
+
+    session, _ = with_llm(base, reply(MOVE, CHECK))
+    run_freeform(session, "vou e tento passar", allow=allow)
+    assert seen == [
+        ("vila", "aria: ir floresta"),
+        ("floresta", "aria: testar furtividade normal"),
+    ]
+
+
+def test_a_refusal_from_allow_goes_back_to_the_model_as_feedback(base):
+    def allow(_working, line):
+        if "ir " in line:
+            raise CommandError("não pode ir")
+
+    session, client = with_llm(base, reply(MOVE), reply(CHECK))
+    result = run_freeform(session, "vou", allow=allow)
+    assert result.commands == ("testar furtividade normal",)
+    assert "ação 'ir floresta' recusada: não pode ir" in client.calls[1]["messages"][-1]["content"]
+    assert session.state == base.state  # a entrada não mudou
+
+
+def test_allow_refusing_every_attempt_leaves_the_state_alone(base):
+    def allow(_working, _line):
+        raise CommandError("nada passa")
+
+    session, _ = with_llm(base, reply(MOVE), reply(MOVE))
+    with pytest.raises(CommandError, match="nada passa"):
+        run_freeform(session, "vou", allow=allow)
+
+
+def test_an_llm_outage_is_its_own_error_and_still_a_command_error(base):
+    session, _ = with_llm(base, LlmError("rede caiu"))
+    with pytest.raises(LlmUnavailableError, match="o LLM falhou: rede caiu") as info:
+        run_freeform(session, "vou")
+    assert isinstance(info.value, CommandError)

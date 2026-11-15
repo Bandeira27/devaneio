@@ -13,7 +13,7 @@ from .commands import (
     parse_line,
     split_actor,
 )
-from .freeform import FreeformResult, run_freeform
+from .freeform import FreeformResult, LlmUnavailableError, run_freeform
 from .output import format_output, status_banner
 from .session import GameError, Session, load_game, new_game, save_game
 from .table import Player, Role, TableMeta
@@ -25,6 +25,7 @@ __all__ = [
     "FreeformResult",
     "GameError",
     "GameOverError",
+    "LlmUnavailableError",
     "Player",
     "Role",
     "Session",

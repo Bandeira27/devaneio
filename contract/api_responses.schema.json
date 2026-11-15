@@ -431,7 +431,7 @@
     },
     "EventView": {
       "additionalProperties": false,
-      "description": "Evento do log para o cliente: sem ``data``. ``prose`` é a narração da gramática, que\né exibição e não volta ao estado.",
+      "description": "Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática\ndo próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto\nlivre, só no primeiro evento do lote (os outros ficam ``None``) e só enquanto o servidor\nnão reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para todos.",
       "properties": {
         "index": {
           "type": "integer"
@@ -447,6 +447,17 @@
         },
         "prose": {
           "type": "string"
+        },
+        "narration": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -454,7 +465,8 @@
         "turn",
         "kind",
         "text",
-        "prose"
+        "prose",
+        "narration"
       ],
       "title": "EventView",
       "type": "object"
@@ -1032,6 +1044,49 @@
       "title": "PlayerView",
       "type": "object"
     },
+    "SayResult": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "type": "integer"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/EventView"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/GameStatus"
+        },
+        "turn_ended": {
+          "type": "boolean"
+        },
+        "say": {
+          "type": "string"
+        },
+        "commands": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "revision",
+        "events",
+        "text",
+        "status",
+        "turn_ended",
+        "say",
+        "commands"
+      ],
+      "title": "SayResult",
+      "type": "object"
+    },
     "TableCreated": {
       "additionalProperties": false,
       "properties": {
@@ -1190,6 +1245,9 @@
     "command_result": {
       "$ref": "#/$defs/CommandResult"
     },
+    "say_result": {
+      "$ref": "#/$defs/SayResult"
+    },
     "events": {
       "$ref": "#/$defs/EventsView"
     },
@@ -1209,6 +1267,7 @@
     "table_created",
     "table_joined",
     "command_result",
+    "say_result",
     "events",
     "campaign",
     "campaign_view",

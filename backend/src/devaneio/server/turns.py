@@ -6,10 +6,12 @@ Quem chama (``TableService``) carrega, chama ``apply`` e grava.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from devaneio.engine import game_status
 from devaneio.game import (
+    CommandError,
     GameOverError,
     Player,
     Session,
@@ -41,8 +43,13 @@ def prefixed(actor: str, rest: str) -> str:
     return f"{actor}: {rest}"
 
 
-def events_view(session: Session, since: int) -> list[EventView]:
+def events_view(
+    session: Session, since: int, narration: Mapping[int, str] | None = None
+) -> list[EventView]:
+    """Eventos de ``since`` em diante, cada um com a prosa da gramática. ``narration`` traz o
+    parágrafo do LLM por índice de evento, onde houver."""
     state = session.state
+    cached = narration or {}
     return [
         EventView(
             index=index,
@@ -50,6 +57,7 @@ def events_view(session: Session, since: int) -> list[EventView]:
             kind=event.kind,
             text=event.text,
             prose=session.narrator.narrate(event, index, state),
+            narration=cached.get(index),
         )
         for index, event in enumerate(state.events)
         if index >= since
@@ -178,3 +186,17 @@ def check_join(state: GameState, player: Player, args: list[str]) -> None:
         )
     if args and args[0] in state.npcs:
         raise ApiFailure(422, "command_refused", f"'{args[0]}' já é o id de um NPC")
+
+
+def authorize_proposal(table: TableMeta, player: Player, working: Session, line: str) -> None:
+    """Uma ação que o LLM propôs passa pela mesma política do jogador que falou: papel,
+    dono do personagem, alvo visível. O que não é ação de jogo (leitura, ``entrar``) nem
+    existe como proposta. Recusa como ``CommandError``, que vira feedback ao modelo."""
+    _, name, _ = parse_line(line)
+    if policy.classify(name) not in ("action", "host"):
+        raise CommandError(f"'{name}' não é uma ação que o mestre possa propor")
+    request = CommandRequest(line=line, revision=len(working.state.events))
+    try:
+        authorize(table, player, request, working.state)
+    except ApiFailure as exc:
+        raise CommandError(exc.message) from None
