@@ -8,9 +8,22 @@ from __future__ import annotations
 import re
 import secrets
 import threading
+from dataclasses import dataclass, field
 from pathlib import Path
 
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
+MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
+
+
+@dataclass
+class _Table:
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
+    waiters: int = 0
+    changed: threading.Condition = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.changed = threading.Condition(self.lock)  # a mesma trava dos comandos
 
 
 class Storage:
@@ -18,7 +31,7 @@ class Storage:
         self.data_dir = Path(data_dir).resolve()
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.max_tables = max_tables
-        self._locks: dict[str, threading.Lock] = {}
+        self._tables: dict[str, _Table] = {}
         self._registry = threading.Lock()
 
     def path_for(self, table_id: str) -> Path | None:
@@ -41,8 +54,38 @@ class Storage:
     def count(self) -> int:
         return sum(1 for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
 
-    def lock(self, table_id: str) -> threading.Lock:
-        """Um lock por mesa existente; o dicionário não cresce com ids inventados porque
+    def _table(self, table_id: str) -> _Table:
+        """Uma entrada por mesa existente; o dicionário não cresce com ids inventados porque
         quem chama já validou o id com ``path_for``."""
         with self._registry:
-            return self._locks.setdefault(table_id, threading.Lock())
+            return self._tables.setdefault(table_id, _Table())
+
+    def lock(self, table_id: str) -> threading.Lock:
+        return self._table(table_id).lock
+
+    def condition(self, table_id: str) -> threading.Condition:
+        """Condição sobre o lock da mesa: ``wait`` solta o lock, então comandos seguem."""
+        return self._table(table_id).changed
+
+    def version(self, table_id: str) -> int:
+        return self._table(table_id).version
+
+    def announce_change(self, table_id: str) -> None:
+        """Avisa quem espera que a mesa foi gravada. Chamar com o lock da mesa tomado."""
+        table = self._table(table_id)
+        table.version += 1
+        table.changed.notify_all()
+
+    def enter_wait(self, table_id: str) -> bool:
+        """Reserva uma vaga de espera; ``False`` se a mesa já tem ``MAX_WAITERS``."""
+        table = self._table(table_id)
+        with self._registry:
+            if table.waiters >= MAX_WAITERS:
+                return False
+            table.waiters += 1
+            return True
+
+    def leave_wait(self, table_id: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.waiters -= 1

@@ -22,6 +22,7 @@ from .auth import bearer_token
 from .models import ApiError, CommandRequest, CreateTableRequest, ErrorResponse, JoinRequest
 
 MAX_BODY = 64 * 1024
+MAX_WAIT = 30  # segundos de long-poll
 JSON = "application/json"
 M = TypeVar("M", bound=BaseModel)
 
@@ -71,7 +72,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_events(self, match: re.Match[str]) -> tuple[int, Payload]:
         since = self._query_int("since", default=0)
-        return 200, self.server.service.get_events(match.group(1), self._token(), since)
+        wait = self._query_int("wait", default=0)
+        if wait > MAX_WAIT:
+            raise ApiFailure(400, "bad_request", f"'wait' vai de 0 a {MAX_WAIT} segundos")
+        return 200, self.server.service.get_events(match.group(1), self._token(), since, wait)
 
     ROUTES: tuple[Route, ...] = (
         ("GET", re.compile(r"^/campaigns$"), _campaigns),

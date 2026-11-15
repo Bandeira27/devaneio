@@ -55,7 +55,7 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 | `POST /tables` `{campaign_id, host_name, seed?}` | — | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui |
 | `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
 | `POST /tables/{id}/commands` `{line, revision}` | Bearer | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem) |
-| `GET /tables/{id}/events?since=N` | Bearer | `EventsView {revision, events}`: eventos de posição `N` em diante, cada um com `prose` da gramática e sem `data` |
+| `GET /tables/{id}/events?since=N&wait=S` | Bearer | `EventsView {revision, events}`: eventos de posição `N` em diante, cada um com `prose` da gramática e sem `data`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
 | `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
 
@@ -94,8 +94,15 @@ caracteres e passam por NFKC; controle e invisíveis dão `400`, e `entrar` acei
 
 `revision` é o número de eventos que o cliente viu: comando que muda a partida com revisão velha recebe `409` (leia
 de novo). Erros dos comandos: 400 linha vazia ou com caracteres de controle, 403 papel ou personagem alheio, 409 revisão
-velha, já agiu, partida encerrada ou segundo personagem, 422 o motor recusou. Long-poll e texto livre pelo LLM são as
-próximas etapas.
+velha, já agiu, partida encerrada ou segundo personagem, 422 o motor recusou.
+
+### Acompanhar a mesa (long-poll)
+
+O cliente guarda o `revision` da última resposta e chama `GET /tables/{id}/events?since=<revision>&wait=25` em
+laço: a resposta volta assim que alguém grava um comando (ou vazia, com o mesmo `revision`, ao fim do prazo). Só
+gravação acorda quem espera: comando recusado ou de consulta não acorda ninguém. Cada mesa aceita até 16 esperas
+simultâneas; acima disso a resposta é imediata (o cliente deve esperar um pouco antes de tentar de novo). Uma espera
+ocupa uma thread do servidor por até 30 s. Texto livre pelo LLM é a próxima etapa.
 
 ## Backend
 

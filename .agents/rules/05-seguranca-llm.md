@@ -67,7 +67,13 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     Mensagens do motor em 422 também confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
     jogador agindo por ele (`bia: testar ...`). Descrições de marco aparecem na prosa quando o marco começa:
     autor de campanha não deve pôr spoiler nelas.
-18. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
+18. **Long-poll**: `wait` é inteiro de 0 a 30 (`400` fora disso); a espera usa uma `Condition` sobre o lock da mesa
+    (soltá-lo enquanto espera é o que deixa os comandos passarem), só uma gravação acorda quem espera, e cada mesa
+    aceita no máximo `MAX_WAITERS` (16) esperas: acima disso responde de imediato. Autenticação e 404 valem antes de
+    esperar, e a vaga é devolvida num `finally`. A versão da mesa é lida antes de carregar a visão, para uma gravação
+    no meio não ser dormida. Risco aceito: um jogador autenticado pode ocupar as 16 vagas da própria mesa (os outros
+    degradam para polling); o teto de threads é mesas × 16, e o servidor não limita conexões ociosas (sec-http-8).
+19. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
     convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da

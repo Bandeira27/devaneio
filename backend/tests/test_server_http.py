@@ -285,6 +285,42 @@ def test_events_query_and_auth_errors(client):
     assert status == 200  # parâmetro desconhecido é ignorado
 
 
+def test_long_poll_over_http_wakes_on_a_command(client):
+    table_id, path, _host, bia, entered = play_setup(client)
+    seen = entered["revision"]
+    box = {}
+
+    def poll():
+        box["answer"] = client.call(
+            "GET", f"/tables/{table_id}/events?since={seen}&wait=10", auth=bia
+        )
+
+    thread = threading.Thread(target=poll)
+    thread.start()
+    status, _, _ = client.call(
+        "POST", path, body={"line": "testar lutar normal", "revision": seen}, auth=bia
+    )
+    assert status == 200
+    thread.join(timeout=10)
+    status, events, _ = box["answer"]
+    assert status == 200
+    assert events["events"][0]["kind"] == "check"
+
+
+@pytest.mark.parametrize("wait", ["31", "-1", "x", "1.5", "1&wait=2"])
+def test_wait_must_be_an_integer_up_to_thirty(client, wait):
+    table_id, _, _, bia, _ = play_setup(client)
+    status, body, _ = client.call("GET", f"/tables/{table_id}/events?wait={wait}", auth=bia)
+    assert (status, body["error"]["code"]) == (400, "bad_request")
+
+
+def test_wait_thirty_is_accepted(client):
+    table_id, _, _, bia, _ = play_setup(client)
+    status, events, _ = client.call("GET", f"/tables/{table_id}/events?since=0&wait=30", auth=bia)
+    assert status == 200  # há eventos desde 0: volta na hora
+    assert events["events"]
+
+
 def test_a_refused_command_leaves_the_table_as_it_was(client):
     table_id, path, host, bia, _ = play_setup(client)
     _, before, _ = client.call("GET", f"/tables/{table_id}", auth=host)

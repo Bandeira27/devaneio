@@ -5,6 +5,7 @@ verdade; nada fica em memória: campanha e regras são relidas com a partida."""
 from __future__ import annotations
 
 import hmac
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -162,10 +163,55 @@ class TableService:
             table=self._view(table_id, session, table, "player"),
         )
 
-    def get_events(self, table_id: str, token: str | None, since: int) -> EventsView:
-        """Eventos de posição ``since`` em diante, com a prosa da gramática."""
+    def get_events(
+        self, table_id: str, token: str | None, since: int, wait: float = 0
+    ) -> EventsView:
+        """Eventos de posição ``since`` em diante, com a prosa da gramática. Com ``wait`` > 0 e
+        nada novo, espera até ``wait`` segundos por uma gravação da mesa (long-poll); acima de
+        ``MAX_WAITERS`` esperas na mesa, responde de imediato."""
+        # A versão vem ANTES da carga: uma gravação entre a carga e a espera deixaria a visão
+        # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
+        # existente: ``version`` cria entrada, e o id ainda não foi validado.)
+        seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
         session, _, _ = self._open(table_id, token)
-        return EventsView(revision=len(session.state.events), events=self._events(session, since))
+        view = EventsView(revision=len(session.state.events), events=self._events(session, since))
+        if view.events or wait <= 0 or not self.storage.enter_wait(table_id):
+            return view
+        try:
+            return self._wait_for_events(
+                table_id, token, since=since, wait=wait, view=view, seen=seen
+            )
+        finally:
+            self.storage.leave_wait(table_id)
+
+    def _wait_for_events(
+        self,
+        table_id: str,
+        token: str | None,
+        *,
+        since: int,
+        wait: float,
+        view: EventsView,
+        seen: int,
+    ) -> EventsView:
+        deadline = time.monotonic() + wait
+        changed = self.storage.condition(table_id)
+        while not view.events:
+            baseline = seen
+
+            def moved(baseline: int = baseline) -> bool:
+                return self.storage.version(table_id) != baseline
+
+            with changed:  # o lock da mesa: wait() o solta enquanto espera
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not changed.wait_for(moved, remaining):
+                    return view
+                seen = self.storage.version(table_id)
+            session, _, _ = self._open(table_id, token)
+            view = EventsView(
+                revision=len(session.state.events), events=self._events(session, since)
+            )
+        return view
 
     def run_command(
         self, table_id: str, token: str | None, request: CommandRequest
@@ -191,6 +237,7 @@ class TableService:
                 raise ApiFailure(422, "command_refused", str(exc)) from None
             if new_session.state is not session.state or new_table is not table:
                 save_game(replace(new_session, table=new_table))
+                self.storage.announce_change(table_id)
         return result
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
