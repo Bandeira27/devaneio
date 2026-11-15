@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from devaneio.game import GameError, load_campaign_content, new_game
+from devaneio.game import GameError, load_campaign_content, load_game, new_game, save_game
 from devaneio.game.content import MAX_CONTENT_BYTES
 from devaneio.narration import builtin_pack_dict
 from devaneio.rules import builtin_rules_dict
@@ -142,3 +142,60 @@ def test_the_server_catalog_checks_the_content_at_startup(folder):
     write(folder, "sistemas", "meu-sistema", good_rules())
     write(folder, "narracoes", "meu-estilo", good_pack())
     assert [c.id for c in Catalog(folder).summaries()] == ["sombra-do-vale"]
+
+
+# --- impressão digital do conteúdo ------------------------------------------------------
+
+
+def start(folder):
+    write(folder, "sistemas", "meu-sistema", good_rules())
+    write(folder, "narracoes", "meu-estilo", good_pack())
+    session = new_game(folder / "campanha.json", folder / "partida.json", seed=1)
+    return session, folder / "partida.json"
+
+
+def test_reopening_an_unchanged_game_has_no_warnings(folder):
+    _, save = start(folder)
+    assert load_game(save).warnings == ()
+
+
+def test_changing_the_system_or_the_pack_warns_which_one(folder):
+    _, save = start(folder)
+    write(
+        folder,
+        "sistemas",
+        "meu-sistema",
+        good_rules(name="Meu Sistema", combat={"fallen_can_act": True}),
+    )
+    (warning,) = load_game(save).warnings
+    assert warning.startswith("O sistema de regras 'meu-sistema' mudou")
+
+    write(folder, "narracoes", "meu-estilo", good_pack(rules={"turn_end": ["Fim #turno#."]}))
+    rules_warning, pack_warning = load_game(save).warnings
+    assert rules_warning.startswith("O sistema de regras")
+    assert pack_warning.startswith("O pacote de narração 'meu-estilo' mudou")
+
+
+def test_saving_again_accepts_the_new_content(folder):
+    _, save = start(folder)
+    write(folder, "narracoes", "meu-estilo", good_pack(rules={"turn_end": ["Fim #turno#."]}))
+    session = load_game(save)
+    assert session.warnings
+    save_game(session)
+    assert load_game(save).warnings == ()
+
+
+def test_reordering_the_json_keys_is_not_a_change(folder):
+    _, save = start(folder)
+    reordered = dict(reversed(list(good_rules().items())))
+    write(folder, "sistemas", "meu-sistema", reordered)
+    assert load_game(save).warnings == ()
+
+
+def test_an_old_save_without_content_opens_without_warnings(folder):
+    _, save = start(folder)
+    data = json.loads(save.read_text(encoding="utf-8"))
+    del data["content"]
+    save.write_text(json.dumps(data), encoding="utf-8")
+    write(folder, "sistemas", "meu-sistema", good_rules(name="Mudou"))
+    assert load_game(save).warnings == ()

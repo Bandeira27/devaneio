@@ -375,3 +375,15 @@ def test_a_name_that_looks_like_an_existing_one_is_taken(service, created, name)
     with pytest.raises(ApiFailure) as info:
         join(service, created, name=name)
     assert info.value.code == "name_taken"
+
+
+def test_the_server_logs_a_changed_content_warning_once_per_table(service, created, capsys):
+    path = service.storage.path_for(created.table_id)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["content"] = {"rules_sha256": "0" * 64, "narration_sha256": "0" * 64}
+    path.write_text(json.dumps(data), encoding="utf-8")
+    service.get_table(created.table_id, bearer(created.host_token))
+    service.get_table(created.table_id, bearer(created.host_token))
+    err = capsys.readouterr().err
+    assert err.count("O sistema de regras 'default' mudou") == 1
+    assert err.count("O pacote de narração 'pt-br' mudou") == 1

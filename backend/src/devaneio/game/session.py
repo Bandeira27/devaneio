@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import random
 import tempfile
@@ -11,13 +13,21 @@ from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state, reveal_facts
 from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
-from devaneio.narration import Narrator
+from devaneio.narration import NarrationPack, Narrator
 from devaneio.rules import RuleSystem, validate_state_against_rules
 from devaneio.schema import Campaign, GameState, StrictModel, validate_against_campaign
 
 from .content import joined, load_campaign_content
 from .errors import GameError
 from .table import TableMeta
+
+
+class ContentHashes(StrictModel):
+    """Impressão digital do conteúdo com que a partida foi jogada (modelos já mesclados). Serve só
+    para avisar que o autor mudou o sistema ou a narração; nunca recusa a partida."""
+
+    rules_sha256: str
+    narration_sha256: str
 
 
 class SaveFile(StrictModel):
@@ -29,6 +39,8 @@ class SaveFile(StrictModel):
     state: GameState
     # Mesa (jogo em grupo): opcional e aditivo; o CLI solo preserva o que não interpreta.
     table: TableMeta | None = None
+    # Opcional: partidas antigas não têm e abrem sem aviso.
+    content: ContentHashes | None = None
 
 
 @dataclass
@@ -41,6 +53,8 @@ class Session:
     narrator: Narrator
     llm: ChatClient | None = None  # opcional; nunca gravado na partida
     table: TableMeta | None = None  # mesa em grupo; gravada junto com o estado
+    # Avisos de ao abrir (conteúdo mudou desde o último salvamento); quem abre mostra.
+    warnings: tuple[str, ...] = ()
 
 
 def connect_llm(config: LlmConfig) -> ChatClient:
@@ -95,6 +109,7 @@ def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
         save_path,
         Narrator(campaign, rules, pack),
         table=data.table,
+        warnings=_content_warnings(data.content, content_hashes(rules, pack), rules, pack),
     )
 
 
@@ -102,7 +117,12 @@ def save_game(session: Session) -> None:
     """Escrita atômica: arquivo temporário na mesma pasta e ``os.replace``, para uma queda
     no meio nunca deixar a partida truncada."""
     relative = os.path.relpath(session.campaign_path, session.save_path.parent)
-    payload = SaveFile(campaign_path=relative, state=session.state, table=session.table)
+    payload = SaveFile(
+        campaign_path=relative,
+        state=session.state,
+        table=session.table,
+        content=content_hashes(session.rules, session.narrator.pack),
+    )
     text = payload.model_dump_json(indent=2) + "\n"
     fd, temp = tempfile.mkstemp(dir=session.save_path.parent, prefix=".partida-", suffix=".tmp")
     try:
@@ -112,3 +132,32 @@ def save_game(session: Session) -> None:
     except OSError:
         os.unlink(temp)
         raise
+
+
+def content_hashes(rules: RuleSystem, pack: NarrationPack) -> ContentHashes:
+    return ContentHashes(rules_sha256=_digest(rules), narration_sha256=_digest(pack))
+
+
+def _digest(model: RuleSystem | NarrationPack) -> str:
+    # Ordenado: reordenar chaves do JSON do autor não conta como mudança.
+    text = json.dumps(model.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _content_warnings(
+    saved: ContentHashes | None, now: ContentHashes, rules: RuleSystem, pack: NarrationPack
+) -> tuple[str, ...]:
+    if saved is None:
+        return ()
+    warnings = []
+    if saved.rules_sha256 != now.rules_sha256:
+        warnings.append(
+            f"O sistema de regras '{rules.id}' mudou desde que esta partida foi salva: fórmulas, "
+            "armas e dificuldades podem se comportar diferente do que o grupo já viveu."
+        )
+    if saved.narration_sha256 != now.narration_sha256:
+        warnings.append(
+            f"O pacote de narração '{pack.id}' mudou desde que esta partida foi salva: só o texto "
+            "da narração muda, o jogo não."
+        )
+    return tuple(warnings)

@@ -88,6 +88,8 @@ def _verify(campaign_path: Path) -> int:
 
 
 def _play(session: Session) -> int:
+    for warning in session.warnings:
+        print(f"aviso: {warning}", file=sys.stderr)
     print(f"{session.campaign.title}\n{session.campaign.premise}\n")
     session, text = execute(session, "olhar")
     print(text)

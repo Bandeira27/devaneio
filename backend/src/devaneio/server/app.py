@@ -7,6 +7,7 @@ descartável."""
 from __future__ import annotations
 
 import hmac
+import sys
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -94,6 +95,7 @@ class TableService:
         self.storage = storage
         self.llm = llm
         self._llm_secrets = llm_secrets
+        self._warned: set[tuple[str, str]] = set()
         self._token_source = token_source
         self._invite_source = invite_source
         self._say = (
@@ -295,9 +297,17 @@ class TableService:
 
     def load_session(self, path: Path) -> Session:
         try:
-            return load_game(path, campaign_root=self.catalog.root)
+            session = load_game(path, campaign_root=self.catalog.root)
         except (GameError, ValidationError, OSError) as exc:
             raise RuntimeError(f"partida ilegível: {path.name}") from exc
+        for warning in session.warnings:
+            if (
+                path.name,
+                warning,
+            ) not in self._warned:  # uma vez por mesa, até o próximo salvamento
+                self._warned.add((path.name, warning))
+                print(f"mesa {path.stem}: {warning}", file=sys.stderr)
+        return session
 
     def _llm_view(self) -> LlmView:
         if self.llm is None:
