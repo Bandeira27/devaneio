@@ -9,6 +9,9 @@ export type GameStatus = "active" | "won" | "lost";
 /**
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */
 export type BeatStatus = "pending" | "active" | "done" | "failed";
 
@@ -16,7 +19,9 @@ export interface ApiResponses {
   campaigns: CampaignSummary[];
   table: TableView;
   table_created: TableCreated;
+  table_joined: TableJoined;
   campaign: Campaign;
+  campaign_view: CampaignView;
   error: ErrorResponse;
 }
 export interface CampaignSummary {
@@ -26,6 +31,7 @@ export interface CampaignSummary {
 }
 export interface TableView {
   table_id: string;
+  role: "host" | "player";
   campaign: CampaignSummary;
   players: PlayerView[];
   turn_policy: "one_action_per_character";
@@ -39,7 +45,7 @@ export interface TableView {
   revision: number;
   status: GameStatus;
   llm: LlmView;
-  state: GameState;
+  state: GameState | PlayerStateView;
 }
 export interface PlayerView {
   id: string;
@@ -76,6 +82,9 @@ export interface GameState {
   events: Event[];
 }
 /**
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */
@@ -123,10 +132,51 @@ export interface Event {
     [k: string]: unknown;
   };
 }
+/**
+ * O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles
+ * o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``) e
+ * ``facts`` (memória do narrador, escrita com acesso aos segredos). NPCs só os do local
+ * atual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o
+ * ``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em
+ * ``of`` (e ``tests/test_server_models.py`` obriga a decidir).
+ */
+export interface PlayerStateView {
+  state_version: 1;
+  campaign_id: string;
+  turn: number;
+  current_location_id: string;
+  characters: {
+    [k: string]: Character;
+  };
+  npcs: {
+    [k: string]: NpcView;
+  };
+  beats: {
+    [k: string]: BeatStatus;
+  };
+}
+/**
+ * NPC como o ``olhar`` o mostra: vivo, hp e se está hostil. Atributos e disposição
+ * numéricos (que revelam defesas e o limiar de hostilidade) ficam com o anfitrião.
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
+ */
+export interface NpcView {
+  alive: boolean;
+  hp: number;
+  max_hp: number;
+  hostile: boolean;
+}
 export interface TableCreated {
   table_id: string;
   host_token: string;
   invite_code: string;
+  table: TableView;
+}
+export interface TableJoined {
+  player_id: string;
+  token: string;
   table: TableView;
 }
 export interface Campaign {
@@ -197,6 +247,38 @@ export interface BeatDone {
 export interface TurnAtLeast {
   kind: "turn_at_least";
   turn: number;
+}
+/**
+ * A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
+ * local atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos
+ * marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
+ * anfitrião, que recebe a ``Campaign`` inteira.
+ */
+export interface CampaignView {
+  id: string;
+  title: string;
+  premise: string;
+  location: LocationView;
+  npcs: NpcInfo[];
+  beats: BeatInfo[];
+}
+export interface LocationView {
+  id: string;
+  name: string;
+  description: string;
+  exits: ExitView[];
+}
+export interface ExitView {
+  id: string;
+  name: string;
+}
+export interface NpcInfo {
+  id: string;
+  name: string;
+}
+export interface BeatInfo {
+  id: string;
+  title: string;
 }
 export interface ErrorResponse {
   error: ApiError;

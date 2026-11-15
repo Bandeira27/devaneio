@@ -53,22 +53,27 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 |---|---|---|
 | `GET /campaigns` | — | `[{id, title, premise}]` do catálogo (`--campanhas`) |
 | `POST /tables` `{campaign_id, host_name, seed?}` | — | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui |
+| `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
-| `GET /tables/{id}/campaign` | Bearer | a campanha; segredos de NPC só para o anfitrião |
+| `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
 
 Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token, 404 mesa/campanha/rota,
 409 limite de mesas, 411/413/415 corpo, 500 genérico). O contrato da API está em `contract/api_requests.schema.json`
 (validation) e `contract/api_responses.schema.json` (serialization), de onde saem `frontend/src/contract/api_*.ts`.
 
 Cada mesa é um arquivo `<table_id>.json` em `--dados`, no mesmo formato do CLI mais o campo `table` (jogadores com
-hash do token, hash do convite, quem já agiu no turno). O CLI abre esse arquivo e preserva a mesa, mas **não jogue
+hash do token, hash do convite, quem já agiu no turno). O anfitrião (mestre) vê o `GameState` e a `Campaign`
+inteiros; um jogador comum vê só o que o `olhar` do CLI mostra: `PlayerStateView` (sem `rng_seed`/`rng_draws`, que tornariam
+o próximo sorteio previsível, sem o log com `data` nem `facts`; NPCs só os do local, só com vivo, hp e hostil; só os marcos
+que já começaram) e `CampaignView` (título, premissa, local com saídas, NPCs ali, marcos). `TableView.role` diz qual dos
+dois ramos veio. Nomes de jogador são normalizados (NFKC) e recusam caracteres de controle ou invisíveis. O CLI abre esse arquivo e preserva a mesa, mas **não jogue
 a mesma partida no CLI com o servidor aberto**: não há bloqueio entre processos. `--host 0.0.0.0` expõe HTTP em
 claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a conexão ao recusar um corpo e não
 limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado no ambiente do servidor,
 `table.llm.notice` avisa todos os jogadores de que o texto e o estado da partida vão a esse servidor.
 
-Entrada de jogadores por convite, comandos por HTTP com uma ação principal por personagem por turno, long-poll
-e texto livre pelo LLM são as próximas etapas.
+Comandos por HTTP com uma ação principal por personagem por turno, long-poll e texto livre pelo LLM são as
+próximas etapas.
 
 ## Backend
 

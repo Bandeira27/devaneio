@@ -19,7 +19,7 @@ from pydantic import BaseModel, ValidationError
 
 from .app import ApiFailure, TableService
 from .auth import bearer_token
-from .models import ApiError, CreateTableRequest, ErrorResponse
+from .models import ApiError, CreateTableRequest, ErrorResponse, JoinRequest
 
 MAX_BODY = 64 * 1024
 JSON = "application/json"
@@ -61,11 +61,16 @@ class Handler(BaseHTTPRequestHandler):
     def _get_campaign(self, match: re.Match[str]) -> tuple[int, Payload]:
         return 200, self.server.service.get_campaign(match.group(1), self._token())
 
+    def _join_table(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(JoinRequest)
+        return 201, self.server.service.join_table(match.group(1), request)
+
     ROUTES: tuple[Route, ...] = (
         ("GET", re.compile(r"^/campaigns$"), _campaigns),
         ("POST", re.compile(r"^/tables$"), _create_table),
         ("GET", re.compile(r"^/tables/([^/]+)$"), _get_table),
         ("GET", re.compile(r"^/tables/([^/]+)/campaign$"), _get_campaign),
+        ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
     )
 
     # --- despacho ----------------------------------------------------------------

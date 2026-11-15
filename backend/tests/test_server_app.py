@@ -1,6 +1,7 @@
 """TableService sem HTTP: regras da mesa contra o motor real e o disco de verdade."""
 
 import json
+from dataclasses import replace
 from itertools import count
 
 import pytest
@@ -8,8 +9,14 @@ import pytest
 from conftest import CAMPAIGN_PATH
 from devaneio.game import load_game, new_game, save_game
 from devaneio.llm import LlmConfig
+from devaneio.schema import Campaign, GameState
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
-from devaneio.server.models import CreateTableRequest
+from devaneio.server.models import (
+    CampaignView,
+    CreateTableRequest,
+    JoinRequest,
+    PlayerStateView,
+)
 
 TOKENS = count(1)
 
@@ -151,18 +158,112 @@ def test_a_save_without_table_in_the_data_folder_is_not_a_table(service, created
     assert info.value.status == 404
 
 
-def test_campaign_hides_npc_secrets_from_players_but_not_from_the_host(service, created):
+def join(service, created, name="Bia", invite="convite-fixo"):
+    return service.join_table(created.table_id, JoinRequest(invite_code=invite, name=name))
+
+
+def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(service, created):
     campaign = service.get_campaign(created.table_id, bearer(created.host_token))
+    assert isinstance(campaign, Campaign)
     assert campaign.npcs[0].secrets == ["sabe o caminho secreto para o altar"]
-    # um jogador comum entra em `players` só na etapa 2: por ora, simula um no arquivo
-    session = load_game(service.storage.path_for(created.table_id))
-    assert session.table is not None
-    player = session.table.players["p1"].model_copy(update={"role": "player"})
-    session.table.players["p1"] = player
-    save_game(session)
-    campaign = service.get_campaign(created.table_id, bearer(created.host_token))
-    assert [n.secrets for n in campaign.npcs] == [[], []]
-    assert campaign.npcs[0].name == "Bram"
+
+    joined = join(service, created)
+    view = service.get_campaign(created.table_id, bearer(joined.token))
+    assert isinstance(view, CampaignView)
+    assert view.location.id == "vila"
+    assert [(e.id, e.name) for e in view.location.exits] == [("floresta", "Floresta Cinzenta")]
+    assert [(n.id, n.name) for n in view.npcs] == [("ferreiro", "Bram")]
+    assert [b.id for b in view.beats] == ["chegada"]  # os pendentes não aparecem
+    dumped = view.model_dump_json()
+    for hidden in (
+        "secrets",
+        "goals",
+        "complete_when",
+        "sacerdote",
+        "confronto",
+        "Culto da Sombra",
+        "adaga",
+    ):
+        assert hidden not in dumped
+
+
+def test_player_state_shows_hostile_but_never_the_numbers_behind_it(service, created):
+    path = service.storage.path_for(created.table_id)
+    session = load_game(path)
+    ferreiro = session.state.npcs["ferreiro"].model_copy(update={"disposition": -5})
+    state = session.state.model_copy(update={"npcs": {**session.state.npcs, "ferreiro": ferreiro}})
+    save_game(replace(session, state=state))
+    joined = join(service, created)
+    view = service.get_table(created.table_id, joined.token)
+    npc = view.state.npcs["ferreiro"]
+    assert npc.hostile is True
+    assert npc.model_dump() == {"alive": True, "hp": 10, "max_hp": 10, "hostile": True}
+
+
+def test_join_gives_a_token_and_stores_only_its_hash(service, created):
+    joined = join(service, created)
+    assert joined.player_id == "p2"
+    assert joined.token.startswith("token-")
+    assert [(p.id, p.name, p.role) for p in joined.table.players] == [
+        ("p1", "Ana", "host"),
+        ("p2", "Bia", "player"),
+    ]
+    path = service.storage.path_for(created.table_id)
+    text = path.read_text(encoding="utf-8")
+    assert joined.token not in text
+    assert "convite-fixo" not in text
+    data = json.loads(text)
+    assert len(data["table"]["players"]["p2"]["token_hash"]) == 64
+    # o token novo abre a mesa, e o do anfitrião continua valendo
+    assert service.get_table(created.table_id, joined.token).table_id == created.table_id
+    assert service.get_table(created.table_id, created.host_token).table_id == created.table_id
+
+
+@pytest.mark.parametrize("table_id", ["0123456789abcdef", "..", "nada"])
+def test_join_with_wrong_invite_or_unknown_table_answers_the_same(service, created, table_id):
+    with pytest.raises(ApiFailure, match="convite inválido") as unknown:
+        service.join_table(table_id, JoinRequest(invite_code="convite-fixo", name="Bia"))
+    with pytest.raises(ApiFailure, match="convite inválido") as wrong:
+        join(service, created, invite="outro")
+    assert (unknown.value.status, unknown.value.code) == (401, "invalid_invite")
+    assert (wrong.value.status, wrong.value.code) == (401, "invalid_invite")
+
+
+def test_join_refuses_a_full_table_and_a_repeated_name(service, created):
+    join(service, created, name="Bia")
+    with pytest.raises(ApiFailure, match="já existe um jogador chamado 'bia'") as info:
+        join(service, created, name="bia")
+    assert (info.value.status, info.value.code) == (409, "name_taken")
+    for number in range(3, 9):
+        join(service, created, name=f"Jogador {number}")
+    with pytest.raises(ApiFailure, match="já tem 8 jogadores") as full:
+        join(service, created, name="De fora")
+    assert (full.value.status, full.value.code) == (409, "table_full")
+    # sem o convite certo, ninguém descobre que a mesa está cheia
+    with pytest.raises(ApiFailure, match="convite inválido"):
+        join(service, created, name="De fora", invite="outro")
+
+
+def test_players_see_a_projection_of_the_state_and_the_host_sees_it_all(service, created):
+    host_view = service.get_table(created.table_id, created.host_token)
+    assert isinstance(host_view.state, GameState)
+    assert host_view.state.rng_seed == 7
+    assert "sacerdote" in host_view.state.npcs
+
+    joined = join(service, created)
+    for view in (joined.table, service.get_table(created.table_id, joined.token)):
+        assert isinstance(view.state, PlayerStateView)
+        dumped = view.state.model_dump()
+        assert "rng_seed" not in dumped
+        assert "rng_draws" not in dumped
+        assert "events" not in dumped
+        assert "facts" not in dumped
+        assert "confronto" not in dumped["beats"]  # marco pendente
+        assert list(view.state.npcs) == ["ferreiro"]  # o sacerdote está nas ruínas
+        assert view.state.npcs["ferreiro"].hostile is False
+        assert view.role == "player"
+        assert view.revision == host_view.revision
+    assert host_view.role == "host"
 
 
 def test_unreadable_save_is_an_internal_error_without_the_file_contents(service, created):
@@ -208,3 +309,14 @@ def test_llm_view_never_shows_user_and_password_from_the_url(tmp_path):
     assert created.table.llm.description == "qwen3 em localhost:11434"
     assert "S3NHA" not in created.model_dump_json()
     assert "alice" not in created.model_dump_json()
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Ana ", " ana", "ANA", chr(0xFF21) + "na"],
+    ids=["espaco", "inicio", "caixa", "largura-total"],
+)
+def test_a_name_that_looks_like_an_existing_one_is_taken(service, created, name):
+    with pytest.raises(ApiFailure) as info:
+        join(service, created, name=name)
+    assert info.value.code == "name_taken"

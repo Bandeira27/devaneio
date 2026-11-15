@@ -4,6 +4,7 @@ verdade; nada fica em memória: campanha e regras são relidas com a partida."""
 
 from __future__ import annotations
 
+import hmac
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -11,7 +12,16 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from devaneio.engine import game_status
-from devaneio.game import GameError, Player, Session, TableMeta, load_game, new_game, save_game
+from devaneio.game import (
+    GameError,
+    Player,
+    Role,
+    Session,
+    TableMeta,
+    load_game,
+    new_game,
+    save_game,
+)
 from devaneio.llm import LlmConfig
 from devaneio.schema import Campaign
 
@@ -20,14 +30,20 @@ from .catalog import Catalog
 from .models import (
     TURN_POLICY,
     CampaignSummary,
+    CampaignView,
     CreateTableRequest,
+    JoinRequest,
     LlmView,
+    PlayerStateView,
     PlayerView,
     TableCreated,
+    TableJoined,
     TableView,
     summarize,
 )
 from .storage import Storage
+
+MAX_PLAYERS = 8
 
 LLM_NOTICE = (
     "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes com seus "
@@ -86,20 +102,51 @@ class TableService:
             table_id=table_id,
             host_token=token,
             invite_code=invite,
-            table=self._view(table_id, session, table),
+            table=self._view(table_id, session, table, "host"),
+        )
+
+    def join_table(self, table_id: str, request: JoinRequest) -> TableJoined:
+        """Entrada por convite. Mesa inexistente e convite errado respondem igual (401), para
+        o convite não servir de oráculo de existência; o limite de jogadores só vale depois."""
+        path = self.storage.path_for(table_id)
+        if path is None:
+            raise ApiFailure(401, "invalid_invite", "convite inválido")
+        with self.storage.lock(table_id):
+            session = self._load(path)
+            table = session.table
+            if table is None or not hmac.compare_digest(
+                hash_secret(request.invite_code), table.invite_hash
+            ):
+                raise ApiFailure(401, "invalid_invite", "convite inválido")
+            if len(table.players) >= MAX_PLAYERS:
+                raise ApiFailure(409, "table_full", f"a mesa já tem {MAX_PLAYERS} jogadores")
+            if request.name.casefold() in {p.name.casefold() for p in table.players.values()}:
+                raise ApiFailure(
+                    409, "name_taken", f"já existe um jogador chamado '{request.name}'"
+                )
+            token = self._token_source()
+            player_id = f"p{len(table.players) + 1}"
+            player = Player(name=request.name, role="player", token_hash=hash_secret(token))
+            table = table.model_copy(update={"players": {**table.players, player_id: player}})
+            session = replace(session, table=table)
+            save_game(session)
+        return TableJoined(
+            player_id=player_id,
+            token=token,
+            table=self._view(table_id, session, table, "player"),
         )
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
-        session, table, _ = self._open(table_id, token)
-        return self._view(table_id, session, table)
+        session, table, player = self._open(table_id, token)
+        return self._view(table_id, session, table, player.role)
 
-    def get_campaign(self, table_id: str, token: str | None) -> Campaign:
-        """Segredos de NPC só para o anfitrião (o mestre); o resto da campanha é público."""
+    def get_campaign(self, table_id: str, token: str | None) -> Campaign | CampaignView:
+        """A campanha inteira só para o anfitrião (o mestre); o jogador comum recebe a visão
+        do que o ``olhar`` mostra, derivada do estado atual."""
         session, _, player = self._open(table_id, token)
         if player.role == "host":
             return session.campaign
-        npcs = [npc.model_copy(update={"secrets": []}) for npc in session.campaign.npcs]
-        return session.campaign.model_copy(update={"npcs": npcs})
+        return CampaignView.of(session.campaign, session.state)
 
     # --- apoio -------------------------------------------------------------------
 
@@ -136,9 +183,11 @@ class TableService:
             notice=LLM_NOTICE.format(description=self.llm.description),
         )
 
-    def _view(self, table_id: str, session: Session, table: TableMeta) -> TableView:
+    def _view(self, table_id: str, session: Session, table: TableMeta, role: Role) -> TableView:
+        state = session.state
         return TableView(
             table_id=table_id,
+            role=role,
             campaign=summarize(session.campaign),
             players=[
                 PlayerView(id=pid, name=p.name, role=p.role, character_ids=list(p.character_ids))
@@ -149,5 +198,5 @@ class TableService:
             revision=len(session.state.events),
             status=game_status(session.state),
             llm=self._llm_view(),
-            state=session.state,
+            state=state if role == "host" else PlayerStateView.of(state, session.rules),
         )

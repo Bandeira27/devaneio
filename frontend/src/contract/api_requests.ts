@@ -7,9 +7,14 @@
 
 export interface ApiRequests {
   create_table: CreateTableRequest;
+  join_table: JoinRequest;
 }
 export interface CreateTableRequest {
   campaign_id: string;
   host_name: string;
   seed?: number | null;
+}
+export interface JoinRequest {
+  invite_code: string;
+  name: string;
 }

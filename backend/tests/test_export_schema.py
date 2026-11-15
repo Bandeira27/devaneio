@@ -41,3 +41,11 @@ def test_api_responses_never_carry_hashes():
     assert "token_hash" not in text
     assert "invite_hash" not in text
     assert "TableMeta" not in text
+
+
+def test_player_state_view_hides_what_would_make_rolls_predictable():
+    schema = json.loads(render(*SCHEMAS["api_responses.schema.json"]))
+    player_state = schema["$defs"]["PlayerStateView"]["properties"]
+    assert "rng_seed" not in player_state
+    assert "rng_draws" not in player_state
+    assert "events" not in player_state

@@ -45,10 +45,19 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `OSError`) vira `500 {"code": "internal"}` com traceback só no stderr: a mensagem original cita caminhos e
     trechos do arquivo. Segredos de NPC em `GET .../campaign` só para o anfitrião. `LlmConfig.host` e
     `description` nunca trazem usuário e senha da URL.
-16. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
+16. **Convite e visão por papel**: no `POST .../players`, mesa inexistente e convite errado respondem igual (401) e o
+    limite de 8 jogadores só vale depois do convite (o `GET .../{id}` sem token ainda revela se a mesa existe: aceito,
+    o id tem 64 bits). Quem não é anfitrião só vê o que o `olhar` do CLI mostra: `TableView.state` é
+    `PlayerStateView` (sem `rng_seed`/`rng_draws`, que tornam o próximo sorteio previsível, sem `events` com `data`,
+    sem `facts`, NPCs só do local e só como `NpcView`) e `GET .../campaign` é `CampaignView`. Campo novo em
+    `GameState` ou `Campaign` não chega ao jogador até entrar de propósito nas visões;
+    `tests/test_server_models.py` falha se `GameState` ganhar campo sem essa decisão. Nomes de jogador passam por
+    NFKC e recusam controle, invisíveis e separadores de linha (impersonação, ANSI, bidi).
+17. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
-    convite: por isso ele tem ~72 bits.
+    convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da
+    partida sob o lock da mesa.
 
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 

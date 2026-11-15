@@ -117,6 +117,67 @@ def test_create_then_read_a_table(client, issued):
     assert campaign["id"] == "sombra-do-vale"
 
 
+def test_a_player_joins_with_the_invite_and_sees_the_projected_state(client, issued):
+    _, created, _ = create(client)
+    table_id = created["table_id"]
+    status, joined, _ = client.call(
+        "POST", f"/tables/{table_id}/players", body={"invite_code": "convite", "name": "Bia"}
+    )
+    assert status == 201
+    assert joined["player_id"] == "p2"
+    assert joined["token"] == issued[-1]
+    assert "rng_seed" not in joined["table"]["state"]
+
+    status, view, _ = client.call("GET", f"/tables/{table_id}", auth=joined["token"])
+    assert status == 200
+    assert view == joined["table"]
+    assert "hash" not in json.dumps(view)
+    status, host_view, _ = client.call("GET", f"/tables/{table_id}", auth=created["host_token"])
+    assert host_view["state"]["rng_seed"] == 7
+    assert [p["name"] for p in host_view["players"]] == ["Ana", "Bia"]
+
+
+def test_a_player_reads_the_campaign_as_olhar_shows_it(client):
+    _, created, _ = create(client)
+    table_id = created["table_id"]
+    _, joined, _ = client.call(
+        "POST", f"/tables/{table_id}/players", body={"invite_code": "convite", "name": "Bia"}
+    )
+    status, view, _ = client.call("GET", f"/tables/{table_id}/campaign", auth=joined["token"])
+    assert status == 200
+    assert view["location"]["id"] == "vila"
+    assert [n["id"] for n in view["npcs"]] == ["ferreiro"]
+    assert "factions" not in view
+    status, whole, _ = client.call(
+        "GET", f"/tables/{table_id}/campaign", auth=created["host_token"]
+    )
+    assert status == 200
+    assert whole["factions"][0]["goals"]
+
+
+def test_join_errors(client):
+    _, created, _ = create(client)
+    path = f"/tables/{created['table_id']}/players"
+    cases = [
+        (path, {"invite_code": "errado", "name": "Bia"}, 401, "invalid_invite"),
+        (
+            "/tables/0123456789abcdef/players",
+            {"invite_code": "convite", "name": "Bia"},
+            401,
+            "invalid_invite",
+        ),
+        (path, {"invite_code": "convite"}, 400, "bad_request"),
+        (path, {"invite_code": "convite", "name": "x" * 41}, 400, "bad_request"),
+        (path, {"invite_code": "convite", "name": "Ana\u200b"}, 400, "bad_request"),
+    ]
+    for case_path, body, status, code in cases:
+        got_status, got, _ = client.call("POST", case_path, body=body)
+        assert (got_status, got["error"]["code"]) == (status, code), body
+    client.call("POST", path, body={"invite_code": "convite", "name": "Bia"})
+    status, body, _ = client.call("POST", path, body={"invite_code": "convite", "name": "Bia"})
+    assert (status, body["error"]["code"]) == (409, "name_taken")
+
+
 def test_errors_are_json_with_code_and_message(client):
     _, created, _ = create(client)
     table_id = created["table_id"]

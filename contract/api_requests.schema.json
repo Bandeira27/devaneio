@@ -33,16 +33,41 @@
       ],
       "title": "CreateTableRequest",
       "type": "object"
+    },
+    "JoinRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "invite_code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 40,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "invite_code",
+        "name"
+      ],
+      "title": "JoinRequest",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "create_table": {
       "$ref": "#/$defs/CreateTableRequest"
+    },
+    "join_table": {
+      "$ref": "#/$defs/JoinRequest"
     }
   },
   "required": [
-    "create_table"
+    "create_table",
+    "join_table"
   ],
   "title": "ApiRequests",
   "type": "object"

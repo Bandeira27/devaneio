@@ -149,6 +149,24 @@
       "title": "BeatDone",
       "type": "object"
     },
+    "BeatInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "BeatInfo",
+      "type": "object"
+    },
     "BeatStatus": {
       "enum": [
         "pending",
@@ -252,6 +270,47 @@
       "title": "CampaignSummary",
       "type": "object"
     },
+    "CampaignView": {
+      "additionalProperties": false,
+      "description": "A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,\nlocal atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos\nmarcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o\nanfitrião, que recebe a ``Campaign`` inteira.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "premise": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationView"
+        },
+        "npcs": {
+          "items": {
+            "$ref": "#/$defs/NpcInfo"
+          },
+          "type": "array"
+        },
+        "beats": {
+          "items": {
+            "$ref": "#/$defs/BeatInfo"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "premise",
+        "location",
+        "npcs",
+        "beats"
+      ],
+      "title": "CampaignView",
+      "type": "object"
+    },
     "Character": {
       "additionalProperties": false,
       "properties": {
@@ -336,6 +395,24 @@
         "data"
       ],
       "title": "Event",
+      "type": "object"
+    },
+    "ExitView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "ExitView",
       "type": "object"
     },
     "Fact": {
@@ -559,6 +636,35 @@
       "title": "Location",
       "type": "object"
     },
+    "LocationView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "exits": {
+          "items": {
+            "$ref": "#/$defs/ExitView"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "exits"
+      ],
+      "title": "LocationView",
+      "type": "object"
+    },
     "Npc": {
       "additionalProperties": false,
       "properties": {
@@ -661,6 +767,24 @@
       "title": "NpcDown",
       "type": "object"
     },
+    "NpcInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "NpcInfo",
+      "type": "object"
+    },
     "NpcState": {
       "additionalProperties": false,
       "properties": {
@@ -708,6 +832,88 @@
         "location_id"
       ],
       "title": "NpcState",
+      "type": "object"
+    },
+    "NpcView": {
+      "additionalProperties": false,
+      "description": "NPC como o ``olhar`` o mostra: vivo, hp e se está hostil. Atributos e disposição\nnuméricos (que revelam defesas e o limiar de hostilidade) ficam com o anfitrião.",
+      "properties": {
+        "alive": {
+          "type": "boolean"
+        },
+        "hp": {
+          "type": "integer"
+        },
+        "max_hp": {
+          "type": "integer"
+        },
+        "hostile": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alive",
+        "hp",
+        "max_hp",
+        "hostile"
+      ],
+      "title": "NpcView",
+      "type": "object"
+    },
+    "PlayerStateView": {
+      "additionalProperties": false,
+      "description": "O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles\no próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``) e\n``facts`` (memória do narrador, escrita com acesso aos segredos). NPCs só os do local\natual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o\n``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em\n``of`` (e ``tests/test_server_models.py`` obriga a decidir).",
+      "properties": {
+        "state_version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "campaign_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "turn": {
+          "type": "integer"
+        },
+        "current_location_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "characters": {
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/Character"
+            }
+          },
+          "type": "object"
+        },
+        "npcs": {
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/NpcView"
+            }
+          },
+          "type": "object"
+        },
+        "beats": {
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/BeatStatus"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "state_version",
+        "campaign_id",
+        "turn",
+        "current_location_id",
+        "characters",
+        "npcs",
+        "beats"
+      ],
+      "title": "PlayerStateView",
       "type": "object"
     },
     "PlayerView": {
@@ -770,11 +976,40 @@
       "title": "TableCreated",
       "type": "object"
     },
+    "TableJoined": {
+      "additionalProperties": false,
+      "properties": {
+        "player_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "table": {
+          "$ref": "#/$defs/TableView"
+        }
+      },
+      "required": [
+        "player_id",
+        "token",
+        "table"
+      ],
+      "title": "TableJoined",
+      "type": "object"
+    },
     "TableView": {
       "additionalProperties": false,
       "properties": {
         "table_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "host",
+            "player"
+          ],
           "type": "string"
         },
         "campaign": {
@@ -808,11 +1043,19 @@
           "$ref": "#/$defs/LlmView"
         },
         "state": {
-          "$ref": "#/$defs/GameState"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GameState"
+            },
+            {
+              "$ref": "#/$defs/PlayerStateView"
+            }
+          ]
         }
       },
       "required": [
         "table_id",
+        "role",
         "campaign",
         "players",
         "turn_policy",
@@ -859,8 +1102,14 @@
     "table_created": {
       "$ref": "#/$defs/TableCreated"
     },
+    "table_joined": {
+      "$ref": "#/$defs/TableJoined"
+    },
     "campaign": {
       "$ref": "#/$defs/Campaign"
+    },
+    "campaign_view": {
+      "$ref": "#/$defs/CampaignView"
     },
     "error": {
       "$ref": "#/$defs/ErrorResponse"
@@ -870,7 +1119,9 @@
     "campaigns",
     "table",
     "table_created",
+    "table_joined",
     "campaign",
+    "campaign_view",
     "error"
   ],
   "title": "ApiResponses",
