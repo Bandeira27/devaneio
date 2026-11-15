@@ -13,13 +13,13 @@ import traceback
 from collections.abc import Callable, Sequence
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import TypeAlias, TypeVar
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from pydantic import BaseModel, ValidationError
 
 from .app import ApiFailure, TableService
 from .auth import bearer_token
-from .models import ApiError, CreateTableRequest, ErrorResponse, JoinRequest
+from .models import ApiError, CommandRequest, CreateTableRequest, ErrorResponse, JoinRequest
 
 MAX_BODY = 64 * 1024
 JSON = "application/json"
@@ -65,12 +65,22 @@ class Handler(BaseHTTPRequestHandler):
         request = self._read_json(JoinRequest)
         return 201, self.server.service.join_table(match.group(1), request)
 
+    def _command(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(CommandRequest)
+        return 200, self.server.service.run_command(match.group(1), self._token(), request)
+
+    def _get_events(self, match: re.Match[str]) -> tuple[int, Payload]:
+        since = self._query_int("since", default=0)
+        return 200, self.server.service.get_events(match.group(1), self._token(), since)
+
     ROUTES: tuple[Route, ...] = (
         ("GET", re.compile(r"^/campaigns$"), _campaigns),
         ("POST", re.compile(r"^/tables$"), _create_table),
         ("GET", re.compile(r"^/tables/([^/]+)$"), _get_table),
         ("GET", re.compile(r"^/tables/([^/]+)/campaign$"), _get_campaign),
         ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
+        ("POST", re.compile(r"^/tables/([^/]+)/commands$"), _command),
+        ("GET", re.compile(r"^/tables/([^/]+)/events$"), _get_events),
     )
 
     # --- despacho ----------------------------------------------------------------
@@ -120,6 +130,15 @@ class Handler(BaseHTTPRequestHandler):
         self._send(status, payload)
 
     # --- leitura -----------------------------------------------------------------
+
+    def _query_int(self, name: str, *, default: int) -> int:
+        values = parse_qs(urlsplit(self.path).query).get(name)
+        if not values:
+            return default
+        raw = values[0]
+        if len(values) > 1 or not (raw.isascii() and raw.isdigit()) or len(raw) > 9:
+            raise ApiFailure(400, "bad_request", f"'{name}' precisa ser um inteiro não negativo")
+        return int(raw)
 
     def _token(self) -> str | None:
         # self.headers.get é case-insensitive (email.message.Message), como manda o HTTP.

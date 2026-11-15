@@ -20,6 +20,8 @@ export interface ApiResponses {
   table: TableView;
   table_created: TableCreated;
   table_joined: TableJoined;
+  command_result: CommandResult;
+  events: EventsView;
   campaign: Campaign;
   campaign_view: CampaignView;
   error: ErrorResponse;
@@ -178,6 +180,28 @@ export interface TableJoined {
   player_id: string;
   token: string;
   table: TableView;
+}
+export interface CommandResult {
+  revision: number;
+  events: EventView[];
+  text: string;
+  status: GameStatus;
+  turn_ended: boolean;
+}
+/**
+ * Evento do log para o cliente: sem ``data``. ``prose`` é a narração da gramática, que
+ * é exibição e não volta ao estado.
+ */
+export interface EventView {
+  index: number;
+  turn: number;
+  kind: string;
+  text: string;
+  prose: string;
+}
+export interface EventsView {
+  revision: number;
+  events: EventView[];
 }
 export interface Campaign {
   schema_version: 1;

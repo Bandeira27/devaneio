@@ -10,6 +10,8 @@ from .commands import (
     GameOverError,
     execute,
     is_command,
+    parse_line,
+    split_actor,
 )
 from .freeform import FreeformResult, run_freeform
 from .output import format_output, status_banner
@@ -32,7 +34,9 @@ __all__ = [
     "is_command",
     "load_game",
     "new_game",
+    "parse_line",
     "run_freeform",
     "save_game",
+    "split_actor",
     "status_banner",
 ]

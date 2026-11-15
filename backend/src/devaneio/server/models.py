@@ -48,6 +48,22 @@ def clean_name(value: object) -> object:
 PlayerName = Annotated[str, BeforeValidator(clean_name), Field(min_length=1, max_length=MAX_NAME)]
 
 
+def clean_line(value: object) -> object:
+    """Linha de comando: mesma regra dos nomes quanto a caracteres de controle e invisíveis
+    (um nome de personagem entre aspas viraria ANSI ou bidi na tela dos outros), sem
+    colapsar espaços, que podem estar entre aspas."""
+    if not isinstance(value, str):
+        return value
+    text = unicodedata.normalize("NFKC", value).strip()
+    if any(unicodedata.category(ch) in _FORBIDDEN_CATEGORIES for ch in text):
+        raise ValueError("a linha não pode ter caracteres de controle ou invisíveis")
+    return text
+
+
+MAX_LINE = 500
+CommandLine = Annotated[str, BeforeValidator(clean_line), Field(min_length=1, max_length=MAX_LINE)]
+
+
 class CreateTableRequest(StrictModel):
     campaign_id: Id
     host_name: PlayerName
@@ -57,6 +73,12 @@ class CreateTableRequest(StrictModel):
 class JoinRequest(StrictModel):
     invite_code: str = Field(min_length=1, max_length=64)
     name: PlayerName
+
+
+class CommandRequest(StrictModel):
+    line: CommandLine
+    # Número de eventos que o cliente viu: comando que muda a partida com revisão velha é recusado.
+    revision: int = Field(ge=0)
 
 
 class CampaignSummary(StrictModel):
@@ -214,6 +236,30 @@ class TableCreated(StrictModel):
     table: TableView
 
 
+class EventView(StrictModel):
+    """Evento do log para o cliente: sem ``data``. ``prose`` é a narração da gramática, que
+    é exibição e não volta ao estado."""
+
+    index: int
+    turn: int
+    kind: str
+    text: str
+    prose: str
+
+
+class EventsView(StrictModel):
+    revision: int
+    events: list[EventView]
+
+
+class CommandResult(StrictModel):
+    revision: int
+    events: list[EventView]  # os que este comando (e o fim de turno automático) produziu
+    text: str
+    status: GameStatus
+    turn_ended: bool
+
+
 class TableJoined(StrictModel):
     player_id: Id
     token: str
@@ -232,6 +278,7 @@ class ErrorResponse(StrictModel):
 class ApiRequests(StrictModel):
     create_table: CreateTableRequest
     join_table: JoinRequest
+    command: CommandRequest
 
 
 class ApiResponses(StrictModel):
@@ -239,6 +286,8 @@ class ApiResponses(StrictModel):
     table: TableView
     table_created: TableCreated
     table_joined: TableJoined
+    command_result: CommandResult
+    events: EventsView
     campaign: Campaign
     campaign_view: CampaignView
     error: ErrorResponse

@@ -354,6 +354,38 @@
       "title": "Character",
       "type": "object"
     },
+    "CommandResult": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "type": "integer"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/EventView"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/GameStatus"
+        },
+        "turn_ended": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "revision",
+        "events",
+        "text",
+        "status",
+        "turn_ended"
+      ],
+      "title": "CommandResult",
+      "type": "object"
+    },
     "ErrorResponse": {
       "additionalProperties": false,
       "properties": {
@@ -395,6 +427,56 @@
         "data"
       ],
       "title": "Event",
+      "type": "object"
+    },
+    "EventView": {
+      "additionalProperties": false,
+      "description": "Evento do log para o cliente: sem ``data``. ``prose`` é a narração da gramática, que\né exibição e não volta ao estado.",
+      "properties": {
+        "index": {
+          "type": "integer"
+        },
+        "turn": {
+          "type": "integer"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "prose": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "index",
+        "turn",
+        "kind",
+        "text",
+        "prose"
+      ],
+      "title": "EventView",
+      "type": "object"
+    },
+    "EventsView": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "type": "integer"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/EventView"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "revision",
+        "events"
+      ],
+      "title": "EventsView",
       "type": "object"
     },
     "ExitView": {
@@ -1105,6 +1187,12 @@
     "table_joined": {
       "$ref": "#/$defs/TableJoined"
     },
+    "command_result": {
+      "$ref": "#/$defs/CommandResult"
+    },
+    "events": {
+      "$ref": "#/$defs/EventsView"
+    },
     "campaign": {
       "$ref": "#/$defs/Campaign"
     },
@@ -1120,6 +1208,8 @@
     "table",
     "table_created",
     "table_joined",
+    "command_result",
+    "events",
     "campaign",
     "campaign_view",
     "error"

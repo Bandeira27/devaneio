@@ -53,7 +53,21 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `GameState` ou `Campaign` não chega ao jogador até entrar de propósito nas visões;
     `tests/test_server_models.py` falha se `GameState` ganhar campo sem essa decisão. Nomes de jogador passam por
     NFKC e recusam controle, invisíveis e separadores de linha (impersonação, ANSI, bidi).
-17. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
+17. **Comandos da mesa**: quem age é política do servidor (`server/policy.py`), nunca o motor: o servidor
+    **sempre** injeta o prefixo `id:` do personagem do jogador antes de chamar `execute` (sem prefixo o motor age
+    pelo único personagem da partida, de quem for), recusa prefixo de personagem alheio (403) e confere que a linha
+    remontada diz o mesmo comando. Os conjuntos de papéis particionam `game.COMMANDS` (um teste falha se um comando
+    novo ficar sem papel). `marcos` é do anfitrião (lista marcos pendentes). Linhas de comando passam por NFKC e
+    recusam controle e invisíveis, porque nomes de personagem entre aspas chegam à tela dos outros. A proposta do
+    LLM para um jogador (etapa 4) passa pela mesma política antes de `execute`. `atacar` de jogador comum contra NPC
+    de outro local responde como alvo inexistente (senão o ataque revela nome e hp e fere quem o `olhar` não mostra).
+    `entrar` limita argumentos (30) e o tamanho de cada um (40).
+    **Limite conhecido, decisão pendente do dono**: o log (`GET .../events`, `log`) é público para todos os
+    jogadores, e o `text` de um evento do anfitrião sobre NPC escondido (`ferir sacerdote`) cita nome e hp dele.
+    Mensagens do motor em 422 também confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
+    jogador agindo por ele (`bia: testar ...`). Descrições de marco aparecem na prosa quando o marco começa:
+    autor de campanha não deve pôr spoiler nelas.
+18. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
     convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da

@@ -54,6 +54,8 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 | `GET /campaigns` | — | `[{id, title, premise}]` do catálogo (`--campanhas`) |
 | `POST /tables` `{campaign_id, host_name, seed?}` | — | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui |
 | `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
+| `POST /tables/{id}/commands` `{line, revision}` | Bearer | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem) |
+| `GET /tables/{id}/events?since=N` | Bearer | `EventsView {revision, events}`: eventos de posição `N` em diante, cada um com `prose` da gramática e sem `data` |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
 | `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
 
@@ -72,7 +74,27 @@ claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a
 limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado no ambiente do servidor,
 `table.llm.notice` avisa todos os jogadores de que o texto e o estado da partida vão a esse servidor.
 
-Comandos por HTTP com uma ação principal por personagem por turno, long-poll e texto livre pelo LLM são as
+### Quem age e quando
+
+| Comando | Quem | Gasta a ação do turno |
+|---|---|---|
+| `olhar`, `ficha`, `log`, `ajuda` | todos | não |
+| `entrar` | jogador (um personagem só) e anfitrião (quantos quiser) | não |
+| `testar`, `atacar`, `ir` | o dono do personagem; o anfitrião por qualquer um (`id: comando`) | sim |
+| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos` | só o anfitrião | não (`descansar` e `fim` encerram o turno) |
+
+Cada personagem faz **uma ação principal por turno**; quando todos os personagens de pé ligados a um jogador agiram, o
+servidor encerra o turno na mesma requisição (`turn_ended: true`) e o diretor age. O anfitrião pode encerrar antes
+com `fim`. Um jogador comum nunca age sem prefixo injetado pelo servidor, nem por personagem de outro. `marcos`
+é do anfitrião porque lista os marcos pendentes. `atacar` aceita o personagem de outro jogador como alvo e `ir`
+move o grupo todo e gasta a ação de quem mandou: como no motor, é decisão da mesa. Jogador comum só ataca NPC do local
+atual (os outros respondem como alvo inexistente). O anfitrião, ao agir por um jogador, gasta a ação dele. O log de
+eventos é público: o que o anfitrião faz a um NPC escondido (`ferir`) aparece nele. Linhas de comando têm até 500
+caracteres e passam por NFKC; controle e invisíveis dão `400`, e `entrar` aceita até 30 argumentos de até 40 caracteres.
+
+`revision` é o número de eventos que o cliente viu: comando que muda a partida com revisão velha recebe `409` (leia
+de novo). Erros dos comandos: 400 linha vazia ou com caracteres de controle, 403 papel ou personagem alheio, 409 revisão
+velha, já agiu, partida encerrada ou segundo personagem, 422 o motor recusou. Long-poll e texto livre pelo LLM são as
 próximas etapas.
 
 ## Backend

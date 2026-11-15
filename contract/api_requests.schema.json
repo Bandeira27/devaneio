@@ -1,6 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
+    "CommandRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "line": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "revision"
+      ],
+      "title": "CommandRequest",
+      "type": "object"
+    },
     "CreateTableRequest": {
       "additionalProperties": false,
       "properties": {
@@ -63,11 +83,15 @@
     },
     "join_table": {
       "$ref": "#/$defs/JoinRequest"
+    },
+    "command": {
+      "$ref": "#/$defs/CommandRequest"
     }
   },
   "required": [
     "create_table",
-    "join_table"
+    "join_table",
+    "command"
   ],
   "title": "ApiRequests",
   "type": "object"

@@ -68,7 +68,7 @@ def service(tmp_path, issued):
 @pytest.fixture
 def client(service):
     server = make_server("127.0.0.1", 0, service)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.02), daemon=True)
     thread.start()
     try:
         yield Client(f"http://127.0.0.1:{server.server_address[1]}")
@@ -155,6 +155,145 @@ def test_a_player_reads_the_campaign_as_olhar_shows_it(client):
     assert whole["factions"][0]["goals"]
 
 
+def play_setup(client):
+    """Mesa com Ana (anfitriã) e Bia (jogadora, com o personagem `bia`)."""
+    _, created, _ = create(client)
+    table_id = created["table_id"]
+    _, joined, _ = client.call(
+        "POST", f"/tables/{table_id}/players", body={"invite_code": "convite", "name": "Bia"}
+    )
+    path = f"/tables/{table_id}/commands"
+    status, result, _ = client.call(
+        "POST", path, body={"line": 'entrar bia "Bia"', "revision": 1}, auth=joined["token"]
+    )
+    assert status == 200
+    return table_id, path, created["host_token"], joined["token"], result
+
+
+def test_a_player_enters_acts_and_reads_the_events_over_http(client):
+    table_id, path, host, bia, entered = play_setup(client)
+    assert entered["revision"] == 2
+    assert [e["kind"] for e in entered["events"]] == ["character_joined"]
+    assert "data" not in entered["events"][0]
+
+    status, result, _ = client.call(
+        "POST", path, body={"line": "testar lutar normal", "revision": 2}, auth=bia
+    )
+    assert status == 200
+    assert result["turn_ended"] is True  # Bia é a única com personagem: o turno fecha
+    assert result["status"] == "active"
+
+    status, events, _ = client.call("GET", f"/tables/{table_id}/events?since=2", auth=bia)
+    assert status == 200
+    assert events["revision"] == result["revision"]
+    assert [e["index"] for e in events["events"]] == list(range(2, events["revision"]))
+    assert events["events"][0]["kind"] == "check"
+    assert events["events"][0]["prose"]
+    status, everything, _ = client.call("GET", f"/tables/{table_id}/events", auth=host)
+    assert everything["events"][2:] == events["events"]
+
+
+def test_command_errors_over_http(client):
+    _table_id, path, host, bia, _ = play_setup(client)
+    cases = [
+        (bia, {"line": "fim", "revision": 2}, 403, "forbidden"),
+        (bia, {"line": "testar lutar normal", "revision": 1}, 409, "stale_revision"),
+        (bia, {"line": "testar lutar impossivel", "revision": 2}, 422, "command_refused"),
+        (bia, {"line": "dançar", "revision": 2}, 422, "command_refused"),
+        (bia, {"line": "ana: testar lutar normal", "revision": 2}, 403, "forbidden"),
+        (bia, {"line": "", "revision": 2}, 400, "bad_request"),
+        (bia, {"line": "   ", "revision": 2}, 400, "bad_request"),
+        (bia, {"line": 'entrar x "A\u202eB"', "revision": 2}, 400, "bad_request"),
+        (bia, {"line": "olhar\nfim", "revision": 2}, 400, "bad_request"),
+        (bia, {"line": "olhar"}, 400, "bad_request"),
+        (bia, {"line": "olhar", "revision": -1}, 400, "bad_request"),
+        (bia, {"line": "x" * 501, "revision": 2}, 400, "bad_request"),
+        (None, {"line": "olhar", "revision": 2}, 401, "unauthorized"),
+        ("token-errado", {"line": "olhar", "revision": 2}, 401, "unauthorized"),
+    ]
+    for token, body, status, code in cases:
+        got_status, got, _ = client.call("POST", path, body=body, auth=token)
+        assert (got_status, got["error"]["code"]) == (status, code), body
+    status, _, _ = client.call(
+        "POST",
+        "/tables/0123456789abcdef/commands",
+        body={"line": "olhar", "revision": 0},
+        auth=host,
+    )
+    assert status == 404
+
+
+@pytest.mark.parametrize(
+    ("headers", "raw", "status", "code"),
+    [
+        (
+            {"Content-Type": "text/plain"},
+            b'{"line":"olhar","revision":2}',
+            415,
+            "unsupported_media_type",
+        ),
+        ({"Content-Type": "application/json"}, b"", 400, "bad_request"),
+        ({"Content-Type": "application/json"}, b"[]", 400, "bad_request"),
+        (
+            {"Content-Type": "application/json"},
+            b'{"line":"olhar","revision":2,"x":1}',
+            400,
+            "bad_request",
+        ),
+    ],
+    ids=["content-type", "sem-corpo", "nao-objeto", "campo-extra"],
+)
+def test_the_commands_route_validates_the_body_before_anything_else(
+    client, headers, raw, status, code
+):
+    _table_id, path, _host, bia, _ = play_setup(client)
+    got_status, body, _ = client.call("POST", path, raw=raw, headers=headers, auth=bia)
+    assert (got_status, body["error"]["code"]) == (status, code)
+
+
+def test_the_commands_route_without_content_length_is_411(client):
+    _table_id, path, _host, bia, _ = play_setup(client)
+    conn = client.connection()
+    conn.putrequest("POST", path)
+    conn.putheader("Content-Type", "application/json")
+    conn.putheader("Authorization", f"Bearer {bia}")
+    conn.endheaders()
+    response = conn.getresponse()
+    body = json.loads(response.read())
+    conn.close()
+    assert (response.status, body["error"]["code"]) == (411, "length_required")
+
+
+def test_the_events_of_a_table_do_not_open_to_a_token_of_another(client):
+    table_id, _, _host, _bia, _ = play_setup(client)
+    _, other, _ = create(client)
+    status, body, _ = client.call("GET", f"/tables/{table_id}/events", auth=other["host_token"])
+    assert (status, body["error"]["code"]) == (401, "unauthorized")
+
+
+def test_events_query_and_auth_errors(client):
+    table_id, _, _host, bia, _ = play_setup(client)
+    for query in ("since=-1", "since=x", "since=1&since=2", "since=" + "9" * 12, "since=%C2%B2"):
+        status, body, _ = client.call("GET", f"/tables/{table_id}/events?{query}", auth=bia)
+        assert (status, body["error"]["code"]) == (400, "bad_request"), query
+    status, body, _ = client.call("GET", f"/tables/{table_id}/events")
+    assert (status, body["error"]["code"]) == (401, "unauthorized")
+    status, events, _ = client.call("GET", f"/tables/{table_id}/events?since=999", auth=bia)
+    assert status == 200
+    assert events["events"] == []
+    status, events, _ = client.call("GET", f"/tables/{table_id}/events?outro=1", auth=bia)
+    assert status == 200  # parâmetro desconhecido é ignorado
+
+
+def test_a_refused_command_leaves_the_table_as_it_was(client):
+    table_id, path, host, bia, _ = play_setup(client)
+    _, before, _ = client.call("GET", f"/tables/{table_id}", auth=host)
+    client.call("POST", path, body={"line": "fim", "revision": 2}, auth=bia)
+    client.call("POST", path, body={"line": "testar lutar impossivel", "revision": 2}, auth=bia)
+    _, after, _ = client.call("GET", f"/tables/{table_id}", auth=host)
+    assert after == before
+
+
 def test_join_errors(client):
     _, created, _ = create(client)
     path = f"/tables/{created['table_id']}/players"
@@ -206,16 +345,16 @@ def test_errors_are_json_with_code_and_message(client):
     ("headers", "raw", "status", "code"),
     [
         ({"Content-Type": "text/plain"}, b"{}", 415, "unsupported_media_type"),
-        ({"Content-Type": "application/json"}, b"x" * (64 * 1024 + 1), 413, "payload_too_large"),
         ({"Content-Type": "application/json"}, b"{not json", 400, "bad_request"),
+        # recusado sem ler o corpo: sem corpo no teste, para o cliente não levar reset ao escrever
         (
             {"Content-Type": "application/json", "Transfer-Encoding": "chunked"},
-            b"{}",
+            None,
             400,
             "bad_request",
         ),
     ],
-    ids=["content-type", "tamanho", "json-invalido", "transfer-encoding"],
+    ids=["content-type", "json-invalido", "transfer-encoding"],
 )
 def test_body_limits_and_content_type(client, headers, raw, status, code):
     got_status, body, _ = client.call("POST", "/tables", raw=raw, headers=headers)
