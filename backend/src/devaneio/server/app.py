@@ -57,6 +57,7 @@ from .storage import Storage
 from .turns import apply, authenticate, events_view
 
 MAX_PLAYERS = 8
+SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
 
 LLM_NOTICE = (
     "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes com seus "
@@ -72,6 +73,7 @@ class TableService:
         storage: Storage,
         *,
         llm: LlmConfig | None = None,
+        say_cooldown: float = SAY_COOLDOWN,
         token_source: Callable[[], str] = new_token,
         invite_source: Callable[[], str] = new_invite,
     ) -> None:
@@ -80,7 +82,7 @@ class TableService:
         self.llm = llm
         self._token_source = token_source
         self._invite_source = invite_source
-        self._say = SayDesk(storage, llm, self._load) if llm is not None else None
+        self._say = SayDesk(storage, llm, self._load, say_cooldown) if llm is not None else None
 
     # --- operações ---------------------------------------------------------------
 
@@ -153,7 +155,7 @@ class TableService:
         session, _, player = self._open(table_id, token)
         view = EventsView(
             revision=len(session.state.events),
-            events=events_view(session, since, self.storage.prose(table_id), role=player.role),
+            events=events_view(session, since, self.storage.flavors(table_id), role=player.role),
         )
         if view.events or wait <= 0 or not self.storage.enter_wait(table_id):
             return view
@@ -190,7 +192,9 @@ class TableService:
             session, _, player = self._open(table_id, token)
             view = EventsView(
                 revision=len(session.state.events),
-                events=events_view(session, since, self.storage.prose(table_id), role=player.role),
+                events=events_view(
+                    session, since, self.storage.flavors(table_id), role=player.role
+                ),
             )
         return view
 

@@ -89,9 +89,12 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `fala` que ele devolve pode, em tese, repeti-los a quem enviou o texto.
     A fala e a prosa do LLM (`Proposal.say`, `clean_narration`) passam por `llm/text.clean_text` (sem controle,
     formatação, bidi nem invisíveis; qualquer espaço vira um espaço): chegam à tela de outros jogadores.
-    Riscos aceitos: um jogador gasta chamadas do LLM do anfitrião com propostas vazias (só há um `say` por vez por
-    mesa, sem limite de taxa) e pode segurar esse único slot por até ~3 min (timeout × 2 tentativas + narração);
-    uma tentativa perdida por `409 stale_revision` também custa chamadas ao LLM.
+    O custo do LLM do anfitrião é limitado por um intervalo mínimo por jogador entre textos livres (`429`, 5 s por
+    padrão, `--intervalo-say`; conta mesmo com proposta vazia ou falha do LLM, e não conta recusa da mesa antes do
+    LLM) e por um `say` por vez por mesa. A fala e a narração são guardadas em memória e vão a todos no primeiro evento
+    visível do lote; sem evento novo a fala volta só a quem enviou. Riscos aceitos: um jogador pode segurar o único
+    slot de `say` por até ~3 min (timeout × 2 tentativas + narração), e uma tentativa perdida por `409 stale_revision`
+    também custa chamadas ao LLM.
 20. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no

@@ -42,7 +42,7 @@ servidor usa só a biblioteca padrão e escuta em `127.0.0.1` por padrão.
 
 ```bash
 cd backend
-.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --sem-llm
+.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --intervalo-say 5, --sem-llm
 curl -s localhost:8765/campaigns
 curl -s -X POST localhost:8765/tables -H 'Content-Type: application/json' \
      -d '{"campaign_id": "sombra-do-vale", "host_name": "Ana"}'          # 201: table_id, host_token, invite_code, table
@@ -119,14 +119,16 @@ ações (só conversa) nada é gravado e a ação não é gasta.
   segredos dos NPCs presentes). O servidor nunca registra o texto do jogador.
 - **A chamada ao LLM roda fora do lock da mesa** (pode levar minutos): os comandos seguem passando, e a gravação só
   acontece se a mesa não mudou nesse intervalo (senão `409 stale_revision`, e a tentativa se perde). Só uma chamada
-  de texto livre por vez por mesa (`409 say_busy`), porque cada uma custa chamadas ao LLM de quem roda o servidor.
-- **Narração:** o LLM escreve um parágrafo para o lote de eventos, guardado **só em memória** (os últimos 200 por
-  mesa): vem em `EventView.narration` no primeiro evento do lote (nos outros é `null`), igual para todos os jogadores, e
-  some ao reiniciar o servidor. `EventView.prose` é sempre a narração da gramática do próprio evento, então o cliente
+  de texto livre por vez por mesa (`409 say_busy`) e um **intervalo mínimo por jogador** entre dois textos livres
+  (`429 say_rate_limited`; 5 s por padrão, `--intervalo-say` muda), porque cada um custa chamadas ao LLM de quem roda o
+  servidor. O intervalo conta mesmo se a proposta vier vazia ou o LLM falhar; recusa da mesa antes do LLM não conta.
+- **Narração e fala:** o LLM escreve um parágrafo para o lote de eventos e uma fala do mestre ou do NPC, guardados
+  **só em memória** (os últimos 200 por mesa): vêm em `EventView.narration` e `EventView.speech` no primeiro evento do
+  lote que os jogadores veem (nos outros são `null`), iguais para todos, e somem ao reiniciar o servidor. `EventView.prose` é sempre a narração da gramática do próprio evento, então o cliente
   mostra `narration` quando houver e `prose` no resto. Se o LLM falhar, `narration` fica `null`. A fala e a narração do
   LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
-- **Limite conhecido:** a `fala` do mestre vai só para quem enviou o texto; os outros jogadores veem os eventos e a
-  narração, não a fala.
+- **Limite conhecido:** numa conversa sem evento novo (a proposta veio sem ações) não há onde pendurar a fala: ela
+  volta só a quem enviou o texto (`SayResult.say`).
 
 ## Backend
 

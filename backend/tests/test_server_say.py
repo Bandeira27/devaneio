@@ -14,7 +14,7 @@ from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.http import make_server
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest, SayRequest
-from devaneio.server.storage import MAX_NARRATIONS
+from devaneio.server.storage import MAX_NARRATIONS, Flavor
 from fakes import FakeLlmServer
 
 TOKENS = count(1)
@@ -75,6 +75,7 @@ def service(tmp_path, llm):
         Catalog(CAMPAIGN_PATH.parent),
         Storage(tmp_path / "mesas", max_tables=10),
         llm=config,
+        say_cooldown=0,  # o intervalo tem testes próprios, com relógio falso
         token_source=lambda: f"token-{next(TOKENS)}",
         invite_source=lambda: "convite",
     )
@@ -378,7 +379,7 @@ def test_a_join_during_the_llm_call_makes_the_say_stale_and_stores_no_narration(
     assert (error.status, error.code) == (409, "stale_revision")
     assert desk.service.get_table(desk.id, joined["caio"].token).revision >= 0  # a entrada ficou
     assert "check" not in [e.kind for e in desk.events(bia)]
-    assert desk.service.storage.prose(desk.id) == {}
+    assert desk.service.storage.flavors(desk.id) == {}
 
 
 def test_a_stale_say_keeps_no_narration(desk, script):
@@ -387,7 +388,7 @@ def test_a_stale_say_keeps_no_narration(desk, script):
     script.proposals.append(proposal(CHECK))
     script.before_reply = lambda: desk.cmd(desk.host, "ferir bia 1")
     desk.refused(bia, "tento")
-    assert desk.service.storage.prose(desk.id) == {}
+    assert desk.service.storage.flavors(desk.id) == {}
     assert all(e.narration is None for e in desk.events(bia))
 
 
@@ -477,7 +478,7 @@ def test_a_narration_in_data_format_is_dropped_and_the_grammar_is_used(desk, scr
     result = desk.say(bia, "tento")
     assert result.events[0].narration is None
     assert result.events[0].prose
-    assert desk.service.storage.prose(desk.id) == {}
+    assert desk.service.storage.flavors(desk.id) == {}
 
 
 def test_old_events_keep_the_grammar(desk, script):
@@ -576,11 +577,13 @@ def test_control_and_invisible_characters_from_the_llm_never_reach_the_players(d
 
 
 def test_only_the_latest_narrations_are_kept(desk):
-    desk.service.storage.store_prose(desk.id, {i: f"p{i}" for i in range(MAX_NARRATIONS + 5)})
-    kept = desk.service.storage.prose(desk.id)
+    desk.service.storage.store_flavors(
+        desk.id, {i: Flavor(narration=f"p{i}") for i in range(MAX_NARRATIONS + 5)}
+    )
+    kept = desk.service.storage.flavors(desk.id)
     assert len(kept) == MAX_NARRATIONS
     assert min(kept) == 5
-    assert kept[MAX_NARRATIONS + 4] == f"p{MAX_NARRATIONS + 4}"
+    assert kept[MAX_NARRATIONS + 4].narration == f"p{MAX_NARRATIONS + 4}"
 
 
 def test_the_llm_cannot_make_a_fallen_character_act(desk, script):
@@ -612,3 +615,114 @@ def test_the_shared_narration_never_sees_what_only_the_host_sees(desk, script):
     for_bia = desk.events(bia, since=result.events[0].index)
     assert "Irmão Vael" not in " ".join(e.text for e in for_bia)
     assert "Irmão Vael" not in " ".join(e.narration or "" for e in for_bia)
+
+
+# --- intervalo entre textos livres do mesmo jogador --------------------------------
+
+
+class Clock:
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self):
+        return self.now
+
+
+@pytest.fixture
+def clock():
+    return Clock()
+
+
+@pytest.fixture
+def slow(tmp_path, llm, clock):
+    """Uma mesa com intervalo de 30 s entre textos livres do mesmo jogador, no relógio falso."""
+    config = LlmConfig(base_url=llm.base_url, model="m-teste")
+    service = TableService(
+        Catalog(CAMPAIGN_PATH.parent),
+        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        llm=config,
+        say_cooldown=30,
+        token_source=lambda: f"token-{next(TOKENS)}",
+        invite_source=lambda: "convite",
+    )
+    return Desk(service)
+
+
+def test_the_same_player_must_wait_between_free_texts(slow, script, clock):
+    slow.cmd(slow.host, 'entrar ana "Ana"')  # dois personagens: o turno não fecha entre os say
+    bia = slow.player("Bia")
+    script.proposals += [proposal(say="Bram acena."), proposal(CHECK)]
+    slow.say(bia, "cumprimento")
+    error = slow.refused(bia, "e agora tento")
+    assert (error.status, error.code) == (429, "say_rate_limited")
+    assert "espere 30 s" in error.message
+    assert len(script.proposer_calls()) == 1  # a segunda nem chegou ao LLM
+    clock.now += 12
+    assert "espere 18 s" in slow.refused(bia, "e agora tento").message
+    clock.now += 18
+    assert slow.say(bia, "e agora tento").commands == ["testar lutar normal"]
+
+
+def test_the_interval_is_per_player(slow, script):
+    slow.cmd(slow.host, 'entrar ana "Ana"')
+    bia = slow.player("Bia")
+    caio = slow.player("Caio")
+    script.proposals += [proposal(CHECK), proposal(CHECK)]
+    slow.say(bia, "tento")
+    assert slow.say(caio, "eu também").commands == ["testar lutar normal"]
+
+
+def test_an_empty_proposal_and_an_llm_failure_both_count(slow, script):
+    bia = slow.player("Bia")
+    script.proposals.append(proposal(say="Só conversa."))
+    slow.say(bia, "oi")
+    assert slow.refused(bia, "oi de novo").code == "say_rate_limited"
+    caio = slow.player("Caio")
+    script.proposer_status = 500
+    assert slow.refused(caio, "tento").code == "llm_unavailable"
+    assert slow.refused(caio, "tento de novo").code == "say_rate_limited"
+
+
+def test_a_say_the_table_refuses_first_does_not_start_the_interval(slow, script):
+    slow.cmd(slow.host, 'entrar ana "Ana"')
+    bia = slow.player("Bia")
+    stale = slow.revision(bia) - 1
+    assert slow.refused(bia, "tento", revision=stale).code == "stale_revision"
+    script.proposals.append(proposal(CHECK))
+    assert slow.say(bia, "tento").commands == ["testar lutar normal"]
+
+
+# --- a fala do mestre vai a todos ---------------------------------------------------
+
+
+def test_the_speech_reaches_every_reader_on_the_first_event(desk, script):
+    desk.cmd(desk.host, 'entrar ana "Ana"')
+    bia = desk.player("Bia")
+    script.proposals.append(proposal(CHECK, say="Bram diz: cuidado na trilha."))
+    result = desk.say(bia, "tento")
+    assert result.say == "Bram diz: cuidado na trilha."
+    assert result.events[0].speech == "Bram diz: cuidado na trilha."
+    assert all(e.speech is None for e in result.events[1:])
+    for token in (bia, desk.host):
+        assert desk.events(token, result.events[0].index) == result.events
+    assert "cuidado na trilha" not in desk.raw()  # só em memória
+
+
+def test_the_speech_survives_a_failed_narration(desk, script):
+    bia = desk.player("Bia")
+    script.narration_status = 500
+    script.proposals.append(proposal(CHECK, say="Boa sorte."))
+    event = desk.say(bia, "tento").events[0]
+    assert event.narration is None
+    assert event.speech == "Boa sorte."
+
+
+def test_a_conversation_without_events_reaches_only_who_spoke(desk, script):
+    """Sem evento novo não há onde pendurar a fala: ela volta só a quem enviou o texto."""
+    bia = desk.player("Bia")
+    caio = desk.player("Caio")
+    script.proposals.append(proposal(say="Bram sussurra um segredo."))
+    result = desk.say(bia, "pergunto ao ferreiro")
+    assert result.say == "Bram sussurra um segredo."
+    assert result.events == []
+    assert all(e.speech is None for e in desk.events(caio))

@@ -8,6 +8,7 @@ grava só se a mesa continua como era, senão ``409`` e a tentativa se perde.
 
 from __future__ import annotations
 
+import math
 import sys
 from collections.abc import Callable
 from dataclasses import replace
@@ -32,7 +33,7 @@ from devaneio.llm import ChatClient, LlmConfig
 from . import policy
 from .errors import ApiFailure
 from .models import SayRequest, SayResult
-from .storage import Storage
+from .storage import Flavor, Storage
 from .turns import (
     authenticate,
     authorize_proposal,
@@ -45,20 +46,33 @@ from .turns import (
 
 
 class SayDesk:
-    def __init__(self, storage: Storage, llm: LlmConfig, load: Callable[[Path], Session]) -> None:
+    def __init__(
+        self,
+        storage: Storage,
+        llm: LlmConfig,
+        load: Callable[[Path], Session],
+        cooldown: float,
+    ) -> None:
         self._storage = storage
         self._llm = llm
+        self._cooldown = cooldown  # segundos entre dois textos livres do mesmo jogador
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
 
     def run(self, table_id: str, path: Path, token: str, request: SayRequest) -> SayResult:
         storage = self._storage
         with storage.lock(table_id):  # fase 1
             session = self._load(path)
-            table, _, player = authenticate(session, token)
+            table, player_id, player = authenticate(session, token)
             who, text = speaker(session.state, player, request.text)
             check_say(table, session.state, who, request.revision)
+        left = storage.say_cooldown_left(table_id, player_id, self._cooldown)
+        if left > 0:
+            raise ApiFailure(
+                429, "say_rate_limited", f"espere {math.ceil(left)} s para pedir outro texto livre"
+            )
         if not storage.enter_say(table_id):
             raise ApiFailure(409, "say_busy", "já há uma ação de texto livre em andamento")
+        storage.mark_say(table_id, player_id)  # conta mesmo se a proposta vier vazia ou falhar
         try:
             return self._with_llm(table_id, path, (session, table, player, who, text))
         finally:
@@ -95,7 +109,7 @@ class SayDesk:
             new_table = table.model_copy(update={"acted": {**table.acted, who: session.state.turn}})
             new_session, _, turn_ended = close_turn_if_all_acted(new_session, new_table, "")
         fresh_events = new_session.state.events[revision:]
-        prose = self._narration(client, new_session, revision) if fresh_events else {}
+        flavors = self._flavors(client, new_session, revision, freeform.say) if fresh_events else {}
 
         with self._storage.lock(table_id):  # fase 3
             current = self._load(path)
@@ -105,9 +119,11 @@ class SayDesk:
                 )
             if fresh_events:
                 save_game(replace(new_session, table=new_table))
-                self._storage.store_prose(table_id, prose)
+                self._storage.store_flavors(table_id, flavors)
                 self._storage.announce_change(table_id)
-        shown = events_view(new_session, revision, self._storage.prose(table_id), role=player.role)
+        shown = events_view(
+            new_session, revision, self._storage.flavors(table_id), role=player.role
+        )
         return SayResult(
             revision=len(new_session.state.events),
             events=shown,
@@ -119,11 +135,12 @@ class SayDesk:
         )
 
     @staticmethod
-    def _narration(client: ChatClient, session: Session, start: int) -> dict[int, str]:
-        """Um parágrafo do LLM para o lote de eventos novos que os JOGADORES veem, no índice do
-        primeiro deles: o parágrafo é igual para todos, então não pode citar o que só o
-        anfitrião vê (evento sobre NPC escondido). Se o LLM falhar, nada: ``narration`` fica
-        ``None`` e vale a prosa da gramática."""
+    def _flavors(
+        client: ChatClient, session: Session, start: int, speech: str
+    ) -> dict[int, Flavor]:
+        """A narração do LLM e a fala do mestre, no primeiro evento novo que os JOGADORES veem:
+        os dois são iguais para todos, então não podem citar o que só o anfitrião vê (evento
+        sobre NPC escondido). Se o LLM falhar na narração, fica só a fala (e a gramática)."""
         state = session.state
         hidden = hidden_events(state, session.campaign)
         visible = [i for i in range(start, len(state.events)) if i not in hidden]
@@ -134,5 +151,6 @@ class SayDesk:
         )
         if paragraph is None:
             print(f"llm: {note}", file=sys.stderr)
+        if paragraph is None and not speech:
             return {}
-        return {visible[0]: paragraph}
+        return {visible[0]: Flavor(narration=paragraph, speech=speech or None)}

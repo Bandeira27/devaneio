@@ -244,8 +244,9 @@ class TableCreated(StrictModel):
 class EventView(StrictModel):
     """Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
     do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
-    livre, só no primeiro evento do lote (os outros ficam ``None``) e só enquanto o servidor
-    não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para todos."""
+    livre e ``speech`` é a fala do mestre ou do NPC naquela ação; os dois vêm só no primeiro
+    evento visível do lote (nos outros são ``None``) e só enquanto o servidor não reinicia.
+    Todos são exibição, nunca voltam ao estado, e são iguais para todos os jogadores."""
 
     index: int
     turn: int
@@ -253,6 +254,7 @@ class EventView(StrictModel):
     text: str
     prose: str
     narration: str | None = None
+    speech: str | None = None
 
 
 class EventsView(StrictModel):

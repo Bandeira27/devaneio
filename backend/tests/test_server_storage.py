@@ -47,3 +47,16 @@ def test_count_ignores_files_that_are_not_tables(storage):
 def test_lock_is_one_object_per_table(storage):
     assert storage.lock(ID_A) is storage.lock(ID_A)
     assert storage.lock(ID_A) is not storage.lock(ID_B)
+
+
+def test_the_say_cooldown_counts_down_per_player(tmp_path):
+    now = [100.0]
+    storage = Storage(tmp_path, max_tables=2, clock=lambda: now[0])
+    assert storage.say_cooldown_left("t", "p1", 30) == 0.0  # nunca falou
+    storage.mark_say("t", "p1")
+    assert storage.say_cooldown_left("t", "p1", 30) == 30.0
+    assert storage.say_cooldown_left("t", "p2", 30) == 0.0  # outro jogador
+    now[0] += 10
+    assert storage.say_cooldown_left("t", "p1", 30) == 20.0
+    now[0] += 25
+    assert storage.say_cooldown_left("t", "p1", 30) == 0.0

@@ -10,12 +10,23 @@ from __future__ import annotations
 import re
 import secrets
 import threading
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
-MAX_NARRATIONS = 200  # parágrafos de narração guardados por mesa; os mais antigos saem primeiro
+MAX_NARRATIONS = 200  # narrações e falas guardadas por mesa; as mais antigas saem primeiro
+
+
+@dataclass(frozen=True)
+class Flavor:
+    """O que o LLM acrescentou a um evento (só exibição): o parágrafo de narração do lote e a
+    fala do mestre ou do NPC. Vive em memória e some ao reiniciar o servidor."""
+
+    narration: str | None = None
+    speech: str | None = None
 
 
 @dataclass
@@ -24,7 +35,8 @@ class _Table:
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
     saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
-    prose: dict[int, str] = field(default_factory=dict)  # prosa do LLM por índice de evento
+    flavors: dict[int, Flavor] = field(default_factory=dict)  # por índice de evento
+    last_say: dict[str, float] = field(default_factory=dict)  # por jogador, no relógio da mesa
     changed: threading.Condition = field(init=False)
 
     def __post_init__(self) -> None:
@@ -32,7 +44,14 @@ class _Table:
 
 
 class Storage:
-    def __init__(self, data_dir: Path, *, max_tables: int) -> None:
+    def __init__(
+        self,
+        data_dir: Path,
+        *,
+        max_tables: int,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._clock = clock  # injetável: os testes do intervalo do texto livre não esperam
         self.data_dir = Path(data_dir).resolve()
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.max_tables = max_tables
@@ -96,19 +115,34 @@ class Storage:
         with self._registry:
             table.saying = False
 
-    def prose(self, table_id: str) -> dict[int, str]:
-        """Prosa do LLM guardada por índice de evento (só em memória: nunca vai ao arquivo, e
-        depois de reiniciar o servidor os eventos antigos voltam com a gramática)."""
+    def flavors(self, table_id: str) -> dict[int, Flavor]:
+        """Narração e fala do LLM por índice de evento (só em memória: nunca vão ao arquivo, e
+        depois de reiniciar o servidor os eventos antigos voltam só com a gramática)."""
         table = self._table(table_id)
         with self._registry:
-            return dict(table.prose)
+            return dict(table.flavors)
 
-    def store_prose(self, table_id: str, prose: dict[int, str]) -> None:
+    def store_flavors(self, table_id: str, flavors: dict[int, Flavor]) -> None:
         table = self._table(table_id)
         with self._registry:
-            table.prose.update(prose)
-            while len(table.prose) > MAX_NARRATIONS:
-                del table.prose[next(iter(table.prose))]  # o dict guarda a ordem de inserção
+            table.flavors.update(flavors)
+            while len(table.flavors) > MAX_NARRATIONS:
+                del table.flavors[next(iter(table.flavors))]  # o dict guarda a ordem de inserção
+
+    def say_cooldown_left(self, table_id: str, player_id: str, cooldown: float) -> float:
+        """Segundos até o jogador poder pedir outro texto livre (0 se já pode). Cada pedido
+        custa chamadas ao LLM de quem roda o servidor: o intervalo vale por jogador."""
+        table = self._table(table_id)
+        with self._registry:
+            last = table.last_say.get(player_id)
+            if last is None:
+                return 0.0
+            return max(0.0, cooldown - (self._clock() - last))
+
+    def mark_say(self, table_id: str, player_id: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.last_say[player_id] = self._clock()
 
     def enter_wait(self, table_id: str) -> bool:
         """Reserva uma vaga de espera; ``False`` se a mesa já tem ``MAX_WAITERS``."""

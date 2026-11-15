@@ -27,6 +27,7 @@ from . import policy
 from .auth import find_player
 from .errors import ApiFailure
 from .models import MAX_NAME, CommandRequest, CommandResult, EventView
+from .storage import Flavor
 
 MAX_JOIN_ARGS = 30  # id, nome, atributos e itens do `entrar`
 
@@ -84,15 +85,15 @@ def hidden_for(role: Role, session: Session) -> frozenset[int]:
 def events_view(
     session: Session,
     since: int,
-    narration: Mapping[int, str] | None = None,
+    flavors: Mapping[int, Flavor] | None = None,
     *,
     role: Role,
 ) -> list[EventView]:
     """Eventos de ``since`` em diante que o papel pode ver, cada um com a prosa da gramática
-    e o índice original (a lista de um jogador pode ter buracos). ``narration`` traz o
-    parágrafo do LLM por índice de evento, onde houver."""
+    e o índice original (a lista de um jogador pode ter buracos). ``flavors`` traz a
+    narração e a fala do LLM por índice de evento, onde houver."""
     state = session.state
-    cached = narration or {}
+    cached = flavors or {}
     hidden = hidden_for(role, session)
     return [
         EventView(
@@ -101,7 +102,8 @@ def events_view(
             kind=event.kind,
             text=event.text,
             prose=session.narrator.narrate(event, index, state),
-            narration=cached.get(index),
+            narration=cached[index].narration if index in cached else None,
+            speech=cached[index].speech if index in cached else None,
         )
         for index, event in enumerate(state.events)
         if index >= since and index not in hidden
