@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Pacote que estende outro. Só ``id`` e ``extends`` são obrigatórios; ``language`` é herdada\nse omitida e cada chave de ``rules`` substitui a de mesmo nome do pai.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "type": "integer"
+    },
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "extends": {
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rules": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "extends"
+  ],
+  "title": "NarrationPackExtension",
+  "type": "object"
+}

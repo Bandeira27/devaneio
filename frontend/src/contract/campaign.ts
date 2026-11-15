@@ -11,6 +11,7 @@ export interface Campaign {
   title: string;
   premise: string;
   rules_id?: string;
+  narration_id?: string;
   start_location_id: string;
   locations?: Location[];
   factions?: Faction[];
