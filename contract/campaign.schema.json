@@ -50,6 +50,7 @@
               "mapping": {
                 "at_location": "#/$defs/AtLocation",
                 "beat_done": "#/$defs/BeatDone",
+                "check_passed": "#/$defs/CheckPassed",
                 "npc_down": "#/$defs/NpcDown",
                 "turn_at_least": "#/$defs/TurnAtLeast"
               },
@@ -67,6 +68,9 @@
               },
               {
                 "$ref": "#/$defs/TurnAtLeast"
+              },
+              {
+                "$ref": "#/$defs/CheckPassed"
               }
             ]
           },
@@ -79,6 +83,7 @@
               "mapping": {
                 "at_location": "#/$defs/AtLocation",
                 "beat_done": "#/$defs/BeatDone",
+                "check_passed": "#/$defs/CheckPassed",
                 "npc_down": "#/$defs/NpcDown",
                 "turn_at_least": "#/$defs/TurnAtLeast"
               },
@@ -96,6 +101,9 @@
               },
               {
                 "$ref": "#/$defs/TurnAtLeast"
+              },
+              {
+                "$ref": "#/$defs/CheckPassed"
               }
             ]
           },
@@ -135,6 +143,26 @@
       "title": "BeatDone",
       "type": "object"
     },
+    "CheckPassed": {
+      "additionalProperties": false,
+      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\nTestes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.",
+      "properties": {
+        "kind": {
+          "const": "check_passed",
+          "type": "string"
+        },
+        "skill_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "skill_id"
+      ],
+      "title": "CheckPassed",
+      "type": "object"
+    },
     "FactDef": {
       "additionalProperties": false,
       "description": "Informação da campanha que começa privada (só o anfitrião sabe) e pode virar pública.\n\n``about`` aponta um NPC, local, facção ou marco e serve só de rótulo de exibição.\n``reveal_when``: o motor revela o fato quando todas as condições valem; vazia, só o\nanfitrião revela, por comando. O estado guarda apenas quais fatos já foram revelados.",
@@ -165,6 +193,7 @@
               "mapping": {
                 "at_location": "#/$defs/AtLocation",
                 "beat_done": "#/$defs/BeatDone",
+                "check_passed": "#/$defs/CheckPassed",
                 "npc_down": "#/$defs/NpcDown",
                 "turn_at_least": "#/$defs/TurnAtLeast"
               },
@@ -182,6 +211,9 @@
               },
               {
                 "$ref": "#/$defs/TurnAtLeast"
+              },
+              {
+                "$ref": "#/$defs/CheckPassed"
               }
             ]
           },

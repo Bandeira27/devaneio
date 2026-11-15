@@ -17,6 +17,7 @@ from devaneio.schema import (
     BeatDone,
     BeatStatus,
     Campaign,
+    CheckPassed,
     Condition,
     Event,
     GameState,
@@ -32,6 +33,7 @@ from .turns import end_turn
 
 TENSION_WEIGHTS = {"hp_lost": 0.4, "hostiles": 0.3, "down": 0.2, "failed": 0.1}
 HIT = (CheckOutcome.SUCCESS, CheckOutcome.CRITICAL_SUCCESS)
+PASSED = frozenset(o.value for o in HIT)
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,14 @@ def holds(condition: Condition, state: GameState) -> bool:
         return state.beats.get(condition.beat_id) is BeatStatus.DONE
     if isinstance(condition, TurnAtLeast):
         return state.turn >= condition.turn
+    if isinstance(condition, CheckPassed):
+        return any(
+            e.kind == "check"
+            and e.data.get("actor_kind") == "character"
+            and e.data.get("skill_id") == condition.skill_id
+            and e.data.get("outcome") in PASSED
+            for e in state.events
+        )
     raise EngineError(f"condição desconhecida: {condition!r}")
 
 

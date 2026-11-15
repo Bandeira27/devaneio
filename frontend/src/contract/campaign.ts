@@ -58,8 +58,8 @@ export interface Beat {
   title: string;
   description?: string;
   requires?: string[];
-  activate_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
-  complete_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
+  activate_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
+  complete_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
   private_notes?: string[];
 }
 export interface AtLocation {
@@ -79,6 +79,14 @@ export interface TurnAtLeast {
   turn: number;
 }
 /**
+ * Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
+ * Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.
+ */
+export interface CheckPassed {
+  kind: "check_passed";
+  skill_id: string;
+}
+/**
  * Informação da campanha que começa privada (só o anfitrião sabe) e pode virar pública.
  *
  * ``about`` aponta um NPC, local, facção ou marco e serve só de rótulo de exibição.
@@ -89,5 +97,5 @@ export interface FactDef {
   id: string;
   text: string;
   about?: string | null;
-  reveal_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast)[];
+  reveal_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
 }

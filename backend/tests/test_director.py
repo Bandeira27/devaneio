@@ -15,7 +15,15 @@ from devaneio.engine import (
 )
 from devaneio.rng import Rng
 from devaneio.rules import CheckOutcome
-from devaneio.schema import AtLocation, BeatDone, BeatStatus, NpcDown, TurnAtLeast
+from devaneio.schema import (
+    AtLocation,
+    BeatDone,
+    BeatStatus,
+    CheckPassed,
+    Event,
+    NpcDown,
+    TurnAtLeast,
+)
 
 SEED = 21
 
@@ -33,6 +41,24 @@ def at(state, campaign, *path):
 
 
 # --- condições -----------------------------------------------------------------
+
+
+def with_check(state, *, skill="persuadir", outcome="success", actor_kind="character"):
+    data = {"actor_kind": actor_kind, "actor_id": "x", "skill_id": skill, "outcome": outcome}
+    new = state.model_copy(deep=True)
+    new.events.append(Event(turn=state.turn, kind="check", text="t", data=data))
+    return new
+
+
+def test_check_passed_needs_a_character_success_in_that_skill(state):
+    cond = CheckPassed(kind="check_passed", skill_id="persuadir")
+    assert not holds(cond, state)
+    assert holds(cond, with_check(state))
+    assert holds(cond, with_check(state, outcome="critical_success"))
+    assert not holds(cond, with_check(state, outcome="failure"))
+    assert not holds(cond, with_check(state, outcome="critical_failure"))
+    assert not holds(cond, with_check(state, skill="lutar"))
+    assert not holds(cond, with_check(state, actor_kind="npc"))
 
 
 def test_conditions(state, campaign):

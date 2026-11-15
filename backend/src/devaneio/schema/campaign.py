@@ -64,7 +64,17 @@ class TurnAtLeast(StrictModel):
     turn: int = Field(ge=0)
 
 
-Condition = Annotated[AtLocation | NpcDown | BeatDone | TurnAtLeast, Field(discriminator="kind")]
+class CheckPassed(StrictModel):
+    """Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
+    Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc."""
+
+    kind: Literal["check_passed"]
+    skill_id: Id
+
+
+Condition = Annotated[
+    AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed, Field(discriminator="kind")
+]
 
 
 class Beat(StrictModel):
