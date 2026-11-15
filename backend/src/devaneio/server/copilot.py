@@ -16,6 +16,7 @@ from pathlib import Path
 
 from devaneio.game import LlmConfig, Session, connect_llm
 from devaneio.llm import LlmError, ask_copilot
+from devaneio.llm.text import clean_text
 
 from .errors import ApiFailure
 from .models import CopilotAnswer, CopilotRequest
@@ -50,12 +51,14 @@ class CopilotDesk:
             )
         if not storage.enter_copilot(table_id):
             raise ApiFailure(409, "copilot_busy", "já há uma consulta ao copiloto em andamento")
-        storage.mark_copilot(table_id)  # conta mesmo se o LLM falhar
         try:  # fase 2, sem lock
+            storage.mark_copilot(table_id)  # conta mesmo se o LLM falhar
             client = connect_llm(self._llm)
             text = ask_copilot(client, session.campaign, session.rules, session.state, request.text)
         except LlmError as exc:
-            print(f"llm: {exc}", file=sys.stderr)  # o detalhe fica com quem roda o servidor
+            print(
+                f"llm: {clean_text(str(exc))}", file=sys.stderr
+            )  # o detalhe fica com quem roda o servidor
             raise ApiFailure(
                 502, "llm_unavailable", "o servidor de LLM não respondeu direito"
             ) from None

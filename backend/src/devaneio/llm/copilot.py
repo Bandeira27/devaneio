@@ -12,7 +12,7 @@ import json
 from typing import Any
 
 from devaneio.rules import RuleSystem
-from devaneio.schema import Campaign, GameState
+from devaneio.schema import Campaign, GameState, Npc, NpcState
 
 from .client import ChatClient
 from .errors import LlmError
@@ -81,23 +81,7 @@ def build_copilot_context(
             }
             for f in campaign.factions
         ],
-        "npcs": [
-            {
-                "id": n.id,
-                "nome": n.name,
-                "descricao": n.description,
-                "faccao": n.faction_id,
-                "local": npc_states[n.id].location_id if n.id in npc_states else n.location_id,
-                "de_pe": n.id in npc_states and npc_states[n.id].alive and npc_states[n.id].hp > 0,
-                "hp": f"{npc_states[n.id].hp}/{npc_states[n.id].max_hp}"
-                if n.id in npc_states
-                else None,
-                "hostil": n.id in npc_states
-                and npc_states[n.id].disposition < rules.dispositions.hostile_below,
-                "notas_privadas": n.private_notes,
-            }
-            for n in campaign.npcs
-        ],
+        "npcs": [_npc_entry(n, npc_states.get(n.id), rules) for n in campaign.npcs],
         "marcos": [
             {
                 "id": b.id,
@@ -123,6 +107,22 @@ def build_copilot_context(
             for f in campaign.facts
         ],
         "eventos_recentes": [e.text for e in state.events[-RECENT_EVENTS:]],
+    }
+
+
+def _npc_entry(npc: Npc, st: NpcState | None, rules: RuleSystem) -> dict[str, Any]:
+    """Sem estado (NPC novo numa campanha editada depois da partida), os campos vivos são ``None``
+    em vez de parecerem um NPC caído: ausência de dado não vira afirmação."""
+    return {
+        "id": npc.id,
+        "nome": npc.name,
+        "descricao": npc.description,
+        "faccao": npc.faction_id,
+        "local": st.location_id if st else npc.location_id,
+        "de_pe": None if st is None else st.alive and st.hp > 0,
+        "hp": None if st is None else f"{st.hp}/{st.max_hp}",
+        "hostil": None if st is None else st.disposition < rules.dispositions.hostile_below,
+        "notas_privadas": npc.private_notes,
     }
 
 

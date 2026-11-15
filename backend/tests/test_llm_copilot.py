@@ -134,3 +134,12 @@ def test_clean_multiline_keeps_line_breaks_and_drops_what_deceives(raw, clean):
 
 def test_clean_multiline_cuts_at_the_limit():
     assert clean_multiline("x" * 5000, MAX_ANSWER_CHARS) == "x" * MAX_ANSWER_CHARS
+
+
+def test_an_npc_without_state_is_unknown_not_fallen(campaign, rules, state):
+    del state.npcs["ferreiro"]
+    npc = next(n for n in ctx(campaign, rules, state)["npcs"] if n["id"] == "ferreiro")
+    assert npc["de_pe"] is None
+    assert npc["hp"] is None
+    assert npc["hostil"] is None
+    assert npc["local"] == "vila"

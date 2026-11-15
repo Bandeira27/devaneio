@@ -237,3 +237,11 @@ def test_the_request_body_is_validated():
     with pytest.raises(ValidationError, match="text"):
         CopilotRequest(text="a\x07b")
     assert json.loads(CopilotRequest(text="oi").model_dump_json()) == {"text": "oi"}
+
+
+def test_the_provider_detail_in_the_log_is_one_clean_line(desk, script, capsys):
+    script.status = 500
+    desk.refused(desk.host)
+    err = capsys.readouterr().err
+    assert "\x1b" not in err
+    assert err.count("llm:") == 1
