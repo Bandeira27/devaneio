@@ -1,12 +1,18 @@
+import json
+
 import pytest
 from pydantic import ValidationError
 
 from devaneio.engine import initial_state
 from devaneio.rules import (
+    RulesExtendsError,
     RulesIntegrityError,
     RuleSystem,
+    builtin_rules_dict,
     load_builtin_rules,
     load_rules,
+    load_rules_extending,
+    merge_rules,
     validate_campaign_against_rules,
     validate_rules,
     validate_state_against_rules,
@@ -212,3 +218,82 @@ def test_fallen_can_act_comes_from_the_rules_data_and_defaults_to_false():
     assert RuleSystem.model_validate(data).combat.fallen_can_act is False
     data["combat"]["fallen_can_act"] = True
     assert RuleSystem.model_validate(data).combat.fallen_can_act is True
+
+
+# --- extends ----------------------------------------------------------------------------
+
+
+def extension(**fields):
+    return {"id": "meu", "extends": "default", **fields}
+
+
+def test_an_extension_adds_replaces_and_keeps_the_parent_order(rules_data):
+    child = extension(
+        name="Meu Sistema",
+        skills=[
+            {"id": "magia", "name": "Magia", "formula": "2d6 + MEN"},
+            {"id": "lutar", "name": "Lutar", "formula": "2d6 + FOR + 1"},
+        ],
+        weapons=[{"id": "varinha", "name": "Varinha", "damage": "1d6 + MEN", "skill": "magia"}],
+        combat={"default_weapon": "varinha"},
+    )
+    rules = load_rules_extending(child, builtin_rules_dict)
+    parent_ids = [s["id"] for s in rules_data["skills"]]
+    assert [s.id for s in rules.skills] == [*parent_ids, "magia"]
+    assert next(s for s in rules.skills if s.id == "lutar").formula == "2d6 + FOR + 1"
+    assert rules.id == "meu"
+    assert rules.name == "Meu Sistema"
+    assert rules.combat.default_weapon == "varinha"
+    assert rules.combat.attack_difficulty == rules_data["combat"]["attack_difficulty"]
+    assert rules.max_hp == rules_data["max_hp"]
+
+
+def test_an_extension_with_nothing_else_is_the_parent_under_a_new_id(rules):
+    child = load_rules_extending(extension(), builtin_rules_dict)
+    assert child.model_dump() == rules.model_copy(update={"id": "meu"}).model_dump()
+
+
+def test_an_explicit_null_clears_the_parent_default_weapon(rules):
+    assert rules.combat.default_weapon is not None
+    child = load_rules_extending(extension(combat={"default_weapon": None}), builtin_rules_dict)
+    assert child.combat.default_weapon is None
+
+
+def test_merge_does_not_mutate_its_inputs(rules_data):
+    parent, child = (
+        json.loads(json.dumps(rules_data)),
+        {"skills": [{"id": "x", "name": "X", "formula": "1"}]},
+    )
+    before = json.loads(json.dumps(parent))
+    merge_rules(parent, child)
+    assert parent == before
+
+
+def test_a_file_without_extends_is_a_plain_system(rules_data):
+    assert load_rules_extending(json.dumps(rules_data), builtin_rules_dict).id == "default"
+
+
+def test_extends_errors_are_clear(rules_data):
+    with pytest.raises(RulesExtendsError, match="estender a si mesmo"):
+        load_rules_extending({"id": "x", "extends": "x"}, builtin_rules_dict)
+    with pytest.raises(RulesExtendsError, match="só um nível"):
+        load_rules_extending(extension(), lambda _id: {**rules_data, "extends": "outro"})
+    with pytest.raises(RulesExtendsError, match="repete o id"):
+        load_rules_extending({"id": "default", "extends": "meu"}, lambda _id: rules_data)
+    with pytest.raises(ValueError, match="não encontrado"):
+        load_rules_extending(extension(extends="nada"), builtin_rules_dict)
+
+
+def test_an_extension_with_a_broken_formula_or_unknown_field_is_rejected():
+    with pytest.raises(ValidationError, match="fórmula inválida"):
+        load_rules_extending(
+            extension(skills=[{"id": "x", "name": "X", "formula": "2d6 +"}]), builtin_rules_dict
+        )
+    with pytest.raises(ValidationError, match="skils"):
+        load_rules_extending(extension(skils=[]), builtin_rules_dict)
+
+
+def test_the_merged_system_is_checked_like_any_other():
+    child = extension(skills=[{"id": "magia", "name": "Magia", "formula": "2d6 + SORTE"}])
+    with pytest.raises(RulesIntegrityError, match="atributo 'SORTE'"):
+        load_rules_extending(child, builtin_rules_dict)

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "types": "json2ts -i ../contract/campaign.schema.json -o src/contract/campaign.ts && json2ts -i ../contract/rules.schema.json -o src/contract/rules.ts && json2ts -i ../contract/narration.schema.json -o src/contract/narration.ts && json2ts -i ../contract/game_state.schema.json -o src/contract/game_state.ts && json2ts -i ../contract/api_requests.schema.json -o src/contract/api_requests.ts && json2ts -i ../contract/api_responses.schema.json -o src/contract/api_responses.ts",
+    "types": "json2ts -i ../contract/campaign.schema.json -o src/contract/campaign.ts && json2ts -i ../contract/rules.schema.json -o src/contract/rules.ts && json2ts -i ../contract/rules_extension.schema.json -o src/contract/rules_extension.ts && json2ts -i ../contract/narration.schema.json -o src/contract/narration.ts && json2ts -i ../contract/game_state.schema.json -o src/contract/game_state.ts && json2ts -i ../contract/api_requests.schema.json -o src/contract/api_requests.ts && json2ts -i ../contract/api_responses.schema.json -o src/contract/api_responses.ts",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

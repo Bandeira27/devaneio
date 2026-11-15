@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Attribute": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        },
+        "min": {
+          "default": 1,
+          "type": "integer"
+        },
+        "max": {
+          "default": 5,
+          "type": "integer"
+        },
+        "default": {
+          "type": "integer",
+          "default": 2
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "Attribute",
+      "type": "object"
+    },
+    "CombatPatch": {
+      "additionalProperties": false,
+      "properties": {
+        "attack_difficulty": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "default_weapon": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallen_can_act": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "CombatPatch",
+      "type": "object"
+    },
+    "Difficulty": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value"
+      ],
+      "title": "Difficulty",
+      "type": "object"
+    },
+    "DispositionsPatch": {
+      "additionalProperties": false,
+      "properties": {
+        "hostile_below": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "DispositionsPatch",
+      "type": "object"
+    },
+    "Modifier": {
+      "additionalProperties": false,
+      "description": "Modificador situacional aplicável a qualquer teste (vantagem +2, desvantagem -2).",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value"
+      ],
+      "title": "Modifier",
+      "type": "object"
+    },
+    "OutcomesPatch": {
+      "additionalProperties": false,
+      "properties": {
+        "critical_failure_margin": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "critical_success_margin": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "OutcomesPatch",
+      "type": "object"
+    },
+    "RestPatch": {
+      "additionalProperties": false,
+      "properties": {
+        "heal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "RestPatch",
+      "type": "object"
+    },
+    "Skill": {
+      "additionalProperties": false,
+      "description": "Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no\ninterpretador para 'o atributo da habilidade'.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "formula": {
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "formula"
+      ],
+      "title": "Skill",
+      "type": "object"
+    },
+    "Weapon": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "damage": {
+          "type": "string"
+        },
+        "skill": {
+          "description": "habilidade testada ao atacar com esta arma",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "damage",
+        "skill"
+      ],
+      "title": "Weapon",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Arquivo de sistema que estende outro. Só ``id`` e ``extends`` são obrigatórios. Item de\nlista com o id de um item do pai o substitui por inteiro; id novo é acrescentado. Blocos\nmudam campo a campo; ``default_weapon: null`` explícito limpa a arma padrão do pai.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "type": "integer"
+    },
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "extends": {
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "attributes": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Attribute"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "difficulties": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Difficulty"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "skills": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Skill"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "weapons": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Weapon"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "modifiers": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Modifier"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "outcomes": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OutcomesPatch"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "combat": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CombatPatch"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "dispositions": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DispositionsPatch"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rest": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RestPatch"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "max_hp": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "id",
+    "extends"
+  ],
+  "title": "RuleSystemExtension",
+  "type": "object"
+}
