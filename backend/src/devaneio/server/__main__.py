@@ -49,6 +49,11 @@ def main(argv: list[str] | None = None) -> int:
         help="segundos mínimos entre dois textos livres do mesmo jogador (custo do LLM)",
     )
     parser.add_argument(
+        "--segredos-no-llm",
+        action="store_true",
+        help="envia os segredos dos NPCs ao LLM da mesa (a fala dele chega a todos os jogadores)",
+    )
+    parser.add_argument(
         "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
     )
     args = parser.parse_args(argv)
@@ -64,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
         Storage(args.dados, max_tables=args.max_mesas),
         llm=llm,
         say_cooldown=args.intervalo_say,
+        llm_secrets=args.segredos_no_llm,
     )
     server = make_server(args.host, args.porta, service)
     port = server.server_address[1]

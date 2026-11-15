@@ -700,12 +700,17 @@
             }
           ],
           "default": null
+        },
+        "secrets": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "required": [
         "enabled",
         "description",
-        "notice"
+        "notice",
+        "secrets"
       ],
       "title": "LlmView",
       "type": "object"

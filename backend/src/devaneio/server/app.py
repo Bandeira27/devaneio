@@ -60,10 +60,13 @@ MAX_PLAYERS = 8
 SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
 
 LLM_NOTICE = (
-    "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes com seus "
-    "segredos, marcos ativos, eventos recentes) vão ao servidor de LLM configurado por quem "
-    "roda esta mesa: {description}. A fala e a narração que o LLM devolve voltam aos jogadores."
+    "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes{with_secrets}, "
+    "marcos ativos, eventos que os jogadores veem) vão ao servidor de LLM configurado por quem "
+    "roda esta mesa: {description}. {secrets_note}A fala e a narração que o LLM devolve voltam "
+    "aos jogadores."
 )
+NOTICE_WITH_SECRETS = (" com seus segredos", "")
+NOTICE_WITHOUT_SECRETS = ("", "Os segredos dos NPCs não vão. ")
 
 
 class TableService:
@@ -74,16 +77,20 @@ class TableService:
         *,
         llm: LlmConfig | None = None,
         say_cooldown: float = SAY_COOLDOWN,
+        llm_secrets: bool = False,
         token_source: Callable[[], str] = new_token,
         invite_source: Callable[[], str] = new_invite,
     ) -> None:
         self.catalog = catalog
         self.storage = storage
         self.llm = llm
+        self._llm_secrets = llm_secrets
         self._token_source = token_source
         self._invite_source = invite_source
         self._say = (
-            SayDesk(storage, llm, self.load_session, say_cooldown) if llm is not None else None
+            SayDesk(storage, llm, self.load_session, say_cooldown, llm_secrets)
+            if llm is not None
+            else None
         )
 
     # --- operações ---------------------------------------------------------------
@@ -273,10 +280,18 @@ class TableService:
     def _llm_view(self) -> LlmView:
         if self.llm is None:
             return LlmView(enabled=False)
+        with_secrets, secrets_note = (
+            NOTICE_WITH_SECRETS if self._llm_secrets else NOTICE_WITHOUT_SECRETS
+        )
         return LlmView(
             enabled=True,
             description=self.llm.description,
-            notice=LLM_NOTICE.format(description=self.llm.description),
+            notice=LLM_NOTICE.format(
+                description=self.llm.description,
+                with_secrets=with_secrets,
+                secrets_note=secrets_note,
+            ),
+            secrets=self._llm_secrets,
         )
 
     def _view(self, table_id: str, session: Session, table: TableMeta, role: Role) -> TableView:

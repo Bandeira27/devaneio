@@ -94,3 +94,15 @@ def test_hidden_events_stay_out_of_the_prompt_and_the_last_five_are_still_five(
     assert shown["eventos_recentes"] == ["evento 1", "evento 2", "evento 3", "evento 4", "evento 6"]
     messages = build_messages(campaign, rules, state, "aria", "oi", hide_events=frozenset({7}))
     assert "evento 7" not in messages[1]["content"]
+
+
+def test_secrets_can_be_left_out_of_the_prompt(campaign, rules, state):
+    here = move(state, campaign, to_location_id="floresta").state
+    ruins = move(here, campaign, to_location_id="ruinas").state
+    with_secrets = build_context(campaign, rules, ruins, "aria")
+    assert with_secrets["npcs_aqui"][0]["segredos"] == ["é o líder do culto"]
+    without = build_context(campaign, rules, ruins, "aria", include_secrets=False)
+    assert "segredos" not in without["npcs_aqui"][0]
+    assert without["npcs_aqui"][0]["nome"] == "Irmão Vael"
+    messages = build_messages(campaign, rules, ruins, "aria", "oi", include_secrets=False)
+    assert "líder do culto" not in messages[1]["content"]

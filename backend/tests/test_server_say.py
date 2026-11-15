@@ -761,3 +761,30 @@ def test_the_flavor_sits_on_the_first_visible_event_not_on_the_hidden_damage(des
     seen_by_bia = desk.events(bia, since=check.index)
     assert [e.kind for e in seen_by_bia] == ["check"]
     assert seen_by_bia[0].speech == "Cuidado, Ana."
+
+
+def test_npc_secrets_stay_out_of_the_llm_prompt_by_default(desk, script):
+    bia = desk.player("Bia")
+    script.proposals.append(proposal(CHECK))
+    desk.say(bia, "pergunto ao ferreiro")
+    prompt = script.proposer_calls()[0]["messages"][1]["content"]
+    assert "Bram" in prompt
+    assert "caminho secreto" not in prompt  # o segredo do ferreiro
+
+
+def test_the_host_can_opt_in_to_sending_the_secrets(tmp_path, llm, script):
+    config = LlmConfig(base_url=llm.base_url, model="m-teste")
+    service = TableService(
+        Catalog(CAMPAIGN_PATH.parent),
+        Storage(tmp_path / "mesas", max_tables=2),
+        llm=config,
+        say_cooldown=0,
+        llm_secrets=True,
+        token_source=lambda: f"token-{next(TOKENS)}",
+        invite_source=lambda: "convite",
+    )
+    desk = Desk(service)
+    bia = desk.player("Bia")
+    script.proposals.append(proposal(CHECK))
+    desk.say(bia, "pergunto ao ferreiro")
+    assert "caminho secreto" in script.proposer_calls()[0]["messages"][1]["content"]

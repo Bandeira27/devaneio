@@ -64,6 +64,7 @@ export interface LlmView {
   enabled: boolean;
   description: string | null;
   notice: string | null;
+  secrets: boolean;
 }
 export interface GameState {
   state_version: 1;

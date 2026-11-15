@@ -645,6 +645,7 @@ def test_the_say_interval_flag_reaches_the_service(tmp_path, monkeypatch, raw, e
 
     def spy(*_args, **kwargs):
         seen.append(kwargs["say_cooldown"])
+        assert kwargs["llm_secrets"] is False  # sem a flag, os segredos não vão ao LLM
 
     monkeypatch.setattr("devaneio.server.__main__.TableService", spy)
     monkeypatch.setattr(
@@ -652,3 +653,15 @@ def test_the_say_interval_flag_reaches_the_service(tmp_path, monkeypatch, raw, e
     )
     assert main(main_args(tmp_path, "--porta", "0", "--intervalo-say", raw)) == 0
     assert seen == [expected]
+
+
+def test_the_secrets_flag_reaches_the_service(tmp_path, monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        "devaneio.server.__main__.TableService", lambda *_a, **kw: seen.append(kw["llm_secrets"])
+    )
+    monkeypatch.setattr(
+        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+    )
+    assert main(main_args(tmp_path, "--porta", "0", "--segredos-no-llm")) == 0
+    assert seen == [True]

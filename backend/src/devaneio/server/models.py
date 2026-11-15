@@ -179,6 +179,7 @@ class LlmView(StrictModel):
     enabled: bool
     description: str | None = None
     notice: str | None = None
+    secrets: bool = False  # os segredos dos NPCs vão ao LLM (e a fala dele chega a todos)
 
 
 class NpcView(StrictModel):

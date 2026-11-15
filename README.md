@@ -115,8 +115,11 @@ manda o texto de um jogador ao LLM, que **só propõe** (as mesmas quatro açõe
 responde como alvo inexistente. A proposta inteira, de até 3 ações, gasta **uma** ação principal do personagem; sem
 ações (só conversa) nada é gravado e a ação não é gasta.
 
-- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida (inclusive os
-  segredos dos NPCs presentes). O servidor nunca registra o texto do jogador.
+- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida. **Por padrão os
+  segredos dos NPCs não vão ao LLM da mesa**, porque a fala dele chega a todos os jogadores e ele não pode repetir o
+  que não recebeu; `--segredos-no-llm` os envia (o aviso e `LlmView.secrets` passam a dizer isso), para o mestre de IA
+  jogar com o que cada NPC esconde. No CLI solo, o jogador é o mestre e os segredos continuam indo. O servidor nunca
+  registra o texto do jogador.
 - **A chamada ao LLM roda fora do lock da mesa** (pode levar minutos): os comandos seguem passando, e a gravação só
   acontece se a mesa não mudou nesse intervalo (senão `409 stale_revision`, e a tentativa se perde). Só uma chamada
   de texto livre por vez por mesa (`409 say_busy`) e um **intervalo mínimo por jogador** entre dois textos livres

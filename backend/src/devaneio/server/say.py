@@ -53,10 +53,12 @@ class SayDesk:
         llm: LlmConfig,
         load: Callable[[Path], Session],
         cooldown: float,
+        secrets: bool,
     ) -> None:
         self._storage = storage
         self._llm = llm
         self._cooldown = cooldown  # segundos entre dois textos livres do mesmo jogador
+        self._secrets = secrets  # os segredos dos NPCs vão ao LLM (a fala dele chega a todos)
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
 
     def run(self, table_id: str, path: Path, token: str, request: SayRequest) -> SayResult:
@@ -95,6 +97,7 @@ class SayDesk:
                 actor=who,
                 allow=lambda working, line: authorize_proposal(player, working, line),
                 hide_events=hidden_events(session.state, session.campaign),
+                include_secrets=self._secrets,
             )
         except GameOverError as exc:
             raise ApiFailure(409, "game_over", str(exc)) from None

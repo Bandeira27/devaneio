@@ -28,7 +28,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
 11. **Privacidade**: com LLM ligado, o contexto da partida (inclusive segredos de NPCs presentes) vai ao servidor
     configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e o README.
     Na mesa em grupo, o LLM é o do processo do servidor (ambiente de quem o roda) e `TableView.llm.notice` diz a
-    todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo.
+    todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo. Na
+    mesa os segredos dos NPCs **não** vão ao LLM por padrão (a fala dele chega a todos); `--segredos-no-llm` os envia e
+    o aviso (`LlmView.secrets`) muda. No CLI solo continuam indo.
 
 ## Servidor da mesa (`server/`)
 
@@ -91,8 +93,8 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     pelo servidor (`run_freeform(actor=)`), nunca pelo prefixo do texto. A chamada ao LLM roda fora do lock da mesa,
     com uma chamada por vez por mesa, e a gravação confere que revisão e mesa não mudaram. A prosa do LLM é só
     exibição: fica em memória, nunca no arquivo. Falha do servidor de LLM vira 502 genérico (o detalhe vai ao
-    stderr do operador, não ao jogador). Risco aceito: o LLM recebe os segredos dos NPCs presentes (o aviso diz) e a
-    `fala` que ele devolve pode, em tese, repeti-los a quem enviou o texto.
+    stderr do operador, não ao jogador). Com `--segredos-no-llm` o LLM recebe os segredos dos NPCs presentes (o aviso diz) e
+    a `fala` que ele devolve pode repeti-los a todos: risco que o anfitrião aceita ao ligar a flag.
     A fala e a prosa do LLM (`Proposal.say`, `clean_narration`) passam por `llm/text.clean_text` (sem controle,
     formatação, bidi nem invisíveis; qualquer espaço vira um espaço): chegam à tela de outros jogadores.
     O custo do LLM do anfitrião é limitado por um intervalo mínimo por jogador entre textos livres (`429`, 5 s por
