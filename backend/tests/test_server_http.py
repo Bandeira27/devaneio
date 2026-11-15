@@ -741,3 +741,35 @@ def test_the_copilot_interval_flag_reaches_the_service(tmp_path, monkeypatch, ar
     )
     assert main(main_args(tmp_path, "--porta", "0", *args)) == 0
     assert seen == [expected]
+
+
+@pytest.mark.parametrize(
+    ("headers", "raw", "status", "code"),
+    [
+        ({"Content-Type": "text/plain"}, b'{"text":"oi"}', 415, "unsupported_media_type"),
+        ({"Content-Type": "application/json"}, b"", 400, "bad_request"),
+        ({"Content-Type": "application/json"}, b'{"text":"oi","x":1}', 400, "bad_request"),
+        ({"Content-Type": "application/json"}, b'{"text":"a\\u0007b"}', 400, "bad_request"),
+    ],
+    ids=["content-type", "sem-corpo", "campo-extra", "controle"],
+)
+def test_the_copilot_route_validates_the_body_before_anything_else(
+    client, headers, raw, status, code
+):
+    table_id, _, host, _bia, _ = play_setup(client)
+    path = f"/tables/{table_id}/copilot"
+    got_status, body, _ = client.call("POST", path, raw=raw, headers=headers, auth=host)
+    assert (got_status, body["error"]["code"]) == (status, code)
+
+
+def test_the_copilot_route_without_content_type_is_415(client):
+    table_id, _, host, _bia, _ = play_setup(client)
+    conn = client.connection()
+    conn.putrequest("POST", f"/tables/{table_id}/copilot")
+    conn.putheader("Authorization", f"Bearer {host}")
+    conn.putheader("Content-Length", "13")
+    conn.endheaders(b'{"text":"oi"}')
+    response = conn.getresponse()
+    body = json.loads(response.read())
+    conn.close()
+    assert (response.status, body["error"]["code"]) == (415, "unsupported_media_type")

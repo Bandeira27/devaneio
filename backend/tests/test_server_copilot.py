@@ -245,3 +245,53 @@ def test_the_provider_detail_in_the_log_is_one_clean_line(desk, script, capsys):
     err = capsys.readouterr().err
     assert "\x1b" not in err
     assert err.count("llm:") == 1
+
+
+def test_a_token_from_another_table_is_refused_and_nothing_is_sent(desk, script):
+    other = desk.service.create_table(
+        CreateTableRequest(campaign_id="sombra-do-vale", host_name="Caio", seed=7)
+    )
+    refused = desk.refused(other.host_token)
+    assert (refused.status, refused.code) == (401, "unauthorized")
+    assert script.requests == []
+
+
+def test_the_seat_is_returned_when_the_llm_server_is_unreachable(tmp_path, llm, clock):
+    config = LlmConfig(base_url="http://127.0.0.1:9/v1", model="m")
+    service = TableService(
+        Catalog(CAMPAIGN_PATH.parent),
+        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        llm=config,
+        copilot_cooldown=0,
+        token_source=lambda: f"token-{next(TOKENS)}",
+        invite_source=lambda: "convite",
+    )
+    desk = Desk(service)
+    assert desk.refused(desk.host).status == 502
+    assert service.storage.enter_copilot(desk.id)  # a vaga voltou
+    service.storage.leave_copilot(desk.id)
+
+
+def test_the_seat_is_returned_even_on_an_unexpected_error(desk, monkeypatch):
+    def boom(_config):
+        raise RuntimeError("inesperado")
+
+    monkeypatch.setattr("devaneio.server.copilot.connect_llm", boom)
+    with pytest.raises(RuntimeError):
+        desk.ask(desk.host)
+    assert desk.service.storage.enter_copilot(desk.id)
+    desk.service.storage.leave_copilot(desk.id)
+
+
+def test_with_zero_interval_consecutive_consultations_pass(desk, script):
+    assert desk.ask(desk.host).text
+    assert desk.ask(desk.host).text
+    assert len(script.copilot_calls()) == 2
+
+
+def test_a_rejected_consultation_by_a_player_does_not_start_the_interval(
+    tmp_path, llm, clock, script
+):
+    desk = Desk(make_service(tmp_path, llm, clock, cooldown=30))
+    assert desk.refused(desk.player).status == 403
+    assert desk.ask(desk.host).text  # o anfitrião não foi limitado pela recusa do jogador

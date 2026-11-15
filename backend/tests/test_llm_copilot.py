@@ -143,3 +143,36 @@ def test_an_npc_without_state_is_unknown_not_fallen(campaign, rules, state):
     assert npc["hp"] is None
     assert npc["hostil"] is None
     assert npc["local"] == "vila"
+
+
+def test_a_campaign_without_factions_beats_or_facts_gives_empty_lists(campaign, rules):
+    data = campaign.model_dump()
+    data["factions"] = []
+    data["beats"] = []
+    data["facts"] = []
+    bare = type(campaign).model_validate(data)
+    state = initial_state(bare, rules, 3)
+    context = ctx(bare, rules, state)
+    assert context["faccoes"] == []
+    assert context["marcos"] == []
+    assert context["fatos"] == []
+    assert build_copilot_messages(bare, rules, state, "oi")[1]["content"]
+
+
+def test_a_fact_about_nothing_has_no_subject(campaign, rules, state):
+    data = campaign.model_dump()
+    data["facts"][0]["about"] = None
+    free = type(campaign).model_validate(data)
+    fact = ctx(free, rules, state)["fatos"][0]
+    assert fact["sobre"] is None
+
+
+def test_an_npc_marked_dead_is_not_standing_even_with_hp(campaign, rules, state):
+    state.npcs["ferreiro"] = state.npcs["ferreiro"].model_copy(update={"alive": False})
+    npc = next(n for n in ctx(campaign, rules, state)["npcs"] if n["id"] == "ferreiro")
+    assert npc["de_pe"] is False
+
+
+def test_an_answer_of_only_blanks_is_an_llm_error(campaign, rules, state):
+    with pytest.raises(LlmError, match="vazia"):
+        ask_copilot(ScriptedClient("   \n\t \n  "), campaign, rules, state, "oi")
