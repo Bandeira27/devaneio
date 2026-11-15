@@ -13,6 +13,7 @@ from devaneio.schema import Campaign, GameState
 
 from .client import ChatClient
 from .errors import LlmError
+from .text import clean_text
 
 MAX_CHARS = 900
 NARRATOR_SYSTEM = """\
@@ -46,7 +47,7 @@ def build_narration_messages(
 
 
 def clean_narration(raw: str) -> str:
-    text = " ".join(raw.split())
+    text = clean_text(raw)
     if not text:
         raise LlmError("narração vazia")
     if text.startswith(("{", "[", "```")):

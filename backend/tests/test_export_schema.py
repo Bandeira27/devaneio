@@ -16,7 +16,7 @@ def test_committed_contract_matches_models(name):
     assert path.read_text(encoding="utf-8") == render(*SCHEMAS[name]), REGENERATE
 
 
-def test_module_writes_both_schemas(tmp_path):
+def test_module_writes_every_schema(tmp_path):
     result = subprocess.run(
         [sys.executable, "-m", "devaneio.export_schema", "--out", str(tmp_path)],
         check=True,
@@ -33,3 +33,19 @@ def test_module_writes_both_schemas(tmp_path):
     # entrada: defaults opcionais; saída: tudo presente
     assert "locations" not in campaign["required"]
     assert "characters" in state["required"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(SCHEMAS)
+
+
+def test_api_responses_never_carry_hashes():
+    text = render(*SCHEMAS["api_responses.schema.json"])
+    assert "token_hash" not in text
+    assert "invite_hash" not in text
+    assert "TableMeta" not in text
+
+
+def test_player_state_view_hides_what_would_make_rolls_predictable():
+    schema = json.loads(render(*SCHEMAS["api_responses.schema.json"]))
+    player_state = schema["$defs"]["PlayerStateView"]["properties"]
+    assert "rng_seed" not in player_state
+    assert "rng_draws" not in player_state
+    assert "events" not in player_state

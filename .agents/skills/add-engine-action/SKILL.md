@@ -11,7 +11,7 @@ com novo estado e um `Event`. Leia antes `engine/damage.py` e `engine/heal.py` c
 
 ## Passos
 
-1. **Decida se é do motor.** Composição de ações para um comando (como `atacar`) vai em `cli/commands.py`, não
+1. **Decida se é do motor.** Composição de ações para um comando (como `atacar`) vai em `game/commands.py`, não
    aqui. Acerto e dano continuam ações separadas.
 2. **Crie o módulo** `engine/<nome>.py`: docstring de módulo curta; `from __future__ import annotations`;
    resultado como `@dataclass(frozen=True)` com `state`, os campos úteis e `text`.

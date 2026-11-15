@@ -28,7 +28,7 @@ diferentes) e cria uma abstração cheia de parâmetros para agradar três chama
 extensão reais (pacote de narração, sistema de regras como dado). Liskov e segregação de interfaces quase não
 aparecem num código de funções puras e dataclasses: **não invente hierarquias** só para satisfazê-los.
 
-**Separation of Concerns.** O motor decide, o CLI orquestra, a narração apresenta, o LLM propõe.
+**Separation of Concerns.** O motor decide, `game` orquestra, o CLI mostra, a narração apresenta, o LLM propõe.
 *Atrapalha* quando vira camada que só repassa chamada, sem responsabilidade própria.
 
 **Composição sobre herança.** Prefira funções, dataclasses e `Protocol`. Herança só para especializar exceção
@@ -47,9 +47,9 @@ saída; sem efeito escondido; nomes que dispensam comentário. Comentário expli
 | Decisão | Onde vive | O que a quebraria |
 |---|---|---|
 | Motor de regras só no backend e puro | `backend/src/devaneio/engine/` | lógica de jogo no frontend; ação do motor que muta a entrada ou faz I/O |
-| Estado é JSON puro, em turnos, fonte única da verdade | `schema/game_state.py`, arquivo de partida do CLI | estado derivado gravado, estado em memória que diverge do arquivo |
+| Estado é JSON puro, em turnos, fonte única da verdade | `schema/game_state.py`, arquivo de partida (`game/session.py`) | estado derivado gravado, estado em memória que diverge do arquivo |
 | Regras são dados declarativos, nunca código | `rules/` (expressões como `2d6 + FOR`) | `eval`, plugin executável, fórmula Python |
-| LLM é opcional e só propõe | `llm/`, `cli/freeform.py` | LLM aplicando mudança direta de estado; jogo que deixa de funcionar sem LLM |
+| LLM é opcional e só propõe | `llm/`, `game/freeform.py` | LLM aplicando mudança direta de estado; jogo que deixa de funcionar sem LLM |
 | Contrato único gerado do Pydantic | `contract/`, `frontend/src/contract/` | tipo TS escrito à mão; JSON Schema editado à mão |
 | Aleatoriedade reprodutível (SplitMix64 próprio) | `rng.py` | `random`, `time`, `uuid` dentro do motor |
 | Narração é camada de exibição | `narration/`, `llm/narration.py` | prosa gravada no estado; narração consumindo `rng_draws` |

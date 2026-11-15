@@ -1,10 +1,15 @@
 // Cliente fino: mostra o estado e envia ações. Por enquanto só prova que os tipos
 // derivados do contrato (contract/*.schema.json) compilam em modo strict.
+import type { ApiRequests } from "./contract/api_requests";
+import type { ApiResponses } from "./contract/api_responses";
 import type { Campaign } from "./contract/campaign";
 import type { GameState } from "./contract/game_state";
 import type { RuleSystem } from "./contract/rules";
 
-export type { Campaign, GameState, RuleSystem };
+export type { ApiRequests, ApiResponses, Campaign, GameState, RuleSystem };
+
+export type CreateTableRequest = ApiRequests["create_table"];
+export type TableView = ApiResponses["table"];
 
 export function describeTurn(state: GameState, campaign: Campaign): string {
   const location = campaign.locations?.find((l) => l.id === state.current_location_id);

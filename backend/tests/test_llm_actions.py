@@ -99,3 +99,8 @@ def test_all_problems_are_reported_together():
     with pytest.raises(ProposalError) as info:
         parse_proposal(raw)
     assert len(info.value.errors) == 2
+
+
+def test_say_loses_control_and_invisible_characters():
+    raw = '{"say": "Oi\\u001b[31m\\u202e!\\u200b"}'
+    assert parse_proposal(raw).say == "Oi[31m!"

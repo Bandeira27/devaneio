@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from devaneio.schema.common import Id
 
+from .text import clean_text
+
 MAX_ACTIONS = 3
 
 
@@ -61,6 +63,11 @@ class Proposal(_Loose):
     @classmethod
     def _none_is_empty(cls, value: object) -> object:
         return "" if value is None else value
+
+    @field_validator("say", mode="after")
+    @classmethod
+    def _clean(cls, value: str) -> str:
+        return clean_text(value)
 
 
 EXAMPLE_PROPOSAL = {
