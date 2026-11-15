@@ -177,3 +177,20 @@ def test_example_facts_are_revealed_by_conditions(campaign):
         "check_passed",
     ]
     assert [c.kind for c in by_id["sacerdote-segredo"].reveal_when] == ["at_location", "npc_down"]
+
+
+@pytest.mark.parametrize("about", ["vila", "culto", "sacerdote", "chegada"])
+def test_fact_about_any_known_element_is_valid(campaign_data, about):
+    campaign_data["facts"][0]["about"] = about
+    assert errors_of(campaign_data) == []
+
+
+def test_fact_reveal_conditions_reject_unknown_beat_and_location(campaign_data):
+    campaign_data["facts"][0]["reveal_when"] = [
+        {"kind": "beat_done", "beat_id": "nada"},
+        {"kind": "at_location", "location_id": "lugar"},
+    ]
+    assert errors_of(campaign_data) == [
+        "fato 'ferreiro-segredo', reveal_when: marco 'nada' não existe",
+        "fato 'ferreiro-segredo', reveal_when: local 'lugar' não existe",
+    ]

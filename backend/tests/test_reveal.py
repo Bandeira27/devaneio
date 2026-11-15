@@ -5,14 +5,22 @@ import pytest
 from conftest import CAMPAIGN_PATH
 from devaneio.engine import (
     EngineError,
+    add_character,
     direct,
     initial_state,
     move,
+    resolve_check,
     reveal_fact,
     reveal_facts,
 )
 from devaneio.game import CommandError, execute, new_game
-from devaneio.schema import AtLocation, FactDef, validate_against_campaign
+from devaneio.schema import (
+    AtLocation,
+    CheckPassed,
+    FactDef,
+    TurnAtLeast,
+    validate_against_campaign,
+)
 
 
 def campaign_with(campaign, *facts):
@@ -126,3 +134,76 @@ def test_a_new_game_already_reveals_facts_that_hold_at_the_start(tmp_path, campa
     path.write_text(campaign_with(campaign, fact).model_dump_json(), encoding="utf-8")
     session = new_game(path, tmp_path / "p.json", seed=3)
     assert "aqui" in session.state.revealed_facts
+
+
+def test_a_fact_needs_all_its_conditions_not_just_one(campaign, state):
+    both = FactDef(
+        id="duplo",
+        text="Duas chaves.",
+        reveal_when=[*AT_FOREST, TurnAtLeast(kind="turn_at_least", turn=99)],
+    )
+    campaign = campaign_with(campaign, both)
+    moved = move(state, campaign, to_location_id="floresta").state
+    same, texts = reveal_facts(moved, campaign)
+    assert same == moved
+    assert texts == ()
+    late = moved.model_copy(update={"turn": 99})
+    revealed, texts = reveal_facts(late, campaign)
+    assert "duplo" in revealed.revealed_facts
+    assert texts == ("Revelado: Duas chaves.",)
+
+
+def test_one_pass_reveals_each_ready_fact_with_its_own_event(campaign, state):
+    other = FactDef(id="outro", text="Outra coisa.", reveal_when=AT_FOREST)
+    campaign = campaign_with(campaign, SECRET, other, HOST_ONLY)
+    moved = move(state, campaign, to_location_id="floresta").state
+    revealed, texts = reveal_facts(moved, campaign)
+    assert set(revealed.revealed_facts) == {"trilha", "outro"}
+    assert texts == ("Revelado: Há uma trilha oculta.", "Revelado: Outra coisa.")
+    ids = [e.data["fact_id"] for e in revealed.events if e.kind == "reveal"]
+    assert ids == ["trilha", "outro"]
+
+
+def test_a_real_passed_check_reveals_a_check_passed_fact(campaign, rules, state):
+    skill = rules.skills[0].id
+    cond = CheckPassed(kind="check_passed", skill_id=skill)
+    campaign = campaign_with(campaign, FactDef(id="pista", text="Achou.", reveal_when=[cond]))
+    state = add_character(state, rules, character_id="aria", name="Aria").state
+    outcomes = {}
+    for seed in range(60):
+        result = resolve_check(
+            state.model_copy(update={"rng_seed": seed}),
+            rules,
+            character_id="aria",
+            skill_id=skill,
+            difficulty_id=rules.difficulties[0].id,
+        )
+        revealed, _ = reveal_facts(result.state, campaign)
+        outcomes[result.outcome.value] = "pista" in revealed.revealed_facts
+    assert outcomes["success"] is True
+    assert outcomes["failure"] is False
+
+
+def test_revealing_by_hand_does_not_mutate_the_input(campaign, state):
+    campaign = campaign_with(campaign, HOST_ONLY)
+    before = state.model_copy(deep=True)
+    reveal_fact(state, campaign, fact_id="culto")
+    assert state == before
+
+
+def test_the_director_reveals_a_fact_only_once(campaign, rules, state):
+    campaign = campaign_with(campaign, SECRET)
+    moved = move(state, campaign, to_location_id="floresta").state
+    first = direct(moved, campaign, rules).state
+    second = direct(first, campaign, rules)
+    assert "Revelado: Há uma trilha oculta." not in second.actions
+    assert len([e for e in second.state.events if e.kind == "reveal"]) == 1
+
+
+def test_a_command_reveals_a_fact_only_once(session):
+    session, _ = execute(session, 'entrar aria "Aria"')
+    session, text = execute(session, "ir floresta")
+    assert text.count("Revelado: Há uma trilha oculta.") == 1
+    session, text = execute(session, "ficha")
+    assert "Revelado" not in text
+    assert len([e for e in session.state.events if e.kind == "reveal"]) == 1

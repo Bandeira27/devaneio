@@ -5,7 +5,7 @@ import pytest
 from devaneio.engine import add_character, initial_state, move, reveal_fact
 from devaneio.llm import MAX_ACTIONS, build_context, build_messages, feedback_message
 from devaneio.llm.prompts import PROPOSER_SYSTEM
-from devaneio.schema import Event, FactDef
+from devaneio.schema import BeatStatus, Event, FactDef
 
 
 @pytest.fixture
@@ -156,3 +156,27 @@ def test_a_revealed_fact_about_an_npc_names_who_it_is_about(campaign, rules, sta
     hidden = build_context(with_fact, rules, state, "aria", include_private=True)
     assert hidden["npcs_aqui"][0]["segredos"] == ["Sabe forjar."]
     assert hidden["fatos_revelados"] == []
+
+
+def test_private_context_only_covers_what_is_in_scene(campaign, rules, state):
+    scoped = campaign.model_copy(
+        update={
+            "facts": [
+                FactDef(id="aqui", text="Fato do local.", about="vila"),
+                FactDef(id="geral", text="Fato geral."),
+                FactDef(id="longe", text="Fato de outro local.", about="floresta"),
+                FactDef(id="ausente", text="Fato de NPC que não está aqui.", about="sacerdote"),
+                FactDef(id="marco-ativo", text="Fato do marco ativo.", about="chegada"),
+                FactDef(id="marco-pendente", text="Fato de marco pendente.", about="confronto"),
+            ]
+        }
+    )
+    state = state.model_copy(deep=True)
+    state.beats["chegada"] = BeatStatus.ACTIVE
+    private = build_context(scoped, rules, state, "aria", include_private=True)["privado"]
+    assert "Fato do local." in private
+    assert "Fato geral." in private
+    assert "Fato do marco ativo." in private
+    assert "Fato de outro local." not in private
+    assert "Fato de NPC que não está aqui." not in private
+    assert "Fato de marco pendente." not in private
