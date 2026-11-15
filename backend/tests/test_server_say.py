@@ -593,3 +593,22 @@ def test_the_llm_cannot_make_a_fallen_character_act(desk, script):
     assert (error.status, error.code) == (422, "command_refused")
     assert "fora de combate" in error.message
     assert desk.raw() == before
+
+
+def test_the_shared_narration_never_sees_what_only_the_host_sees(desk, script):
+    """O anfitrião ataca, por texto livre, um NPC que os jogadores não veem: o parágrafo do LLM
+    vai a todos, então o narrador só recebe os eventos que os jogadores veem."""
+    desk.cmd(desk.host, 'entrar ana "Ana" FOR=5')
+    bia = desk.player("Bia")
+    script.proposals.append(proposal(HIDDEN_ATTACK))
+    result = desk.say(desk.host, "ataco o sacerdote à distância")
+    assert any(e.kind == "damage" for e in result.events)  # o anfitrião vê o dano
+    assert "Irmão Vael" in result.text
+    narrator_calls = [
+        r for r in script.requests if PROPOSER_MARK not in r["messages"][0]["content"]
+    ]
+    assert len(narrator_calls) == 1
+    assert "Irmão Vael" not in narrator_calls[0]["messages"][1]["content"]
+    for_bia = desk.events(bia, since=result.events[0].index)
+    assert "Irmão Vael" not in " ".join(e.text for e in for_bia)
+    assert "Irmão Vael" not in " ".join(e.narration or "" for e in for_bia)

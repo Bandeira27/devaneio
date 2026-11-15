@@ -79,18 +79,20 @@ limita conexões simultâneas: é uma mesa entre amigos, não um serviço públi
 
 | Comando | Quem | Gasta a ação do turno |
 |---|---|---|
-| `olhar`, `ficha`, `log`, `ajuda` | todos | não |
+| `olhar`, `ficha`, `ajuda` | todos | não |
 | `entrar` | jogador (um personagem só) e anfitrião (quantos quiser) | não |
 | `testar`, `atacar`, `ir` | o dono do personagem; o anfitrião por qualquer um (`id: comando`) | sim |
-| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos` | só o anfitrião | não (`descansar` e `fim` encerram o turno) |
+| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos`, `log` | só o anfitrião | não (`descansar` e `fim` encerram o turno) |
 
 Cada personagem faz **uma ação principal por turno**; quando todos os personagens de pé ligados a um jogador agiram, o
 servidor encerra o turno na mesma requisição (`turn_ended: true`) e o diretor age. O anfitrião pode encerrar antes
 com `fim`. Um jogador comum nunca age sem prefixo injetado pelo servidor, nem por personagem de outro. `marcos`
 é do anfitrião porque lista os marcos pendentes. `atacar` aceita o personagem de outro jogador como alvo e `ir`
 move o grupo todo e gasta a ação de quem mandou: como no motor, é decisão da mesa. Jogador comum só ataca NPC do local
-atual (os outros respondem como alvo inexistente). O anfitrião, ao agir por um jogador, gasta a ação dele. O log de
-eventos é público: o que o anfitrião faz a um NPC escondido (`ferir`) aparece nele. Linhas de comando têm até 500
+atual (os outros respondem como alvo inexistente). O anfitrião, ao agir por um jogador, gasta a ação dele. O log que o
+jogador lê (`GET .../events`) **não traz eventos sobre NPC que o grupo não via na hora** (o que o anfitrião faz com `ferir`
+num NPC escondido): o `index` de cada evento é o original, então a lista pode ter buracos, e `revision` conta todos os
+eventos (pode subir sem evento novo para o jogador). O comando `log` é do anfitrião. Linhas de comando têm até 500
 caracteres e passam por NFKC; controle e invisíveis dão `400`, e `entrar` aceita até 30 argumentos de até 40 caracteres.
 
 `revision` é o número de eventos que o cliente viu: comando que muda a partida com revisão velha recebe `409` (leia

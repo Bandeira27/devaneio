@@ -14,13 +14,14 @@ from devaneio.game import (
     CommandError,
     GameOverError,
     Player,
+    Role,
     Session,
     TableMeta,
     execute,
     parse_line,
     split_actor,
 )
-from devaneio.schema import GameState
+from devaneio.schema import Campaign, GameState
 
 from . import policy
 from .auth import find_player
@@ -44,13 +45,55 @@ def prefixed(actor: str, rest: str) -> str:
     return f"{actor}: {rest}"
 
 
+# Quem age ou sofre num evento: pares (tipo, id) nas chaves de ``Event.data``.
+_PARTICIPANTS = (
+    ("actor_kind", "actor_id"),
+    ("attacker_kind", "attacker_id"),
+    ("target_kind", "target_id"),
+)
+
+
+def hidden_events(state: GameState, campaign: Campaign) -> frozenset[int]:
+    """Índices dos eventos sobre NPC que o grupo não via quando eles aconteceram.
+
+    O local do grupo em cada momento vem de reproduzir os ``move`` desde o início da
+    campanha, então um evento escondido continua escondido depois que o grupo chega ao
+    NPC: a visão só cresce por eventos novos, e quem lê com ``since`` não perde nada."""
+    here = campaign.start_location_id
+    hidden: set[int] = set()
+    for index, event in enumerate(state.events):
+        if event.kind == "move":
+            here = str(event.data["to_location_id"])
+        for kind_key, id_key in _PARTICIPANTS:
+            if event.data.get(kind_key) != "npc":
+                continue
+            npc = state.npcs.get(str(event.data.get(id_key)))
+            if npc is not None and npc.location_id != here:
+                hidden.add(index)
+    return frozenset(hidden)
+
+
+def hidden_for(role: Role, session: Session) -> frozenset[int]:
+    """O que o papel não vê: nada para o anfitrião (o mestre), os eventos sobre NPC escondido
+    para o jogador comum (o texto deles cita nome e hp)."""
+    if role == "host":
+        return frozenset()
+    return hidden_events(session.state, session.campaign)
+
+
 def events_view(
-    session: Session, since: int, narration: Mapping[int, str] | None = None
+    session: Session,
+    since: int,
+    narration: Mapping[int, str] | None = None,
+    *,
+    role: Role,
 ) -> list[EventView]:
-    """Eventos de ``since`` em diante, cada um com a prosa da gramática. ``narration`` traz o
+    """Eventos de ``since`` em diante que o papel pode ver, cada um com a prosa da gramática
+    e o índice original (a lista de um jogador pode ter buracos). ``narration`` traz o
     parágrafo do LLM por índice de evento, onde houver."""
     state = session.state
     cached = narration or {}
+    hidden = hidden_for(role, session)
     return [
         EventView(
             index=index,
@@ -61,7 +104,7 @@ def events_view(
             narration=cached.get(index),
         )
         for index, event in enumerate(state.events)
-        if index >= since
+        if index >= since and index not in hidden
     ]
 
 
@@ -86,7 +129,7 @@ def apply(
         new_table = adopt(table, player_id, player, set(new_session.state.characters) - before)
     result = CommandResult(
         revision=len(new_session.state.events),
-        events=events_view(new_session, len(state.events)),
+        events=events_view(new_session, len(state.events), role=player.role),
         text=text,
         status=game_status(new_session.state),
         turn_ended=turn_ended,

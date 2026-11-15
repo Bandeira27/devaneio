@@ -39,6 +39,7 @@ from .turns import (
     check_say,
     close_turn_if_all_acted,
     events_view,
+    hidden_events,
     speaker,
 )
 
@@ -106,10 +107,11 @@ class SayDesk:
                 save_game(replace(new_session, table=new_table))
                 self._storage.store_prose(table_id, prose)
                 self._storage.announce_change(table_id)
+        shown = events_view(new_session, revision, self._storage.prose(table_id), role=player.role)
         return SayResult(
             revision=len(new_session.state.events),
-            events=events_view(new_session, revision, self._storage.prose(table_id)),
-            text="\n".join(e.text for e in fresh_events),
+            events=shown,
+            text="\n".join(e.text for e in shown),
             status=game_status(new_session.state),
             turn_ended=turn_ended,
             say=freeform.say,
@@ -118,13 +120,19 @@ class SayDesk:
 
     @staticmethod
     def _narration(client: ChatClient, session: Session, start: int) -> dict[int, str]:
-        """Um parágrafo do LLM para o lote de eventos novos, no índice do primeiro. Se o LLM
-        falhar, nada: ``EventView.narration`` fica ``None`` e vale a prosa da gramática."""
-        events = session.state.events[start:]
+        """Um parágrafo do LLM para o lote de eventos novos que os JOGADORES veem, no índice do
+        primeiro deles: o parágrafo é igual para todos, então não pode citar o que só o
+        anfitrião vê (evento sobre NPC escondido). Se o LLM falhar, nada: ``narration`` fica
+        ``None`` e vale a prosa da gramática."""
+        state = session.state
+        hidden = hidden_events(state, session.campaign)
+        visible = [i for i in range(start, len(state.events)) if i not in hidden]
+        if not visible:
+            return {}
         paragraph, note = narrate_batch(
-            client, session.campaign, session.state, [e.text for e in events]
+            client, session.campaign, state, [state.events[i].text for i in visible]
         )
         if paragraph is None:
             print(f"llm: {note}", file=sys.stderr)
             return {}
-        return {start: paragraph}
+        return {visible[0]: paragraph}

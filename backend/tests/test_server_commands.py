@@ -155,7 +155,8 @@ def test_the_host_names_the_actor_unless_they_own_exactly_one_character(desk):
 
 
 @pytest.mark.parametrize(
-    "line", ["fim", "descansar", "ferir bia 3", "curar bia 3", "marco ativar x", "marcos"]
+    "line",
+    ["fim", "descansar", "ferir bia 3", "curar bia 3", "marco ativar x", "marcos", "log"],
 )
 def test_host_commands_are_refused_to_players(desk, line):
     bia = desk.player("Bia")
@@ -404,7 +405,7 @@ def test_ficha_without_a_character_does_not_pick_one_for_the_player(desk):
 def test_reading_never_writes_the_file(desk):
     bia = desk.player("Bia")
     before = desk.raw()
-    for line in ("olhar", "ficha", "log", "ajuda"):
+    for line in ("olhar", "ficha", "ajuda"):
         desk.cmd(bia, line)
     assert desk.raw() == before
 

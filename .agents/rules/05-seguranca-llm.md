@@ -62,9 +62,13 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     LLM para um jogador (etapa 4) passa pela mesma política antes de `execute`. `atacar` de jogador comum contra NPC
     de outro local responde como alvo inexistente (senão o ataque revela nome e hp e fere quem o `olhar` não mostra).
     `entrar` limita argumentos (30) e o tamanho de cada um (40).
-    **Limite conhecido, decisão pendente do dono**: o log (`GET .../events`, `log`) é público para todos os
-    jogadores, e o `text` de um evento do anfitrião sobre NPC escondido (`ferir sacerdote`) cita nome e hp dele.
-    Mensagens do motor em 422 também confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
+    **Log filtrado**: o jogador comum não vê eventos sobre NPC que o grupo não via quando eles aconteceram (o `text`
+    cita nome e hp: `ferir sacerdote` do anfitrião). `server/turns.hidden_events` reproduz os `move` para saber onde o
+    grupo estava em cada evento, então o que é escondido continua escondido depois que o grupo chega ao NPC e `since`
+    nunca perde evento visível; `EventView.index` mantém o índice original (a lista tem buracos) e `revision` conta todos
+    os eventos. O comando `log` é do anfitrião; o jogador lê `GET .../events`. A narração compartilhada do LLM só recebe
+    eventos que os jogadores veem. Campo novo em `Event.data` que cite NPC precisa entrar em `_PARTICIPANTS`.
+    Mensagens do motor em 422 ainda confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
     jogador agindo por ele (`bia: testar ...`). Descrições de marco aparecem na prosa quando o marco começa:
     autor de campanha não deve pôr spoiler nelas.
 18. **Long-poll**: `wait` é inteiro de 0 a 30 (`400` fora disso); a espera usa uma `Condition` sobre o lock da mesa

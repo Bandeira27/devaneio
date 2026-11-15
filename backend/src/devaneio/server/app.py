@@ -150,10 +150,10 @@ class TableService:
         # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
         # existente: ``version`` cria entrada, e o id ainda não foi validado.)
         seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
-        session, _, _ = self._open(table_id, token)
+        session, _, player = self._open(table_id, token)
         view = EventsView(
             revision=len(session.state.events),
-            events=events_view(session, since, self.storage.prose(table_id)),
+            events=events_view(session, since, self.storage.prose(table_id), role=player.role),
         )
         if view.events or wait <= 0 or not self.storage.enter_wait(table_id):
             return view
@@ -187,10 +187,10 @@ class TableService:
                 if remaining <= 0 or not changed.wait_for(moved, remaining):
                     return view
                 seen = self.storage.version(table_id)
-            session, _, _ = self._open(table_id, token)
+            session, _, player = self._open(table_id, token)
             view = EventsView(
                 revision=len(session.state.events),
-                events=events_view(session, since, self.storage.prose(table_id)),
+                events=events_view(session, since, self.storage.prose(table_id), role=player.role),
             )
         return view
 

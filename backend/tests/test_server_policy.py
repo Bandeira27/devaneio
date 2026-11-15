@@ -20,6 +20,7 @@ def test_every_command_gets_a_kind_and_unknown_ones_get_none():
 def test_marcos_is_the_hosts_because_it_lists_pending_beats():
     assert "marcos" in READ_ONLY
     assert policy.classify("marcos") == "host"
+    assert policy.classify("log") == "host"  # o jogador lê o log filtrado por GET .../events
     assert policy.classify("olhar") == "read"
     assert policy.classify("ficha") == "read"
 
