@@ -15,7 +15,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from devaneio.game import LlmConfig, Session, connect_llm
-from devaneio.llm import LlmError, ask_copilot
+from devaneio.llm import CopilotContextTooLarge, LlmError, ask_copilot
 from devaneio.llm.text import clean_text
 
 from .errors import ApiFailure
@@ -55,6 +55,10 @@ class CopilotDesk:
             storage.mark_copilot(table_id)  # conta mesmo se o LLM falhar
             client = connect_llm(self._llm)
             text = ask_copilot(client, session.campaign, session.rules, session.state, request.text)
+        except CopilotContextTooLarge as exc:
+            raise ApiFailure(
+                422, "context_too_large", "a campanha é grande demais para o copiloto"
+            ) from exc
         except LlmError as exc:
             print(
                 f"llm: {clean_text(str(exc))}", file=sys.stderr

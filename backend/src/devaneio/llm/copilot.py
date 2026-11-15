@@ -21,6 +21,16 @@ from .text import clean_multiline
 RECENT_EVENTS = 15
 MAX_ANSWER_CHARS = 2000
 COPILOT_TEMPERATURE = 0.5
+# Teto do contexto serializado (cerca de 15 mil tokens): campanha grande demais estouraria a janela do
+# modelo e o pedido falharia por um motivo obscuro. Passando do teto o contexto encolhe em etapas.
+MAX_CONTEXT_CHARS = 60_000
+REDUCED_EVENTS = 5
+TEXT_CUT = 200  # tamanho máximo de cada texto livre na última etapa de encolhimento
+
+
+class CopilotContextTooLarge(ValueError):
+    """Mesmo encolhido, o contexto da campanha passa de ``MAX_CONTEXT_CHARS``."""
+
 
 COPILOT_SYSTEM = """\
 Você é o copiloto do anfitrião (mestre) de uma mesa de RPG, em português do Brasil. Só o anfitrião lê
@@ -126,12 +136,51 @@ def _npc_entry(npc: Npc, st: NpcState | None, rules: RuleSystem) -> dict[str, An
     }
 
 
+def _dump(context: dict[str, Any]) -> str:
+    return json.dumps(context, ensure_ascii=False, separators=(",", ":"))
+
+
+def _cut(value: Any) -> Any:
+    """Corta cada texto livre acima de ``TEXT_CUT`` (ids e nomes são curtos e ficam como estão)."""
+    if isinstance(value, str):
+        return value if len(value) <= TEXT_CUT else value[: TEXT_CUT - 1] + "…"
+    if isinstance(value, list):
+        return [_cut(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _cut(v) for k, v in value.items()}
+    return value
+
+
+def fit_context(context: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """O contexto dentro do teto, e o JSON dele. Etapas, da que menos perde à que mais: menos
+    eventos recentes, nenhum evento, textos livres cortados. Quando algo é cortado o próprio contexto
+    traz um ``aviso`` para o modelo não tratar o que falta como inexistente."""
+    text = _dump(context)
+    if len(text) <= MAX_CONTEXT_CHARS:
+        return context, text
+    reduced = dict(context)
+    notes: list[str] = []
+    for keep in (REDUCED_EVENTS, 0):
+        reduced["eventos_recentes"] = context["eventos_recentes"][-keep:] if keep else []
+        notes = [f"só os {keep} eventos mais recentes" if keep else "sem eventos recentes"]
+        if len(_dump(reduced)) <= MAX_CONTEXT_CHARS:
+            break
+    else:
+        reduced = _cut(reduced)
+        notes.append(f"textos longos cortados em {TEXT_CUT} caracteres")
+    reduced["aviso"] = "Contexto reduzido por tamanho: " + "; ".join(notes) + "."
+    text = _dump(reduced)
+    if len(text) > MAX_CONTEXT_CHARS:
+        raise CopilotContextTooLarge(
+            f"o contexto da campanha tem {len(text)} caracteres; o teto do copiloto é {MAX_CONTEXT_CHARS}"
+        )
+    return reduced, text
+
+
 def build_copilot_messages(
     campaign: Campaign, rules: RuleSystem, state: GameState, question: str
 ) -> list[dict[str, str]]:
-    context = json.dumps(
-        build_copilot_context(campaign, rules, state), ensure_ascii=False, separators=(",", ":")
-    )
+    _, context = fit_context(build_copilot_context(campaign, rules, state))
     return [
         {"role": "system", "content": COPILOT_SYSTEM},
         {"role": "user", "content": f"CONTEXTO\n{context}\n\nPERGUNTA DO ANFITRIÃO\n{question}"},

@@ -4,13 +4,21 @@ import pytest
 
 from devaneio.engine import add_character, apply_damage, initial_state, reveal_fact
 from devaneio.llm import (
+    CopilotContextTooLarge,
     LlmError,
     ask_copilot,
     build_context,
     build_copilot_context,
     build_copilot_messages,
+    copilot,
 )
-from devaneio.llm.copilot import COPILOT_SYSTEM, MAX_ANSWER_CHARS, RECENT_EVENTS
+from devaneio.llm.copilot import (
+    COPILOT_SYSTEM,
+    MAX_ANSWER_CHARS,
+    RECENT_EVENTS,
+    TEXT_CUT,
+    fit_context,
+)
 from devaneio.llm.text import clean_multiline
 from devaneio.schema import Event
 from fakes import ScriptedClient
@@ -176,3 +184,65 @@ def test_an_npc_marked_dead_is_not_standing_even_with_hp(campaign, rules, state)
 def test_an_answer_of_only_blanks_is_an_llm_error(campaign, rules, state):
     with pytest.raises(LlmError, match="vazia"):
         ask_copilot(ScriptedClient("   \n\t \n  "), campaign, rules, state, "oi")
+
+
+# --- teto de tamanho -------------------------------------------------------------------
+
+
+def with_events(state, count, size):
+    state.events.extend(Event(turn=0, kind="x", text=f"e{i}" + "y" * size) for i in range(count))
+    return state
+
+
+def test_a_normal_campaign_is_not_reduced(campaign, rules, state):
+    context, text = fit_context(ctx(campaign, rules, with_events(state, 15, 50)))
+    assert "aviso" not in context
+    assert len(context["eventos_recentes"]) == 15
+    assert len(text) < 20_000
+
+
+def test_over_the_cap_the_oldest_events_go_first_and_the_model_is_told(
+    campaign, rules, state, monkeypatch
+):
+    state = with_events(state, 15, 2000)  # ~30 mil caracteres só de eventos
+    base = ctx(campaign, rules, state)
+    without_events = len(copilot._dump({**base, "eventos_recentes": []}))
+    monkeypatch.setattr(copilot, "MAX_CONTEXT_CHARS", without_events + 12_000)
+    context, _ = fit_context(base)
+    assert len(context["eventos_recentes"]) == copilot.REDUCED_EVENTS
+    assert context["eventos_recentes"][-1] == base["eventos_recentes"][-1]  # os mais novos ficam
+    assert "só os 5 eventos mais recentes" in context["aviso"]
+
+    monkeypatch.setattr(copilot, "MAX_CONTEXT_CHARS", without_events + 500)
+    context, _ = fit_context(base)
+    assert context["eventos_recentes"] == []
+    assert "sem eventos recentes" in context["aviso"]
+
+
+def test_then_long_texts_are_cut_and_ids_stay(campaign, rules, state, monkeypatch):
+    data = campaign.model_dump()
+    data["locations"][0]["description"] = "z" * 5000
+    big = type(campaign).model_validate(data)
+    base = ctx(big, rules, state)
+    monkeypatch.setattr(copilot, "MAX_CONTEXT_CHARS", len(copilot._dump(base)) - 1000)
+    context, _ = fit_context(base)
+    assert len(context["locais"][0]["descricao"]) == TEXT_CUT
+    assert context["locais"][0]["descricao"].endswith("…")
+    assert context["locais"][0]["id"] == base["locais"][0]["id"]
+    assert "textos longos cortados" in context["aviso"]
+
+
+def test_an_absurd_campaign_is_refused_with_a_clear_error(campaign, rules, state, monkeypatch):
+    monkeypatch.setattr(copilot, "MAX_CONTEXT_CHARS", 500)
+    with pytest.raises(CopilotContextTooLarge, match="teto do copiloto é 500"):
+        ask_copilot(ScriptedClient("x"), campaign, rules, state, "oi")
+
+
+def test_the_messages_carry_the_reduction_notice(campaign, rules, state, monkeypatch):
+    state = with_events(state, 15, 2000)
+    base = ctx(campaign, rules, state)
+    monkeypatch.setattr(
+        copilot, "MAX_CONTEXT_CHARS", len(copilot._dump({**base, "eventos_recentes": []})) + 500
+    )
+    _, user = build_copilot_messages(campaign, rules, state, "oi")
+    assert "Contexto reduzido por tamanho" in user["content"]

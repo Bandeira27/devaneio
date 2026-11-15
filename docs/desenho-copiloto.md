@@ -44,7 +44,10 @@ invisíveis, e corta em 2000 caracteres, porque chega à tela do anfitrião.
 
 ## Limites conhecidos
 
-- O contexto cresce com a campanha: não há corte além dos 15 eventos. Campanha enorme custa mais tokens.
+- O contexto tem teto (`MAX_CONTEXT_CHARS`, 60 mil caracteres, cerca de 15 mil tokens). Passando dele, encolhe em
+  etapas: 5 eventos recentes, nenhum evento, textos livres cortados em 200 caracteres; o próprio contexto ganha um
+  `aviso` para o modelo não tratar o que falta como inexistente. Se mesmo assim não cabe, `422 context_too_large`
+  sem chamar o LLM (o pedido conta no intervalo).
 - Sem memória entre perguntas. Quem quiser continuidade cola o que importa na pergunta.
 - O copiloto não executa nada: sugerir um comando não o aplica.
 

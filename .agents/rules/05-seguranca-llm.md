@@ -120,7 +120,8 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     a pergunta também não é registrada. Ele não altera estado nem propõe comandos (não usa `execute`, `Proposal` nem
     `authorize_proposal`). Uma chamada ao LLM por vez por mesa (vaga própria, `409 copilot_busy`) e intervalo mínimo
     (`429 copilot_rate_limited`, que conta mesmo se o LLM falhar); falha do LLM é `502` genérico com o detalhe só no
-    stderr. A resposta passa por `clean_multiline` (sem controle, ANSI, bidi nem invisíveis; até 2000 caracteres)
+    stderr. O contexto tem teto (`MAX_CONTEXT_CHARS`): acima dele encolhe em etapas com um `aviso` ao modelo e, se ainda
+    não cabe, `422 context_too_large` antes de chamar o LLM. A resposta passa por `clean_multiline` (sem controle, ANSI, bidi nem invisíveis; até 2000 caracteres)
     porque chega à tela do anfitrião. Qualquer saída do copiloto que passe a ir a jogadores quebra este item e
     exige trocar o contexto para o recorte público (`build_context` com `include_private=False`).
 

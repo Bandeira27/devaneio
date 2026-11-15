@@ -295,3 +295,12 @@ def test_a_rejected_consultation_by_a_player_does_not_start_the_interval(
     desk = Desk(make_service(tmp_path, llm, clock, cooldown=30))
     assert desk.refused(desk.player).status == 403
     assert desk.ask(desk.host).text  # o anfitrião não foi limitado pela recusa do jogador
+
+
+def test_a_campaign_too_big_for_the_copilot_is_a_clear_422(desk, script, monkeypatch):
+    monkeypatch.setattr("devaneio.llm.copilot.MAX_CONTEXT_CHARS", 500)
+    refused = desk.refused(desk.host)
+    assert (refused.status, refused.code) == (422, "context_too_large")
+    assert script.requests == []  # nem chegou ao LLM
+    monkeypatch.setattr("devaneio.llm.copilot.MAX_CONTEXT_CHARS", 60_000)
+    assert desk.ask(desk.host).text  # e a vaga foi devolvida

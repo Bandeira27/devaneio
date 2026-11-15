@@ -125,7 +125,8 @@ rascunha falas de NPC e avisa de spoiler. Quem aplica é o anfitrião, pelos com
 quem perguntou: não entra no mural nem na narração, não vira evento e não é gravada; a pergunta também não. O envio
 do privado ao LLM vale **mesmo sem `--segredos-no-llm`** (o anfitrião configurou o LLM), e por isso `TableView.llm.notice`
 diz a todos que o copiloto existe. Vaga e intervalo próprios, independentes do `/say`: uma consulta por vez por mesa
-(`409 copilot_busy`) e 5 s entre consultas (`429`, `--intervalo-copiloto`; conta mesmo se o LLM falhar). Não há
+(`409 copilot_busy`) e 5 s entre consultas (`429`, `--intervalo-copiloto`; conta mesmo se o LLM falhar). O contexto tem teto (60 mil caracteres): se a campanha passa dele, encolhe em etapas (menos eventos, textos
+cortados) com um aviso ao modelo, e se ainda não cabe responde `422 context_too_large`. Não há
 memória entre perguntas. Desenho em [`docs/desenho-copiloto.md`](docs/desenho-copiloto.md).
 
 ### Texto livre pelo LLM na mesa
