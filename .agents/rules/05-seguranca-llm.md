@@ -30,7 +30,8 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     Na mesa em grupo, o LLM é o do processo do servidor (ambiente de quem o roda) e `TableView.llm.notice` diz a
     todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo. Na
     mesa os segredos dos NPCs **não** vão ao LLM por padrão (a fala dele chega a todos); `--segredos-no-llm` os envia e
-    o aviso (`LlmView.secrets`) muda. No CLI solo continuam indo.
+    o aviso (`LlmView.secrets`) muda. No CLI solo continuam indo. O copiloto do anfitrião (item 22) recebe a
+    campanha inteira de qualquer forma, e o aviso também diz isso.
 
 ## Servidor da mesa (`server/`)
 
@@ -108,6 +109,20 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
     convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da
     partida sob o lock da mesa.
+
+## Copiloto do anfitrião (`server/copilot.py`, `llm/copilot.py`)
+
+22. **O copiloto é do anfitrião e só lê.** A rota exige `role == "host"` (403 para os outros) e o LLM configurado
+    da mesa. O contexto enviado é a campanha inteira, segredos, fatos ocultos e `private_notes` inclusive, **mesmo
+    sem `--segredos-no-llm`**: decisão do dono, porque a saída não vai aos jogadores; por isso `LLM_NOTICE` diz a
+    todos que o copiloto existe e o que ele recebe (item 11). Nada do que ele devolve pode chegar a outro jogador:
+    não passa por `Presentation` (mural, narração), não vira `Event`, não é gravado no arquivo da mesa nem em log, e
+    a pergunta também não é registrada. Ele não altera estado nem propõe comandos (não usa `execute`, `Proposal` nem
+    `authorize_proposal`). Uma chamada ao LLM por vez por mesa (vaga própria, `409 copilot_busy`) e intervalo mínimo
+    (`429 copilot_rate_limited`, que conta mesmo se o LLM falhar); falha do LLM é `502` genérico com o detalhe só no
+    stderr. A resposta passa por `clean_multiline` (sem controle, ANSI, bidi nem invisíveis; até 2000 caracteres)
+    porque chega à tela do anfitrião. Qualquer saída do copiloto que passe a ir a jogadores quebra este item e
+    exige trocar o contexto para o recorte público (`build_context` com `include_private=False`).
 
 ## Conteúdo do autor (`game/content.py`)
 

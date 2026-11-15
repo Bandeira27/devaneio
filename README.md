@@ -14,8 +14,10 @@ Mesa de RPG com um mestre de IA, jogável sozinho (linha de comando) ou em grupo
 
 O Devaneio caminha para uma **plataforma de campanhas extensível**: ações primitivas no motor e conteúdo, sistemas de
 regras e narrações do usuário por cima, para autores técnicos e não técnicos. A direção e a ordem de trabalho estão em
-[`docs/rumo-extensibilidade.md`](docs/rumo-extensibilidade.md); o primeiro passo (visibilidade e revelações pelo motor,
-[`docs/desenho-visibilidade-revelacoes.md`](docs/desenho-visibilidade-revelacoes.md)) está implementado, o resto não.
+[`docs/rumo-extensibilidade.md`](docs/rumo-extensibilidade.md); os passos 1 (visibilidade e revelações pelo motor,
+[`docs/desenho-visibilidade-revelacoes.md`](docs/desenho-visibilidade-revelacoes.md)), 2 (sistemas e narrações do
+usuário, [`docs/desenho-sistemas-do-usuario.md`](docs/desenho-sistemas-do-usuario.md)) e 3 (copiloto do anfitrião,
+[`docs/desenho-copiloto.md`](docs/desenho-copiloto.md)) estão implementados, o resto não.
 
 ## Estrutura
 
@@ -63,6 +65,7 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 | `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
 | `POST /tables/{id}/commands` `{line, revision}` | Bearer | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem) |
 | `POST /tables/{id}/say` `{text, revision}` | Bearer | texto livre: o LLM do anfitrião propõe ações e o servidor aplica; `SayResult` = `CommandResult` + `say` (fala do mestre, só para quem enviou) e `commands`. `409 llm_disabled` sem LLM |
+| `POST /tables/{id}/copilot` `{text}` | Bearer (anfitrião) | pergunta ao copiloto do anfitrião (ver abaixo); resposta `{text}` só para ele. `403` para jogador, `409 llm_disabled` sem LLM, `409 copilot_busy`, `429 copilot_rate_limited` |
 | `GET /tables/{id}/events?since=N&since_talk=T&wait=S` | Bearer | `EventsView {revision, events, talk, talk_seq}`: eventos de posição `N` em diante (cada um com `prose` da gramática e sem `data`) e falas com `seq` > `T`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
 | `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
@@ -113,6 +116,18 @@ laço: a resposta volta assim que alguém grava um comando (ou vazia, com o mesm
 gravação acorda quem espera: comando recusado ou de consulta não acorda ninguém. Cada mesa aceita até 16 esperas
 simultâneas; acima disso a resposta é imediata (o cliente deve esperar um pouco antes de tentar de novo). Uma espera
 ocupa uma thread do servidor por até 30 s. 
+### Copiloto do anfitrião
+
+`POST /tables/{id}/copilot` `{"text": "..."}` (até 500 caracteres) é uma pergunta avulsa ao LLM, **só do anfitrião**.
+O copiloto recebe a **campanha inteira**, segredos, fatos ocultos, marcos pendentes com as condições, facções e
+`private_notes` inclusive (o anfitrião já vê tudo pela API), e **não altera nada**: responde, sugere o próximo marco,
+rascunha falas de NPC e avisa de spoiler. Quem aplica é o anfitrião, pelos comandos de sempre. A resposta volta só a
+quem perguntou: não entra no mural nem na narração, não vira evento e não é gravada; a pergunta também não. O envio
+do privado ao LLM vale **mesmo sem `--segredos-no-llm`** (o anfitrião configurou o LLM), e por isso `TableView.llm.notice`
+diz a todos que o copiloto existe. Vaga e intervalo próprios, independentes do `/say`: uma consulta por vez por mesa
+(`409 copilot_busy`) e 5 s entre consultas (`429`, `--intervalo-copiloto`; conta mesmo se o LLM falhar). Não há
+memória entre perguntas. Desenho em [`docs/desenho-copiloto.md`](docs/desenho-copiloto.md).
+
 ### Texto livre pelo LLM na mesa
 
 Com `DEVANEIO_LLM_*` no ambiente **do servidor** (nunca em requisição, resposta ou arquivo), `POST /tables/{id}/say`
