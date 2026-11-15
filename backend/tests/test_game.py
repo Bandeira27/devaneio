@@ -11,16 +11,20 @@ from devaneio.game import (
     GameError,
     GameOverError,
     TableMeta,
+    connect_llm,
     execute,
     format_output,
     is_command,
     load_game,
+    narrate_batch,
     new_game,
     save_game,
     status_banner,
 )
 from devaneio.game.commands import parse_line, split_actor
+from devaneio.llm import LlmConfig, LlmError
 from devaneio.rules import CheckOutcome
+from fakes import ScriptedClient
 
 
 @pytest.fixture
@@ -503,3 +507,73 @@ def test_help_mentions_the_new_commands(session):
     _, text = run(session, "ajuda")
     for fragment in ("curar <alvo>", "descansar", "+item"):
         assert fragment in text
+
+
+# --- personagem fora de combate -----------------------------------------------------
+
+
+def with_fallen_allowed(session):
+    combat = session.rules.combat.model_copy(update={"fallen_can_act": True})
+    return replace(session, rules=session.rules.model_copy(update={"combat": combat}))
+
+
+@pytest.fixture
+def downed(session):
+    session, _ = run(session, 'entrar aria "Aria"', 'entrar zed "Zed"', "ferir aria 99")
+    return session
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["aria: testar lutar normal", "aria: atacar punhos ferreiro", "aria: ir floresta"],
+)
+def test_a_fallen_character_cannot_act(downed, line):
+    before = downed.state
+    with pytest.raises(CommandError, match="Aria está fora de combate e não pode agir"):
+        execute(downed, line)
+    assert downed.state == before
+
+
+def test_the_others_still_act_and_the_group_still_moves(downed):
+    _, text = run(downed, "zed: testar lutar normal")
+    assert "Zed" in text
+    _, moved = run(downed, "zed: ir floresta")
+    assert "Floresta Cinzenta" in moved
+
+
+def test_healing_gets_a_fallen_character_back_on_her_feet(downed):
+    session, _ = run(downed, "curar aria 5")
+    _, text = run(session, "aria: testar lutar normal")
+    assert "Aria" in text
+
+
+def test_the_rules_may_let_the_fallen_act(downed):
+    _, text = run(with_fallen_allowed(downed), "aria: testar lutar normal")
+    assert "Aria" in text
+    _, moved = run(with_fallen_allowed(downed), "aria: ir floresta")
+    assert "Floresta Cinzenta" in moved
+
+
+def test_the_default_rules_say_the_fallen_cannot_act(session):
+    assert session.rules.combat.fallen_can_act is False
+
+
+# --- LLM: cliente e narração do lote ------------------------------------------------
+
+
+def test_narrate_batch_returns_the_paragraph_or_the_fallback_note(session):
+    state = session.state
+    ok = ScriptedClient("A trilha se abre.")
+    assert narrate_batch(ok, session.campaign, state, ["Fim do turno 0"]) == (
+        "A trilha se abre.",
+        "",
+    )
+    broken = ScriptedClient(LlmError("rede caiu"))
+    paragraph, note = narrate_batch(broken, session.campaign, state, ["Fim do turno 0"])
+    assert paragraph is None
+    assert note == "(narração por LLM indisponível: rede caiu; usei a gramática)"
+
+
+def test_connect_llm_builds_the_client_for_a_config():
+    client = connect_llm(LlmConfig(base_url="http://localhost:11434/v1", model="qwen3"))
+    assert client.description == "qwen3 em localhost:11434"

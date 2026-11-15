@@ -14,7 +14,7 @@ from devaneio.rules import DiceRoll, ExpressionError, RuleSystem, evaluate, pars
 from devaneio.schema import Campaign, Character, Event, GameState, NpcState
 
 from .errors import EngineError
-from .lookup import combatant
+from .lookup import combatant, npc_locations
 
 TargetKind = Literal["character", "npc"]
 
@@ -150,6 +150,11 @@ def _hit(
                 "hp_before": hp_before,
                 "hp_after": hp_after,
                 "incapacitated": incapacitated,
+                "npc_locations": npc_locations(
+                    state,
+                    (target_kind, target_id),
+                    (str(data.get("attacker_kind")), str(data.get("attacker_id"))),
+                ),
                 **data,
             },
         )

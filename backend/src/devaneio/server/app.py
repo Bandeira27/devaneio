@@ -7,36 +7,30 @@ descartável."""
 from __future__ import annotations
 
 import hmac
-import sys
-import time
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
+from typing import NamedTuple
 
 from pydantic import ValidationError
 
-from devaneio.engine import GameStatus, game_status
+from devaneio.engine import game_status
 from devaneio.game import (
     CommandError,
     GameError,
     GameOverError,
-    LlmUnavailableError,
+    LlmConfig,
     Player,
     Role,
     Session,
     TableMeta,
     load_game,
     new_game,
-    parse_line,
-    run_freeform,
     save_game,
-    split_actor,
 )
-from devaneio.llm import LlmConfig, LlmError, OpenAiCompatClient, narrate_with_llm
 from devaneio.schema import Campaign
 
-from . import policy
-from .auth import find_player, hash_secret, new_invite, new_token
+from .auth import hash_secret, new_invite, new_token
 from .catalog import Catalog
 from .errors import ApiFailure
 from .models import (
@@ -58,22 +52,30 @@ from .models import (
     TableView,
     summarize,
 )
+from .say import SayDesk
 from .storage import Storage
-from .turns import (
-    acting_character,
-    apply,
-    authorize_proposal,
-    close_turn_if_all_acted,
-    events_view,
-)
+from .turns import apply, authenticate, events_view
 
 MAX_PLAYERS = 8
+SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
+
+
+class Cursor(NamedTuple):
+    """Até onde o cliente já leu: a posição do primeiro evento que ainda não viu e o ``seq`` da
+    última fala que viu."""
+
+    events: int
+    talk: int
+
 
 LLM_NOTICE = (
-    "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes com seus "
-    "segredos, marcos ativos, eventos recentes) vão ao servidor de LLM configurado por quem "
-    "roda esta mesa: {description}. A fala e a narração que o LLM devolve voltam aos jogadores."
+    "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes{with_secrets}, "
+    "marcos ativos, eventos que os jogadores veem) vão ao servidor de LLM configurado por quem "
+    "roda esta mesa: {description}. {secrets_note}A fala e a narração que o LLM devolve voltam "
+    "aos jogadores."
 )
+NOTICE_WITH_SECRETS = (" com seus segredos", "")
+NOTICE_WITHOUT_SECRETS = ("", "Os segredos dos NPCs não vão. ")
 
 
 class TableService:
@@ -83,14 +85,22 @@ class TableService:
         storage: Storage,
         *,
         llm: LlmConfig | None = None,
+        say_cooldown: float = SAY_COOLDOWN,
+        llm_secrets: bool = False,
         token_source: Callable[[], str] = new_token,
         invite_source: Callable[[], str] = new_invite,
     ) -> None:
         self.catalog = catalog
         self.storage = storage
         self.llm = llm
+        self._llm_secrets = llm_secrets
         self._token_source = token_source
         self._invite_source = invite_source
+        self._say = (
+            SayDesk(storage, llm, self.load_session, say_cooldown, llm_secrets)
+            if llm is not None
+            else None
+        )
 
     # --- operações ---------------------------------------------------------------
 
@@ -126,7 +136,7 @@ class TableService:
         if path is None:
             raise ApiFailure(401, "invalid_invite", "convite inválido")
         with self.storage.lock(table_id):
-            session = self._load(path)
+            session = self.load_session(path)
             table = session.table
             if table is None or not hmac.compare_digest(
                 hash_secret(request.invite_code), table.invite_hash
@@ -151,57 +161,72 @@ class TableService:
         )
 
     def get_events(
-        self, table_id: str, token: str | None, since: int, wait: float = 0
+        self,
+        table_id: str,
+        token: str | None,
+        since: int,
+        *,
+        wait: float = 0,
+        since_talk: int = 0,
     ) -> EventsView:
-        """Eventos de posição ``since`` em diante, com a prosa da gramática. Com ``wait`` > 0 e
-        nada novo, espera até ``wait`` segundos por uma gravação da mesa (long-poll); acima de
-        ``MAX_WAITERS`` esperas na mesa, responde de imediato."""
+        """Eventos de posição ``since`` em diante e falas com ``seq`` > ``since_talk``. Com
+        ``wait`` > 0 e nada novo, espera até ``wait`` segundos por uma gravação da mesa
+        (long-poll); acima de ``MAX_WAITERS`` esperas na mesa, responde de imediato.
+
+        Com ``wait`` > 0 e sem ``since_talk``, o mural não conta como novidade: só falas
+        posteriores a esta chamada acordam a espera (senão um cliente que não devolve
+        ``talk_seq`` giraria sem esperar, relendo o arquivo a cada volta)."""
         # A versão vem ANTES da carga: uma gravação entre a carga e a espera deixaria a visão
         # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
         # existente: ``version`` cria entrada, e o id ainda não foi validado.)
         seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
-        session, _, _ = self._open(table_id, token)
-        view = EventsView(
-            revision=len(session.state.events),
-            events=events_view(session, since, self.storage.prose(table_id)),
-        )
-        if view.events or wait <= 0 or not self.storage.enter_wait(table_id):
+        cursor = Cursor(since, since_talk)
+        view = self._events_view(table_id, token, cursor)
+        if wait > 0 and since_talk == 0:
+            cursor = Cursor(since, view.talk_seq)
+            view = view.model_copy(update={"talk": []})
+        if view.events or view.talk or wait <= 0 or not self.storage.enter_wait(table_id):
             return view
         try:
-            return self._wait_for_events(
-                table_id, token, since=since, wait=wait, view=view, seen=seen
-            )
+            return self._wait_for_events(table_id, token, cursor, wait=wait, view=view, seen=seen)
         finally:
             self.storage.leave_wait(table_id)
+
+    def _events_view(self, table_id: str, token: str | None, cursor: Cursor) -> EventsView:
+        session, _, player = self._open(table_id, token)
+        presentation = self.storage.presentation(table_id)
+        talk, talk_seq = presentation.talk_since(cursor.talk)
+        return EventsView(
+            revision=len(session.state.events),
+            events=events_view(session, cursor.events, presentation.narrations(), role=player.role),
+            talk=talk,
+            talk_seq=talk_seq,
+        )
 
     def _wait_for_events(
         self,
         table_id: str,
         token: str | None,
+        cursor: Cursor,
         *,
-        since: int,
         wait: float,
         view: EventsView,
         seen: int,
     ) -> EventsView:
-        deadline = time.monotonic() + wait
+        deadline = self.storage.now() + wait
         changed = self.storage.condition(table_id)
-        while not view.events:
+        while not (view.events or view.talk):
             baseline = seen
 
             def moved(baseline: int = baseline) -> bool:
                 return self.storage.version(table_id) != baseline
 
             with changed:  # o lock da mesa: wait() o solta enquanto espera
-                remaining = deadline - time.monotonic()
+                remaining = deadline - self.storage.now()
                 if remaining <= 0 or not changed.wait_for(moved, remaining):
                     return view
                 seen = self.storage.version(table_id)
-            session, _, _ = self._open(table_id, token)
-            view = EventsView(
-                revision=len(session.state.events),
-                events=events_view(session, since, self.storage.prose(table_id)),
-            )
+            view = self._events_view(table_id, token, cursor)
         return view
 
     def run_command(
@@ -216,8 +241,8 @@ class TableService:
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
-            session = self._load(path)
-            table, player_id, player = self._authenticate(session, token)
+            session = self.load_session(path)
+            table, player_id, player = authenticate(session, token)
             try:
                 result, new_session, new_table = apply(session, table, player_id, player, request)
             except GameOverError as exc:
@@ -230,121 +255,15 @@ class TableService:
         return result
 
     def say(self, table_id: str, token: str | None, request: SayRequest) -> SayResult:
-        """Texto livre: o LLM do anfitrião PROPÕE ações, cada uma passa pela política do
-        jogador e pelo motor, e a proposta inteira gasta uma ação principal do personagem.
-
-        Três fases: (1) sob o lock, confere tudo e para se algo recusa; (2) SEM o lock, chama o
-        LLM (pode levar minutos e não pode travar os comandos da mesa); (3) sob o lock de novo,
-        grava só se a mesa continua como era, senão ``409`` e a tentativa se perde."""
-        if self.llm is None:
+        """Texto livre pelo LLM do anfitrião (ver ``say.SayDesk``)."""
+        if self._say is None:
             raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
         path = self.storage.path_for(table_id)
         if path is None:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
-        with self.storage.lock(table_id):  # fase 1
-            session = self._load(path)
-            table, _, player = self._authenticate(session, token)
-            who, text = self._speaker(session, player, request.text)
-            self._check_turn(session, table, who, request.revision)
-        if not self.storage.enter_say(table_id):
-            raise ApiFailure(409, "say_busy", "já há uma ação de texto livre em andamento")
-        try:
-            return self._say_with_llm(table_id, path, (session, table, player, who, text))
-        finally:
-            self.storage.leave_say(table_id)
-
-    def _say_with_llm(
-        self,
-        table_id: str,
-        path: Path,
-        sent: tuple[Session, TableMeta, Player, str, str],
-    ) -> SayResult:
-        session, table, player, who, text = sent
-        if self.llm is None:  # já checado em say(); aqui só estreita o tipo
-            raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
-        client = OpenAiCompatClient(self.llm)
-        revision = len(session.state.events)
-        try:  # fase 2, sem lock
-            freeform = run_freeform(
-                replace(session, llm=client),
-                text,
-                actor=who,
-                allow=lambda working, line: authorize_proposal(table, player, working, line),
-            )
-        except GameOverError as exc:
-            raise ApiFailure(409, "game_over", str(exc)) from None
-        except LlmUnavailableError as exc:
-            print(f"llm: {exc}", file=sys.stderr)  # o detalhe fica com quem roda o servidor
-            raise ApiFailure(
-                502, "llm_unavailable", "o servidor de LLM não respondeu direito"
-            ) from None
-        except CommandError as exc:
-            raise ApiFailure(422, "command_refused", str(exc)) from None
-
-        new_session, new_table, turn_ended = freeform.session, table, False
-        if any(policy.classify(parse_line(c)[1]) == "action" for c in freeform.commands):
-            new_table = table.model_copy(update={"acted": {**table.acted, who: session.state.turn}})
-            new_session, _, turn_ended = close_turn_if_all_acted(new_session, new_table, "")
-        fresh_events = new_session.state.events[revision:]
-        prose = self._llm_prose(client, new_session, revision) if fresh_events else {}
-
-        with self.storage.lock(table_id):  # fase 3
-            current = self._load(path)
-            if len(current.state.events) != revision or current.table != table:
-                raise ApiFailure(
-                    409, "stale_revision", "a mesa mudou enquanto o mestre pensava: tente de novo"
-                )
-            if fresh_events:
-                save_game(replace(new_session, table=new_table))
-                self.storage.store_prose(table_id, prose)
-                self.storage.announce_change(table_id)
-        return SayResult(
-            revision=len(new_session.state.events),
-            events=events_view(new_session, revision, self.storage.prose(table_id)),
-            text="\n".join(e.text for e in fresh_events),
-            status=game_status(new_session.state),
-            turn_ended=turn_ended,
-            say=freeform.say,
-            commands=list(freeform.commands),
-        )
-
-    @staticmethod
-    def _llm_prose(client: OpenAiCompatClient, session: Session, start: int) -> dict[int, str]:
-        """Um parágrafo do LLM para o lote de eventos novos, no índice do primeiro. Se o LLM
-        falhar, nada: ``EventView.narration`` fica ``None`` e vale a prosa da gramática."""
-        events = session.state.events[start:]
-        try:
-            paragraph = narrate_with_llm(
-                client, session.campaign, session.state, [e.text for e in events]
-            )
-        except LlmError as exc:
-            print(f"llm: narração indisponível: {exc}", file=sys.stderr)
-            return {}
-        return {start: paragraph}
-
-    @staticmethod
-    def _speaker(session: Session, player: Player, text: str) -> tuple[str, str]:
-        """Quem fala e o texto sem o prefixo ``id:``. Jogador comum fala pelo seu personagem
-        (prefixo alheio é 403); o anfitrião cita o personagem ou usa o seu, se for um só."""
-        named, rest = split_actor(text)
-        if named in session.state.characters and rest:
-            return acting_character(player, named), rest
-        return acting_character(player, None), text
-
-    @staticmethod
-    def _check_turn(session: Session, table: TableMeta, who: str, seen: int) -> None:
-        revision = len(session.state.events)
-        if seen != revision:
-            raise ApiFailure(
-                409, "stale_revision", f"a mesa está na revisão {revision}, não em {seen}: releia"
-            )
-        status = game_status(session.state)
-        if status is not GameStatus.ACTIVE:
-            raise ApiFailure(409, "game_over", f"a partida terminou ({status.value})")
-        if table.acted.get(who) == session.state.turn:
-            raise ApiFailure(409, "already_acted", f"'{who}' já agiu neste turno")
+        return self._say.run(table_id, path, token, request)
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
         session, table, player = self._open(table_id, token)
@@ -370,21 +289,11 @@ class TableService:
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
-            session = self._load(path)
-        table, _, player = self._authenticate(session, token)
+            session = self.load_session(path)
+        table, _, player = authenticate(session, token)
         return session, table, player
 
-    @staticmethod
-    def _authenticate(session: Session, token: str) -> tuple[TableMeta, str, Player]:
-        table = session.table
-        if table is None:
-            raise ApiFailure(404, "table_not_found", "mesa não encontrada")
-        found = find_player(table, token)
-        if found is None:
-            raise ApiFailure(401, "unauthorized", "token inválido")
-        return table, found[0], found[1]
-
-    def _load(self, path: Path) -> Session:
+    def load_session(self, path: Path) -> Session:
         try:
             return load_game(path, campaign_root=self.catalog.root)
         except (GameError, ValidationError, OSError) as exc:
@@ -393,10 +302,18 @@ class TableService:
     def _llm_view(self) -> LlmView:
         if self.llm is None:
             return LlmView(enabled=False)
+        with_secrets, secrets_note = (
+            NOTICE_WITH_SECRETS if self._llm_secrets else NOTICE_WITHOUT_SECRETS
+        )
         return LlmView(
             enabled=True,
             description=self.llm.description,
-            notice=LLM_NOTICE.format(description=self.llm.description),
+            notice=LLM_NOTICE.format(
+                description=self.llm.description,
+                with_secrets=with_secrets,
+                secrets_note=secrets_note,
+            ),
+            secrets=self._llm_secrets,
         )
 
     def _view(self, table_id: str, session: Session, table: TableMeta, role: Role) -> TableView:

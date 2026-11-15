@@ -431,7 +431,7 @@
     },
     "EventView": {
       "additionalProperties": false,
-      "description": "Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática\ndo próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto\nlivre, só no primeiro evento do lote (os outros ficam ``None``) e só enquanto o servidor\nnão reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para todos.",
+      "description": "Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática\ndo próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto\nlivre, só no primeiro evento visível do lote (nos outros é ``None``) e só enquanto o\nservidor não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para\ntodos os jogadores.",
       "properties": {
         "index": {
           "type": "integer"
@@ -482,11 +482,23 @@
             "$ref": "#/$defs/EventView"
           },
           "type": "array"
+        },
+        "talk": {
+          "items": {
+            "$ref": "#/$defs/TalkView"
+          },
+          "type": "array"
+        },
+        "talk_seq": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "required": [
         "revision",
-        "events"
+        "events",
+        "talk",
+        "talk_seq"
       ],
       "title": "EventsView",
       "type": "object"
@@ -688,12 +700,17 @@
             }
           ],
           "default": null
+        },
+        "secrets": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "required": [
         "enabled",
         "description",
-        "notice"
+        "notice",
+        "secrets"
       ],
       "title": "LlmView",
       "type": "object"
@@ -1203,6 +1220,33 @@
         "state"
       ],
       "title": "TableView",
+      "type": "object"
+    },
+    "TalkView": {
+      "additionalProperties": false,
+      "description": "Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.\n``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o\npersonagem que a provocou. Não é evento: o LLM nunca escreve no estado.",
+      "properties": {
+        "seq": {
+          "type": "integer"
+        },
+        "after": {
+          "type": "integer"
+        },
+        "to": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "after",
+        "to",
+        "text"
+      ],
+      "title": "TalkView",
       "type": "object"
     },
     "TurnAtLeast": {

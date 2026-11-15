@@ -147,7 +147,8 @@
   },
   "combat": {
     "attack_difficulty": "normal",
-    "default_weapon": "punhos"
+    "default_weapon": "punhos",
+    "fallen_can_act": false
   },
   "dispositions": {
     "hostile_below": -2

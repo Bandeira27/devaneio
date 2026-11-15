@@ -24,6 +24,7 @@ from devaneio.engine import (
     game_status,
     heal,
     move,
+    npc_ids_at,
     pass_turn,
     resolve_check,
     rest,
@@ -173,7 +174,7 @@ def _look(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameS
             else ""
         )
         for npc_id, npc in state.npcs.items()
-        if npc.location_id == here.id
+        if npc_id in npc_ids_at(state, here.id)
     ]
     lines.append("Aqui: " + (", ".join(present) if present else "ninguém"))
     titles = {b.id: b.title for b in campaign.beats}
@@ -216,9 +217,18 @@ def _join(session: Session, _actor: str | None, args: list[str]) -> tuple[GameSt
     return result.state, result.text
 
 
-def _go(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
+def _ensure_can_act(session: Session, character: Character) -> None:
+    """Personagem fora de combate (hp 0) não age, a menos que o sistema de regras diga que
+    pode (``combat.fallen_can_act``). Morte continua sendo decisão narrativa."""
+    if character.hp <= 0 and not session.rules.combat.fallen_can_act:
+        raise CommandError(f"{character.name} está fora de combate e não pode agir")
+
+
+def _go(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
     if len(args) != 1:
         raise CommandError("uso: ir <local>")
+    if actor is not None:  # o grupo anda junto: só quem é nomeado precisa poder agir
+        _ensure_can_act(session, resolve_actor(session, actor))
     result = move(session.state, session.campaign, to_location_id=args[0])
     return result.state, result.text
 
@@ -227,6 +237,7 @@ def _check(session: Session, actor: str | None, args: list[str]) -> tuple[GameSt
     if len(args) not in (2, 3):
         raise CommandError("uso: testar <habilidade> <dificuldade> [modificador]")
     character = resolve_actor(session, actor)
+    _ensure_can_act(session, character)
     result = resolve_check(
         session.state,
         session.rules,
@@ -243,6 +254,7 @@ def _attack(session: Session, actor: str | None, args: list[str]) -> tuple[GameS
         raise CommandError("uso: atacar <arma> <alvo> [modificador]")
     weapon_id, target_id = args[0], args[1]
     character = resolve_actor(session, actor)
+    _ensure_can_act(session, character)
     weapon = next((w for w in session.rules.weapons if w.id == weapon_id), None)
     if weapon is None:
         raise CommandError(f"arma '{weapon_id}' não existe no sistema de regras")

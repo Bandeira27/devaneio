@@ -42,8 +42,17 @@ Formato da resposta (exemplo; use os ids do catálogo da partida):
 
 
 def build_context(
-    campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str
+    campaign: Campaign,
+    rules: RuleSystem,
+    state: GameState,
+    actor_id: str,
+    *,
+    hide_events: frozenset[int] = frozenset(),
+    include_secrets: bool = True,
 ) -> dict[str, Any]:
+    """``hide_events``: índices de eventos que não vão ao prompt (quem orquestra sabe quais os
+    jogadores não podem ver, e a fala do modelo pode chegar a todos). ``include_secrets``:
+    sem ele os segredos dos NPCs não vão ao modelo, que então não tem como repeti-los."""
     here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
     names = {loc.id: loc.name for loc in campaign.locations}
     static = {n.id: n for n in campaign.npcs}
@@ -54,17 +63,17 @@ def build_context(
         if npc.location_id != here.id or npc_id not in static:
             continue
         info = static[npc_id]
-        npcs_here.append(
-            {
-                "id": npc_id,
-                "nome": info.name,
-                "descricao": info.description,
-                "segredos": info.secrets,
-                "hp": f"{npc.hp}/{npc.max_hp}",
-                "de_pe": npc.alive and npc.hp > 0,
-                "hostil": npc.disposition < rules.dispositions.hostile_below,
-            }
-        )
+        npc_info: dict[str, Any] = {
+            "id": npc_id,
+            "nome": info.name,
+            "descricao": info.description,
+            "hp": f"{npc.hp}/{npc.max_hp}",
+            "de_pe": npc.alive and npc.hp > 0,
+            "hostil": npc.disposition < rules.dispositions.hostile_below,
+        }
+        if include_secrets:
+            npc_info["segredos"] = info.secrets
+        npcs_here.append(npc_info)
 
     weapon_ids = {w.id for w in rules.weapons}
     weapons = [i for i in actor.inventory if i in weapon_ids]
@@ -100,7 +109,9 @@ def build_context(
             for b in campaign.beats
             if state.beats.get(b.id) is not None and state.beats[b.id].value == "active"
         ],
-        "eventos_recentes": [e.text for e in state.events[-5:]],
+        "eventos_recentes": [e.text for i, e in enumerate(state.events) if i not in hide_events][
+            -5:
+        ],
         "catalogo": {
             "habilidades": [{"id": s.id, "nome": s.name} for s in rules.skills],
             "dificuldades": [
@@ -117,9 +128,26 @@ def build_context(
 
 
 def build_messages(
-    campaign: Campaign, rules: RuleSystem, state: GameState, actor_id: str, player_text: str
+    campaign: Campaign,
+    rules: RuleSystem,
+    state: GameState,
+    actor_id: str,
+    player_text: str,
+    *,
+    hide_events: frozenset[int] = frozenset(),
+    include_secrets: bool = True,
 ) -> list[dict[str, str]]:
-    context = json.dumps(build_context(campaign, rules, state, actor_id), ensure_ascii=False)
+    context = json.dumps(
+        build_context(
+            campaign,
+            rules,
+            state,
+            actor_id,
+            hide_events=hide_events,
+            include_secrets=include_secrets,
+        ),
+        ensure_ascii=False,
+    )
     name = state.characters[actor_id].name
     return [
         {"role": "system", "content": PROPOSER_SYSTEM},

@@ -14,7 +14,10 @@ from pydantic import ValidationError
 from devaneio.game import (
     CommandError,
     GameError,
+    LlmConfig,
+    LlmError,
     Session,
+    connect_llm,
     execute,
     format_output,
     is_command,
@@ -24,7 +27,6 @@ from devaneio.game import (
     save_game,
     status_banner,
 )
-from devaneio.llm import LlmConfig, LlmError, OpenAiCompatClient
 from devaneio.schema import CampaignIntegrityError
 
 QUIT = ("sair", "quit", "exit")
@@ -57,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.sem_llm:
             config = LlmConfig.from_env(os.environ)
             if config is not None:
-                session = replace(session, llm=OpenAiCompatClient(config))
+                session = replace(session, llm=connect_llm(config))
         return _play(session)
     except FileNotFoundError as exc:
         print(f"erro: arquivo não encontrado: {exc.filename}", file=sys.stderr)

@@ -10,7 +10,8 @@ rules                          sistema de regras e expressões (dados interpreta
 schema | rng                   modelos Pydantic e gerador reprodutível
 ```
 
-Dependências só apontam para baixo. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
+Dependências só apontam para baixo. `game` reexporta o que `cli` e `server` precisam de `llm` (`LlmConfig`,
+`LlmError`, `ChatClient`): os dois só falam com `game`. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
 e passa por `execute()` (`game/commands.py`), reaproveitando as validações. `export_schema.py` é ferramenta de
 build, no topo: importa `server.models` para exportar o contrato da API, e `server/__init__.py` não reexporta o
 adaptador HTTP (`server/http.py`), para a ferramenta de build não carregar `http.server`.
@@ -25,11 +26,11 @@ pare e pergunte, não ajuste o contrato.
 | composição de ações para um comando (`atacar` = check + dano) | `game/commands.py` |
 | modelo persistido fora do contrato (`SaveFile`, `TableMeta`) | `game/` |
 | leitura e impressão no terminal | `cli/` |
-| rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; tokens, limites), modelo de requisição/resposta | `server/` |
+| rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; texto livre pelo LLM: `server/say.py`; narração e mural do LLM, só em memória e fora do estado e do arquivo: `server/presentation.py`; tokens, limites), modelo de requisição/resposta | `server/` |
 | campo ou modelo de dados | `schema/` ou `rules/schema.py`, depois regenerar o contrato |
 | fórmula, dificuldade, arma, habilidade | arquivo de regras (`rules/data/default.json`), não código |
 | texto de narração | pacote pt-br (`narration/data/pt-br.json`), regra `tipo.variante` |
-| qualquer coisa que fale com o LLM | `llm/` (propõe e valida a saída; nunca altera estado) |
+| qualquer coisa que fale com o LLM | `llm/` (propõe e valida a saída; nunca altera estado); quem o liga ao jogo (`connect_llm`, `narrate_batch`, `run_freeform`) é `game/` |
 
 ## Preservar o que existe
 

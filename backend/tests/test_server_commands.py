@@ -155,7 +155,8 @@ def test_the_host_names_the_actor_unless_they_own_exactly_one_character(desk):
 
 
 @pytest.mark.parametrize(
-    "line", ["fim", "descansar", "ferir bia 3", "curar bia 3", "marco ativar x", "marcos"]
+    "line",
+    ["fim", "descansar", "ferir bia 3", "curar bia 3", "marco ativar x", "marcos", "log"],
 )
 def test_host_commands_are_refused_to_players(desk, line):
     bia = desk.player("Bia")
@@ -211,6 +212,20 @@ def test_entering_has_size_limits(desk, line):
     assert (error.status, error.code) == (422, "command_refused")
     assert "entrar aceita até" in error.message
     assert desk.raw() == before
+
+
+def test_a_fallen_character_cannot_act_until_healed(desk):
+    desk.cmd(desk.host, 'entrar ana "Ana"')
+    bia = desk.player("Bia")
+    desk.cmd(desk.host, "ferir bia 99")
+    before = desk.raw()
+    error = desk.refused(bia, "testar lutar normal")
+    assert (error.status, error.code) == (422, "command_refused")
+    assert "Bia está fora de combate e não pode agir" in error.message
+    assert desk.raw() == before
+    assert desk.view(bia).acted == {}  # recusa não gasta a ação
+    desk.cmd(desk.host, "curar bia 5")
+    assert desk.cmd(bia, "testar lutar normal").events[0].kind == "check"
 
 
 # --- revisão, turno, fim da partida -------------------------------------------------
@@ -390,7 +405,7 @@ def test_ficha_without_a_character_does_not_pick_one_for_the_player(desk):
 def test_reading_never_writes_the_file(desk):
     bia = desk.player("Bia")
     before = desk.raw()
-    for line in ("olhar", "ficha", "log", "ajuda"):
+    for line in ("olhar", "ficha", "ajuda"):
         desk.cmd(bia, line)
     assert desk.raw() == before
 

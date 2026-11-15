@@ -84,10 +84,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_events(self, match: re.Match[str]) -> tuple[int, Payload]:
         since = self._query_int("since", default=0)
+        since_talk = self._query_int("since_talk", default=0, max_digits=16)
         wait = self._query_int("wait", default=0)
         if wait > MAX_WAIT:
             raise ApiFailure(400, "bad_request", f"'wait' vai de 0 a {MAX_WAIT} segundos")
-        return 200, self.server.service.get_events(match.group(1), self._token(), since, wait)
+        return 200, self.server.service.get_events(
+            match.group(1), self._token(), since, wait=wait, since_talk=since_talk
+        )
 
     ROUTES: tuple[Route, ...] = (
         ("GET", re.compile(r"^/campaigns$"), _campaigns),
@@ -148,12 +151,12 @@ class Handler(BaseHTTPRequestHandler):
 
     # --- leitura -----------------------------------------------------------------
 
-    def _query_int(self, name: str, *, default: int) -> int:
+    def _query_int(self, name: str, *, default: int, max_digits: int = 9) -> int:
         values = parse_qs(urlsplit(self.path).query).get(name)
         if not values:
             return default
         raw = values[0]
-        if len(values) > 1 or not (raw.isascii() and raw.isdigit()) or len(raw) > 9:
+        if len(values) > 1 or not (raw.isascii() and raw.isdigit()) or len(raw) > max_digits:
             raise ApiFailure(400, "bad_request", f"'{name}' precisa ser um inteiro não negativo")
         return int(raw)
 

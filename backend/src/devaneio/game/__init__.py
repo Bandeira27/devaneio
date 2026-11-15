@@ -3,6 +3,8 @@
 Nada aqui é terminal nem HTTP: ``cli`` e um servidor são clientes deste pacote.
 """
 
+from devaneio.llm import ChatClient, LlmConfig, LlmError
+
 from .commands import (
     COMMANDS,
     READ_ONLY,
@@ -14,26 +16,31 @@ from .commands import (
     split_actor,
 )
 from .freeform import FreeformResult, LlmUnavailableError, run_freeform
-from .output import format_output, status_banner
-from .session import GameError, Session, load_game, new_game, save_game
+from .output import format_output, narrate_batch, status_banner
+from .session import GameError, Session, connect_llm, load_game, new_game, save_game
 from .table import Player, Role, TableMeta
 
 __all__ = [
     "COMMANDS",
     "READ_ONLY",
+    "ChatClient",
     "CommandError",
     "FreeformResult",
     "GameError",
     "GameOverError",
+    "LlmConfig",
+    "LlmError",
     "LlmUnavailableError",
     "Player",
     "Role",
     "Session",
     "TableMeta",
+    "connect_llm",
     "execute",
     "format_output",
     "is_command",
     "load_game",
+    "narrate_batch",
     "new_game",
     "parse_line",
     "run_freeform",

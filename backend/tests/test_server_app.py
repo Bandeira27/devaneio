@@ -295,9 +295,45 @@ def test_llm_view_tells_players_where_the_context_goes(tmp_path):
     llm = created.table.llm
     assert llm.enabled is True
     assert llm.description == "qwen3 em localhost:11434"
-    assert "segredos" in llm.notice
     assert "qwen3 em localhost:11434" in llm.notice
+    assert "voltam aos jogadores" in llm.notice
     assert "chave" not in created.model_dump_json()
+
+
+def test_by_default_the_notice_says_npc_secrets_do_not_go_to_the_llm(tmp_path):
+    config = LlmConfig(base_url="http://localhost:11434/v1", model="qwen3")
+    llm = (
+        make_service(tmp_path, llm=config)
+        .create_table(CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana"))
+        .table.llm
+    )
+    assert llm.secrets is False
+    assert "Os segredos dos NPCs não vão." in llm.notice
+    assert "com seus segredos" not in llm.notice
+
+
+def test_when_the_host_opts_in_the_notice_says_the_secrets_go_and_the_speech_reaches_all(tmp_path):
+    config = LlmConfig(base_url="http://localhost:11434/v1", model="qwen3")
+    llm = (
+        make_service(tmp_path, llm=config, llm_secrets=True)
+        .create_table(CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana"))
+        .table.llm
+    )
+    assert llm.secrets is True
+    assert "NPCs presentes com seus segredos" in llm.notice
+    assert "Os segredos dos NPCs não vão." not in llm.notice
+
+
+def test_without_an_llm_the_table_says_secrets_are_not_shared(tmp_path):
+    created = make_service(tmp_path).create_table(
+        CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana")
+    )
+    assert created.table.llm.model_dump() == {
+        "enabled": False,
+        "description": None,
+        "notice": None,
+        "secrets": False,
+    }
 
 
 def test_llm_view_never_shows_user_and_password_from_the_url(tmp_path):

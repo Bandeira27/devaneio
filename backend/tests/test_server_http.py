@@ -620,3 +620,67 @@ def test_main_warns_on_stderr_when_listening_outside_loopback(tmp_path, monkeypa
     assert "aviso: escutando em 192.0.2.10: HTTP em claro, inclusive tokens." in err
     assert "Devaneio: mesa em http://192.0.2.10:4242" in out
     assert [s.closed for s in servers] == [True]
+
+
+@pytest.mark.parametrize("value", ["nan", "-1", "inf", "x", "-inf"])
+def test_the_say_interval_flag_must_be_a_finite_non_negative_number(tmp_path, capsys, value):
+    with pytest.raises(SystemExit) as info:
+        main(
+            [
+                "--campanhas",
+                str(CAMPAIGN_PATH.parent),
+                "--dados",
+                str(tmp_path / "d"),
+                "--intervalo-say",
+                value,
+            ]
+        )
+    assert info.value.code == 2
+    assert "--intervalo-say" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("0", 0.0), ("2.5", 2.5), ("30", 30.0)])
+def test_the_say_interval_flag_reaches_the_service(tmp_path, monkeypatch, raw, expected):
+    seen = []
+
+    def spy(*_args, **kwargs):
+        seen.append(kwargs["say_cooldown"])
+        assert kwargs["llm_secrets"] is False  # sem a flag, os segredos não vão ao LLM
+
+    monkeypatch.setattr("devaneio.server.__main__.TableService", spy)
+    monkeypatch.setattr(
+        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+    )
+    assert main(main_args(tmp_path, "--porta", "0", "--intervalo-say", raw)) == 0
+    assert seen == [expected]
+
+
+def test_the_secrets_flag_reaches_the_service(tmp_path, monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        "devaneio.server.__main__.TableService", lambda *_a, **kw: seen.append(kw["llm_secrets"])
+    )
+    monkeypatch.setattr(
+        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+    )
+    assert main(main_args(tmp_path, "--porta", "0", "--segredos-no-llm")) == 0
+    assert seen == [True]
+
+
+def test_the_talk_log_over_http(client):
+    table_id, _, host, bia, _ = play_setup(client)
+    status, view, _ = client.call("GET", f"/tables/{table_id}/events", auth=bia)
+    assert status == 200
+    assert view["talk"] == []
+    assert isinstance(view["talk_seq"], int)
+    far = view["talk_seq"] + 10**6  # 13 dígitos: o número de fala vem do relógio
+    status, again, _ = client.call("GET", f"/tables/{table_id}/events?since_talk={far}", auth=host)
+    assert status == 200
+    assert again["talk"] == []
+
+
+@pytest.mark.parametrize("value", ["-1", "x", "1.5", "9" * 17, "1&since_talk=2"])
+def test_since_talk_must_be_a_non_negative_integer(client, value):
+    table_id, _, _, bia, _ = play_setup(client)
+    status, body, _ = client.call("GET", f"/tables/{table_id}/events?since_talk={value}", auth=bia)
+    assert (status, body["error"]["code"]) == (400, "bad_request")

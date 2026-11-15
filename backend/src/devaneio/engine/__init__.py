@@ -15,6 +15,7 @@ from .director import (
 )
 from .errors import EngineError
 from .heal import HealResult, RestResult, heal, rest
+from .lookup import npc_ids_at, npc_locations
 from .movement import MoveResult, move
 from .setup import initial_state
 from .status import GameStatus, game_status
@@ -49,6 +50,8 @@ __all__ = [
     "initial_state",
     "move",
     "npc_check",
+    "npc_ids_at",
+    "npc_locations",
     "pass_turn",
     "resolve_check",
     "rest",

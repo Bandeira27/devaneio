@@ -2,20 +2,23 @@
 
 O id da mesa é gerado aqui e validado de novo quando vem da URL: só o formato que o
 próprio servidor produz vira caminho, e sempre dentro da pasta de dados. O arquivo é a fonte
-única da verdade; em memória ficam só a coordenação (lock, versão, vagas) e os parágrafos de
-narração do LLM, que são exibição e somem ao reiniciar."""
+única da verdade; em memória ficam só a coordenação (lock, versão, vagas, intervalo do texto
+livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao reiniciar."""
 
 from __future__ import annotations
 
 import re
 import secrets
 import threading
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .presentation import Presentation
+
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
-MAX_NARRATIONS = 200  # parágrafos de narração guardados por mesa; os mais antigos saem primeiro
 
 
 @dataclass
@@ -24,7 +27,8 @@ class _Table:
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
     saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
-    prose: dict[int, str] = field(default_factory=dict)  # prosa do LLM por índice de evento
+    last_say: dict[str, float] = field(default_factory=dict)  # por jogador, no relógio da mesa
+    presentation: Presentation = field(default_factory=lambda: Presentation(0))
     changed: threading.Condition = field(init=False)
 
     def __post_init__(self) -> None:
@@ -32,7 +36,16 @@ class _Table:
 
 
 class Storage:
-    def __init__(self, data_dir: Path, *, max_tables: int) -> None:
+    def __init__(
+        self,
+        data_dir: Path,
+        *,
+        max_tables: int,
+        clock: Callable[[], float] = time.monotonic,
+        wall_clock: Callable[[], float] = time.time,
+    ) -> None:
+        self._clock = clock  # injetável: os testes do intervalo do texto livre não esperam
+        self._wall_clock = wall_clock  # semente dos números do mural de falas
         self.data_dir = Path(data_dir).resolve()
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.max_tables = max_tables
@@ -63,7 +76,11 @@ class Storage:
         """Uma entrada por mesa existente; o dicionário não cresce com ids inventados porque
         quem chama já validou o id com ``path_for``."""
         with self._registry:
-            return self._tables.setdefault(table_id, _Table())
+            if table_id not in self._tables:
+                self._tables[table_id] = _Table(
+                    presentation=Presentation(int(self._wall_clock() * 1000))
+                )
+            return self._tables[table_id]
 
     def lock(self, table_id: str) -> threading.Lock:
         return self._table(table_id).lock
@@ -96,19 +113,34 @@ class Storage:
         with self._registry:
             table.saying = False
 
-    def prose(self, table_id: str) -> dict[int, str]:
-        """Prosa do LLM guardada por índice de evento (só em memória: nunca vai ao arquivo, e
-        depois de reiniciar o servidor os eventos antigos voltam com a gramática)."""
-        table = self._table(table_id)
-        with self._registry:
-            return dict(table.prose)
+    def presentation(self, table_id: str) -> Presentation:
+        """Narração e mural da mesa (em memória). Só para mesa existente: o id já foi validado."""
+        return self._table(table_id).presentation
 
-    def store_prose(self, table_id: str, prose: dict[int, str]) -> None:
+    def now(self) -> float:
+        """O relógio monotônico da mesa: prazos de espera e intervalos usam este."""
+        return self._clock()
+
+    def say_cooldown_left(self, table_id: str, player_id: str, cooldown: float) -> float:
+        """Segundos até o jogador poder pedir outro texto livre (0 se já pode). Cada pedido
+        custa chamadas ao LLM de quem roda o servidor: o intervalo vale por jogador."""
         table = self._table(table_id)
         with self._registry:
-            table.prose.update(prose)
-            while len(table.prose) > MAX_NARRATIONS:
-                del table.prose[next(iter(table.prose))]  # o dict guarda a ordem de inserção
+            last = table.last_say.get(player_id)
+            if last is None:
+                return 0.0
+            return max(0.0, cooldown - (self._clock() - last))
+
+    def mark_say(self, table_id: str, player_id: str) -> None:
+        table = self._table(table_id)
+        with self._registry:
+            table.last_say[player_id] = self._clock()
+
+    def waiting(self, table_id: str) -> int:
+        """Quantas esperas de long-poll há agora na mesa."""
+        table = self._table(table_id)
+        with self._registry:
+            return table.waiters
 
     def enter_wait(self, table_id: str) -> bool:
         """Reserva uma vaga de espera; ``False`` se a mesa já tem ``MAX_WAITERS``."""

@@ -97,6 +97,10 @@ export interface Combat {
    * arma de quem não declara nenhuma (NPCs); None exige weapon_id
    */
   default_weapon?: string | null;
+  /**
+   * personagem com hp 0 (fora de combate) ainda pode agir; por padrão não
+   */
+  fallen_can_act?: boolean;
 }
 export interface Dispositions {
   /**

@@ -28,7 +28,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
 11. **Privacidade**: com LLM ligado, o contexto da partida (inclusive segredos de NPCs presentes) vai ao servidor
     configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e o README.
     Na mesa em grupo, o LLM é o do processo do servidor (ambiente de quem o roda) e `TableView.llm.notice` diz a
-    todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo.
+    todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo. Na
+    mesa os segredos dos NPCs **não** vão ao LLM por padrão (a fala dele chega a todos); `--segredos-no-llm` os envia e
+    o aviso (`LlmView.secrets`) muda. No CLI solo continuam indo.
 
 ## Servidor da mesa (`server/`)
 
@@ -62,9 +64,19 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     LLM para um jogador (etapa 4) passa pela mesma política antes de `execute`. `atacar` de jogador comum contra NPC
     de outro local responde como alvo inexistente (senão o ataque revela nome e hp e fere quem o `olhar` não mostra).
     `entrar` limita argumentos (30) e o tamanho de cada um (40).
-    **Limite conhecido, decisão pendente do dono**: o log (`GET .../events`, `log`) é público para todos os
-    jogadores, e o `text` de um evento do anfitrião sobre NPC escondido (`ferir sacerdote`) cita nome e hp dele.
-    Mensagens do motor em 422 também confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
+    **Log filtrado**: o jogador comum não vê eventos sobre NPC que o grupo não via quando eles aconteceram (o `text`
+    cita nome e hp: `ferir sacerdote` do anfitrião). `server/turns.hidden_events` reproduz os `move` para saber onde o
+    grupo estava em cada evento, então o que é escondido continua escondido depois que o grupo chega ao NPC e `since`
+    nunca perde evento visível; `EventView.index` mantém o índice original (a lista tem buracos) e `revision` conta todos
+    os eventos. O comando `log` é do anfitrião; o jogador lê `GET .../events`. A narração compartilhada do LLM e o prompt
+    de proposta (`hide_events`) só recebem eventos que os jogadores veem, porque a fala do modelo vai a todos. Campo novo
+    em `Event.data` que cite NPC precisa entrar em `PARTICIPANT_KEYS` (um teste percorre eventos reais do motor e falha
+    se um id de NPC aparecer sob outra chave). O motor grava em `data["npc_locations"]` onde estava cada NPC do evento,
+    então o filtro não depende de o NPC continuar lá (evento antigo sem o campo usa o local atual); `npc_ids_at` é o
+    critério único do `olhar` e das visões. Um
+    marco que conclui por `npc_down` de NPC escondido revelaria a queda dele pelo título: autor de campanha não deve
+    ativar esse marco com o grupo longe. O filtro custa cerca de 2 ms para 1.500 eventos.
+    Mensagens do motor em 422 ainda confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
     jogador agindo por ele (`bia: testar ...`). Descrições de marco aparecem na prosa quando o marco começa:
     autor de campanha não deve pôr spoiler nelas.
 18. **Long-poll**: `wait` é inteiro de 0 a 30 (`400` fora disso); a espera usa uma `Condition` sobre o lock da mesa
@@ -81,13 +93,16 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     pelo servidor (`run_freeform(actor=)`), nunca pelo prefixo do texto. A chamada ao LLM roda fora do lock da mesa,
     com uma chamada por vez por mesa, e a gravação confere que revisão e mesa não mudaram. A prosa do LLM é só
     exibição: fica em memória, nunca no arquivo. Falha do servidor de LLM vira 502 genérico (o detalhe vai ao
-    stderr do operador, não ao jogador). Risco aceito: o LLM recebe os segredos dos NPCs presentes (o aviso diz) e a
-    `fala` que ele devolve pode, em tese, repeti-los a quem enviou o texto.
+    stderr do operador, não ao jogador). Com `--segredos-no-llm` o LLM recebe os segredos dos NPCs presentes (o aviso diz) e
+    a `fala` que ele devolve pode repeti-los a todos: risco que o anfitrião aceita ao ligar a flag.
     A fala e a prosa do LLM (`Proposal.say`, `clean_narration`) passam por `llm/text.clean_text` (sem controle,
     formatação, bidi nem invisíveis; qualquer espaço vira um espaço): chegam à tela de outros jogadores.
-    Riscos aceitos: um jogador gasta chamadas do LLM do anfitrião com propostas vazias (só há um `say` por vez por
-    mesa, sem limite de taxa) e pode segurar esse único slot por até ~3 min (timeout × 2 tentativas + narração);
-    uma tentativa perdida por `409 stale_revision` também custa chamadas ao LLM.
+    O custo do LLM do anfitrião é limitado por um intervalo mínimo por jogador entre textos livres (`429`, 5 s por
+    padrão, `--intervalo-say`; conta mesmo com proposta vazia ou falha do LLM, e não conta recusa da mesa antes do
+    LLM) e por um `say` por vez por mesa. A narração fica em memória no primeiro evento visível do lote; a fala vai ao mural
+    em memória (`EventsView.talk`, 50 por mesa) para todos, com ou sem evento novo, e acorda o long-poll. Riscos aceitos: um jogador pode segurar o único
+    slot de `say` por até ~3 min (timeout × 2 tentativas + narração), e uma tentativa perdida por `409 stale_revision`
+    também custa chamadas ao LLM.
 20. **Limites conhecidos e aceitos (mesa entre amigos, LAN)**: um token errado custa uma carga da partida (os
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no

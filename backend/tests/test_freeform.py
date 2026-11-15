@@ -281,3 +281,24 @@ def test_an_llm_outage_is_its_own_error_and_still_a_command_error(base):
     with pytest.raises(LlmUnavailableError, match="o LLM falhou: rede caiu") as info:
         run_freeform(session, "vou")
     assert isinstance(info.value, CommandError)
+
+
+def test_hidden_events_are_not_sent_to_the_model(base):
+    session, _ = execute(base, 'ferir sacerdote 2 "armadilha"')
+    session, client = with_llm(session, reply(say="ok"))
+    last = len(session.state.events) - 1
+    run_freeform(session, "olho em volta", hide_events=frozenset({last}))
+    assert "Irmão Vael" not in client.calls[0]["messages"][1]["content"]
+    session, client = with_llm(session, reply(say="ok"))
+    run_freeform(session, "olho em volta")
+    assert "Irmão Vael" in client.calls[0]["messages"][1]["content"]  # sem ocultar, vai
+
+
+def test_secrets_are_sent_unless_the_caller_leaves_them_out(base):
+    session, _ = execute(base, "ir floresta")
+    session, _ = execute(session, "ir ruinas")
+    session, client = with_llm(session, reply(say="ok"), reply(say="ok"))
+    run_freeform(session, "olho em volta")
+    assert "líder do culto" in client.calls[0]["messages"][1]["content"]
+    run_freeform(session, "olho em volta", include_secrets=False)
+    assert "líder do culto" not in client.calls[1]["messages"][1]["content"]

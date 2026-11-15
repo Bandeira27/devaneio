@@ -12,7 +12,7 @@ from typing import Annotated, Literal
 
 from pydantic import BeforeValidator, Field
 
-from devaneio.engine import GameStatus
+from devaneio.engine import GameStatus, npc_ids_at
 from devaneio.game import Role
 from devaneio.rules import RuleSystem
 from devaneio.schema import (
@@ -135,7 +135,7 @@ class CampaignView(StrictModel):
     def of(cls, campaign: Campaign, state: GameState) -> CampaignView:
         names = {loc.id: loc.name for loc in campaign.locations}
         here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
-        present = {k for k, v in state.npcs.items() if v.location_id == here.id}
+        present = npc_ids_at(state, here.id)
         return cls(
             id=campaign.id,
             title=campaign.title,
@@ -169,6 +169,7 @@ class LlmView(StrictModel):
     enabled: bool
     description: str | None = None
     notice: str | None = None
+    secrets: bool = False  # os segredos dos NPCs vão ao LLM (e a fala dele chega a todos)
 
 
 class NpcView(StrictModel):
@@ -215,7 +216,7 @@ class PlayerStateView(StrictModel):
                     hostile=v.disposition < hostile_below,
                 )
                 for k, v in state.npcs.items()
-                if v.location_id == here
+                if k in npc_ids_at(state, here)
             },
             beats={k: v for k, v in state.beats.items() if v is not BeatStatus.PENDING},
         )
@@ -244,8 +245,9 @@ class TableCreated(StrictModel):
 class EventView(StrictModel):
     """Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
     do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
-    livre, só no primeiro evento do lote (os outros ficam ``None``) e só enquanto o servidor
-    não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para todos."""
+    livre, só no primeiro evento visível do lote (nos outros é ``None``) e só enquanto o
+    servidor não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para
+    todos os jogadores."""
 
     index: int
     turn: int
@@ -255,9 +257,24 @@ class EventView(StrictModel):
     narration: str | None = None
 
 
+class TalkView(StrictModel):
+    """Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.
+    ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
+    personagem que a provocou. Não é evento: o LLM nunca escreve no estado."""
+
+    seq: int
+    after: int
+    to: Id
+    text: str
+
+
 class EventsView(StrictModel):
     revision: int
     events: list[EventView]
+    # Falas com ``seq`` maior que ``since_talk``; ``talk_seq`` é a última (o cliente a devolve
+    # em ``since_talk``). Os números sobem entre reinícios do servidor.
+    talk: list[TalkView] = Field(default_factory=list)
+    talk_seq: int = 0
 
 
 class CommandResult(StrictModel):

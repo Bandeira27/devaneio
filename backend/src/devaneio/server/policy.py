@@ -16,8 +16,10 @@ Kind = Literal["read", "join", "action", "host"]
 
 # `marcos` lista também os marcos pendentes e seus requisitos: spoiler da trama. O jogador
 # vê os marcos que já começaram pelo `olhar` e pela CampaignView.
-HOST_ONLY = frozenset({"descansar", "fim", "ferir", "curar", "marco", "marcos"})
-PLAYER_READ = frozenset(READ_ONLY) - {"marcos"}
+# `log` lista todos os eventos, inclusive os sobre NPC escondido: o jogador lê o log
+# filtrado por `GET .../events`.
+HOST_ONLY = frozenset({"descansar", "fim", "ferir", "curar", "marco", "marcos", "log"})
+PLAYER_READ = frozenset(READ_ONLY) - {"marcos", "log"}
 JOIN = frozenset({"entrar"})
 # Gastam a ação principal do personagem no turno. `ir` move o grupo todo, e `atacar`
 # aceita o personagem de outro jogador como alvo: ficam como no motor (decisão do dono).

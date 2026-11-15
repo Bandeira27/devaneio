@@ -42,7 +42,7 @@ servidor usa só a biblioteca padrão e escuta em `127.0.0.1` por padrão.
 
 ```bash
 cd backend
-.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --sem-llm
+.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --intervalo-say 5, --sem-llm
 curl -s localhost:8765/campaigns
 curl -s -X POST localhost:8765/tables -H 'Content-Type: application/json' \
      -d '{"campaign_id": "sombra-do-vale", "host_name": "Ana"}'          # 201: table_id, host_token, invite_code, table
@@ -56,7 +56,7 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 | `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
 | `POST /tables/{id}/commands` `{line, revision}` | Bearer | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem) |
 | `POST /tables/{id}/say` `{text, revision}` | Bearer | texto livre: o LLM do anfitrião propõe ações e o servidor aplica; `SayResult` = `CommandResult` + `say` (fala do mestre, só para quem enviou) e `commands`. `409 llm_disabled` sem LLM |
-| `GET /tables/{id}/events?since=N&wait=S` | Bearer | `EventsView {revision, events}`: eventos de posição `N` em diante, cada um com `prose` da gramática e sem `data`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
+| `GET /tables/{id}/events?since=N&since_talk=T&wait=S` | Bearer | `EventsView {revision, events, talk, talk_seq}`: eventos de posição `N` em diante (cada um com `prose` da gramática e sem `data`) e falas com `seq` > `T`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
 | `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
 
@@ -79,18 +79,20 @@ limita conexões simultâneas: é uma mesa entre amigos, não um serviço públi
 
 | Comando | Quem | Gasta a ação do turno |
 |---|---|---|
-| `olhar`, `ficha`, `log`, `ajuda` | todos | não |
+| `olhar`, `ficha`, `ajuda` | todos | não |
 | `entrar` | jogador (um personagem só) e anfitrião (quantos quiser) | não |
 | `testar`, `atacar`, `ir` | o dono do personagem; o anfitrião por qualquer um (`id: comando`) | sim |
-| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos` | só o anfitrião | não (`descansar` e `fim` encerram o turno) |
+| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos`, `log` | só o anfitrião | não (`descansar` e `fim` encerram o turno) |
 
 Cada personagem faz **uma ação principal por turno**; quando todos os personagens de pé ligados a um jogador agiram, o
 servidor encerra o turno na mesma requisição (`turn_ended: true`) e o diretor age. O anfitrião pode encerrar antes
 com `fim`. Um jogador comum nunca age sem prefixo injetado pelo servidor, nem por personagem de outro. `marcos`
 é do anfitrião porque lista os marcos pendentes. `atacar` aceita o personagem de outro jogador como alvo e `ir`
 move o grupo todo e gasta a ação de quem mandou: como no motor, é decisão da mesa. Jogador comum só ataca NPC do local
-atual (os outros respondem como alvo inexistente). O anfitrião, ao agir por um jogador, gasta a ação dele. O log de
-eventos é público: o que o anfitrião faz a um NPC escondido (`ferir`) aparece nele. Linhas de comando têm até 500
+atual (os outros respondem como alvo inexistente). O anfitrião, ao agir por um jogador, gasta a ação dele. O log que o
+jogador lê (`GET .../events`) **não traz eventos sobre NPC que o grupo não via na hora** (o que o anfitrião faz com `ferir`
+num NPC escondido): o `index` de cada evento é o original, então a lista pode ter buracos, e `revision` conta todos os
+eventos (pode subir sem evento novo para o jogador). O comando `log` é do anfitrião. Linhas de comando têm até 500
 caracteres e passam por NFKC; controle e invisíveis dão `400`, e `entrar` aceita até 30 argumentos de até 40 caracteres.
 
 `revision` é o número de eventos que o cliente viu: comando que muda a partida com revisão velha recebe `409` (leia
@@ -113,18 +115,31 @@ manda o texto de um jogador ao LLM, que **só propõe** (as mesmas quatro açõe
 responde como alvo inexistente. A proposta inteira, de até 3 ações, gasta **uma** ação principal do personagem; sem
 ações (só conversa) nada é gravado e a ação não é gasta.
 
-- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida (inclusive os
-  segredos dos NPCs presentes). O servidor nunca registra o texto do jogador.
+- **Privacidade:** `TableView.llm.notice` diz a todos para onde vão o texto e o estado da partida. **Por padrão os
+  segredos dos NPCs não vão ao LLM da mesa**, porque a fala dele chega a todos os jogadores e ele não pode repetir o
+  que não recebeu; `--segredos-no-llm` os envia (o aviso e `LlmView.secrets` passam a dizer isso), para o mestre de IA
+  jogar com o que cada NPC esconde. No CLI solo, o jogador é o mestre e os segredos continuam indo. O servidor nunca
+  registra o texto do jogador.
 - **A chamada ao LLM roda fora do lock da mesa** (pode levar minutos): os comandos seguem passando, e a gravação só
   acontece se a mesa não mudou nesse intervalo (senão `409 stale_revision`, e a tentativa se perde). Só uma chamada
-  de texto livre por vez por mesa (`409 say_busy`), porque cada uma custa chamadas ao LLM de quem roda o servidor.
+  de texto livre por vez por mesa (`409 say_busy`) e um **intervalo mínimo por jogador** entre dois textos livres
+  (`429 say_rate_limited`; 5 s por padrão, `--intervalo-say` muda), porque cada um custa chamadas ao LLM de quem roda o
+  servidor. O intervalo conta mesmo se a proposta vier vazia ou o LLM falhar; recusa da mesa antes do LLM não conta.
 - **Narração:** o LLM escreve um parágrafo para o lote de eventos, guardado **só em memória** (os últimos 200 por
-  mesa): vem em `EventView.narration` no primeiro evento do lote (nos outros é `null`), igual para todos os jogadores, e
-  some ao reiniciar o servidor. `EventView.prose` é sempre a narração da gramática do próprio evento, então o cliente
-  mostra `narration` quando houver e `prose` no resto. Se o LLM falhar, `narration` fica `null`. A fala e a narração do
-  LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
-- **Limite conhecido:** a `fala` do mestre vai só para quem enviou o texto; os outros jogadores veem os eventos e a
-  narração, não a fala.
+  mesa): vem em `EventView.narration` no primeiro evento do lote que os jogadores veem (nos outros é `null`), igual
+  para todos, e some ao reiniciar o servidor. `EventView.prose` é sempre a narração da gramática do próprio evento,
+  então o cliente mostra `narration` quando houver e `prose` no resto. Se o LLM falhar, `narration` fica `null`.
+- **Fala (mural):** a fala do mestre ou do NPC não é evento (o LLM nunca escreve no estado): fica num mural em memória
+  (as últimas 50 por mesa), com ou sem evento novo, e todos a leem em `EventsView.talk` (`seq`, `after` = revisão na
+  hora, `to` = personagem que a provocou). O cliente guarda `talk_seq` e o devolve em `since_talk`; uma fala nova
+  também acorda o long-poll. Os números vêm do relógio de parede e continuam subindo depois de reiniciar o servidor.
+  Com `wait` e **sem** `since_talk` o mural antigo não conta como novidade (só falas posteriores à chamada acordam a
+  espera): um cliente que não devolve `talk_seq` espera em vez de girar; para o histórico, chame com `wait=0`.
+- **Autoria de campanha:** `description` de NPC, de local e de marco vai ao LLM e pode chegar a todos pela fala; o que
+  ninguém pode saber vai em `secrets` (que, por padrão, não sai do servidor). Não ative um marco que conclui por
+  `npc_down` de um NPC que o grupo não vê: o título do marco concluído revela a queda dele.
+- A fala e a narração do LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos
+  outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
 
 ## Backend
 
@@ -180,6 +195,8 @@ O sistema padrão, **Devaneio Básico** (`backend/src/devaneio/rules/data/defaul
 atributos FOR, AGI, MEN e PRE de 1 a 5; teste `2d6 + atributo` contra uma dificuldade
 (Fácil 7, Normal 9, Difícil 11, Heroica 13); margem ≤ -5 é falha crítica, ≥ 5 sucesso
 crítico; vantagem/desvantagem ±2; `max_hp = 6 + FOR * 2`.
+Personagem com hp 0 está fora de combate e **não age** (`testar`, `atacar` e `ir` com `id:`) até ser curado; o sistema
+pode mudar isso com `combat.fallen_can_act: true`.
 
 A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, e o gerador
 (SplitMix64 próprio) é recriado a partir deles a cada ação.
