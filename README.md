@@ -133,6 +133,11 @@ ações (só conversa) nada é gravado e a ação não é gasta.
   (as últimas 50 por mesa), com ou sem evento novo, e todos a leem em `EventsView.talk` (`seq`, `after` = revisão na
   hora, `to` = personagem que a provocou). O cliente guarda `talk_seq` e o devolve em `since_talk`; uma fala nova
   também acorda o long-poll. Os números vêm do relógio de parede e continuam subindo depois de reiniciar o servidor.
+  Com `wait` e **sem** `since_talk` o mural antigo não conta como novidade (só falas posteriores à chamada acordam a
+  espera): um cliente que não devolve `talk_seq` espera em vez de girar; para o histórico, chame com `wait=0`.
+- **Autoria de campanha:** `description` de NPC, de local e de marco vai ao LLM e pode chegar a todos pela fala; o que
+  ninguém pode saber vai em `secrets` (que, por padrão, não sai do servidor). Não ative um marco que conclui por
+  `npc_down` de um NPC que o grupo não vê: o título do marco concluído revela a queda dele.
 - A fala e a narração do LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos
   outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
 

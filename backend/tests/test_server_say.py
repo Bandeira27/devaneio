@@ -19,7 +19,7 @@ from devaneio.server.models import (
     JoinRequest,
     SayRequest,
 )
-from devaneio.server.storage import MAX_NARRATIONS, MAX_TALK
+from devaneio.server.presentation import MAX_NARRATIONS, MAX_TALK
 from fakes import FakeLlmServer
 
 TOKENS = count(1)
@@ -123,7 +123,7 @@ class Desk:
         return self.service.get_events(self.id, token, since).events
 
     def view(self, token, since=0, since_talk=0, wait=0):
-        return self.service.get_events(self.id, token, since, wait, since_talk)
+        return self.service.get_events(self.id, token, since, wait=wait, since_talk=since_talk)
 
 
 @pytest.fixture
@@ -387,7 +387,7 @@ def test_a_join_during_the_llm_call_makes_the_say_stale_and_stores_no_narration(
     assert (error.status, error.code) == (409, "stale_revision")
     assert desk.service.get_table(desk.id, joined["caio"].token).revision >= 0  # a entrada ficou
     assert "check" not in [e.kind for e in desk.events(bia)]
-    assert desk.service.storage.narrations(desk.id) == {}
+    assert desk.service.storage.presentation(desk.id).narrations() == {}
 
 
 def test_a_stale_say_keeps_no_narration(desk, script):
@@ -396,7 +396,7 @@ def test_a_stale_say_keeps_no_narration(desk, script):
     script.proposals.append(proposal(CHECK))
     script.before_reply = lambda: desk.cmd(desk.host, "ferir bia 1")
     desk.refused(bia, "tento")
-    assert desk.service.storage.narrations(desk.id) == {}
+    assert desk.service.storage.presentation(desk.id).narrations() == {}
     assert all(e.narration is None for e in desk.events(bia))
 
 
@@ -486,7 +486,7 @@ def test_a_narration_in_data_format_is_dropped_and_the_grammar_is_used(desk, scr
     result = desk.say(bia, "tento")
     assert result.events[0].narration is None
     assert result.events[0].prose
-    assert desk.service.storage.narrations(desk.id) == {}
+    assert desk.service.storage.presentation(desk.id).narrations() == {}
 
 
 def test_old_events_keep_the_grammar(desk, script):
@@ -585,8 +585,10 @@ def test_control_and_invisible_characters_from_the_llm_never_reach_the_players(d
 
 
 def test_only_the_latest_narrations_are_kept(desk):
-    desk.service.storage.store_narrations(desk.id, {i: f"p{i}" for i in range(MAX_NARRATIONS + 5)})
-    kept = desk.service.storage.narrations(desk.id)
+    desk.service.storage.presentation(desk.id).store_narrations(
+        {i: f"p{i}" for i in range(MAX_NARRATIONS + 5)}
+    )
+    kept = desk.service.storage.presentation(desk.id).narrations()
     assert len(kept) == MAX_NARRATIONS
     assert min(kept) == 5
     assert kept[MAX_NARRATIONS + 4] == f"p{MAX_NARRATIONS + 4}"
@@ -742,7 +744,7 @@ def test_talk_entries_are_numbered_in_order_and_old_ones_leave(desk, script):
     assert (first.text, second.text) == ("um", "dois")
     assert second.seq == first.seq + 1
     for number in range(MAX_TALK + 5):
-        desk.service.storage.add_talk(desk.id, after=0, to="bia", text=f"t{number}")
+        desk.service.storage.presentation(desk.id).add_talk(after=0, to="bia", text=f"t{number}")
     kept = desk.view(bia).talk
     assert len(kept) == MAX_TALK
     assert kept[-1].text == f"t{MAX_TALK + 4}"

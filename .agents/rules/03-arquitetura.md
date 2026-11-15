@@ -26,7 +26,7 @@ pare e pergunte, não ajuste o contrato.
 | composição de ações para um comando (`atacar` = check + dano) | `game/commands.py` |
 | modelo persistido fora do contrato (`SaveFile`, `TableMeta`) | `game/` |
 | leitura e impressão no terminal | `cli/` |
-| rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; texto livre pelo LLM: `server/say.py`; tokens, limites), modelo de requisição/resposta | `server/` |
+| rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; texto livre pelo LLM: `server/say.py`; narração e mural do LLM, só em memória e fora do estado e do arquivo: `server/presentation.py`; tokens, limites), modelo de requisição/resposta | `server/` |
 | campo ou modelo de dados | `schema/` ou `rules/schema.py`, depois regenerar o contrato |
 | fórmula, dificuldade, arma, habilidade | arquivo de regras (`rules/data/default.json`), não código |
 | texto de narração | pacote pt-br (`narration/data/pt-br.json`), regra `tipo.variante` |

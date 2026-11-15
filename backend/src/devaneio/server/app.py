@@ -7,10 +7,10 @@ descartável."""
 from __future__ import annotations
 
 import hmac
-import time
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
+from typing import NamedTuple
 
 from pydantic import ValidationError
 
@@ -58,6 +58,15 @@ from .turns import apply, authenticate, events_view
 
 MAX_PLAYERS = 8
 SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
+
+
+class Cursor(NamedTuple):
+    """Até onde o cliente já leu: a posição do primeiro evento que ainda não viu e o ``seq`` da
+    última fala que viu."""
+
+    events: int
+    talk: int
+
 
 LLM_NOTICE = (
     "O texto enviado à mesa e o estado da partida (local, grupo, NPCs presentes{with_secrets}, "
@@ -152,33 +161,44 @@ class TableService:
         )
 
     def get_events(
-        self, table_id: str, token: str | None, since: int, wait: float = 0, since_talk: int = 0
+        self,
+        table_id: str,
+        token: str | None,
+        since: int,
+        *,
+        wait: float = 0,
+        since_talk: int = 0,
     ) -> EventsView:
         """Eventos de posição ``since`` em diante e falas com ``seq`` > ``since_talk``. Com
         ``wait`` > 0 e nada novo, espera até ``wait`` segundos por uma gravação da mesa
-        (long-poll); acima de ``MAX_WAITERS`` esperas na mesa, responde de imediato."""
+        (long-poll); acima de ``MAX_WAITERS`` esperas na mesa, responde de imediato.
+
+        Com ``wait`` > 0 e sem ``since_talk``, o mural não conta como novidade: só falas
+        posteriores a esta chamada acordam a espera (senão um cliente que não devolve
+        ``talk_seq`` giraria sem esperar, relendo o arquivo a cada volta)."""
         # A versão vem ANTES da carga: uma gravação entre a carga e a espera deixaria a visão
         # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
         # existente: ``version`` cria entrada, e o id ainda não foi validado.)
         seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
-        view = self._events_view(table_id, token, since, since_talk)
+        cursor = Cursor(since, since_talk)
+        view = self._events_view(table_id, token, cursor)
+        if wait > 0 and since_talk == 0:
+            cursor = Cursor(since, view.talk_seq)
+            view = view.model_copy(update={"talk": []})
         if view.events or view.talk or wait <= 0 or not self.storage.enter_wait(table_id):
             return view
         try:
-            return self._wait_for_events(
-                table_id, token, (since, since_talk), wait=wait, view=view, seen=seen
-            )
+            return self._wait_for_events(table_id, token, cursor, wait=wait, view=view, seen=seen)
         finally:
             self.storage.leave_wait(table_id)
 
-    def _events_view(
-        self, table_id: str, token: str | None, since: int, since_talk: int
-    ) -> EventsView:
+    def _events_view(self, table_id: str, token: str | None, cursor: Cursor) -> EventsView:
         session, _, player = self._open(table_id, token)
-        talk, talk_seq = self.storage.talk_since(table_id, since_talk)
+        presentation = self.storage.presentation(table_id)
+        talk, talk_seq = presentation.talk_since(cursor.talk)
         return EventsView(
             revision=len(session.state.events),
-            events=events_view(session, since, self.storage.narrations(table_id), role=player.role),
+            events=events_view(session, cursor.events, presentation.narrations(), role=player.role),
             talk=talk,
             talk_seq=talk_seq,
         )
@@ -187,13 +207,13 @@ class TableService:
         self,
         table_id: str,
         token: str | None,
-        since: tuple[int, int],
+        cursor: Cursor,
         *,
         wait: float,
         view: EventsView,
         seen: int,
     ) -> EventsView:
-        deadline = time.monotonic() + wait
+        deadline = self.storage.now() + wait
         changed = self.storage.condition(table_id)
         while not (view.events or view.talk):
             baseline = seen
@@ -202,11 +222,11 @@ class TableService:
                 return self.storage.version(table_id) != baseline
 
             with changed:  # o lock da mesa: wait() o solta enquanto espera
-                remaining = deadline - time.monotonic()
+                remaining = deadline - self.storage.now()
                 if remaining <= 0 or not changed.wait_for(moved, remaining):
                     return view
                 seen = self.storage.version(table_id)
-            view = self._events_view(table_id, token, *since)
+            view = self._events_view(table_id, token, cursor)
         return view
 
     def run_command(

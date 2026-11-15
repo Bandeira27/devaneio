@@ -89,7 +89,7 @@ class Handler(BaseHTTPRequestHandler):
         if wait > MAX_WAIT:
             raise ApiFailure(400, "bad_request", f"'wait' vai de 0 a {MAX_WAIT} segundos")
         return 200, self.server.service.get_events(
-            match.group(1), self._token(), since, wait, since_talk
+            match.group(1), self._token(), since, wait=wait, since_talk=since_talk
         )
 
     ROUTES: tuple[Route, ...] = (

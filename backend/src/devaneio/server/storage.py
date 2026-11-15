@@ -2,8 +2,8 @@
 
 O id da mesa é gerado aqui e validado de novo quando vem da URL: só o formato que o
 próprio servidor produz vira caminho, e sempre dentro da pasta de dados. O arquivo é a fonte
-única da verdade; em memória ficam só a coordenação (lock, versão, vagas) e os parágrafos de
-narração do LLM, que são exibição e somem ao reiniciar."""
+única da verdade; em memória ficam só a coordenação (lock, versão, vagas, intervalo do texto
+livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao reiniciar."""
 
 from __future__ import annotations
 
@@ -15,12 +15,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .models import TalkView
+from .presentation import Presentation
 
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
-MAX_NARRATIONS = 200  # narrações guardadas por mesa; as mais antigas saem primeiro
-MAX_TALK = 50  # falas guardadas por mesa; as mais antigas saem primeiro
 
 
 @dataclass
@@ -29,14 +27,8 @@ class _Table:
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
     saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
-    narrations: dict[int, str] = field(
-        default_factory=dict
-    )  # parágrafo do LLM por índice de evento
-    talk: list[TalkView] = field(default_factory=list)
-    # Os números das falas começam no relógio de parede: depois de um reinício do servidor
-    # continuam acima dos que o cliente já viu.
-    talk_seq: int = field(default_factory=lambda: int(time.time() * 1000))
     last_say: dict[str, float] = field(default_factory=dict)  # por jogador, no relógio da mesa
+    presentation: Presentation = field(default_factory=lambda: Presentation(0))
     changed: threading.Condition = field(init=False)
 
     def __post_init__(self) -> None:
@@ -50,8 +42,10 @@ class Storage:
         *,
         max_tables: int,
         clock: Callable[[], float] = time.monotonic,
+        wall_clock: Callable[[], float] = time.time,
     ) -> None:
         self._clock = clock  # injetável: os testes do intervalo do texto livre não esperam
+        self._wall_clock = wall_clock  # semente dos números do mural de falas
         self.data_dir = Path(data_dir).resolve()
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.max_tables = max_tables
@@ -82,7 +76,11 @@ class Storage:
         """Uma entrada por mesa existente; o dicionário não cresce com ids inventados porque
         quem chama já validou o id com ``path_for``."""
         with self._registry:
-            return self._tables.setdefault(table_id, _Table())
+            if table_id not in self._tables:
+                self._tables[table_id] = _Table(
+                    presentation=Presentation(int(self._wall_clock() * 1000))
+                )
+            return self._tables[table_id]
 
     def lock(self, table_id: str) -> threading.Lock:
         return self._table(table_id).lock
@@ -115,34 +113,13 @@ class Storage:
         with self._registry:
             table.saying = False
 
-    def narrations(self, table_id: str) -> dict[int, str]:
-        """Parágrafo de narração do LLM por índice de evento (só em memória: nunca vai ao arquivo, e
-        depois de reiniciar o servidor os eventos antigos voltam só com a gramática)."""
-        table = self._table(table_id)
-        with self._registry:
-            return dict(table.narrations)
+    def presentation(self, table_id: str) -> Presentation:
+        """Narração e mural da mesa (em memória). Só para mesa existente: o id já foi validado."""
+        return self._table(table_id).presentation
 
-    def store_narrations(self, table_id: str, narrations: dict[int, str]) -> None:
-        table = self._table(table_id)
-        with self._registry:
-            table.narrations.update(narrations)
-            while len(table.narrations) > MAX_NARRATIONS:
-                del table.narrations[next(iter(table.narrations))]  # ordem de inserção
-
-    def add_talk(self, table_id: str, *, after: int, to: str, text: str) -> TalkView:
-        table = self._table(table_id)
-        with self._registry:
-            table.talk_seq += 1
-            entry = TalkView(seq=table.talk_seq, after=after, to=to, text=text)
-            table.talk.append(entry)
-            del table.talk[:-MAX_TALK]
-            return entry
-
-    def talk_since(self, table_id: str, since: int) -> tuple[list[TalkView], int]:
-        """As falas com ``seq`` maior que ``since`` e o último ``seq`` da mesa."""
-        table = self._table(table_id)
-        with self._registry:
-            return [e for e in table.talk if e.seq > since], table.talk_seq
+    def now(self) -> float:
+        """O relógio monotônico da mesa: prazos de espera e intervalos usam este."""
+        return self._clock()
 
     def say_cooldown_left(self, table_id: str, player_id: str, cooldown: float) -> float:
         """Segundos até o jogador poder pedir outro texto livre (0 se já pode). Cada pedido
@@ -158,6 +135,12 @@ class Storage:
         table = self._table(table_id)
         with self._registry:
             table.last_say[player_id] = self._clock()
+
+    def waiting(self, table_id: str) -> int:
+        """Quantas esperas de long-poll há agora na mesa."""
+        table = self._table(table_id)
+        with self._registry:
+            return table.waiters
 
     def enter_wait(self, table_id: str) -> bool:
         """Reserva uma vaga de espera; ``False`` se a mesa já tem ``MAX_WAITERS``."""

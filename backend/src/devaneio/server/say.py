@@ -124,15 +124,18 @@ class SayDesk:
                 )
             if fresh_events:
                 save_game(replace(new_session, table=new_table))
-                self._storage.store_narrations(table_id, narrations)
+                self._storage.presentation(table_id).store_narrations(narrations)
             if freeform.say:  # a fala vai a todos, com ou sem evento novo
-                self._storage.add_talk(
-                    table_id, after=len(new_session.state.events), to=who, text=freeform.say
+                self._storage.presentation(table_id).add_talk(
+                    after=len(new_session.state.events), to=who, text=freeform.say
                 )
             if fresh_events or freeform.say:
                 self._storage.announce_change(table_id)
         shown = events_view(
-            new_session, revision, self._storage.narrations(table_id), role=player.role
+            new_session,
+            revision,
+            self._storage.presentation(table_id).narrations(),
+            role=player.role,
         )
         return SayResult(
             revision=len(new_session.state.events),

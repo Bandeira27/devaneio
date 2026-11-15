@@ -40,7 +40,7 @@ class Desk:
         return self.service.run_command(self.id, token, request)
 
     def events(self, token, since=0, wait=0):
-        return self.service.get_events(self.id, token, since, wait)
+        return self.service.get_events(self.id, token, since, wait=wait)
 
 
 @pytest.fixture
