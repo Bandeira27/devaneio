@@ -180,6 +180,19 @@ def test_a_proposal_without_actions_changes_nothing(desk, script):
     assert len(script.requests) == 1  # e sem narração para o que não aconteceu
 
 
+def test_an_absent_target_gets_an_empty_proposal_that_spends_nothing(desk, script):
+    bia = desk.player("Bia")
+    script.proposals.append(proposal(say="O sacerdote não está à vista."))
+    before = desk.raw()
+    result = desk.say(bia, "ataco o sacerdote")
+    assert result.say == "O sacerdote não está à vista."
+    assert result.events == []
+    assert result.commands == []
+    assert desk.raw() == before
+    assert desk.service.get_table(desk.id, bia).acted == {}  # a ação do personagem não foi gasta
+    assert len(script.requests) == 1
+
+
 # --- a política vale para a proposta ------------------------------------------------
 
 

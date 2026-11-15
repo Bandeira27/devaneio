@@ -27,6 +27,10 @@ Regras:
   é o sistema, depois.
 - Se o jogador cita uma arma que o personagem não tem, NÃO recuse o ataque: use uma arma de
   "armas_do_personagem" (os punhos sempre estão disponíveis) e proponha a ação normalmente.
+- Se o jogador cita um alvo que NÃO está em "alvos" (alguém que não está no local, ou que não
+  existe), NÃO ataque outro alvo no lugar dele: devolva "actions" vazio e use "say" para dizer,
+  em uma frase, apenas que não encontra esse alvo por aqui, sem afirmar se ele existe ou não.
+  Só ataque quem o jogador citou.
 - Em falas de NPC, use só o que consta em "descricao" e no contexto; não invente fatos novos.
 - Não revele "segredos" de NPCs a menos que o jogador os descubra por uma ação bem-sucedida.
 

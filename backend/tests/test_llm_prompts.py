@@ -82,6 +82,14 @@ def test_missing_weapon_falls_back_instead_of_refusing():
     assert "NÃO recuse o ataque" in PROPOSER_SYSTEM
 
 
+def test_a_target_that_is_not_listed_must_not_be_swapped_for_another():
+    # Visto no nemotron: "ataco o sacerdote" (fora de vista) virava um ataque ao ferreiro, que
+    # estava ali e nada tinha a ver. Sem alvo à vista, a proposta é vazia e o "say" explica.
+    assert "NÃO ataque outro alvo no lugar dele" in PROPOSER_SYSTEM
+    # a fala não distingue alvo escondido de inexistente (o servidor também não distingue)
+    assert "sem afirmar se ele existe ou não" in PROPOSER_SYSTEM
+
+
 def test_hidden_events_stay_out_of_the_prompt_and_the_last_five_are_still_five(
     campaign, rules, state
 ):
