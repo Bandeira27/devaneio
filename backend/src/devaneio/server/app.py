@@ -152,42 +152,50 @@ class TableService:
         )
 
     def get_events(
-        self, table_id: str, token: str | None, since: int, wait: float = 0
+        self, table_id: str, token: str | None, since: int, wait: float = 0, since_talk: int = 0
     ) -> EventsView:
-        """Eventos de posição ``since`` em diante, com a prosa da gramática. Com ``wait`` > 0 e
-        nada novo, espera até ``wait`` segundos por uma gravação da mesa (long-poll); acima de
-        ``MAX_WAITERS`` esperas na mesa, responde de imediato."""
+        """Eventos de posição ``since`` em diante e falas com ``seq`` > ``since_talk``. Com
+        ``wait`` > 0 e nada novo, espera até ``wait`` segundos por uma gravação da mesa
+        (long-poll); acima de ``MAX_WAITERS`` esperas na mesa, responde de imediato."""
         # A versão vem ANTES da carga: uma gravação entre a carga e a espera deixaria a visão
         # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
         # existente: ``version`` cria entrada, e o id ainda não foi validado.)
         seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
-        session, _, player = self._open(table_id, token)
-        view = EventsView(
-            revision=len(session.state.events),
-            events=events_view(session, since, self.storage.flavors(table_id), role=player.role),
-        )
-        if view.events or wait <= 0 or not self.storage.enter_wait(table_id):
+        view = self._events_view(table_id, token, since, since_talk)
+        if view.events or view.talk or wait <= 0 or not self.storage.enter_wait(table_id):
             return view
         try:
             return self._wait_for_events(
-                table_id, token, since=since, wait=wait, view=view, seen=seen
+                table_id, token, (since, since_talk), wait=wait, view=view, seen=seen
             )
         finally:
             self.storage.leave_wait(table_id)
+
+    def _events_view(
+        self, table_id: str, token: str | None, since: int, since_talk: int
+    ) -> EventsView:
+        session, _, player = self._open(table_id, token)
+        talk, talk_seq = self.storage.talk_since(table_id, since_talk)
+        return EventsView(
+            revision=len(session.state.events),
+            events=events_view(session, since, self.storage.narrations(table_id), role=player.role),
+            talk=talk,
+            talk_seq=talk_seq,
+        )
 
     def _wait_for_events(
         self,
         table_id: str,
         token: str | None,
+        since: tuple[int, int],
         *,
-        since: int,
         wait: float,
         view: EventsView,
         seen: int,
     ) -> EventsView:
         deadline = time.monotonic() + wait
         changed = self.storage.condition(table_id)
-        while not view.events:
+        while not (view.events or view.talk):
             baseline = seen
 
             def moved(baseline: int = baseline) -> bool:
@@ -198,13 +206,7 @@ class TableService:
                 if remaining <= 0 or not changed.wait_for(moved, remaining):
                     return view
                 seen = self.storage.version(table_id)
-            session, _, player = self._open(table_id, token)
-            view = EventsView(
-                revision=len(session.state.events),
-                events=events_view(
-                    session, since, self.storage.flavors(table_id), role=player.role
-                ),
-            )
+            view = self._events_view(table_id, token, *since)
         return view
 
     def run_command(

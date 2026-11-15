@@ -15,11 +15,12 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .models import Flavor
+from .models import TalkView
 
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
-MAX_NARRATIONS = 200  # narrações e falas guardadas por mesa; as mais antigas saem primeiro
+MAX_NARRATIONS = 200  # narrações guardadas por mesa; as mais antigas saem primeiro
+MAX_TALK = 50  # falas guardadas por mesa; as mais antigas saem primeiro
 
 
 @dataclass
@@ -28,7 +29,13 @@ class _Table:
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
     saying: bool = False  # uma chamada de texto livre ao LLM por vez por mesa
-    flavors: dict[int, Flavor] = field(default_factory=dict)  # por índice de evento
+    narrations: dict[int, str] = field(
+        default_factory=dict
+    )  # parágrafo do LLM por índice de evento
+    talk: list[TalkView] = field(default_factory=list)
+    # Os números das falas começam no relógio de parede: depois de um reinício do servidor
+    # continuam acima dos que o cliente já viu.
+    talk_seq: int = field(default_factory=lambda: int(time.time() * 1000))
     last_say: dict[str, float] = field(default_factory=dict)  # por jogador, no relógio da mesa
     changed: threading.Condition = field(init=False)
 
@@ -108,19 +115,34 @@ class Storage:
         with self._registry:
             table.saying = False
 
-    def flavors(self, table_id: str) -> dict[int, Flavor]:
-        """Narração e fala do LLM por índice de evento (só em memória: nunca vão ao arquivo, e
+    def narrations(self, table_id: str) -> dict[int, str]:
+        """Parágrafo de narração do LLM por índice de evento (só em memória: nunca vai ao arquivo, e
         depois de reiniciar o servidor os eventos antigos voltam só com a gramática)."""
         table = self._table(table_id)
         with self._registry:
-            return dict(table.flavors)
+            return dict(table.narrations)
 
-    def store_flavors(self, table_id: str, flavors: dict[int, Flavor]) -> None:
+    def store_narrations(self, table_id: str, narrations: dict[int, str]) -> None:
         table = self._table(table_id)
         with self._registry:
-            table.flavors.update(flavors)
-            while len(table.flavors) > MAX_NARRATIONS:
-                del table.flavors[next(iter(table.flavors))]  # o dict guarda a ordem de inserção
+            table.narrations.update(narrations)
+            while len(table.narrations) > MAX_NARRATIONS:
+                del table.narrations[next(iter(table.narrations))]  # ordem de inserção
+
+    def add_talk(self, table_id: str, *, after: int, to: str, text: str) -> TalkView:
+        table = self._table(table_id)
+        with self._registry:
+            table.talk_seq += 1
+            entry = TalkView(seq=table.talk_seq, after=after, to=to, text=text)
+            table.talk.append(entry)
+            del table.talk[:-MAX_TALK]
+            return entry
+
+    def talk_since(self, table_id: str, since: int) -> tuple[list[TalkView], int]:
+        """As falas com ``seq`` maior que ``since`` e o último ``seq`` da mesa."""
+        table = self._table(table_id)
+        with self._registry:
+            return [e for e in table.talk if e.seq > since], table.talk_seq
 
     def say_cooldown_left(self, table_id: str, player_id: str, cooldown: float) -> float:
         """Segundos até o jogador poder pedir outro texto livre (0 se já pode). Cada pedido

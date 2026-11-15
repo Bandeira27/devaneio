@@ -33,7 +33,7 @@ from devaneio.game import (
 
 from . import policy
 from .errors import ApiFailure
-from .models import Flavor, SayRequest, SayResult
+from .models import SayRequest, SayResult
 from .storage import Storage
 from .turns import (
     authenticate,
@@ -114,7 +114,7 @@ class SayDesk:
             new_table = table.model_copy(update={"acted": {**table.acted, who: session.state.turn}})
             new_session, _, turn_ended = close_turn_if_all_acted(new_session, new_table, "")
         fresh_events = new_session.state.events[revision:]
-        flavors = self._flavors(client, new_session, revision, freeform.say) if fresh_events else {}
+        narrations = self._narration(client, new_session, revision) if fresh_events else {}
 
         with self._storage.lock(table_id):  # fase 3
             current = self._load(path)
@@ -124,10 +124,15 @@ class SayDesk:
                 )
             if fresh_events:
                 save_game(replace(new_session, table=new_table))
-                self._storage.store_flavors(table_id, flavors)
+                self._storage.store_narrations(table_id, narrations)
+            if freeform.say:  # a fala vai a todos, com ou sem evento novo
+                self._storage.add_talk(
+                    table_id, after=len(new_session.state.events), to=who, text=freeform.say
+                )
+            if fresh_events or freeform.say:
                 self._storage.announce_change(table_id)
         shown = events_view(
-            new_session, revision, self._storage.flavors(table_id), role=player.role
+            new_session, revision, self._storage.narrations(table_id), role=player.role
         )
         return SayResult(
             revision=len(new_session.state.events),
@@ -140,12 +145,10 @@ class SayDesk:
         )
 
     @staticmethod
-    def _flavors(
-        client: ChatClient, session: Session, start: int, speech: str
-    ) -> dict[int, Flavor]:
-        """A narração do LLM e a fala do mestre, no primeiro evento novo que os JOGADORES veem:
-        os dois são iguais para todos, então não podem citar o que só o anfitrião vê (evento
-        sobre NPC escondido). Se o LLM falhar na narração, fica só a fala (e a gramática)."""
+    def _narration(client: ChatClient, session: Session, start: int) -> dict[int, str]:
+        """O parágrafo do LLM no primeiro evento novo que os JOGADORES veem: é igual para todos,
+        então não pode citar o que só o anfitrião vê (evento sobre NPC escondido). Se o LLM
+        falhar, nada: ``narration`` fica ``None`` e vale a prosa da gramática."""
         state = session.state
         hidden = hidden_events(state, session.campaign)
         visible = [i for i in range(start, len(state.events)) if i not in hidden]
@@ -156,6 +159,5 @@ class SayDesk:
         )
         if paragraph is None:
             print(f"llm: {note}", file=sys.stderr)
-        if paragraph is None and not speech:
             return {}
-        return {visible[0]: Flavor(narration=paragraph, speech=speech or None)}
+        return {visible[0]: paragraph}

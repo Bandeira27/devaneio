@@ -16,11 +16,10 @@ from devaneio.server.http import make_server
 from devaneio.server.models import (
     CommandRequest,
     CreateTableRequest,
-    Flavor,
     JoinRequest,
     SayRequest,
 )
-from devaneio.server.storage import MAX_NARRATIONS
+from devaneio.server.storage import MAX_NARRATIONS, MAX_TALK
 from fakes import FakeLlmServer
 
 TOKENS = count(1)
@@ -122,6 +121,9 @@ class Desk:
 
     def events(self, token, since=0):
         return self.service.get_events(self.id, token, since).events
+
+    def view(self, token, since=0, since_talk=0, wait=0):
+        return self.service.get_events(self.id, token, since, wait, since_talk)
 
 
 @pytest.fixture
@@ -385,7 +387,7 @@ def test_a_join_during_the_llm_call_makes_the_say_stale_and_stores_no_narration(
     assert (error.status, error.code) == (409, "stale_revision")
     assert desk.service.get_table(desk.id, joined["caio"].token).revision >= 0  # a entrada ficou
     assert "check" not in [e.kind for e in desk.events(bia)]
-    assert desk.service.storage.flavors(desk.id) == {}
+    assert desk.service.storage.narrations(desk.id) == {}
 
 
 def test_a_stale_say_keeps_no_narration(desk, script):
@@ -394,7 +396,7 @@ def test_a_stale_say_keeps_no_narration(desk, script):
     script.proposals.append(proposal(CHECK))
     script.before_reply = lambda: desk.cmd(desk.host, "ferir bia 1")
     desk.refused(bia, "tento")
-    assert desk.service.storage.flavors(desk.id) == {}
+    assert desk.service.storage.narrations(desk.id) == {}
     assert all(e.narration is None for e in desk.events(bia))
 
 
@@ -484,7 +486,7 @@ def test_a_narration_in_data_format_is_dropped_and_the_grammar_is_used(desk, scr
     result = desk.say(bia, "tento")
     assert result.events[0].narration is None
     assert result.events[0].prose
-    assert desk.service.storage.flavors(desk.id) == {}
+    assert desk.service.storage.narrations(desk.id) == {}
 
 
 def test_old_events_keep_the_grammar(desk, script):
@@ -583,13 +585,11 @@ def test_control_and_invisible_characters_from_the_llm_never_reach_the_players(d
 
 
 def test_only_the_latest_narrations_are_kept(desk):
-    desk.service.storage.store_flavors(
-        desk.id, {i: Flavor(narration=f"p{i}") for i in range(MAX_NARRATIONS + 5)}
-    )
-    kept = desk.service.storage.flavors(desk.id)
+    desk.service.storage.store_narrations(desk.id, {i: f"p{i}" for i in range(MAX_NARRATIONS + 5)})
+    kept = desk.service.storage.narrations(desk.id)
     assert len(kept) == MAX_NARRATIONS
     assert min(kept) == 5
-    assert kept[MAX_NARRATIONS + 4].narration == f"p{MAX_NARRATIONS + 4}"
+    assert kept[MAX_NARRATIONS + 4] == f"p{MAX_NARRATIONS + 4}"
 
 
 def test_the_llm_cannot_make_a_fallen_character_act(desk, script):
@@ -701,37 +701,78 @@ def test_a_say_the_table_refuses_first_does_not_start_the_interval(slow, script)
 # --- a fala do mestre vai a todos ---------------------------------------------------
 
 
-def test_the_speech_reaches_every_reader_on_the_first_event(desk, script):
+def test_the_speech_reaches_every_reader_in_the_talk_log(desk, script):
     desk.cmd(desk.host, 'entrar ana "Ana"')
     bia = desk.player("Bia")
+    caio = desk.player("Caio")
     script.proposals.append(proposal(CHECK, say="Bram diz: cuidado na trilha."))
     result = desk.say(bia, "tento")
     assert result.say == "Bram diz: cuidado na trilha."
-    assert result.events[0].speech == "Bram diz: cuidado na trilha."
-    assert all(e.speech is None for e in result.events[1:])
-    for token in (bia, desk.host):
-        assert desk.events(token, result.events[0].index) == result.events
+    for token in (bia, caio, desk.host):
+        view = desk.view(token)
+        [talk] = view.talk
+        assert talk.text == "Bram diz: cuidado na trilha."
+        assert talk.to == "bia"
+        assert talk.after == result.revision  # encaixa depois dos eventos da ação
+        assert view.talk_seq == talk.seq
     assert "cuidado na trilha" not in desk.raw()  # só em memória
+
+
+def test_a_conversation_without_events_reaches_everyone_too(desk, script):
+    """A fala não depende de evento novo: nada é gravado e todos a leem no mural."""
+    bia = desk.player("Bia")
+    caio = desk.player("Caio")
+    script.proposals.append(proposal(say="Bram sussurra um segredo."))
+    before = desk.raw()
+    result = desk.say(bia, "pergunto ao ferreiro")
+    assert result.say == "Bram sussurra um segredo."
+    assert result.events == []
+    assert desk.raw() == before
+    view = desk.view(caio)
+    assert [(t.to, t.text) for t in view.talk] == [("bia", "Bram sussurra um segredo.")]
+    assert desk.view(caio, since_talk=view.talk_seq).talk == []  # já visto: nada novo
+
+
+def test_talk_entries_are_numbered_in_order_and_old_ones_leave(desk, script):
+    bia = desk.player("Bia")
+    script.proposals += [proposal(say="um"), proposal(say="dois")]
+    desk.say(bia, "a")
+    desk.say(bia, "b")
+    first, second = desk.view(bia).talk
+    assert (first.text, second.text) == ("um", "dois")
+    assert second.seq == first.seq + 1
+    for number in range(MAX_TALK + 5):
+        desk.service.storage.add_talk(desk.id, after=0, to="bia", text=f"t{number}")
+    kept = desk.view(bia).talk
+    assert len(kept) == MAX_TALK
+    assert kept[-1].text == f"t{MAX_TALK + 4}"
+
+
+def test_a_talk_only_say_wakes_a_long_poller(desk, script):
+    bia = desk.player("Bia")
+    caio = desk.player("Caio")
+    base = desk.view(caio)
+    box = {}
+
+    def poll():
+        box["view"] = desk.view(caio, since=base.revision, since_talk=base.talk_seq, wait=10)
+
+    thread = threading.Thread(target=poll)
+    thread.start()
+    script.proposals.append(proposal(say="Alguém chegou à vila."))
+    desk.say(bia, "olho a estrada")
+    thread.join(timeout=10)
+    assert box["view"].events == []  # nenhum evento: só a fala acordou o poller
+    assert [t.text for t in box["view"].talk] == ["Alguém chegou à vila."]
 
 
 def test_the_speech_survives_a_failed_narration(desk, script):
     bia = desk.player("Bia")
     script.narration_status = 500
     script.proposals.append(proposal(CHECK, say="Boa sorte."))
-    event = desk.say(bia, "tento").events[0]
-    assert event.narration is None
-    assert event.speech == "Boa sorte."
-
-
-def test_a_conversation_without_events_reaches_only_who_spoke(desk, script):
-    """Sem evento novo não há onde pendurar a fala: ela volta só a quem enviou o texto."""
-    bia = desk.player("Bia")
-    caio = desk.player("Caio")
-    script.proposals.append(proposal(say="Bram sussurra um segredo."))
-    result = desk.say(bia, "pergunto ao ferreiro")
-    assert result.say == "Bram sussurra um segredo."
-    assert result.events == []
-    assert all(e.speech is None for e in desk.events(caio))
+    result = desk.say(bia, "tento")
+    assert result.events[0].narration is None
+    assert [t.text for t in desk.view(bia).talk] == ["Boa sorte."]
 
 
 def test_the_prompt_never_carries_events_the_players_do_not_see(desk, script):
@@ -745,22 +786,20 @@ def test_the_prompt_never_carries_events_the_players_do_not_see(desk, script):
     assert "Irmão Vael" not in prompt
 
 
-def test_the_flavor_sits_on_the_first_visible_event_not_on_the_hidden_damage(desk, script):
-    """O ataque ao NPC escondido gera um teste (visível) e o dano (escondido): a fala e a
-    narração vão ao teste e o dano do NPC nunca as recebe, nem para o anfitrião."""
+def test_the_narration_sits_on_the_first_visible_event_not_on_the_hidden_damage(desk, script):
+    """O ataque ao NPC escondido gera um teste (visível) e o dano (escondido): a narração vai ao
+    teste e o dano do NPC nunca a recebe, nem para o anfitrião."""
     desk.cmd(desk.host, 'entrar ana "Ana" FOR=5')
     bia = desk.player("Bia")
     script.proposals.append(proposal(HIDDEN_ATTACK, say="Cuidado, Ana."))
     result = desk.say(desk.host, "ataco o sacerdote")
     assert [e.kind for e in result.events] == ["check", "damage"]
     check, damage = result.events
-    assert check.speech == "Cuidado, Ana."
     assert check.narration == "O vento muda de direção."
-    assert damage.speech is None
     assert damage.narration is None
     seen_by_bia = desk.events(bia, since=check.index)
     assert [e.kind for e in seen_by_bia] == ["check"]
-    assert seen_by_bia[0].speech == "Cuidado, Ana."
+    assert [t.text for t in desk.view(bia).talk] == ["Cuidado, Ana."]
 
 
 def test_npc_secrets_stay_out_of_the_llm_prompt_by_default(desk, script):

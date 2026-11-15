@@ -193,9 +193,9 @@ export interface CommandResult {
 /**
  * Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
  * do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
- * livre e ``speech`` é a fala do mestre ou do NPC naquela ação; os dois vêm só no primeiro
- * evento visível do lote (nos outros são ``None``) e só enquanto o servidor não reinicia.
- * Todos são exibição, nunca voltam ao estado, e são iguais para todos os jogadores.
+ * livre, só no primeiro evento visível do lote (nos outros é ``None``) e só enquanto o
+ * servidor não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para
+ * todos os jogadores.
  */
 export interface EventView {
   index: number;
@@ -204,7 +204,6 @@ export interface EventView {
   text: string;
   prose: string;
   narration: string | null;
-  speech: string | null;
 }
 export interface SayResult {
   revision: number;
@@ -218,6 +217,19 @@ export interface SayResult {
 export interface EventsView {
   revision: number;
   events: EventView[];
+  talk: TalkView[];
+  talk_seq: number;
+}
+/**
+ * Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.
+ * ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
+ * personagem que a provocou. Não é evento: o LLM nunca escreve no estado.
+ */
+export interface TalkView {
+  seq: number;
+  after: number;
+  to: string;
+  text: string;
 }
 export interface Campaign {
   schema_version: 1;

@@ -665,3 +665,22 @@ def test_the_secrets_flag_reaches_the_service(tmp_path, monkeypatch):
     )
     assert main(main_args(tmp_path, "--porta", "0", "--segredos-no-llm")) == 0
     assert seen == [True]
+
+
+def test_the_talk_log_over_http(client):
+    table_id, _, host, bia, _ = play_setup(client)
+    status, view, _ = client.call("GET", f"/tables/{table_id}/events", auth=bia)
+    assert status == 200
+    assert view["talk"] == []
+    assert isinstance(view["talk_seq"], int)
+    far = view["talk_seq"] + 10**6  # 13 dígitos: o número de fala vem do relógio
+    status, again, _ = client.call("GET", f"/tables/{table_id}/events?since_talk={far}", auth=host)
+    assert status == 200
+    assert again["talk"] == []
+
+
+@pytest.mark.parametrize("value", ["-1", "x", "1.5", "9" * 17, "1&since_talk=2"])
+def test_since_talk_must_be_a_non_negative_integer(client, value):
+    table_id, _, _, bia, _ = play_setup(client)
+    status, body, _ = client.call("GET", f"/tables/{table_id}/events?since_talk={value}", auth=bia)
+    assert (status, body["error"]["code"]) == (400, "bad_request")

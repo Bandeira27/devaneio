@@ -8,7 +8,6 @@ JSON Schema por modo (validation e serialization). Nenhum modelo de ``game/table
 from __future__ import annotations
 
 import unicodedata
-from dataclasses import dataclass
 from typing import Annotated, Literal
 
 from pydantic import BeforeValidator, Field
@@ -85,15 +84,6 @@ class CommandRequest(StrictModel):
 class SayRequest(StrictModel):
     text: CommandLine
     revision: int = Field(ge=0)
-
-
-@dataclass(frozen=True)
-class Flavor:
-    """O que o LLM acrescentou a um evento (só exibição): o parágrafo de narração do lote e a
-    fala do mestre ou do NPC. Vive em memória e some ao reiniciar o servidor."""
-
-    narration: str | None = None
-    speech: str | None = None
 
 
 class CampaignSummary(StrictModel):
@@ -255,9 +245,9 @@ class TableCreated(StrictModel):
 class EventView(StrictModel):
     """Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
     do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
-    livre e ``speech`` é a fala do mestre ou do NPC naquela ação; os dois vêm só no primeiro
-    evento visível do lote (nos outros são ``None``) e só enquanto o servidor não reinicia.
-    Todos são exibição, nunca voltam ao estado, e são iguais para todos os jogadores."""
+    livre, só no primeiro evento visível do lote (nos outros é ``None``) e só enquanto o
+    servidor não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para
+    todos os jogadores."""
 
     index: int
     turn: int
@@ -265,12 +255,26 @@ class EventView(StrictModel):
     text: str
     prose: str
     narration: str | None = None
-    speech: str | None = None
+
+
+class TalkView(StrictModel):
+    """Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.
+    ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
+    personagem que a provocou. Não é evento: o LLM nunca escreve no estado."""
+
+    seq: int
+    after: int
+    to: Id
+    text: str
 
 
 class EventsView(StrictModel):
     revision: int
     events: list[EventView]
+    # Falas com ``seq`` maior que ``since_talk``; ``talk_seq`` é a última (o cliente a devolve
+    # em ``since_talk``). Os números sobem entre reinícios do servidor.
+    talk: list[TalkView] = Field(default_factory=list)
+    talk_seq: int = 0
 
 
 class CommandResult(StrictModel):
