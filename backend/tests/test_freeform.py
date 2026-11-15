@@ -300,5 +300,5 @@ def test_secrets_are_sent_unless_the_caller_leaves_them_out(base):
     session, client = with_llm(session, reply(say="ok"), reply(say="ok"))
     run_freeform(session, "olho em volta")
     assert "líder do culto" in client.calls[0]["messages"][1]["content"]
-    run_freeform(session, "olho em volta", include_secrets=False)
+    run_freeform(session, "olho em volta", include_private=False)
     assert "líder do culto" not in client.calls[1]["messages"][1]["content"]

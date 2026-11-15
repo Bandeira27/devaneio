@@ -296,7 +296,7 @@
     },
     "CampaignView": {
       "additionalProperties": false,
-      "description": "A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,\nlocal atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos\nmarcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o\nanfitrião, que recebe a ``Campaign`` inteira.",
+      "description": "A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,\nlocal atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos\nocultos, ``private_notes``, facções, condições dos\nmarcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o\nanfitrião, que recebe a ``Campaign`` inteira.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -322,6 +322,12 @@
             "$ref": "#/$defs/BeatInfo"
           },
           "type": "array"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/FactInfo"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -330,7 +336,8 @@
         "premise",
         "location",
         "npcs",
-        "beats"
+        "beats",
+        "facts"
       ],
       "title": "CampaignView",
       "type": "object"
@@ -629,6 +636,36 @@
         "reveal_when"
       ],
       "title": "FactDef",
+      "type": "object"
+    },
+    "FactInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "about": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "about"
+      ],
+      "title": "FactInfo",
       "type": "object"
     },
     "Faction": {

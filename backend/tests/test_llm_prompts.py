@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from devaneio.engine import add_character, initial_state, move
+from devaneio.engine import add_character, initial_state, move, reveal_fact
 from devaneio.llm import MAX_ACTIONS, build_context, build_messages, feedback_message
 from devaneio.llm.prompts import PROPOSER_SYSTEM
-from devaneio.schema import Event
+from devaneio.schema import Event, FactDef
 
 
 @pytest.fixture
@@ -109,8 +109,50 @@ def test_secrets_can_be_left_out_of_the_prompt(campaign, rules, state):
     ruins = move(here, campaign, to_location_id="ruinas").state
     with_secrets = build_context(campaign, rules, ruins, "aria")
     assert with_secrets["npcs_aqui"][0]["segredos"] == ["é o líder do culto"]
-    without = build_context(campaign, rules, ruins, "aria", include_secrets=False)
+    without = build_context(campaign, rules, ruins, "aria", include_private=False)
     assert "segredos" not in without["npcs_aqui"][0]
     assert without["npcs_aqui"][0]["nome"] == "Irmão Vael"
-    messages = build_messages(campaign, rules, ruins, "aria", "oi", include_secrets=False)
+    messages = build_messages(campaign, rules, ruins, "aria", "oi", include_private=False)
     assert "líder do culto" not in messages[1]["content"]
+
+
+def test_a_revealed_fact_is_public_and_a_hidden_one_is_private(campaign, rules, state):
+    with_notes = campaign.model_copy(
+        update={
+            "locations": [
+                loc.model_copy(update={"private_notes": ["a vila esconde um poço"]})
+                if loc.id == "vila"
+                else loc
+                for loc in campaign.locations
+            ],
+            "facts": [
+                FactDef(id="culto", text="O culto é real."),
+                FactDef(id="poco", text="O poço leva às ruínas."),
+            ],
+        }
+    )
+    revealed = reveal_fact(state, with_notes, fact_id="culto").state
+
+    public = build_context(with_notes, rules, revealed, "aria", include_private=False)
+    assert public["fatos_revelados"] == [{"sobre": None, "texto": "O culto é real."}]
+    assert "privado" not in public
+    flat = json.dumps(public, ensure_ascii=False)
+    assert "O poço leva às ruínas." not in flat
+    assert "a vila esconde um poço" not in flat
+
+    private = build_context(with_notes, rules, revealed, "aria", include_private=True)
+    assert private["fatos_revelados"] == public["fatos_revelados"]
+    assert private["privado"] == ["a vila esconde um poço", "O poço leva às ruínas."]
+    assert "O culto é real." not in private["privado"]
+
+
+def test_a_revealed_fact_about_an_npc_names_who_it_is_about(campaign, rules, state):
+    with_fact = campaign.model_copy(
+        update={"facts": [FactDef(id="forja", text="Sabe forjar.", about="ferreiro")]}
+    )
+    revealed = reveal_fact(state, with_fact, fact_id="forja").state
+    ctx = build_context(with_fact, rules, revealed, "aria", include_private=False)
+    assert ctx["fatos_revelados"] == [{"sobre": "Bram", "texto": "Sabe forjar."}]
+    hidden = build_context(with_fact, rules, state, "aria", include_private=True)
+    assert hidden["npcs_aqui"][0]["segredos"] == ["Sabe forjar."]
+    assert hidden["fatos_revelados"] == []

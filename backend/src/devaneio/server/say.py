@@ -97,7 +97,7 @@ class SayDesk:
                 actor=who,
                 allow=lambda working, line: authorize_proposal(player, working, line),
                 hide_events=hidden_events(session.state, session.campaign),
-                include_secrets=self._secrets,
+                include_private=self._secrets,
             )
         except GameOverError as exc:
             raise ApiFailure(409, "game_over", str(exc)) from None

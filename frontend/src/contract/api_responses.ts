@@ -332,7 +332,8 @@ export interface FactDef {
 }
 /**
  * A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
- * local atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos
+ * local atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos
+ * ocultos, ``private_notes``, facções, condições dos
  * marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
  * anfitrião, que recebe a ``Campaign`` inteira.
  */
@@ -343,6 +344,7 @@ export interface CampaignView {
   location: LocationView;
   npcs: NpcInfo[];
   beats: BeatInfo[];
+  facts: FactInfo[];
 }
 export interface LocationView {
   id: string;
@@ -361,6 +363,11 @@ export interface NpcInfo {
 export interface BeatInfo {
   id: string;
   title: string;
+}
+export interface FactInfo {
+  id: string;
+  text: string;
+  about: string | null;
 }
 export interface ErrorResponse {
   error: ApiError;

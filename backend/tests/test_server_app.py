@@ -7,6 +7,7 @@ from itertools import count
 import pytest
 
 from conftest import CAMPAIGN_PATH
+from devaneio.engine import reveal_fact
 from devaneio.game import load_game, new_game, save_game
 from devaneio.llm import LlmConfig
 from devaneio.schema import Campaign, GameState
@@ -160,6 +161,22 @@ def test_a_save_without_table_in_the_data_folder_is_not_a_table(service, created
 
 def join(service, created, name="Bia", invite="convite-fixo"):
     return service.join_table(created.table_id, JoinRequest(invite_code=invite, name=name))
+
+
+def test_players_see_a_fact_only_after_it_is_revealed(service, created):
+    joined = join(service, created)
+    before = service.get_campaign(created.table_id, bearer(joined.token))
+    assert before.facts == []
+
+    session = load_game(service.storage.path_for(created.table_id))
+    revealed = reveal_fact(session.state, session.campaign, fact_id="ferreiro-segredo").state
+    save_game(replace(session, state=revealed))
+    after = service.get_campaign(created.table_id, bearer(joined.token))
+    assert [(f.id, f.text) for f in after.facts] == [
+        ("ferreiro-segredo", "sabe o caminho secreto para o altar")
+    ]
+    view = service.get_table(created.table_id, joined.token)
+    assert view.state.revealed_facts == {"ferreiro-segredo": 0}
 
 
 def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(service, created):

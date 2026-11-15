@@ -186,6 +186,9 @@ def _look(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameS
     active = [titles[b] for b, st in state.beats.items() if st is BeatStatus.ACTIVE]
     if active:
         lines.append("Marcos ativos: " + ", ".join(active))
+    known = [f.text for f in campaign.facts if f.id in state.revealed_facts]
+    if known:
+        lines.append("Vocês sabem: " + " ".join(known))
 
     if state.characters:
         party = ", ".join(_char_line(c) for c in state.characters.values())

@@ -110,3 +110,10 @@ def test_fatos_and_revelar_commands(session):
 def test_fatos_without_facts(session):
     session = replace(session, campaign=campaign_with(session.campaign))
     assert execute(session, "fatos")[1] == "Nenhum fato na campanha."
+
+
+def test_olhar_tells_what_the_group_already_knows(session):
+    session, _ = execute(session, 'entrar aria "Aria"')
+    assert "Vocês sabem" not in execute(session, "olhar")[1]
+    session, _ = execute(session, "revelar culto")
+    assert "Vocês sabem: O culto é real." in execute(session, "olhar")[1]

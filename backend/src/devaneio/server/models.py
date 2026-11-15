@@ -118,9 +118,16 @@ class BeatInfo(StrictModel):
     title: str
 
 
+class FactInfo(StrictModel):
+    id: Id
+    text: str
+    about: Id | None
+
+
 class CampaignView(StrictModel):
     """A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
-    local atual com saídas, NPCs ali, marcos que já começaram). Facções, condições dos
+    local atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos
+    ocultos, ``private_notes``, facções, condições dos
     marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
     anfitrião, que recebe a ``Campaign`` inteira."""
 
@@ -130,6 +137,7 @@ class CampaignView(StrictModel):
     location: LocationView
     npcs: list[NpcInfo]
     beats: list[BeatInfo]
+    facts: list[FactInfo]
 
     @classmethod
     def of(cls, campaign: Campaign, state: GameState) -> CampaignView:
@@ -151,6 +159,11 @@ class CampaignView(StrictModel):
                 BeatInfo(id=b.id, title=b.title)
                 for b in campaign.beats
                 if state.beats.get(b.id) not in (None, BeatStatus.PENDING)
+            ],
+            facts=[
+                FactInfo(id=f.id, text=f.text, about=f.about)
+                for f in campaign.facts
+                if f.id in state.revealed_facts
             ],
         )
 
