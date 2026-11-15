@@ -15,7 +15,7 @@ from devaneio.schema import Campaign, Character, Event, GameState, NpcState
 
 from .damage import TargetKind
 from .errors import EngineError
-from .lookup import combatant
+from .lookup import combatant, npc_locations
 
 
 @dataclass(frozen=True)
@@ -61,6 +61,7 @@ def heal(
             data={
                 "target_kind": target_kind,
                 "target_id": target_id,
+                "npc_locations": npc_locations(state, (target_kind, target_id)),
                 "amount": gained,
                 "hp_before": before,
                 "hp_after": after,

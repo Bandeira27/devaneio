@@ -264,3 +264,28 @@ def test_player_views_list_the_npcs_of_the_current_location(session):
     moved, _ = execute(moved, "ir ruinas")
     assert list(PlayerStateView.of(moved.state, moved.rules).npcs) == ["sacerdote"]
     assert [n.id for n in CampaignView.of(moved.campaign, moved.state).npcs] == ["sacerdote"]
+
+
+def test_a_hidden_event_stays_hidden_if_the_npc_moves_afterwards(tmp_path):
+    base = new_game(CAMPAIGN_PATH, tmp_path / "p.json", seed=7)
+    state, _ = execute(base, 'entrar bia "Bia"')
+    state, _ = execute(state, 'ferir sacerdote 2 "a"')  # o sacerdote está nas ruínas
+    state, _ = execute(state, 'ferir ferreiro 1 "b"')  # o ferreiro está na vila, com o grupo
+    npcs = dict(state.state.npcs)
+    npcs["sacerdote"] = npcs["sacerdote"].model_copy(update={"location_id": "vila"})
+    moved = state.state.model_copy(update={"npcs": npcs})  # um dia NPCs poderão andar
+    damages = [i for i, e in enumerate(moved.events) if e.kind == "damage"]
+    assert hidden_events(moved, state.campaign) == {damages[0]}  # o evento guardou onde ele estava
+
+
+def test_an_old_event_without_the_recorded_location_uses_the_current_one(tmp_path):
+    base = new_game(CAMPAIGN_PATH, tmp_path / "p.json", seed=7)
+    state, _ = execute(base, 'entrar bia "Bia"')
+    state, _ = execute(state, 'ferir sacerdote 2 "a"')
+    events = []
+    for event in state.state.events:
+        data = {k: v for k, v in event.data.items() if k != "npc_locations"}
+        events.append(event.model_copy(update={"data": data}))
+    old = state.state.model_copy(update={"events": events})
+    damage = next(i for i, e in enumerate(old.events) if e.kind == "damage")
+    assert hidden_events(old, state.campaign) == {damage}

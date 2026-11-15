@@ -9,6 +9,18 @@ from .errors import EngineError
 KINDS = ("character", "npc")
 
 
+def npc_locations(state: GameState, *who: tuple[str, str]) -> dict[str, str]:
+    """Onde estavam, agora, os NPCs entre ``(tipo, id)``. Os eventos gravam isso em
+    ``data["npc_locations"]``: quem filtra o log (o jogador não vê NPC de outro local) não
+    depende de o NPC continuar onde estava, o que vale se um dia NPCs puderem andar."""
+    found: dict[str, str] = {}
+    for kind, who_id in who:
+        npc = state.npcs.get(who_id) if kind == "npc" else None
+        if npc is not None and npc.location_id is not None:
+            found[who_id] = npc.location_id
+    return found
+
+
 def npc_ids_at(state: GameState, location_id: str) -> frozenset[str]:
     """Ids dos NPCs que estão num local. É o critério de "quem o grupo vê aqui": o ``olhar``, as
     visões do jogador na mesa e o filtro do log usam esta função, então mudar o critério

@@ -19,7 +19,7 @@ from devaneio.rules import (
 from devaneio.schema import Campaign, Event, GameState
 
 from .errors import EngineError
-from .lookup import combatant
+from .lookup import combatant, npc_locations
 
 OUTCOME_LABELS = {
     CheckOutcome.CRITICAL_FAILURE: "falha crítica",
@@ -152,6 +152,7 @@ def _resolve(
             data={
                 "actor_kind": actor_kind,
                 "actor_id": actor_id,
+                "npc_locations": npc_locations(state, (actor_kind, actor_id)),
                 "skill_id": skill_id,
                 "difficulty_id": difficulty_id,
                 "modifier_id": modifier_id,

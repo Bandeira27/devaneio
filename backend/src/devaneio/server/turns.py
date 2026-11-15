@@ -57,8 +57,10 @@ def hidden_events(state: GameState, campaign: Campaign) -> frozenset[int]:
     """Índices dos eventos sobre NPC que o grupo não via quando eles aconteceram.
 
     O local do grupo em cada momento vem de reproduzir os ``move`` desde o início da
-    campanha, então um evento escondido continua escondido depois que o grupo chega ao
-    NPC: a visão só cresce por eventos novos, e quem lê com ``since`` não perde nada."""
+    campanha, e o do NPC, do que o próprio evento gravou (``data["npc_locations"]``; evento
+    antigo sem o campo usa o local atual do NPC). Assim um evento escondido continua
+    escondido depois que o grupo chega ao NPC, mesmo que o NPC se mova: a visão só cresce
+    por eventos novos, e quem lê com ``since`` não perde nada."""
     here = campaign.start_location_id
     hidden: set[int] = set()
     for index, event in enumerate(state.events):
@@ -68,7 +70,11 @@ def hidden_events(state: GameState, campaign: Campaign) -> frozenset[int]:
             if event.data.get(kind_key) != "npc":
                 continue
             npc_id = str(event.data.get(id_key))
-            if npc_id in state.npcs and npc_id not in npc_ids_at(state, here):
+            recorded = event.data.get("npc_locations", {})
+            where = recorded.get(npc_id) if isinstance(recorded, dict) else None
+            if where is None and npc_id in state.npcs:
+                where = state.npcs[npc_id].location_id  # evento antigo: o local de agora
+            if where is not None and where != here:
                 hidden.add(index)
     return frozenset(hidden)
 

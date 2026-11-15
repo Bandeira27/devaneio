@@ -69,8 +69,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     os eventos. O comando `log` é do anfitrião; o jogador lê `GET .../events`. A narração compartilhada do LLM e o prompt
     de proposta (`hide_events`) só recebem eventos que os jogadores veem, porque a fala do modelo vai a todos. Campo novo
     em `Event.data` que cite NPC precisa entrar em `PARTICIPANT_KEYS` (um teste percorre eventos reais do motor e falha
-    se um id de NPC aparecer sob outra chave). Premissas: o local de um NPC (`npc_ids_at`, critério único do `olhar`,
-    das visões e do filtro) é estático (se um dia mudar, a estabilidade do filtro precisa gravar o local no evento); e um
+    se um id de NPC aparecer sob outra chave). O motor grava em `data["npc_locations"]` onde estava cada NPC do evento,
+    então o filtro não depende de o NPC continuar lá (evento antigo sem o campo usa o local atual); `npc_ids_at` é o
+    critério único do `olhar` e das visões. Um
     marco que conclui por `npc_down` de NPC escondido revelaria a queda dele pelo título: autor de campanha não deve
     ativar esse marco com o grupo longe. O filtro custa cerca de 2 ms para 1.500 eventos.
     Mensagens do motor em 422 ainda confirmam ids de locais (`ir xyz`). O anfitrião pode gastar a ação de um
