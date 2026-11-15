@@ -213,6 +213,20 @@ def test_entering_has_size_limits(desk, line):
     assert desk.raw() == before
 
 
+def test_a_fallen_character_cannot_act_until_healed(desk):
+    desk.cmd(desk.host, 'entrar ana "Ana"')
+    bia = desk.player("Bia")
+    desk.cmd(desk.host, "ferir bia 99")
+    before = desk.raw()
+    error = desk.refused(bia, "testar lutar normal")
+    assert (error.status, error.code) == (422, "command_refused")
+    assert "Bia está fora de combate e não pode agir" in error.message
+    assert desk.raw() == before
+    assert desk.view(bia).acted == {}  # recusa não gasta a ação
+    desk.cmd(desk.host, "curar bia 5")
+    assert desk.cmd(bia, "testar lutar normal").events[0].kind == "check"
+
+
 # --- revisão, turno, fim da partida -------------------------------------------------
 
 

@@ -55,6 +55,11 @@
           ],
           "default": null,
           "description": "arma de quem não declara nenhuma (NPCs); None exige weapon_id"
+        },
+        "fallen_can_act": {
+          "default": false,
+          "description": "personagem com hp 0 (fora de combate) ainda pode agir; por padrão não",
+          "type": "boolean"
         }
       },
       "required": [

@@ -180,6 +180,8 @@ O sistema padrão, **Devaneio Básico** (`backend/src/devaneio/rules/data/defaul
 atributos FOR, AGI, MEN e PRE de 1 a 5; teste `2d6 + atributo` contra uma dificuldade
 (Fácil 7, Normal 9, Difícil 11, Heroica 13); margem ≤ -5 é falha crítica, ≥ 5 sucesso
 crítico; vantagem/desvantagem ±2; `max_hp = 6 + FOR * 2`.
+Personagem com hp 0 está fora de combate e **não age** (`testar`, `atacar` e `ir` com `id:`) até ser curado; o sistema
+pode mudar isso com `combat.fallen_can_act: true`.
 
 A aleatoriedade é reprodutível: o estado guarda só `rng_seed` e `rng_draws`, e o gerador
 (SplitMix64 próprio) é recriado a partir deles a cada ação.

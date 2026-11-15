@@ -104,6 +104,10 @@ class Combat(StrictModel):
     default_weapon: Id | None = Field(
         default=None, description="arma de quem não declara nenhuma (NPCs); None exige weapon_id"
     )
+    fallen_can_act: bool = Field(
+        default=False,
+        description="personagem com hp 0 (fora de combate) ainda pode agir; por padrão não",
+    )
 
 
 class Dispositions(StrictModel):

@@ -581,3 +581,15 @@ def test_only_the_latest_narrations_are_kept(desk):
     assert len(kept) == MAX_NARRATIONS
     assert min(kept) == 5
     assert kept[MAX_NARRATIONS + 4] == f"p{MAX_NARRATIONS + 4}"
+
+
+def test_the_llm_cannot_make_a_fallen_character_act(desk, script):
+    desk.cmd(desk.host, 'entrar ana "Ana"')
+    bia = desk.player("Bia")
+    desk.cmd(desk.host, "ferir bia 99")
+    script.proposals += [proposal(CHECK), proposal(CHECK)]
+    before = desk.raw()
+    error = desk.refused(bia, "tento")
+    assert (error.status, error.code) == (422, "command_refused")
+    assert "fora de combate" in error.message
+    assert desk.raw() == before
