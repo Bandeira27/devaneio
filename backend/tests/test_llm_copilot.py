@@ -246,3 +246,10 @@ def test_the_messages_carry_the_reduction_notice(campaign, rules, state, monkeyp
     )
     _, user = build_copilot_messages(campaign, rules, state, "oi")
     assert "Contexto reduzido por tamanho" in user["content"]
+
+
+def test_the_prompt_explains_that_all_conditions_of_a_list_must_hold():
+    assert "TODAS as de uma lista" in COPILOT_SYSTEM
+    assert 'nunca "ou"' in COPILOT_SYSTEM
+    for kind in ("at_location", "npc_down", "beat_done", "turn_at_least", "check_passed"):
+        assert kind in COPILOT_SYSTEM
