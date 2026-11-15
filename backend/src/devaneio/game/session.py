@@ -11,26 +11,13 @@ from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state, reveal_facts
 from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
-from devaneio.narration import Narrator, load_builtin_pack
-from devaneio.rules import (
-    RuleSystem,
-    load_builtin_rules,
-    validate_campaign_against_rules,
-    validate_state_against_rules,
-)
-from devaneio.schema import (
-    Campaign,
-    GameState,
-    StrictModel,
-    load_campaign,
-    validate_against_campaign,
-)
+from devaneio.narration import Narrator
+from devaneio.rules import RuleSystem, validate_state_against_rules
+from devaneio.schema import Campaign, GameState, StrictModel, validate_against_campaign
 
+from .content import joined, load_campaign_content
+from .errors import GameError
 from .table import TableMeta
-
-
-class GameError(ValueError):
-    """Problema ao criar ou abrir uma partida (arquivo incoerente, campanha incompatível)."""
 
 
 class SaveFile(StrictModel):
@@ -66,13 +53,18 @@ def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> S
     """Cria o estado inicial (com os marcos iniciais já ativos) e grava. Semente aleatória
     (< 2**53, portável) se não for dada."""
     campaign_path = Path(campaign_path).resolve()
-    campaign, rules = _load_campaign_and_rules(campaign_path)
+    campaign, rules, pack = load_campaign_content(campaign_path)
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
     state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
     state, _ = reveal_facts(state, campaign)
     session = Session(
-        campaign, rules, state, campaign_path, Path(save_path).resolve(), _narrator(campaign, rules)
+        campaign,
+        rules,
+        state,
+        campaign_path,
+        Path(save_path).resolve(),
+        Narrator(campaign, rules, pack),
     )
     save_game(session)
     return session
@@ -89,19 +81,19 @@ def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
         Path(campaign_root).resolve()
     ):
         raise GameError(f"partida '{save_path}' aponta para uma campanha fora da pasta permitida")
-    campaign, rules = _load_campaign_and_rules(campaign_path)
+    campaign, rules, pack = load_campaign_content(campaign_path)
     errors = validate_against_campaign(data.state, campaign) + validate_state_against_rules(
         data.state, rules
     )
     if errors:
-        raise GameError(_joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
+        raise GameError(joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
     return Session(
         campaign,
         rules,
         data.state,
         campaign_path,
         save_path,
-        _narrator(campaign, rules),
+        Narrator(campaign, rules, pack),
         table=data.table,
     )
 
@@ -120,20 +112,3 @@ def save_game(session: Session) -> None:
     except OSError:
         os.unlink(temp)
         raise
-
-
-def _narrator(campaign: Campaign, rules: RuleSystem) -> Narrator:
-    return Narrator(campaign, rules, load_builtin_pack("pt-br"))
-
-
-def _load_campaign_and_rules(campaign_path: Path) -> tuple[Campaign, RuleSystem]:
-    campaign = load_campaign(campaign_path.read_text(encoding="utf-8"))
-    rules = load_builtin_rules(campaign.rules_id)
-    errors = validate_campaign_against_rules(campaign, rules)
-    if errors:
-        raise GameError(_joined(f"campanha '{campaign.id}' incompatível com '{rules.id}'", errors))
-    return campaign, rules
-
-
-def _joined(head: str, errors: list[str]) -> str:
-    return head + ":\n" + "\n".join(f"- {e}" for e in errors)
