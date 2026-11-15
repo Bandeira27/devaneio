@@ -9,19 +9,27 @@ anfitrião configurou o LLM e o aviso da mesa diz isso a todos.
 
 from __future__ import annotations
 
-import math
 import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from devaneio.game import LlmConfig, Session, connect_llm
-from devaneio.llm import CopilotContextTooLarge, LlmError, ask_copilot
-from devaneio.llm.text import clean_text
+from devaneio.game import (
+    CopilotContextTooLarge,
+    LlmConfig,
+    LlmError,
+    Session,
+    ask_copilot,
+    clean_text,
+    connect_llm,
+)
 
 from .errors import ApiFailure
+from .llm_gate import COPILOT, reserve
 from .models import CopilotAnswer, CopilotRequest
 from .storage import Storage
 from .turns import authenticate
+
+TABLE_KEY = "mesa"  # só o anfitrião consulta: o intervalo vale para a mesa, não por jogador
 
 
 class CopilotDesk:
@@ -44,15 +52,8 @@ class CopilotDesk:
             _, _, player = authenticate(session, token)
             if player.role != "host":
                 raise ApiFailure(403, "forbidden", "o copiloto é só do anfitrião")
-        left = storage.copilot_cooldown_left(table_id, self._cooldown)
-        if left > 0:
-            raise ApiFailure(
-                429, "copilot_rate_limited", f"espere {math.ceil(left)} s para consultar o copiloto"
-            )
-        if not storage.enter_copilot(table_id):
-            raise ApiFailure(409, "copilot_busy", "já há uma consulta ao copiloto em andamento")
+        reserve(storage, table_id, COPILOT, TABLE_KEY, self._cooldown)
         try:  # fase 2, sem lock
-            storage.mark_copilot(table_id)  # conta mesmo se o LLM falhar
             client = connect_llm(self._llm)
             text = ask_copilot(client, session.campaign, session.rules, session.state, request.text)
         except CopilotContextTooLarge as exc:
@@ -67,5 +68,5 @@ class CopilotDesk:
                 502, "llm_unavailable", "o servidor de LLM não respondeu direito"
             ) from None
         finally:
-            storage.leave_copilot(table_id)
+            storage.leave_slot(table_id, COPILOT.kind)
         return CopilotAnswer(text=text)

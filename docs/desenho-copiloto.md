@@ -22,6 +22,10 @@ resposta `{"text": "..."}` síncrona, `200`, `Cache-Control: no-store`.
 - Falha do servidor de LLM: `502 llm_unavailable` sem detalhe do provedor (o detalhe vai ao stderr).
 - Não é comando do jogo: não entra em `COMMANDS` nem na política de papéis.
 
+O intervalo e a vaga usam o mesmo portão do `/say` (`server/llm_gate.py`): recusar se o intervalo não passou
+(`429`), recusar se já há uma chamada do mesmo tipo (`409`) e contar o pedido. Cada tipo tem a sua vaga no
+`Storage` (`enter_slot`, `leave_slot`, `slot_cooldown_left`, `mark_slot`), então um não segura o outro.
+
 ## Canal e privacidade
 
 A resposta volta só a quem perguntou. Ela **não** entra no mural nem na narração (`Presentation`), não vira

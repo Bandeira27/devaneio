@@ -194,12 +194,12 @@ def test_only_one_consultation_at_a_time(desk, script):
 
 def test_the_copilot_seat_is_independent_from_the_free_text_seat(desk):
     storage = desk.service.storage
-    assert storage.enter_say(desk.id)
-    assert storage.enter_copilot(desk.id)
-    assert not storage.enter_copilot(desk.id)
-    storage.leave_copilot(desk.id)
-    assert not storage.enter_say(desk.id)  # a do /say continua ocupada
-    storage.leave_say(desk.id)
+    assert storage.enter_slot(desk.id, "say")
+    assert storage.enter_slot(desk.id, "copilot")
+    assert not storage.enter_slot(desk.id, "copilot")
+    storage.leave_slot(desk.id, "copilot")
+    assert not storage.enter_slot(desk.id, "say")  # a do /say continua ocupada
+    storage.leave_slot(desk.id, "say")
 
 
 def test_the_interval_between_consultations_counts_even_on_failure(tmp_path, llm, clock, script):
@@ -268,8 +268,8 @@ def test_the_seat_is_returned_when_the_llm_server_is_unreachable(tmp_path, llm, 
     )
     desk = Desk(service)
     assert desk.refused(desk.host).status == 502
-    assert service.storage.enter_copilot(desk.id)  # a vaga voltou
-    service.storage.leave_copilot(desk.id)
+    assert service.storage.enter_slot(desk.id, "copilot")  # a vaga voltou
+    service.storage.leave_slot(desk.id, "copilot")
 
 
 def test_the_seat_is_returned_even_on_an_unexpected_error(desk, monkeypatch):
@@ -279,8 +279,8 @@ def test_the_seat_is_returned_even_on_an_unexpected_error(desk, monkeypatch):
     monkeypatch.setattr("devaneio.server.copilot.connect_llm", boom)
     with pytest.raises(RuntimeError):
         desk.ask(desk.host)
-    assert desk.service.storage.enter_copilot(desk.id)
-    desk.service.storage.leave_copilot(desk.id)
+    assert desk.service.storage.enter_slot(desk.id, "copilot")
+    desk.service.storage.leave_slot(desk.id, "copilot")
 
 
 def test_with_zero_interval_consecutive_consultations_pass(desk, script):
@@ -304,3 +304,19 @@ def test_a_campaign_too_big_for_the_copilot_is_a_clear_422(desk, script, monkeyp
     assert script.requests == []  # nem chegou ao LLM
     monkeypatch.setattr("devaneio.llm.copilot.MAX_CONTEXT_CHARS", 60_000)
     assert desk.ask(desk.host).text  # e a vaga foi devolvida
+
+
+def test_the_default_interval_is_five_seconds(tmp_path, llm, clock):
+    config = LlmConfig(base_url=llm.base_url, model="m-teste")
+    service = TableService(  # sem copilot_cooldown: vale o padrão
+        Catalog(CAMPAIGN_PATH.parent),
+        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        llm=config,
+        token_source=lambda: f"token-{next(TOKENS)}",
+        invite_source=lambda: "convite",
+    )
+    desk = Desk(service)
+    assert desk.ask(desk.host).text
+    assert desk.refused(desk.host).code == "copilot_rate_limited"
+    clock.now += 5
+    assert desk.ask(desk.host).text

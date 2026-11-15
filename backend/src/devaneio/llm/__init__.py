@@ -24,6 +24,7 @@ from .copilot import (
 from .errors import LlmError
 from .narration import narrate_with_llm
 from .prompts import build_context, build_messages, feedback_message
+from .text import clean_text
 
 __all__ = [
     "EXAMPLE_PROPOSAL",
@@ -45,6 +46,7 @@ __all__ = [
     "build_copilot_context",
     "build_copilot_messages",
     "build_messages",
+    "clean_text",
     "feedback_message",
     "narrate_with_llm",
     "parse_proposal",
