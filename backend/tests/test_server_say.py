@@ -467,7 +467,7 @@ def test_if_the_narration_fails_the_grammar_is_used(desk, script, capsys):
     result = desk.say(bia, "tento")
     assert result.events[0].prose  # a da gramática continua lá
     assert result.events[0].narration is None
-    assert "narração indisponível" in capsys.readouterr().err
+    assert "narração por LLM indisponível" in capsys.readouterr().err
 
 
 def test_a_narration_in_data_format_is_dropped_and_the_grammar_is_used(desk, script):

@@ -2,10 +2,23 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from devaneio.engine import GameStatus, game_status
 from devaneio.llm import ChatClient, LlmError, narrate_with_llm
 from devaneio.narration import Narrator
-from devaneio.schema import GameState
+from devaneio.schema import Campaign, GameState
+
+
+def narrate_batch(
+    client: ChatClient, campaign: Campaign, after: GameState, texts: Sequence[str]
+) -> tuple[str | None, str]:
+    """Um parágrafo do LLM para o lote de eventos e, se ele falhar, ``None`` e o aviso de que
+    vale a gramática. É o único lugar com esse fallback: CLI e servidor o usam."""
+    try:
+        return narrate_with_llm(client, campaign, after, texts), ""
+    except LlmError as exc:
+        return None, f"(narração por LLM indisponível: {exc}; usei a gramática)"
 
 
 def format_output(
@@ -26,11 +39,9 @@ def format_output(
 
     note = ""
     if llm is not None:
-        try:
-            prose = narrate_with_llm(llm, narrator.campaign, after, [e.text for e in events])
+        prose, note = narrate_batch(llm, narrator.campaign, after, [e.text for e in events])
+        if prose is not None:
             return "\n".join([prose, *(f"  [{e.text}]" for e in events)])
-        except LlmError as exc:
-            note = f"(narração por LLM indisponível: {exc}; usei a gramática)"
 
     lines: list[str] = []
     for index, event in zip(indexes, events, strict=True):

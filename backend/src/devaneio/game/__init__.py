@@ -14,8 +14,8 @@ from .commands import (
     split_actor,
 )
 from .freeform import FreeformResult, LlmUnavailableError, run_freeform
-from .output import format_output, status_banner
-from .session import GameError, Session, load_game, new_game, save_game
+from .output import format_output, narrate_batch, status_banner
+from .session import GameError, Session, connect_llm, load_game, new_game, save_game
 from .table import Player, Role, TableMeta
 
 __all__ = [
@@ -30,10 +30,12 @@ __all__ = [
     "Role",
     "Session",
     "TableMeta",
+    "connect_llm",
     "execute",
     "format_output",
     "is_command",
     "load_game",
+    "narrate_batch",
     "new_game",
     "parse_line",
     "run_freeform",

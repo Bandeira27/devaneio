@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state
-from devaneio.llm import ChatClient
+from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
 from devaneio.narration import Narrator, load_builtin_pack
 from devaneio.rules import (
     RuleSystem,
@@ -54,6 +54,12 @@ class Session:
     narrator: Narrator
     llm: ChatClient | None = None  # opcional; nunca gravado na partida
     table: TableMeta | None = None  # mesa em grupo; gravada junto com o estado
+
+
+def connect_llm(config: LlmConfig) -> ChatClient:
+    """O cliente de LLM de uma configuração. É o único lugar que escolhe a implementação:
+    CLI e servidor só pedem o cliente."""
+    return OpenAiCompatClient(config)
 
 
 def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> Session:

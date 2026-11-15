@@ -25,14 +25,16 @@ from devaneio.game import (
     Role,
     Session,
     TableMeta,
+    connect_llm,
     load_game,
+    narrate_batch,
     new_game,
     parse_line,
     run_freeform,
     save_game,
     split_actor,
 )
-from devaneio.llm import LlmConfig, LlmError, OpenAiCompatClient, narrate_with_llm
+from devaneio.llm import ChatClient, LlmConfig
 from devaneio.schema import Campaign
 
 from . import policy
@@ -264,7 +266,7 @@ class TableService:
         session, table, player, who, text = sent
         if self.llm is None:  # já checado em say(); aqui só estreita o tipo
             raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
-        client = OpenAiCompatClient(self.llm)
+        client = connect_llm(self.llm)
         revision = len(session.state.events)
         try:  # fase 2, sem lock
             freeform = run_freeform(
@@ -311,16 +313,15 @@ class TableService:
         )
 
     @staticmethod
-    def _llm_prose(client: OpenAiCompatClient, session: Session, start: int) -> dict[int, str]:
+    def _llm_prose(client: ChatClient, session: Session, start: int) -> dict[int, str]:
         """Um parágrafo do LLM para o lote de eventos novos, no índice do primeiro. Se o LLM
         falhar, nada: ``EventView.narration`` fica ``None`` e vale a prosa da gramática."""
         events = session.state.events[start:]
-        try:
-            paragraph = narrate_with_llm(
-                client, session.campaign, session.state, [e.text for e in events]
-            )
-        except LlmError as exc:
-            print(f"llm: narração indisponível: {exc}", file=sys.stderr)
+        paragraph, note = narrate_batch(
+            client, session.campaign, session.state, [e.text for e in events]
+        )
+        if paragraph is None:
+            print(f"llm: {note}", file=sys.stderr)
             return {}
         return {start: paragraph}
 
