@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import random
 import tempfile
@@ -11,26 +13,21 @@ from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state, reveal_facts
 from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
-from devaneio.narration import Narrator, load_builtin_pack
-from devaneio.rules import (
-    RuleSystem,
-    load_builtin_rules,
-    validate_campaign_against_rules,
-    validate_state_against_rules,
-)
-from devaneio.schema import (
-    Campaign,
-    GameState,
-    StrictModel,
-    load_campaign,
-    validate_against_campaign,
-)
+from devaneio.narration import NarrationPack, Narrator
+from devaneio.rules import RuleSystem, validate_state_against_rules
+from devaneio.schema import Campaign, GameState, StrictModel, validate_against_campaign
 
+from .content import joined, load_campaign_content
+from .errors import GameError
 from .table import TableMeta
 
 
-class GameError(ValueError):
-    """Problema ao criar ou abrir uma partida (arquivo incoerente, campanha incompatível)."""
+class ContentHashes(StrictModel):
+    """Impressão digital do conteúdo com que a partida foi jogada (modelos já mesclados). Serve só
+    para avisar que o autor mudou o sistema ou a narração; nunca recusa a partida."""
+
+    rules_sha256: str
+    narration_sha256: str
 
 
 class SaveFile(StrictModel):
@@ -42,6 +39,8 @@ class SaveFile(StrictModel):
     state: GameState
     # Mesa (jogo em grupo): opcional e aditivo; o CLI solo preserva o que não interpreta.
     table: TableMeta | None = None
+    # Opcional: partidas antigas não têm e abrem sem aviso.
+    content: ContentHashes | None = None
 
 
 @dataclass
@@ -54,6 +53,8 @@ class Session:
     narrator: Narrator
     llm: ChatClient | None = None  # opcional; nunca gravado na partida
     table: TableMeta | None = None  # mesa em grupo; gravada junto com o estado
+    # Avisos de ao abrir (conteúdo mudou desde o último salvamento); quem abre mostra.
+    warnings: tuple[str, ...] = ()
 
 
 def connect_llm(config: LlmConfig) -> ChatClient:
@@ -66,13 +67,18 @@ def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> S
     """Cria o estado inicial (com os marcos iniciais já ativos) e grava. Semente aleatória
     (< 2**53, portável) se não for dada."""
     campaign_path = Path(campaign_path).resolve()
-    campaign, rules = _load_campaign_and_rules(campaign_path)
+    campaign, rules, pack = load_campaign_content(campaign_path)
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
     state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
     state, _ = reveal_facts(state, campaign)
     session = Session(
-        campaign, rules, state, campaign_path, Path(save_path).resolve(), _narrator(campaign, rules)
+        campaign,
+        rules,
+        state,
+        campaign_path,
+        Path(save_path).resolve(),
+        Narrator(campaign, rules, pack),
     )
     save_game(session)
     return session
@@ -89,20 +95,21 @@ def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
         Path(campaign_root).resolve()
     ):
         raise GameError(f"partida '{save_path}' aponta para uma campanha fora da pasta permitida")
-    campaign, rules = _load_campaign_and_rules(campaign_path)
+    campaign, rules, pack = load_campaign_content(campaign_path)
     errors = validate_against_campaign(data.state, campaign) + validate_state_against_rules(
         data.state, rules
     )
     if errors:
-        raise GameError(_joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
+        raise GameError(joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
     return Session(
         campaign,
         rules,
         data.state,
         campaign_path,
         save_path,
-        _narrator(campaign, rules),
+        Narrator(campaign, rules, pack),
         table=data.table,
+        warnings=_content_warnings(data.content, content_hashes(rules, pack), rules, pack),
     )
 
 
@@ -110,7 +117,12 @@ def save_game(session: Session) -> None:
     """Escrita atômica: arquivo temporário na mesma pasta e ``os.replace``, para uma queda
     no meio nunca deixar a partida truncada."""
     relative = os.path.relpath(session.campaign_path, session.save_path.parent)
-    payload = SaveFile(campaign_path=relative, state=session.state, table=session.table)
+    payload = SaveFile(
+        campaign_path=relative,
+        state=session.state,
+        table=session.table,
+        content=content_hashes(session.rules, session.narrator.pack),
+    )
     text = payload.model_dump_json(indent=2) + "\n"
     fd, temp = tempfile.mkstemp(dir=session.save_path.parent, prefix=".partida-", suffix=".tmp")
     try:
@@ -122,18 +134,32 @@ def save_game(session: Session) -> None:
         raise
 
 
-def _narrator(campaign: Campaign, rules: RuleSystem) -> Narrator:
-    return Narrator(campaign, rules, load_builtin_pack("pt-br"))
+def content_hashes(rules: RuleSystem, pack: NarrationPack) -> ContentHashes:
+    return ContentHashes(rules_sha256=_digest(rules), narration_sha256=_digest(pack))
 
 
-def _load_campaign_and_rules(campaign_path: Path) -> tuple[Campaign, RuleSystem]:
-    campaign = load_campaign(campaign_path.read_text(encoding="utf-8"))
-    rules = load_builtin_rules(campaign.rules_id)
-    errors = validate_campaign_against_rules(campaign, rules)
-    if errors:
-        raise GameError(_joined(f"campanha '{campaign.id}' incompatível com '{rules.id}'", errors))
-    return campaign, rules
+def _digest(model: RuleSystem | NarrationPack) -> str:
+    # Ordenado e sem defaults: reordenar chaves do JSON do autor, ou o projeto ganhar um campo
+    # novo com valor padrão, não conta como mudança.
+    dumped = model.model_dump(mode="json", exclude_defaults=True)
+    text = json.dumps(dumped, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _joined(head: str, errors: list[str]) -> str:
-    return head + ":\n" + "\n".join(f"- {e}" for e in errors)
+def _content_warnings(
+    saved: ContentHashes | None, now: ContentHashes, rules: RuleSystem, pack: NarrationPack
+) -> tuple[str, ...]:
+    if saved is None:
+        return ()
+    warnings = []
+    if saved.rules_sha256 != now.rules_sha256:
+        warnings.append(
+            f"O sistema de regras '{rules.id}' mudou desde que esta partida foi salva: fórmulas, "
+            "armas e dificuldades podem se comportar diferente do que o grupo já viveu."
+        )
+    if saved.narration_sha256 != now.narration_sha256:
+        warnings.append(
+            f"O pacote de narração '{pack.id}' mudou desde que esta partida foi salva: só o texto "
+            "da narração muda, o jogo não."
+        )
+    return tuple(warnings)

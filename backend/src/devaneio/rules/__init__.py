@@ -1,6 +1,13 @@
 """Regras como dados: expressões de dados, esquema do sistema de regras e validação."""
 
 from .expression import DiceRoll, EvalResult, ExpressionError, evaluate, identifiers, parse, roll
+from .extends import (
+    RulesExtendsError,
+    RuleSystemExtension,
+    builtin_rules_dict,
+    load_rules_extending,
+    merge_rules,
+)
 from .schema import (
     Attribute,
     CheckOutcome,
@@ -37,14 +44,19 @@ __all__ = [
     "Outcomes",
     "Rest",
     "RuleSystem",
+    "RuleSystemExtension",
+    "RulesExtendsError",
     "RulesIntegrityError",
     "Skill",
     "Weapon",
+    "builtin_rules_dict",
     "builtin_rules_json",
     "evaluate",
     "identifiers",
     "load_builtin_rules",
     "load_rules",
+    "load_rules_extending",
+    "merge_rules",
     "parse",
     "roll",
     "validate_campaign_against_rules",

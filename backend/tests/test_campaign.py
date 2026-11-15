@@ -166,7 +166,7 @@ def test_unknown_condition_kind_is_a_structural_error(campaign_data):
 def test_example_campaign_has_triggers(campaign):
     by_id = {b.id: b for b in campaign.beats}
     assert by_id["chegada"].complete_when[0].location_id == "floresta"
-    assert by_id["confronto"].complete_when[0].npc_id == "sacerdote"
+    assert by_id["confronto"].complete_when[1].npc_id == "sacerdote"
     assert by_id["pista"].complete_when == []
 
 
@@ -194,3 +194,10 @@ def test_fact_reveal_conditions_reject_unknown_beat_and_location(campaign_data):
         "fato 'ferreiro-segredo', reveal_when: marco 'nada' não existe",
         "fato 'ferreiro-segredo', reveal_when: local 'lugar' não existe",
     ]
+
+
+def test_narration_id_defaults_to_the_builtin_pack(campaign_data):
+    assert "narration_id" not in campaign_data
+    assert Campaign.model_validate(campaign_data).narration_id == "pt-br"
+    campaign_data["narration_id"] = "meu-estilo"
+    assert Campaign.model_validate(campaign_data).narration_id == "meu-estilo"

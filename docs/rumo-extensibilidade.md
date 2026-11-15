@@ -35,10 +35,10 @@ em parte; esta direção formaliza a fronteira e fecha as lacunas.
 2. **Tudo parametrizado, com padrão e coerência.** Cada número tem valor padrão no sistema base, e o sistema do
    usuário passa por verificação de coerência (como `validate_rules` já faz). Um sistema novo nasce como cópia
    ou `extends` do "Devaneio Básico", sobrescrevendo só o que mudou.
-3. **Sistemas e narrações do usuário carregam de arquivo.** Hoje só os embutidos carregam
-   (`load_builtin_rules`, `load_builtin_pack`): é a lacuna a fechar.
-4. **Conteúdo empacotado com id e versão.** Falta decidir o que acontece com partidas salvas quando o conteúdo
-   muda.
+3. **Sistemas e narrações do usuário carregam de arquivo.** Implementado: pastas `sistemas/` e `narracoes/` ao lado
+   da campanha, com `extends` de um nível e o comando `verificar` (ver o documento de desenho do passo 2).
+4. **Conteúdo empacotado com id e versão.** Parcial: a partida guarda o hash do sistema e da narração e avisa
+   quando mudam; versionar o conteúdo com migração segue em aberto.
 5. **A classificação de cada ação vira metadado**, não conjuntos fixos no servidor: se é leitura, ação
    principal ou do anfitrião, quais campos de evento citam NPC (para o filtro do log), e se o LLM pode propô-la.
    Hoje isso está em `server/policy.py`, em `PARTICIPANT_KEYS` e na allow-list de `llm/actions.py`.

@@ -128,3 +128,39 @@ def test_end_to_end_banner_and_lock(tmp_path):
     )
     assert "*** DERROTA: todo o grupo caiu." in played.stdout
     assert "erro: a partida terminou" in played.stdout
+
+
+def test_a_missing_authors_system_is_an_error_message_not_a_traceback(tmp_path):
+    data = json.loads(CAMPAIGN_PATH.read_text(encoding="utf-8"))
+    data["rules_id"] = "meu-sistema"
+    campaign = tmp_path / "campanha.json"
+    campaign.write_text(json.dumps(data), encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, "-m", "devaneio.cli", "nova", str(campaign), str(tmp_path / "p.json")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "'meu-sistema' não encontrado" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_jogar_shows_the_content_warnings_on_stderr(tmp_path):
+    data = json.loads(CAMPAIGN_PATH.read_text(encoding="utf-8"))
+    data["narration_id"] = "meu"
+    campaign = tmp_path / "campanha.json"
+    campaign.write_text(json.dumps(data), encoding="utf-8")
+    pack = tmp_path / "narracoes" / "meu.json"
+    pack.parent.mkdir()
+    pack.write_text(json.dumps({"id": "meu", "extends": "pt-br"}), encoding="utf-8")
+    save = tmp_path / "partida.json"
+    base = [sys.executable, "-m", "devaneio.cli"]
+    subprocess.run([*base, "nova", str(campaign), str(save)], check=True, capture_output=True)
+    changed = {"id": "meu", "extends": "pt-br", "rules": {"turn_end": ["Fim #turno#."]}}
+    pack.write_text(json.dumps(changed), encoding="utf-8")
+    result = subprocess.run(
+        [*base, "jogar", str(save)], input="sair\n", capture_output=True, text=True, check=False
+    )
+    assert "aviso: O pacote de narração 'meu' mudou" in result.stderr
+    assert "aviso" not in result.stdout

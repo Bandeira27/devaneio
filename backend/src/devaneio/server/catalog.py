@@ -7,7 +7,8 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from devaneio.schema import Campaign, CampaignIntegrityError, load_campaign
+from devaneio.game import GameError, load_campaign_content
+from devaneio.schema import Campaign, CampaignIntegrityError
 
 from .models import CampaignSummary, summarize
 
@@ -33,8 +34,8 @@ class Catalog:
     @staticmethod
     def _load(path: Path) -> Campaign:
         try:
-            return load_campaign(path.read_text(encoding="utf-8"))
-        except (ValidationError, CampaignIntegrityError, UnicodeDecodeError) as exc:
+            return load_campaign_content(path)[0]
+        except (ValidationError, CampaignIntegrityError, GameError, UnicodeDecodeError) as exc:
             raise CatalogError(f"campanha '{path.name}' inválida: {exc}") from exc
 
     def summaries(self) -> list[CampaignSummary]:

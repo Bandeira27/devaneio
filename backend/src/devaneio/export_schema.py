@@ -14,8 +14,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode
 
-from .narration import NarrationPack
-from .rules import RuleSystem
+from .narration import NarrationPack, NarrationPackExtension
+from .rules import RuleSystem, RuleSystemExtension
 from .schema import Campaign, GameState
 from .server.models import ApiRequests, ApiResponses
 
@@ -29,7 +29,9 @@ DEFAULT_OUT = Path(__file__).resolve().parents[3] / "contract"
 SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
     "campaign.schema.json": (Campaign, "validation"),
     "rules.schema.json": (RuleSystem, "validation"),
+    "rules_extension.schema.json": (RuleSystemExtension, "validation"),
     "narration.schema.json": (NarrationPack, "validation"),
+    "narration_extension.schema.json": (NarrationPackExtension, "validation"),
     "game_state.schema.json": (GameState, "serialization"),
     "api_requests.schema.json": (ApiRequests, "validation"),
     "api_responses.schema.json": (ApiResponses, "serialization"),

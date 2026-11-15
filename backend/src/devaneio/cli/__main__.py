@@ -1,5 +1,6 @@
 """``python -m devaneio.cli nova <campanha.json> <partida.json> [--seed N]``
-``python -m devaneio.cli jogar <partida.json>``"""
+``python -m devaneio.cli jogar <partida.json>``
+``python -m devaneio.cli verificar <campanha.json>``"""
 
 from __future__ import annotations
 
@@ -17,10 +18,12 @@ from devaneio.game import (
     LlmConfig,
     LlmError,
     Session,
+    check_content,
     connect_llm,
     execute,
     format_output,
     is_command,
+    load_campaign_content,
     load_game,
     new_game,
     run_freeform,
@@ -45,8 +48,13 @@ def main(argv: list[str] | None = None) -> int:
     play.add_argument("partida", type=Path)
     play.add_argument("--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente")
 
+    check = sub.add_parser("verificar", help="confere a campanha, o sistema e a narração dela")
+    check.add_argument("campanha", type=Path, help="arquivo JSON da campanha")
+
     args = parser.parse_args(argv)
     try:
+        if args.command == "verificar":
+            return _verify(args.campanha)
         if args.command == "nova":
             session = new_game(args.campanha, args.partida, args.seed)
             print(
@@ -68,7 +76,20 @@ def main(argv: list[str] | None = None) -> int:
     return 1
 
 
+def _verify(campaign_path: Path) -> int:
+    """Carga (que já recusa o quebrado) e achados de autoria. Sai com 1 se houver erro."""
+    campaign, rules, pack = load_campaign_content(campaign_path)
+    findings = check_content(campaign, rules, pack)
+    for finding in findings:
+        print(finding)
+    if not findings:
+        print(f"Campanha '{campaign.id}': nenhum problema encontrado.")
+    return 1 if any(f.level == "erro" for f in findings) else 0
+
+
 def _play(session: Session) -> int:
+    for warning in session.warnings:
+        print(f"aviso: {warning}", file=sys.stderr)
     print(f"{session.campaign.title}\n{session.campaign.premise}\n")
     session, text = execute(session, "olhar")
     print(text)

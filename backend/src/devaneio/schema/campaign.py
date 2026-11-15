@@ -115,6 +115,8 @@ class Campaign(StrictModel):
     title: str
     premise: str
     rules_id: Id = "default"
+    # Pacote de narração (a voz do narrador); o embutido padrão é o pt-br.
+    narration_id: Id = "pt-br"
     start_location_id: Id
     # Listas, não dicts: JSON com chave repetida é achatado silenciosamente pelo parser,
     # então detectar id duplicado (erro comum de autoria) exige lista.

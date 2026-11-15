@@ -109,6 +109,20 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da
     partida sob o lock da mesa.
 
+## Conteúdo do autor (`game/content.py`)
+
+21. **Sistema de regras e pacote de narração do autor são dado não confiável.** O id vem da campanha e é um
+    slug (sem `..`); o arquivo fica só em `sistemas/` ou `narracoes/` ao lado da campanha, o caminho resolvido
+    precisa estar dentro dessa pasta (symlink para fora dela é recusado), o tamanho é limitado
+    (`MAX_CONTENT_BYTES`, 256 KiB) aplicado à leitura (lê no máximo o teto mais um byte), e o JSON entra por modelo Pydantic estrito. Pacote de narração é recusado na carga se tiver ciclo entre regras
+    ou se o pior caso de uma regra passar de `MAX_EXPANDED_CHARS` (2000), e o narrador conta as expansões
+    (`MAX_EXPANSIONS`) e cai no texto mecânico se estourar: gramática do autor não pode travar a mesa. `extends` é de um
+    nível só (sem cadeia, ciclo nem recursão) e é mesclagem de dados: nenhum código do arquivo roda. Todo erro (JSON
+    aninhado demais inclusive) vira `GameError` em português que cita o nome do arquivo e onde está o problema, nunca
+    o caminho absoluto nem os valores do arquivo; no servidor, partida ilegível
+    continua virando 500 genérico (item 15). Mudar o limite, a pasta ou a profundidade do `extends` exige atualizar
+    este item e o teste que o prova. O hash do conteúdo no `SaveFile` só avisa, nunca decide nada.
+
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 
 - O que o modelo pode fazer mudou? Atualize a allow-list *e* o teste que a prova.

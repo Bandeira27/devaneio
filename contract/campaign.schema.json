@@ -437,6 +437,11 @@
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
       "type": "string"
     },
+    "narration_id": {
+      "default": "pt-br",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
     "start_location_id": {
       "pattern": "^[a-z0-9][a-z0-9_-]*$",
       "type": "string"

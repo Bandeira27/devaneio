@@ -20,12 +20,17 @@ from devaneio.engine import (
 )
 from devaneio.narration import (
     EVENT_VARIABLES,
+    EVENT_VARIANTS,
     NarrationIntegrityError,
     NarrationPack,
     Narrator,
+    PackExtendsError,
+    builtin_pack_dict,
     builtin_pack_json,
     load_builtin_pack,
     load_pack,
+    load_pack_extending,
+    merge_pack,
     validate_pack,
 )
 from devaneio.schema import Event, FactDef
@@ -235,3 +240,91 @@ def test_a_reveal_event_gets_prose_with_the_fact_text(campaign, rules, pack):
     text = Narrator(with_fact, rules, pack).narrate(state.events[-1], len(state.events) - 1, state)
     assert "O culto é real." in text
     assert "#" not in text
+
+
+# --- extends ----------------------------------------------------------------------------
+
+
+def pack_extension(**fields):
+    return {"id": "meu", "extends": "pt-br", **fields}
+
+
+def test_a_pack_extension_replaces_keys_and_inherits_the_rest():
+    parent = builtin_pack_dict("pt-br")
+    child = load_pack_extending(
+        pack_extension(rules={"move": ["Vocês seguem para #destino#."]}), builtin_pack_dict
+    )
+    assert child.id == "meu"
+    assert child.language == parent["language"]
+    assert child.rules["move"] == ["Vocês seguem para #destino#."]
+    assert child.rules["check.success"] == parent["rules"]["check.success"]
+    assert set(child.rules) == set(parent["rules"])
+
+
+def test_a_pack_extension_can_add_new_keys():
+    child = load_pack_extending(
+        pack_extension(language="pt-PT", rules={"check.extra": ["#ator# tenta."]}),
+        builtin_pack_dict,
+    )
+    assert child.language == "pt-PT"
+    assert child.rules["check.extra"] == ["#ator# tenta."]
+
+
+def test_merge_pack_does_not_mutate_its_inputs():
+    parent = builtin_pack_dict("pt-br")
+    before = json.loads(json.dumps(parent))
+    merge_pack(parent, {"rules": {"move": ["x"]}})
+    assert parent == before
+
+
+def test_a_pack_extension_is_validated_like_a_full_pack():
+    with pytest.raises(NarrationIntegrityError, match="destinno"):
+        load_pack_extending(pack_extension(rules={"move": ["#destinno#"]}), builtin_pack_dict)
+
+
+def test_pack_extends_errors_are_clear():
+    parent = builtin_pack_dict("pt-br")
+    with pytest.raises(PackExtendsError, match="estender a si mesmo"):
+        load_pack_extending({"id": "x", "extends": "x"}, builtin_pack_dict)
+    with pytest.raises(PackExtendsError, match="só um nível"):
+        load_pack_extending(pack_extension(), lambda _id: {**parent, "extends": "outro"})
+    with pytest.raises(PackExtendsError, match="repete o id"):
+        load_pack_extending({"id": "pt-br", "extends": "meu"}, lambda _id: parent)
+    with pytest.raises(ValueError, match="não encontrado"):
+        load_pack_extending(pack_extension(extends="nada"), builtin_pack_dict)
+    with pytest.raises(ValidationError, match="regra_x"):
+        load_pack_extending(pack_extension(regra_x=[]), builtin_pack_dict)
+
+
+def test_a_file_without_extends_is_a_plain_pack():
+    text = builtin_pack_json("pt-br")
+    assert load_pack_extending(text, builtin_pack_dict).id == "pt-br"
+
+
+def test_the_narrator_only_uses_variants_the_table_knows(narrator, played):
+    for event in played.events:
+        variant, _ = narrator._prepare(event, played)
+        assert variant == "" or variant in EVENT_VARIANTS.get(event.kind, ()), event.kind
+
+
+def test_a_pack_extension_without_language_or_rules_inherits_everything():
+    parent = builtin_pack_dict("pt-br")
+    child = load_pack_extending({"id": "meu", "extends": "pt-br"}, builtin_pack_dict)
+    assert child.language == parent["language"]
+    assert child.rules == parent["rules"]
+
+
+def test_a_pack_extension_cannot_empty_an_inherited_rule():
+    with pytest.raises(ValidationError):
+        load_pack_extending(pack_extension(rules={"move": []}), builtin_pack_dict)
+
+
+def test_a_null_language_in_a_pack_extension_is_rejected_not_inherited():
+    child = pack_extension(language=None)
+    with pytest.raises(ValueError, match="language"):
+        load_pack_extending(child, builtin_pack_dict)
+
+
+def test_merge_pack_drops_extends_and_creates_missing_rules():
+    merged = merge_pack({"id": "p"}, {"extends": "p", "id": "f", "rules": {"a": ["x"]}})
+    assert merged == {"id": "f", "rules": {"a": ["x"]}}

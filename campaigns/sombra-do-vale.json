@@ -106,6 +106,10 @@
       ],
       "complete_when": [
         {
+          "kind": "at_location",
+          "location_id": "ruinas"
+        },
+        {
           "kind": "npc_down",
           "npc_id": "sacerdote"
         }
