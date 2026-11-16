@@ -21,6 +21,10 @@ def classify_outcome(margin: int, outcomes: Outcomes) -> CheckOutcome:
     """Converte a margem de um teste (resultado menos dificuldade) em um dos quatro graus."""
 ```
 
+**Modelos Pydantic:** a docstring de um modelo (e a `description` de um campo) vira `description` no JSON Schema de
+`contract/` e comentário nos tipos TypeScript gerados. Escreva-a para quem usa o contrato, sem detalhe interno, e
+regenere o contrato ao mudá-la (skill `change-contract`).
+
 **TypeScript:** JSDoc `/** ... */` sem tipos (o TypeScript já os tem); `@param` e `@returns` só quando acrescentam algo.
 
 ```ts
