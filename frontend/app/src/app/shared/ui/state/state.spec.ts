@@ -32,12 +32,13 @@ describe('DvState', () => {
     expect(el.getAttribute('role')).toBe(role);
   });
 
-  it('carregando é aria-busy e mostra os pontos; os outros mostram um ícone', async () => {
+  it('carregando mostra os pontos (sem ícone) e é um status; os outros mostram um ícone', async () => {
     const { fixture, el, host } = await render();
     expect(el.querySelector('dv-icon')).not.toBeNull();
     host.kind.set('loading');
     await fixture.whenStable();
-    expect(el.getAttribute('aria-busy')).toBe('true');
+    expect(el.getAttribute('role')).toBe('status');
+    expect(el.hasAttribute('aria-busy')).toBe(false); // um status que nunca vira "não ocupado" não seria anunciado
     expect(el.querySelector('.pending')).not.toBeNull();
     expect(el.querySelector('dv-icon')).toBeNull();
   });

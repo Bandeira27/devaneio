@@ -69,59 +69,6 @@
 }
 
 .feed__talk {
-  --fade: 0;
-}
-
-.feed__event--new,
-.feed__talk--new {
-  animation: reveal var(--dv-duration-narrative) var(--dv-ease-decelerate) both;
-}
-
-.feed__narration,
-.feed__talk-text {
-  opacity: calc(1 - var(--fade) * (1 - var(--dv-fade-floor-text)));
-}
-
-.feed__narration {
-  margin: 0;
-  font-family: var(--dv-font-narration);
-  font-size: var(--dv-text-narration);
-  line-height: var(--dv-leading-narration);
-}
-
-.feed__event[data-tone='danger'] .feed__narration {
-  color: var(--dv-danger);
-}
-
-.feed__event[data-tone='good'] .feed__narration {
-  color: var(--dv-ok);
-}
-
-.feed__event[data-tone='danger'] .feed__narration,
-.feed__event[data-tone='good'] .feed__narration,
-.feed__note,
-.feed__speaker {
-  opacity: calc(1 - var(--fade) * (1 - var(--dv-fade-floor-quiet)));
-}
-
-.feed__note {
-  margin-top: var(--dv-space-1);
-  padding-left: var(--dv-space-3);
-  border-left: var(--dv-border-width) dotted var(--dv-line);
-  font-family: var(--dv-font-note);
-  font-size: var(--dv-text-note);
-  color: var(--dv-text-muted);
-}
-
-.feed__note summary {
-  cursor: pointer;
-}
-
-.feed__note p {
-  margin: var(--dv-space-1) 0 0;
-}
-
-.feed__talk {
   margin: 0;
   padding-left: var(--dv-space-4);
   border-left: var(--dv-border-width-strong) dotted var(--dv-accent);

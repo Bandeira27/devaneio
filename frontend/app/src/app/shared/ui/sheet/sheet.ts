@@ -76,7 +76,12 @@ export class Sheet {
       finish(); // sem animação (jsdom, movimento ausente): fecha já
       return;
     }
-    pane.addEventListener('animationend', finish, { once: true });
+    // `animationend` borbulha: só o da própria folha conta (o de um filho não pode cortar a saída).
+    pane.addEventListener('animationend', (event) => {
+      if (event.target === pane) {
+        finish();
+      }
+    });
     setTimeout(finish, seconds * 1000 * 1.5); // se o fim da animação não vier, não prende a folha
   }
 }

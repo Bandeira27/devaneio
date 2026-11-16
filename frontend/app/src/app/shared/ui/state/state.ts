@@ -5,7 +5,7 @@ import { DvIcon, type IconName } from '../icon/icon';
 export type StateKind = 'loading' | 'empty' | 'error' | 'unavailable';
 
 /**
- * O estado de uma tela ou de uma região: carregando (três pontos de fumaça, `role="status"` e `aria-busy`), vazio,
+ * O estado de uma tela ou de uma região: carregando (três pontos de fumaça e `role="status"`), vazio,
  * erro (`role="alert"`) ou indisponível. A mensagem é o conteúdo; uma ação opcional (tentar de novo, voltar) entra
  * em `[dvStateAction]`.
  */
@@ -26,7 +26,6 @@ export type StateKind = 'loading' | 'empty' | 'error' | 'unavailable';
   host: {
     '[class]': "'state state--' + kind()",
     '[attr.role]': 'role()',
-    '[attr.aria-busy]': "kind() === 'loading' ? 'true' : null",
   },
 })
 export class DvState {

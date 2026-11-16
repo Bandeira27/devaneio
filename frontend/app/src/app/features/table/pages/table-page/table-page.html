@@ -1,9 +1,11 @@
 @switch (store.state()) {
   @case ('loading') {
+    <h1 class="dv-visually-hidden">Mesa</h1>
     <dv-state kind="loading">Abrindo a mesa…</dv-state>
   }
   @case ('failed') {
     <div class="dv-page">
+      <h1 class="dv-visually-hidden">Mesa</h1>
       <dv-state kind="error">
         {{ store.loadError() }}
         <button dvStateAction dvButton type="button" (click)="store.load()">Tentar de novo</button>

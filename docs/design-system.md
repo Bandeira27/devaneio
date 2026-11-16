@@ -81,6 +81,8 @@ está no JSDoc de cada um.
 | `dv-icon`                                | conjunto fechado de ícones decorativos                                                               |
 | `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                        |
 
+`dvLoading` e `dv-choice` ainda não têm uso em tela: entram com as folhas e os formulários do PR de entrada.
+
 O **cartão** e a **lista** não são componentes: são as classes `.dv-card` e `.dv-stack` (não havia comportamento a
 encapsular). Não há _tabs_ nem _toast_ (o feedback é contextual).
 

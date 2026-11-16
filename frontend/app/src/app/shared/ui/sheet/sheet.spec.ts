@@ -91,6 +91,32 @@ describe('Sheet', () => {
     }
   });
 
+  it('o fim da animação de um filho não fecha a folha: só o da própria folha', async () => {
+    const styles = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ animationDuration: '0.2s' } as CSSStyleDeclaration);
+    try {
+      let closed = false;
+      const result = TestBed.inject(Sheet)
+        .open<string>(Content, { label: 'x', data: 'y' })
+        .then((value) => {
+          closed = true;
+          return value;
+        });
+      await tick();
+      (panel()?.querySelector('#a') as HTMLButtonElement).click();
+      panel()
+        ?.querySelector('h2')
+        ?.dispatchEvent(new Event('animationend', { bubbles: true })); // de um filho
+      await tick();
+      expect(closed).toBe(false);
+      panel()?.dispatchEvent(new Event('animationend'));
+      expect(await result).toBe('ir floresta');
+    } finally {
+      styles.mockRestore();
+    }
+  });
+
   it('se o fim da animação não vier, um limite de tempo fecha a folha', async () => {
     vi.useFakeTimers();
     const styles = vi
