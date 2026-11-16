@@ -205,9 +205,8 @@ class TableService:
         posteriores a esta chamada acordam a espera (senão um cliente que não devolve
         ``talk_seq`` giraria sem esperar, relendo o arquivo a cada volta).
         """
-        # A versão vem ANTES da carga: uma gravação entre a carga e a espera deixaria a visão
-        # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
-        # existente: ``version`` cria entrada, e o id ainda não foi validado.)
+        # Antes da carga: uma gravação entre as duas deixaria a visão velha com a versão nova.
+        # Só com mesa existente, porque ``version`` cria entrada e o id ainda não foi validado.
         seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
         cursor = Cursor(since, since_talk)
         view = self._events_view(table_id, token, cursor)

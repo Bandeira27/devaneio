@@ -33,8 +33,7 @@ class _Table:
     lock: threading.Lock = field(default_factory=threading.Lock)
     version: int = 0  # sobe a cada gravação; quem espera compara com a que viu
     waiters: int = 0
-    # Vagas de chamada ao LLM, uma por tipo ("say", "copilot"): cada uma tem a sua, então um tipo não
-    # segura o outro.
+    # Vagas de chamada ao LLM, uma por tipo ("say", "copilot"): um tipo não segura o outro.
     slots: dict[str, _Slot] = field(default_factory=dict)
     presentation: Presentation = field(default_factory=lambda: Presentation(0))
     changed: threading.Condition = field(init=False)

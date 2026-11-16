@@ -42,9 +42,8 @@ SECURITY_HEADERS = {
 }
 IMMUTABLE = "public, max-age=31536000, immutable"
 REVALIDATE = "no-cache"
-# O build do Angular põe um hash em maiúsculas e dígitos no nome (``main-3F8K2LQA.js``); o que não tem
-# hash revalida sempre. Só maiúsculas e dígitos: ``logo-devaneio.svg`` não é hash e não pode ficar um ano
-# em cache ``immutable``.
+# O hash do Angular no nome (``main-3F8K2LQA.js``): só maiúsculas e dígitos, para ``logo-devaneio.svg``
+# não ficar um ano em cache ``immutable``.
 _HASHED = re.compile(r"[-.][A-Z0-9]{8,}\.[A-Za-z0-9]+$")
 
 
@@ -99,8 +98,7 @@ class StaticSite:
             size = resolved.stat().st_size
         except OSError:
             return None
-        # O nome pedido já passou; o ALVO também precisa passar (um symlink dentro da pasta não pode
-        # apontar para um segmento oculto nem para um tipo fora da lista, como ``.map``).
+        # O alvo de um symlink também passa pela lista de tipos e pelos segmentos ocultos.
         content_type = MIME.get(resolved.suffix.lower())
         target_parts = resolved.relative_to(self.root).parts
         if content_type is None or any(p.startswith(".") for p in target_parts):

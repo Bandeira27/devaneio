@@ -151,8 +151,7 @@ def build_context(
         },
     }
     if include_private:
-        # Só o que diz respeito ao que está em cena: fato sobre NPC ausente ou local distante
-        # entregaria o nome de quem o grupo ainda não conhece.
+        # Só o que está em cena: fato sobre NPC ausente ou local distante entregaria o nome dele.
         active_beats = [b for b in campaign.beats if state.beats.get(b.id) is BeatStatus.ACTIVE]
         active_ids = [b.id for b in active_beats]
         context["privado"] = [

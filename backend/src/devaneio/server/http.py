@@ -205,8 +205,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = self._declared_length()
         except ApiFailure:
-            # Corpo recusado sem ser lido: fechar a conexão, senão os bytes dele viram a
-            # próxima requisição do keep-alive (desync de Content-Length).
+            # Corpo recusado sem ler: fecha a conexão, ou os bytes viram a próxima requisição.
             self.close_connection = True
             raise
         try:

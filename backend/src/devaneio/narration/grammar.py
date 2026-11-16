@@ -14,8 +14,6 @@ from collections.abc import Collection, Iterable, Mapping, Sequence
 from devaneio.rng import Rng
 
 MAX_DEPTH = 24
-# Limites contra pacote do autor que explode ao expandir (cada regra se refere três vezes à
-# próxima, 3^n): o pior caso é conferido na carga e as expansões são contadas ao narrar.
 MAX_EXPANSIONS = 500
 MAX_EXPANDED_CHARS = 2000
 VARIABLE_CHARS = 100  # tamanho presumido de uma variável (nome, local...) no pior caso

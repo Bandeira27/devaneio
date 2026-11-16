@@ -158,8 +158,7 @@ def content_hashes(rules: RuleSystem, pack: NarrationPack) -> ContentHashes:
 
 
 def _digest(model: RuleSystem | NarrationPack) -> str:
-    # Ordenado e sem defaults: reordenar chaves do JSON do autor, ou o projeto ganhar um campo
-    # novo com valor padrão, não conta como mudança.
+    # Ordenado e sem defaults: reordenar chaves ou ganhar campo com valor padrão não é mudança.
     dumped = model.model_dump(mode="json", exclude_defaults=True)
     text = json.dumps(dumped, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()

@@ -46,8 +46,7 @@ class Npc(StrictModel):
     weapon_id: Id | None = None
 
 
-# Condições declarativas avaliadas pelo diretor sobre o estado. Todas as de uma lista
-# precisam valer. Regras são dados: a campanha descreve a própria trama sem código.
+# Condições declarativas avaliadas pelo diretor; todas as de uma lista precisam valer.
 
 
 class AtLocation(StrictModel):
@@ -136,8 +135,7 @@ class Campaign(StrictModel):
     # Pacote de narração (a voz do narrador); o embutido padrão é o pt-br.
     narration_id: Id = "pt-br"
     start_location_id: Id
-    # Listas, não dicts: JSON com chave repetida é achatado silenciosamente pelo parser,
-    # então detectar id duplicado (erro comum de autoria) exige lista.
+    # Listas, não dicts: o parser de JSON achata chave repetida, e id duplicado precisa ser detectado.
     locations: list[Location] = []
     factions: list[Faction] = []
     npcs: list[Npc] = []

@@ -1186,7 +1186,7 @@
     },
     "NpcState": {
       "additionalProperties": false,
-      "description": "O que muda num NPC durante a partida: hp, onde está, se está de pé.",
+      "description": "O que muda num NPC durante a partida: hp, onde está, se está de pé.\n\nhp 0 derruba o NPC (`alive=False`). Para personagens, hp 0 é \"fora de combate\": morte é\ndecisão narrativa, não do motor.",
       "properties": {
         "alive": {
           "default": true,

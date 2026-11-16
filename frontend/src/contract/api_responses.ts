@@ -138,6 +138,9 @@ export interface Character {
 /**
  * O que muda num NPC durante a partida: hp, onde está, se está de pé.
  *
+ * hp 0 derruba o NPC (`alive=False`). Para personagens, hp 0 é "fora de combate": morte é
+ * decisão narrativa, não do motor.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */

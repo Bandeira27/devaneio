@@ -58,8 +58,7 @@ class EventsView(StrictModel):
 
     revision: int
     events: list[EventView]
-    # Falas com ``seq`` maior que ``since_talk``; ``talk_seq`` é a última (o cliente a devolve
-    # em ``since_talk``). Os números sobem entre reinícios do servidor.
+    # `talk_seq` é a última fala; o cliente a devolve em `since_talk`. Sobe entre reinícios.
     talk: list[TalkView] = Field(default_factory=list)
     talk_seq: int = 0
 

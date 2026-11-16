@@ -22,10 +22,7 @@ from .server.models import ApiRequests, ApiResponses
 # <raiz>/backend/src/devaneio/export_schema.py -> <raiz>/contract
 DEFAULT_OUT = Path(__file__).resolve().parents[3] / "contract"
 
-# Campaign, RuleSystem, NarrationPack e as requisições da API são documentos de ENTRADA
-# (autorados por pessoas ou pelo cliente): modo "validation", campos com default são
-# opcionais. GameState e as respostas da API são SAÍDA: modo "serialization", todo campo
-# está sempre presente, e os tipos TypeScript do cliente não ficam cheios de opcionais.
+# Entradas (autoradas por pessoas ou pelo cliente) em "validation"; saídas em "serialization".
 SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
     "campaign.schema.json": (Campaign, "validation"),
     "rules.schema.json": (RuleSystem, "validation"),

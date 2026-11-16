@@ -21,8 +21,6 @@ from .text import clean_multiline
 RECENT_EVENTS = 15
 MAX_ANSWER_CHARS = 2000
 COPILOT_TEMPERATURE = 0.5
-# Teto do contexto serializado (cerca de 15 mil tokens): campanha grande demais estouraria a janela do
-# modelo e o pedido falharia por um motivo obscuro. Passando do teto o contexto encolhe em etapas.
 MAX_CONTEXT_CHARS = 60_000
 REDUCED_EVENTS = 5
 TEXT_CUT = 200  # tamanho máximo de cada texto livre na última etapa de encolhimento

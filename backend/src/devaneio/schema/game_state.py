@@ -36,15 +36,16 @@ class Character(StrictModel):
 
 
 class NpcState(StrictModel):
-    # hp 0 derruba o NPC (alive=False). Para personagens, hp 0 é "fora de combate";
-    # morte é decisão narrativa, não do motor.
-    """O que muda num NPC durante a partida: hp, onde está, se está de pé."""
+    """O que muda num NPC durante a partida: hp, onde está, se está de pé.
+
+    hp 0 derruba o NPC (`alive=False`). Para personagens, hp 0 é "fora de combate": morte é
+    decisão narrativa, não do motor.
+    """
 
     alive: bool = True
     hp: int
     max_hp: int = Field(ge=0)
-    # Resolvidos na criação do estado (campanha + defaults do sistema): o motor age só
-    # sobre estado e regras, e efeitos futuros podem alterá-los.
+    # Resolvidos na criação do estado (campanha + padrões do sistema): efeitos futuros podem alterá-los.
     attributes: dict[str, int] = {}
     # Sem limites: os limiares (hostil, neutro, aliado...) virão do sistema de regras.
     disposition: int = 0

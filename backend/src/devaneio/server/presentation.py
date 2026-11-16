@@ -18,8 +18,7 @@ class Presentation:
     """O que é só exibição e fica em memória: narrações do LLM e falas do mestre."""
 
     def __init__(self, talk_seq: int) -> None:
-        # Os números das falas partem do relógio de parede (quem cria passa o valor): depois de
-        # um reinício continuam acima dos que o cliente já viu.
+        # Os números das falas partem do relógio, para continuar acima dos já vistos após um reinício.
         self._talk_seq = talk_seq
         self._narrations: dict[int, str] = {}
         self._talk: list[TalkView] = []
