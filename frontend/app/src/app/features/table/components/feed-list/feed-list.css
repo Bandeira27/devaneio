@@ -96,10 +96,8 @@
   margin-right: var(--dv-space-1);
 }
 
-/* A barra de ações fixa cobre o pé da tela: o fim do feed para acima dela (a mesa mede a barra). */
 .feed__end {
   height: 1px;
-  scroll-margin-bottom: var(--dv-dock-height);
 }
 
 @keyframes reveal {

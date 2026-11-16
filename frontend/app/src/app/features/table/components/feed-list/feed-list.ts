@@ -1,8 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -31,12 +33,15 @@ const NEAR_BOTTOM_PX = 160;
 })
 export class FeedList {
   readonly items = input.required<readonly FeedItem[]>();
+  /** A carga inicial já chegou: o que vem depois é novidade (anima e é anunciado). */
+  readonly loaded = input(false);
   /** Quantos itens chegaram enquanto quem lê estava longe do fim. Volta a 0 ao chegar perto do fim. */
   readonly unseen = output<number>();
   private readonly end = viewChild.required<ElementRef<HTMLElement>>('end');
   private count = 0;
   private missed = 0;
   private initial: ReadonlySet<string> | null = null;
+  private announceTimer: ReturnType<typeof setTimeout> | undefined;
   /** Só depois da carga inicial a região anuncia: o log não lê 50 itens de uma vez. */
   protected readonly announce = signal(false);
 
@@ -46,11 +51,12 @@ export class FeedList {
   }
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.announceTimer));
     effect(() => {
       const items = this.items();
-      if (this.initial === null && items.length > 0) {
+      if (this.initial === null && this.loaded()) {
         this.initial = new Set(items.map((item) => item.key));
-        setTimeout(() => this.announce.set(true));
+        this.announceTimer = setTimeout(() => this.announce.set(true));
       }
       const total = items.length;
       const grew = total > this.count;

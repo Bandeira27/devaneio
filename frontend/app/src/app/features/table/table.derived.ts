@@ -85,26 +85,36 @@ export function connectionBlockOf(status: LiveStatus): string {
   }
 }
 
-/** Uma linha sobre a vez de quem olha: se pode agir, se já agiu e quem falta. */
-export function turnStatusOf(table: TableView | null, character: Character | null): string {
-  if (table === null) {
+/**
+ * Uma linha sobre a vez de quem olha: se pode agir, se já agiu e quem falta. Usa a mesma regra que bloqueia os botões
+ * (`actBlock`), para a linha e a barra nunca discordarem. `''` quando não há o que dizer (a tela já avisa, por
+ * exemplo, que falta criar o personagem).
+ */
+export function turnStatusOf(
+  table: TableView | null,
+  rules: RulesView | null,
+  character: Character | null,
+): string {
+  if (table === null || rules === null) {
     return '';
   }
-  if (table.status !== 'active') {
-    return 'Partida encerrada';
-  }
-  if (character === null) {
-    return 'Você ainda não tem personagem';
-  }
-  if (character.hp <= 0) {
-    return 'Você está fora de combate';
-  }
   const turn = table.state.turn;
-  if (table.acted[character.id] !== turn) {
-    return 'Sua vez de agir';
+  const block = actBlock({ character, turn, acted: table.acted, status: table.status, rules });
+  switch (block) {
+    case null:
+      return 'Sua vez de agir';
+    case 'over':
+      return 'Partida encerrada';
+    case 'no-character':
+      return '';
+    case 'fallen':
+      return 'Você está fora de combate';
+    case 'acted': {
+      // Quem segura o turno é quem está de pé e ainda não agiu (a mesma regra do servidor).
+      const waiting = Object.values(table.state.characters)
+        .filter((c) => c.id !== character?.id && c.hp > 0 && table.acted[c.id] !== turn)
+        .map((c) => c.name);
+      return waiting.length > 0 ? `Você já agiu · falta ${waiting.join(', ')}` : 'Você já agiu';
+    }
   }
-  const waiting = Object.values(table.state.characters)
-    .filter((c) => c.id !== character.id && c.hp > 0 && table.acted[c.id] !== turn)
-    .map((c) => c.name);
-  return waiting.length > 0 ? `Você já agiu · falta ${waiting.join(', ')}` : 'Você já agiu';
 }

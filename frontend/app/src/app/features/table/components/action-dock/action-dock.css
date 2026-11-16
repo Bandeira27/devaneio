@@ -3,6 +3,10 @@
   gap: var(--dv-space-2);
 }
 
+.dock:focus {
+  outline: none;
+}
+
 .dock__reason {
   margin: 0;
 }

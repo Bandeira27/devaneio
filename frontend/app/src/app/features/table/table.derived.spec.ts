@@ -101,23 +101,33 @@ describe('turnStatusOf', () => {
     view.state = { ...view.state, characters: { bia, zed } };
     return view;
   };
+  const rules = rulesView();
 
-  it('sem mesa não diz nada', () => {
-    expect(turnStatusOf(null, bia)).toBe('');
+  it('sem mesa ou sem regras não diz nada', () => {
+    expect(turnStatusOf(null, rules, bia)).toBe('');
+    expect(turnStatusOf(com({}), null, bia)).toBe('');
   });
 
-  it('partida encerrada, sem personagem e fora de combate vêm antes de tudo', () => {
-    expect(turnStatusOf(com({ status: 'won' }), bia)).toBe('Partida encerrada');
-    expect(turnStatusOf(com({}), null)).toBe('Você ainda não tem personagem');
-    expect(turnStatusOf(com({}), { ...bia, hp: 0 })).toBe('Você está fora de combate');
+  it('partida encerrada e fora de combate vêm da mesma regra que bloqueia os botões', () => {
+    expect(turnStatusOf(com({ status: 'won' }), rules, bia)).toBe('Partida encerrada');
+    expect(turnStatusOf(com({}), rules, { ...bia, hp: 0 })).toBe('Você está fora de combate');
+  });
+
+  it('com a regra "caído age", quem está caído ainda tem a vez', () => {
+    const livre = { ...rules, combat: { ...rules.combat, fallen_can_act: true } };
+    expect(turnStatusOf(com({}), livre, { ...bia, hp: 0 })).toBe('Sua vez de agir');
+  });
+
+  it('sem personagem a tela já avisa: a linha fica vazia', () => {
+    expect(turnStatusOf(com({}), rules, null)).toBe('');
   });
 
   it('é a sua vez enquanto você não agiu', () => {
-    expect(turnStatusOf(com({}), bia)).toBe('Sua vez de agir');
+    expect(turnStatusOf(com({}), rules, bia)).toBe('Sua vez de agir');
   });
 
   it('já agiu: diz quem falta (só quem está de pé e ainda não agiu)', () => {
-    expect(turnStatusOf(com({ acted: { bia: 2 } }), bia)).toBe('Você já agiu · falta Zed');
-    expect(turnStatusOf(com({ acted: { bia: 2, zed: 2 } }), bia)).toBe('Você já agiu');
+    expect(turnStatusOf(com({ acted: { bia: 2 } }), rules, bia)).toBe('Você já agiu · falta Zed');
+    expect(turnStatusOf(com({ acted: { bia: 2, zed: 2 } }), rules, bia)).toBe('Você já agiu');
   });
 });

@@ -72,7 +72,7 @@ export class TableStore implements OnDestroy {
       connectionBlockOf(this.liveStatus()) ||
       blockedReasonOf(this.table(), this.rules(), this.character()),
   );
-  readonly turnStatus = computed(() => turnStatusOf(this.table(), this.character()));
+  readonly turnStatus = computed(() => turnStatusOf(this.table(), this.rules(), this.character()));
   readonly weapons = computed<WeaponInfo[]>(() => {
     const rules = this.rules();
     return rules === null ? [] : usableWeapons(rules, this.character()?.inventory ?? []);

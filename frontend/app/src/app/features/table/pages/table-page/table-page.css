@@ -1,7 +1,10 @@
 /*
- * Celular (padrão): uma coluna, na ordem do que se usa — situação, cena e grupo, a história e, fixa no pé da tela,
- * a barra de ações. Tela larga (64rem): a lateral com situação, cena, grupo e ações fica presa à esquerda e a
- * história corre ao lado, numa coluna de leitura. A página rola (sem rolagem aninhada).
+ * A ordem do HTML é a ordem de leitura e de foco: situação, cena e grupo, a história e, por último, as ações.
+ *
+ * Celular (padrão): uma coluna; a barra de ações fica fixa no pé da tela.
+ * Tela larga (64rem): duas colunas; a lateral (situação, cena e grupo) fica à esquerda e rola com a página, e as ações
+ * ficam presas no topo da coluna da esquerda, sempre à vista, com a história corrida ao lado. A página rola: não há
+ * rolagem aninhada.
  */
 .table {
   display: grid;
@@ -26,39 +29,33 @@
   gap: var(--dv-space-4);
 }
 
-/* No celular a lateral "some" como caixa: situação, cena e grupo vêm antes da história e a barra de ações depois. */
-.table__rail {
-  display: contents;
-}
-
 .table__side {
   display: grid;
   gap: var(--dv-space-3);
-  order: 1;
 }
 
 .table__feed {
   display: grid;
   gap: var(--dv-space-4);
-  order: 2;
+}
+
+.table__feed:focus {
+  outline: none;
 }
 
 .table__dock {
   position: sticky;
   bottom: 0;
   z-index: var(--dv-z-sticky);
-  order: 3;
   display: grid;
   gap: var(--dv-space-2);
-  margin-inline: calc(-1 * var(--dv-space-4));
-  padding: var(--dv-space-3) var(--dv-space-4);
-  padding-bottom: max(var(--dv-space-3), env(safe-area-inset-bottom));
+  margin-inline: calc(-1 * max(var(--dv-space-4), env(safe-area-inset-left)))
+    calc(-1 * max(var(--dv-space-4), env(safe-area-inset-right)));
+  padding: var(--dv-space-3) max(var(--dv-space-4), env(safe-area-inset-right))
+    max(var(--dv-space-3), env(safe-area-inset-bottom))
+    max(var(--dv-space-4), env(safe-area-inset-left));
   border-top: var(--dv-border-width) dotted var(--dv-line);
   background: var(--dv-surface-0);
-}
-
-.table__dock:focus {
-  outline: none;
 }
 
 .table__turn {
@@ -72,6 +69,11 @@
 .table__turn-status {
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
+}
+
+/* A linha do turno que mora junto das ações só aparece na tela larga (no celular ela fica no topo, na lateral). */
+.table__turn--dock {
+  display: none;
 }
 
 .table__new {
@@ -96,30 +98,37 @@
 
   .table__layout {
     grid-template-columns: var(--dv-rail-width) minmax(0, var(--dv-measure-feed));
-    gap: var(--dv-space-6);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'side feed'
+      'dock feed';
+    gap: var(--dv-space-4) var(--dv-space-6);
     align-items: start;
   }
 
-  .table__rail {
-    display: grid;
-    gap: var(--dv-space-4);
-    position: sticky;
-    top: var(--dv-space-4);
-    max-height: calc(100dvh - 2 * var(--dv-space-4));
-    overflow-y: auto;
+  .table__side {
+    grid-area: side;
   }
 
-  .table__side,
   .table__feed {
-    order: 0;
+    grid-area: feed;
   }
 
   .table__dock {
-    position: static;
-    order: 0;
+    grid-area: dock;
+    top: var(--dv-space-4);
+    bottom: auto;
     margin-inline: 0;
     padding: var(--dv-space-4) 0 0;
     border-top: var(--dv-border-width) dotted var(--dv-line);
-    background: transparent;
+    background: var(--dv-surface-0);
+  }
+
+  .table__side .table__turn {
+    display: none;
+  }
+
+  .table__turn--dock {
+    display: flex;
   }
 }

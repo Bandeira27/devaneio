@@ -6,6 +6,8 @@
 
 html {
   color-scheme: dark;
+  /* A barra de ações fixa não cobre o que ganha foco nem o fim da rolagem. */
+  scroll-padding-bottom: var(--dv-dock-height);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

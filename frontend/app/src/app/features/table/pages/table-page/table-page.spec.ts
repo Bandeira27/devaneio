@@ -85,6 +85,16 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(player.root().querySelector('.table__bar .table__invite')).toBeNull();
   });
 
+  it('a ordem do HTML é a de leitura: situação e cena, a história, as ações', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    const order = Array.from(root().querySelectorAll('.table__layout > *')).map(
+      (el) => el.className,
+    );
+    expect(order).toEqual(['table__side', 'table__feed', 'table__dock']);
+  });
+
   it('o log só anuncia depois da carga inicial', async () => {
     const { root, events, settle } = await open();
     events('0').flush(eventsView(3, [event(1, 1)]));
@@ -102,6 +112,8 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
       value: 5000,
       configurable: true,
     });
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
     try {
       events('20').flush(eventsView(4, [event(2, 1)]));
       await settle();
@@ -109,9 +121,12 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
       expect(pill.textContent).toContain('1 nova');
       pill.click();
       await settle();
+      await Promise.resolve();
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end' });
       expect(root().querySelector('.table__new')).toBeNull();
     } finally {
       Reflect.deleteProperty(document.documentElement, 'scrollHeight');
+      Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
     }
   });
 
