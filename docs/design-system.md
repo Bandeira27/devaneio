@@ -101,6 +101,24 @@ stories se escrevem com o helper `story(imports, template)` de `src/app/testing/
 e **Design/Movimento** vêm de `src/app/design/`. A aba de acessibilidade (axe) mostra as violações de cada story. Stories não
 entram no build do app (`tsconfig.app.json`) nem exigem JSDoc.
 
+## A mesa
+
+Pensada pela tarefa: quem joga lê a história o tempo todo e age uma vez por turno.
+
+- **Celular:** uma coluna. Situação do turno ("Sua vez de agir", "Você já agiu · falta Zed"), cena compacta (descrição
+  recolhida em "Ver a cena") e grupo, depois a história; a **barra de ações fica fixa no pé** (ícone sobre o rótulo, uma
+  linha só). A mesa mede a barra e publica `--dv-dock-height` na raiz; o `scroll-padding-bottom` do documento faz o fim
+  da história e o que ganha foco pararem acima dela. Quem leu mais acima vê "N novas" quando chega algo; tocar leva ao
+  fim e o foco vai para a história.
+- **Tela larga (≥ 64rem):** situação, cena e grupo ficam à esquerda e rolam com a página; só a barra de ações fica presa
+  no topo dessa coluna, com a história (42rem) ao lado. A página rola; **não há rolagem aninhada**.
+- **Ordem do HTML = ordem de leitura e de foco** (situação e cena, história, ações), sem `order` para reordenar. O
+  "Pular para as ações" (`.dv-skip`, visível só com foco) leva ao primeiro botão que ainda age. O `.shell` usa
+  `overflow: clip` (não `hidden`) para não quebrar o `sticky`.
+- Sem conexão, sessão vencida ou mesa sumida, as ações ficam **bloqueadas com o motivo** (em vez de falhar com erro cru).
+- O leitor de tela só anuncia o que chega depois do carregamento; dano e cura levam ícone e texto, não só cor; o turno
+  atual diz "agora".
+
 ## Como mudar ou criar
 
 1. **Valor novo?** Entra em `tokens.css` com o papel comentado e, se for cor, com o par de contraste em `tokens.spec.ts`.

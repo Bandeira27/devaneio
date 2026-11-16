@@ -90,6 +90,12 @@
   color: var(--dv-accent);
 }
 
+.feed__tag {
+  display: inline-flex;
+  vertical-align: text-bottom;
+  margin-right: var(--dv-space-1);
+}
+
 .feed__end {
   height: 1px;
 }

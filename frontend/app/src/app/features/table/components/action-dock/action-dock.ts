@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvIcon } from '@shared/ui/icon/icon';
@@ -23,6 +23,22 @@ import { SaySheet } from '../sheets/say-sheet';
 export class ActionDock {
   protected readonly store = inject(TableStore);
   private readonly sheet = inject(Sheet);
+  private readonly root = viewChild.required<ElementRef<HTMLElement>>('root');
+
+  /** Leva o foco ao primeiro botão que ainda age (ou à própria barra, se todos estão bloqueados). */
+  focusActions(): void {
+    const root = this.root().nativeElement;
+    const first = root.querySelector<HTMLElement>(
+      "button:not([disabled]):not([aria-disabled='true'])",
+    );
+    (first ?? root).focus();
+  }
+
+  /** Tira a resposta ou o erro da tela e devolve o foco às ações (o botão de dispensar some junto). */
+  protected dismissFeedback(): void {
+    this.store.dismissFeedback();
+    queueMicrotask(() => this.focusActions());
+  }
 
   protected async go(): Promise<void> {
     const line = await this.sheet.open<string>(GoSheet, {

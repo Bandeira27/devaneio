@@ -1,9 +1,9 @@
-<section class="dock" aria-label="Ações">
+<section #root class="dock" aria-label="Ações" tabindex="-1">
   @if (store.actionError()) {
     <dv-notice
       kind="error"
       dismissible
-      (dismissed)="store.dismissFeedback()"
+      (dismissed)="dismissFeedback()"
       animate.enter="dv-enter"
       animate.leave="dv-leave"
     >
@@ -13,7 +13,7 @@
   @if (store.reply()) {
     <dv-notice
       dismissible
-      (dismissed)="store.dismissFeedback()"
+      (dismissed)="dismissFeedback()"
       animate.enter="dv-enter"
       animate.leave="dv-leave"
     >
