@@ -65,6 +65,11 @@
   align-items: center;
   gap: var(--dv-space-2);
   margin-top: var(--dv-space-4);
+  /* Com muitas opções a folha rola: a ação fica sempre à vista. */
+  position: sticky;
+  bottom: 0;
+  padding-block: var(--dv-space-2);
+  background: var(--dv-surface-1);
 }
 
 /* Na tela larga a folha vira um diálogo no meio, com a mesma ação (o fundo e a saída seguem iguais). */
