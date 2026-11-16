@@ -13,7 +13,7 @@ export const MAX_SAY = 500;
   selector: 'dv-say-sheet',
   imports: [DvSheetHead, DvButton, DvField, DvInput],
   template: `
-    <dv-sheet-head title="Falar com o mestre" />
+    <dv-sheet-head title="Falar" />
     <form class="dv-stack" (submit)="$event.preventDefault(); send()">
       <dv-field
         label="O que você diz ou faz"
@@ -29,7 +29,10 @@ export const MAX_SAY = 500;
           (input)="text.set(fieldValue($event))"
         ></textarea>
       </dv-field>
-      <button dvButton="primary" type="submit">Enviar</button>
+      <div class="dv-sheet__foot">
+        <span class="dv-note" aria-hidden="true">{{ text().length }}/{{ max }}</span>
+        <button dvButton="primary" type="submit">Enviar</button>
+      </div>
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

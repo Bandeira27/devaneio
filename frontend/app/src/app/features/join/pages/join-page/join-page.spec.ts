@@ -61,23 +61,23 @@ describe('Entrar na mesa', () => {
         { status: 401, statusText: 'Unauthorized' },
       );
     await settle();
-    expect(root().querySelector('[role="alert"]')?.textContent).toContain('convite inválido');
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain('Esse convite não vale');
     expect(router.url).toBe(url);
   });
 
-  it.each(['já existe um jogador chamado Bia', 'a mesa já tem 8 jogadores'])(
-    'mostra o que o servidor disse: %s',
-    async (message) => {
-      const { root, http, type, submit, settle } = await setup(url);
-      await type('input', 'Bia');
-      await submit();
-      http
-        .expectOne(`/tables/${TABLE_ID}/players`)
-        .flush({ error: { code: 'x', message } }, { status: 409, statusText: 'Conflict' });
-      await settle();
-      expect(root().querySelector('[role="alert"]')?.textContent).toContain(message);
-    },
-  );
+  it.each([
+    ['já existe um jogador chamado Bia', 'Já existe um jogador chamado Bia.'],
+    ['a mesa já tem 8 jogadores', 'A mesa já tem 8 jogadores.'],
+  ])('mostra o que o servidor disse: %s', async (message, shown) => {
+    const { root, http, type, submit, settle } = await setup(url);
+    await type('input', 'Bia');
+    await submit();
+    http
+      .expectOne(`/tables/${TABLE_ID}/players`)
+      .flush({ error: { code: 'x', message } }, { status: 409, statusText: 'Conflict' });
+    await settle();
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain(shown);
+  });
 
   it('quem já entrou por este navegador vai direto para a mesa', async () => {
     const app = await setup('/');
@@ -107,6 +107,6 @@ describe('Entrar na mesa', () => {
     await settle();
     expect(root().querySelector('b')).toBeNull();
     expect(root().querySelector('img')).toBeNull();
-    expect(root().textContent).toContain('nome <b>ruim</b>');
+    expect(root().textContent).toContain('Nome <b>ruim</b>.');
   });
 });

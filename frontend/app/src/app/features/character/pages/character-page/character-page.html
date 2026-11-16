@@ -14,9 +14,9 @@
     }
     @case ('ready') {
       @if (store.llmNotice()) {
-        <dv-notice>
-          <strong>Sobre o mestre de IA desta mesa.</strong> {{ store.llmNotice() }}
-        </dv-notice>
+        <dv-disclosure label="O que o mestre de IA recebe">
+          <p>{{ store.llmNotice() }}</p>
+        </dv-disclosure>
       }
       <p class="dv-lede">
         Dê um nome a quem você vai ser e distribua os atributos. O mestre cuida do resto.
@@ -32,7 +32,7 @@
             autocomplete="off"
             maxlength="40"
             [value]="store.name()"
-            (input)="store.name.set(fieldValue($event))"
+            (input)="store.setName(fieldValue($event))"
           />
         </dv-field>
         @if (store.rules(); as rules) {
@@ -48,15 +48,24 @@
               />
             }
           </div>
-          <button dvButton type="button" (click)="store.useDefaults()">
-            Usar os valores padrão
+          <button
+            dvButton
+            type="button"
+            [dvBlocked]="!store.changed()"
+            [attr.aria-describedby]="store.changed() ? null : 'restore-reason'"
+            (click)="store.useDefaults()"
+          >
+            Restaurar padrão
           </button>
+          <span id="restore-reason" class="dv-visually-hidden"
+            >Os atributos já estão no padrão.</span
+          >
         }
         @if (store.error()) {
           <dv-notice kind="error">{{ store.error() }}</dv-notice>
         }
-        <button dvButton="primary" type="submit" [disabled]="store.saving()">
-          {{ store.saving() ? 'Entrando…' : 'Entrar na mesa' }}
+        <button dvButton="primary" type="submit" [dvLoading]="store.saving()">
+          Entrar na mesa
         </button>
       </form>
       @if (store.isHost()) {

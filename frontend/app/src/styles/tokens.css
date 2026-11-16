@@ -106,6 +106,7 @@
   --dv-measure-sheet: 40rem;
   --dv-measure-wide: 70rem;
   --dv-measure-feed: 42rem;
+  --dv-measure-dialog: 32rem;
   --dv-rail-width: 22rem;
   --dv-dock-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da barra de ações fixa */
   --dv-sheet-max-height: 85dvh;

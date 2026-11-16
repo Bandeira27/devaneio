@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApiFailure } from './api-failure';
+import { ApiFailure, messageOf } from './api-failure';
 
 function response(status: number, error: unknown): HttpErrorResponse {
   return new HttpErrorResponse({ status, error });
@@ -21,6 +21,7 @@ describe('ApiFailure', () => {
     expect(failure.code).toBe('network');
     expect(failure.retryable).toBe(true);
     expect(failure.message).toBe('Sem conexão com o servidor.');
+    expect(messageOf(failure)).toContain('Confira a rede');
   });
 
   it.each([
@@ -51,5 +52,34 @@ describe('ApiFailure', () => {
     [422, false],
   ])('status %i é repetível: %s', (status, retryable) => {
     expect(new ApiFailure(status, 'x', 'm').retryable).toBe(retryable);
+  });
+});
+
+describe('messageOf', () => {
+  it.each(['copilot_rate_limited', 'llm_unavailable', 'context_too_large', 'campaign_not_found'])(
+    'o código %s tem mensagem humana própria',
+    (code) => {
+      const text = messageOf(new ApiFailure(502, code, 'texto técnico do servidor'));
+      expect(text).not.toContain('técnico');
+    },
+  );
+
+  it('traduz o código conhecido para uma frase humana, sem ids nem jargão', () => {
+    const text = messageOf(
+      new ApiFailure(409, 'stale_revision', 'a mesa está na revisão 12, não em 10'),
+    );
+    expect(text).toBe('A mesa mudou enquanto você agia. Tente de novo.');
+  });
+
+  it('command_refused mantém a explicação do servidor, com maiúscula e ponto final', () => {
+    expect(messageOf(new ApiFailure(422, 'command_refused', 'alvo fora de alcance'))).toBe(
+      'Alvo fora de alcance.',
+    );
+  });
+
+  it('código desconhecido usa a frase do servidor ajeitada; o que não é da API fica genérico', () => {
+    expect(messageOf(new ApiFailure(400, 'novo_codigo', 'algo novo'))).toBe('Algo novo.');
+    expect(messageOf(new ApiFailure(400, 'novo_codigo', 'Já tem ponto.'))).toBe('Já tem ponto.');
+    expect(messageOf(new Error('x'))).toBe('Algo deu errado. Tente de novo.');
   });
 });

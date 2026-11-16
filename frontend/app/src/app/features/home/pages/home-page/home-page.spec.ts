@@ -23,6 +23,69 @@ describe('Home', () => {
     expect((root().querySelector('select') as HTMLSelectElement).value).toBe('sombra-do-vale');
   });
 
+  it('mostra a premissa da campanha escolhida', async () => {
+    const { root, type } = await open();
+    expect(root().querySelector('.home__premise')?.textContent).toContain('Um culto desperta.');
+    await type('select', 'outra');
+    expect(root().querySelector('.home__premise')?.textContent).toBe('x');
+  });
+
+  it('mesa guardada mostra o papel e quando foi; "Esquecer" pode ser desfeito', async () => {
+    const app = await setup('/');
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p1',
+      role: 'host',
+      title: 'A Sombra do Vale',
+      invite: INVITE,
+      savedAt: Date.now(),
+    });
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    await app.settle();
+    const { root, session, click, settle } = app;
+    expect(root().querySelector('.saved__item')?.textContent).toContain('anfitrião · hoje');
+    await click('.saved__forget');
+    expect(session.get(TABLE_ID)).toBeNull();
+    expect(root().textContent).toContain('esquecida neste aparelho');
+    const undo = Array.from(root().querySelectorAll('dv-notice button')).find(
+      (b) => b.textContent?.trim() === 'Desfazer',
+    ) as HTMLButtonElement;
+    undo.click();
+    await settle();
+    expect(session.get(TABLE_ID)?.invite).toBe(INVITE); // o convite do anfitrião volta junto
+    expect(root().textContent).not.toContain('esquecida neste aparelho');
+  });
+
+  it('o "desfazer" expira em 8 s e o foco vai para ele ao esquecer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const app = await setup('/');
+      app.session.save(TABLE_ID, {
+        token: 'tk',
+        playerId: 'p1',
+        role: 'player',
+        title: 'A Sombra do Vale',
+        savedAt: Date.now(),
+      });
+      app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+      await app.settle();
+      const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+      await app.click('.saved__forget');
+      await app.settle();
+      await Promise.resolve();
+      expect(
+        focus.mock.contexts.some((el) => (el as HTMLElement).classList.contains('home__undo')),
+      ).toBe(true);
+      focus.mockRestore();
+      vi.advanceTimersByTime(8001);
+      await app.settle();
+      expect(app.root().textContent).not.toContain('esquecida neste aparelho');
+      expect(app.session.get(TABLE_ID)).toBeNull(); // passou o prazo: o esquecimento vale
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('exige o nome do anfitrião antes de criar a mesa', async () => {
     const { root, http, submit } = await open();
     await submit();
@@ -30,7 +93,7 @@ describe('Home', () => {
     http.expectNone('/tables');
   });
 
-  it('cria a mesa, guarda a sessão do anfitrião e vai para o convite', async () => {
+  it('cria a mesa, guarda a sessão do anfitrião e vai para o personagem', async () => {
     const { http, session, router, type, submit, settle } = await open();
     await type('select', 'outra');
     await type('input[autocomplete="nickname"]', '  Ana  ');
@@ -46,7 +109,7 @@ describe('Home', () => {
       invite: INVITE,
       title: 'A Sombra do Vale',
     });
-    await vi.waitFor(() => expect(router.url).toBe(`/mesa/${TABLE_ID}/convite`));
+    await vi.waitFor(() => expect(router.url).toBe(`/mesa/${TABLE_ID}/personagem`));
   });
 
   it('mostra o erro do servidor ao criar a mesa, como texto', async () => {
@@ -56,12 +119,12 @@ describe('Home', () => {
     http
       .expectOne('/tables')
       .flush(
-        { error: { code: 'table_limit', message: 'cheio <img src=x onerror=alert(1)>' } },
+        { error: { code: 'sem_mapa', message: 'cheio <img src=x onerror=alert(1)>' } },
         { status: 409, statusText: 'Conflict' },
       );
     await settle();
     expect(root().querySelector('[role="alert"]')?.textContent).toContain(
-      'cheio <img src=x onerror=alert(1)>',
+      'Cheio <img src=x onerror=alert(1)>.',
     );
     expect(root().querySelector('img')).toBeNull();
   });
@@ -71,7 +134,7 @@ describe('Home', () => {
     app.http.expectOne('/campaigns').error(new ProgressEvent('error'));
     await app.settle();
     expect(app.root().querySelector('[role="alert"]')?.textContent).toContain(
-      'Sem conexão com o servidor.',
+      'Sem conexão com o servidor',
     );
     await app.click('button');
     app.http.expectOne('/campaigns').flush(CAMPAIGNS);

@@ -37,7 +37,58 @@ export class ApiFailure extends Error {
   }
 }
 
-/** Texto de erro para a tela: o do servidor (já em português) ou um genérico para o que não é falha da API. */
+/**
+ * Mensagem humana por código de erro do servidor: o que aconteceu e, quando há, o que fazer. Os códigos são estáveis;
+ * a mensagem do servidor é técnica (minúscula, sem ponto, com ids) e só serve de reserva.
+ */
+const FRIENDLY: Readonly<Record<string, string>> = {
+  network: 'Sem conexão com o servidor. Confira a rede e tente de novo.',
+  invalid_invite: 'Esse convite não vale. Peça um link novo ao anfitrião.',
+  unauthorized: 'Sua sessão nesta mesa expirou. Volte ao início e entre de novo pelo convite.',
+  table_not_found: 'Essa mesa não existe mais no servidor.',
+  already_acted: 'Você já agiu neste turno. Espere o grupo.',
+  character_limit: 'Você já tem o máximo de personagens nesta mesa.',
+  game_over: 'A partida terminou: não dá mais para agir.',
+  table_full: 'A mesa está cheia.',
+  table_limit: 'O servidor já tem o máximo de mesas. Tente mais tarde.',
+  stale_revision: 'A mesa mudou enquanto você agia. Tente de novo.',
+  no_character: 'Você ainda não tem personagem nesta mesa. Crie um para agir.',
+  say_rate_limited: 'Calma: espere um instante antes de falar de novo.',
+  say_busy: 'O mestre ainda está respondendo. Espere um instante.',
+  copilot_busy: 'O copiloto ainda está respondendo. Espere um instante.',
+  copilot_rate_limited: 'O copiloto precisa de um instante antes da próxima pergunta.',
+  llm_unavailable: 'O mestre de IA não respondeu. Tente de novo.',
+  context_too_large: 'A campanha é grande demais para o copiloto responder.',
+  campaign_not_found: 'Essa campanha não está mais no servidor. Escolha outra.',
+  llm_disabled: 'Esta mesa não tem mestre de IA ligado.',
+  forbidden: 'Isso é só do anfitrião da mesa.',
+  name_taken: 'Já existe alguém com esse nome na mesa. Escolha outro.',
+  payload_too_large: 'O texto é grande demais.',
+  request_timeout: 'A conexão demorou demais. Tente de novo.',
+  internal: 'O servidor falhou. Tente de novo em instantes.',
+};
+
+/** "regra quebrada" → "Regra quebrada." (a frase do servidor, apresentável). */
+function sentence(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed === '') {
+    return 'Algo deu errado. Tente de novo.';
+  }
+  const capital = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  return /[.!?…]$/.test(capital) ? capital : `${capital}.`;
+}
+
+/**
+ * Texto de erro para a tela. Código conhecido vira a mensagem humana; `command_refused` mantém a explicação do servidor
+ * (é ela que diz por que a regra recusou); o resto usa a frase do servidor, só ajeitada. O que não é falha da API
+ * ganha uma frase genérica.
+ */
 export function messageOf(error: unknown): string {
-  return error instanceof ApiFailure ? error.message : 'Algo deu errado. Tente de novo.';
+  if (!(error instanceof ApiFailure)) {
+    return 'Algo deu errado. Tente de novo.';
+  }
+  if (error.code === 'command_refused') {
+    return sentence(error.message);
+  }
+  return FRIENDLY[error.code] ?? sentence(error.message);
 }

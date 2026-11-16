@@ -11,7 +11,7 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
   selector: 'dv-command-sheet',
   imports: [DvSheetHead, DvButton, DvField, DvInput],
   template: `
-    <dv-sheet-head title="Digitar um comando" />
+    <dv-sheet-head title="Comando" />
     <form class="dv-stack" (submit)="$event.preventDefault(); send()">
       <dv-field
         label="Comando"
@@ -29,7 +29,9 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
           (input)="line.set(fieldValue($event))"
         />
       </dv-field>
-      <button dvButton="primary" type="submit">Enviar</button>
+      <div class="dv-sheet__foot">
+        <button dvButton="primary" type="submit">Enviar</button>
+      </div>
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

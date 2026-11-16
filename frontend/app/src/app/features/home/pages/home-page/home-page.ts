@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  OnInit,
+  afterNextRender,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
@@ -6,6 +14,7 @@ import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { HomeStore } from '../../home.store';
+import { whenOf } from '@shared/game/when';
 import { fieldValue } from '@shared/ui/field/field-value';
 
 /** Tela inicial: criar uma mesa, entrar por link e retomar mesas guardadas. */
@@ -20,6 +29,26 @@ import { fieldValue } from '@shared/ui/field/field-value';
 export class HomePage implements OnInit {
   protected readonly fieldValue = fieldValue;
   protected readonly store = inject(HomeStore);
+  private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly when = (time: number): string => whenOf(time, Date.now());
+
+  /** Esquece a mesa e leva o foco ao "Desfazer" (o botão clicado some junto com a linha). */
+  protected forget(tableId: string): void {
+    this.store.forget(tableId);
+    this.focusLater('.home__undo');
+  }
+
+  private focusLater(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
+  }
+
+  protected restore(): void {
+    this.store.restore();
+    this.focusLater('.saved__link');
+  }
 
   ngOnInit(): void {
     void this.store.load();

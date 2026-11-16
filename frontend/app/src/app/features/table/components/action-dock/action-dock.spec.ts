@@ -105,7 +105,11 @@ describe('Ações da mesa', () => {
     const app = await open();
     await app.press('Ir');
     expect(app.sheet()?.textContent).toContain('Floresta');
-    await app.inSheet('button.dv-button:not(:first-of-type), .dv-stack button');
+    await app.inSheet('.dv-stack button'); // escolher o destino não envia: pede a confirmação
+    app.http.expectNone(`/tables/${TABLE_ID}/commands`);
+    expect(app.sheet()?.textContent).toContain('Mover o grupo para Floresta');
+    expect(app.sheet()?.textContent).toContain('Gasta a sua ação');
+    await app.inSheet('.dv-sheet__foot .dv-button--primary');
     const request = app.commandRequest();
     expect(request.request.body).toEqual({ line: 'ir floresta', revision: 3 });
     expect(request.request.headers.get('Authorization')).toBe('Bearer tk');
@@ -117,7 +121,7 @@ describe('Ações da mesa', () => {
   it('Testar mostra a fórmula e manda a linha montada', async () => {
     const app = await open();
     await app.press('Testar');
-    expect(app.sheet()?.textContent).toContain('2d6 + FOR');
+    expect(app.sheet()?.textContent).toContain('Rola 2d6 + Força');
     (app.sheet()?.querySelector('form') as HTMLFormElement).dispatchEvent(
       new Event('submit', { cancelable: true }),
     );
@@ -137,6 +141,9 @@ describe('Ações da mesa', () => {
       new Event('submit', { cancelable: true }),
     );
     await app.settle();
+    app.http.expectNone(`/tables/${TABLE_ID}/commands`);
+    expect(app.sheet()?.textContent).toContain('Atacar ferreiro com Punhos');
+    await app.inSheet('.dv-sheet__foot .dv-button--primary');
     const request = app.commandRequest();
     expect((request.request.body as { line: string }).line).toBe('atacar punhos ferreiro');
     request.flush(commandResult());

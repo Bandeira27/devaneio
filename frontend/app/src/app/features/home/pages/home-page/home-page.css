@@ -23,3 +23,30 @@
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
 }
+
+.saved__forget {
+  min-height: var(--dv-touch);
+  color: var(--dv-text-muted);
+}
+
+.home__premise {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  line-height: var(--dv-leading-narration);
+}
+
+.home,
+.home__start {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+/* Na tela larga: as mesas guardadas ao lado de criar e entrar. */
+@media (min-width: 64rem) {
+  .home {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--dv-space-6);
+  }
+}

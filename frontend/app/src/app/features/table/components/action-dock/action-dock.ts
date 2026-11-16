@@ -42,7 +42,7 @@ export class ActionDock {
 
   protected async go(): Promise<void> {
     const line = await this.sheet.open<string>(GoSheet, {
-      label: 'Ir para',
+      label: 'Ir',
       data: { exits: this.store.scene()?.exits ?? [] },
     });
     if (line) {
@@ -56,7 +56,7 @@ export class ActionDock {
       return;
     }
     const line = await this.sheet.open<string>(CheckSheet, {
-      label: 'Testar uma habilidade',
+      label: 'Testar',
       data: { rules },
     });
     if (line) {
@@ -94,14 +94,14 @@ export class ActionDock {
   }
 
   protected async say(): Promise<void> {
-    const text = await this.sheet.open<string>(SaySheet, { label: 'Falar com o mestre' });
+    const text = await this.sheet.open<string>(SaySheet, { label: 'Falar' });
     if (text) {
       await this.store.say(text);
     }
   }
 
   protected async command(): Promise<void> {
-    const line = await this.sheet.open<string>(CommandSheet, { label: 'Digitar um comando' });
+    const line = await this.sheet.open<string>(CommandSheet, { label: 'Comando' });
     if (line) {
       await this.store.run(line);
     }
