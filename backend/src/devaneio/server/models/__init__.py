@@ -1,0 +1,114 @@
+"""Modelos da API: requisições (entrada, estritas) e respostas (saída).
+
+``ApiRequests`` e ``ApiResponses`` existem só para o contrato: ``export_schema`` gera um
+JSON Schema por modo (validation e serialization). Nenhum modelo de ``game/table.py``
+é alcançável a partir das respostas: hashes nunca saem do arquivo.
+"""
+
+from .campaign import (
+    BeatInfo,
+    CampaignSummary,
+    CampaignView,
+    ExitView,
+    FactInfo,
+    LocationView,
+    NpcInfo,
+    summarize,
+)
+from .contract import (
+    ApiError,
+    ApiRequests,
+    ApiResponses,
+    ErrorResponse,
+)
+from .requests import (
+    MAX_LINE,
+    MAX_NAME,
+    MAX_SEED,
+    CommandLine,
+    CommandRequest,
+    CopilotRequest,
+    CreateTableRequest,
+    JoinRequest,
+    PlayerName,
+    SayRequest,
+    clean_line,
+    clean_name,
+)
+from .responses import (
+    CommandResult,
+    CopilotAnswer,
+    EventsView,
+    EventView,
+    SayResult,
+    TableCreated,
+    TableJoined,
+    TalkView,
+)
+from .rules_view import (
+    AttributeInfo,
+    CombatInfo,
+    DifficultyInfo,
+    ModifierInfo,
+    RulesView,
+    SkillInfo,
+    WeaponInfo,
+)
+from .state import (
+    TURN_POLICY,
+    LlmView,
+    NpcView,
+    PlayerStateView,
+    PlayerView,
+    TableView,
+    TurnPolicy,
+)
+
+__all__ = [
+    "MAX_LINE",
+    "MAX_NAME",
+    "MAX_SEED",
+    "TURN_POLICY",
+    "ApiError",
+    "ApiRequests",
+    "ApiResponses",
+    "AttributeInfo",
+    "BeatInfo",
+    "CampaignSummary",
+    "CampaignView",
+    "CombatInfo",
+    "CommandLine",
+    "CommandRequest",
+    "CommandResult",
+    "CopilotAnswer",
+    "CopilotRequest",
+    "CreateTableRequest",
+    "DifficultyInfo",
+    "ErrorResponse",
+    "EventView",
+    "EventsView",
+    "ExitView",
+    "FactInfo",
+    "JoinRequest",
+    "LlmView",
+    "LocationView",
+    "ModifierInfo",
+    "NpcInfo",
+    "NpcView",
+    "PlayerName",
+    "PlayerStateView",
+    "PlayerView",
+    "RulesView",
+    "SayRequest",
+    "SayResult",
+    "SkillInfo",
+    "TableCreated",
+    "TableJoined",
+    "TableView",
+    "TalkView",
+    "TurnPolicy",
+    "WeaponInfo",
+    "clean_line",
+    "clean_name",
+    "summarize",
+]

@@ -1,0 +1,82 @@
+"""Entrada da API: limites, sanitização de nomes e linhas, e os corpos das requisições."""
+
+from __future__ import annotations
+
+import unicodedata
+from typing import Annotated
+
+from pydantic import BeforeValidator, Field
+
+from devaneio.schema import (
+    Id,
+    StrictModel,
+)
+
+MAX_NAME = 40
+
+
+MAX_SEED = 2**53  # mesma faixa portável de new_game
+
+
+_FORBIDDEN_CATEGORIES = {"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"}
+
+
+def clean_name(value: object) -> object:
+    """Nome de jogador: NFKC, sem caracteres de controle, formatação ou separadores de
+    linha (ANSI, zero-width, bidi), espaços colapsados. Sem isso, "Ana\u200b" passaria por
+    outro jogador e o nome chegaria sujo ao log, ao prompt do LLM e à tela dos outros."""
+    if not isinstance(value, str):
+        return value
+    text = unicodedata.normalize("NFKC", value)
+    if any(unicodedata.category(ch) in _FORBIDDEN_CATEGORIES for ch in text):
+        raise ValueError("o nome não pode ter caracteres de controle ou invisíveis")
+    return " ".join(text.split())
+
+
+PlayerName = Annotated[str, BeforeValidator(clean_name), Field(min_length=1, max_length=MAX_NAME)]
+
+
+def clean_line(value: object) -> object:
+    """Linha de comando: mesma regra dos nomes quanto a caracteres de controle e invisíveis
+    (um nome de personagem entre aspas viraria ANSI ou bidi na tela dos outros), sem
+    colapsar espaços, que podem estar entre aspas."""
+    if not isinstance(value, str):
+        return value
+    text = unicodedata.normalize("NFKC", value).strip()
+    if any(unicodedata.category(ch) in _FORBIDDEN_CATEGORIES for ch in text):
+        raise ValueError("a linha não pode ter caracteres de controle ou invisíveis")
+    return text
+
+
+MAX_LINE = 500
+
+
+CommandLine = Annotated[str, BeforeValidator(clean_line), Field(min_length=1, max_length=MAX_LINE)]
+
+
+class CreateTableRequest(StrictModel):
+    campaign_id: Id
+    host_name: PlayerName
+    seed: int | None = Field(default=None, ge=0, lt=MAX_SEED)
+
+
+class JoinRequest(StrictModel):
+    invite_code: str = Field(min_length=1, max_length=64)
+    name: PlayerName
+
+
+class CommandRequest(StrictModel):
+    line: CommandLine
+    # Número de eventos que o cliente viu: comando que muda a partida com revisão velha é recusado.
+    revision: int = Field(ge=0)
+
+
+class SayRequest(StrictModel):
+    text: CommandLine
+    revision: int = Field(ge=0)
+
+
+class CopilotRequest(StrictModel):
+    """Pergunta avulsa ao copiloto do anfitrião (sem estado: cada chamada leva o contexto atual)."""
+
+    text: CommandLine
