@@ -1,6 +1,6 @@
 """Sistema de regras como dados: atributos, dificuldades, habilidades, armas, modificadores.
 
-Fórmulas são strings na linguagem de ``expression.py``. A sintaxe é validada aqui (campo a
+Fórmulas são strings na linguagem de ``expression``. A sintaxe é validada aqui (campo a
 campo, pelo Pydantic); os identificadores são conferidos contra os atributos declarados em
 ``validation.validate_rules``.
 """

@@ -5,7 +5,7 @@ import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { JoinStore } from '../../join.store';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-join-page',
@@ -15,7 +15,7 @@ import { valueOf } from '@shared/ui/field/value-of';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JoinPage implements OnInit {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   /** Da rota: o id da mesa e o código do convite (o código é opcional: quem entra sem o link o cola). */
   readonly tableId = input.required<string>();
   readonly invite = input<string>();

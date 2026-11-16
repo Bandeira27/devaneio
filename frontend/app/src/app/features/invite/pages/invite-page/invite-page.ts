@@ -6,7 +6,7 @@ import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { InviteStore } from '../../invite.store';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-invite-page',
@@ -16,7 +16,7 @@ import { valueOf } from '@shared/ui/field/value-of';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvitePage implements OnInit {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   /** O id da mesa, vindo da rota. */
   readonly tableId = input.required<string>();
 

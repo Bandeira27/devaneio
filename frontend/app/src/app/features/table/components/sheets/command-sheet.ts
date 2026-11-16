@@ -3,7 +3,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SheetRef } from '@shared/ui/sheet/sheet';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 @Component({
@@ -24,7 +24,7 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
           autocapitalize="none"
           spellcheck="false"
           [value]="line()"
-          (input)="line.set(valueOf($event))"
+          (input)="line.set(fieldValue($event))"
         />
       </dv-field>
       <button dvButton="primary" type="submit">Enviar</button>
@@ -33,7 +33,7 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommandSheet {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
   protected readonly line = signal('');
   protected readonly error = signal('');

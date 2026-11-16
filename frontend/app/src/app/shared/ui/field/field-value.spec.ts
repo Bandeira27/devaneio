@@ -1,6 +1,6 @@
-import { valueOf } from './value-of';
+import { fieldValue } from './field-value';
 
-describe('valueOf', () => {
+describe('fieldValue', () => {
   it.each([
     ['input', () => document.createElement('input')],
     ['textarea', () => document.createElement('textarea')],
@@ -9,7 +9,7 @@ describe('valueOf', () => {
     document.body.append(field);
     field.value = 'olá';
     let seen = '';
-    field.addEventListener('input', (event) => (seen = valueOf(event)));
+    field.addEventListener('input', (event) => (seen = fieldValue(event)));
     field.dispatchEvent(new Event('input'));
     field.remove();
     expect(seen).toBe('olá');
@@ -21,7 +21,7 @@ describe('valueOf', () => {
     select.add(new Option('Dois', 'dois'));
     select.value = 'dois';
     let seen = '';
-    select.addEventListener('change', (event) => (seen = valueOf(event)));
+    select.addEventListener('change', (event) => (seen = fieldValue(event)));
     select.dispatchEvent(new Event('change'));
     expect(seen).toBe('dois');
   });

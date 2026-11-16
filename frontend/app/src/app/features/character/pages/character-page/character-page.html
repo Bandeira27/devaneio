@@ -29,7 +29,7 @@
             autocomplete="off"
             maxlength="40"
             [value]="store.name()"
-            (input)="store.name.set(valueOf($event))"
+            (input)="store.name.set(fieldValue($event))"
           />
         </dv-field>
         @if (store.rules(); as rules) {

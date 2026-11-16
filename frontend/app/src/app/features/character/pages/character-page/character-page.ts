@@ -6,7 +6,7 @@ import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvStepper } from '@shared/ui/stepper/stepper';
 import { CharacterStore } from '../../character.store';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-character-page',
@@ -16,7 +16,7 @@ import { valueOf } from '@shared/ui/field/value-of';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CharacterPage implements OnInit {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(CharacterStore);

@@ -3,7 +3,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SheetRef } from '@shared/ui/sheet/sheet';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export const MAX_SAY = 500;
@@ -24,7 +24,7 @@ export const MAX_SAY = 500;
           rows="3"
           [attr.maxlength]="max"
           [value]="text()"
-          (input)="text.set(valueOf($event))"
+          (input)="text.set(fieldValue($event))"
         ></textarea>
       </dv-field>
       <button dvButton="primary" type="submit">Enviar</button>
@@ -33,7 +33,7 @@ export const MAX_SAY = 500;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SaySheet {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
   protected readonly max = MAX_SAY;
   protected readonly text = signal('');

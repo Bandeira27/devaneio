@@ -5,7 +5,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export interface CheckSheetData {
@@ -19,14 +19,14 @@ export interface CheckSheetData {
     <dv-sheet-head title="Testar uma habilidade" />
     <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
       <dv-field label="Habilidade" [hint]="formula()">
-        <select dvInput [value]="skill()" (change)="skill.set(valueOf($event))">
+        <select dvInput [value]="skill()" (change)="skill.set(fieldValue($event))">
           @for (item of data.rules.skills; track item.id) {
             <option [value]="item.id">{{ item.name }}</option>
           }
         </select>
       </dv-field>
       <dv-field label="Dificuldade">
-        <select dvInput [value]="difficulty()" (change)="difficulty.set(valueOf($event))">
+        <select dvInput [value]="difficulty()" (change)="difficulty.set(fieldValue($event))">
           @for (item of data.rules.difficulties; track item.id) {
             <option [value]="item.id">{{ item.name }} ({{ item.value }})</option>
           }
@@ -34,7 +34,7 @@ export interface CheckSheetData {
       </dv-field>
       @if (data.rules.modifiers.length > 0) {
         <dv-field label="Modificador">
-          <select dvInput [value]="modifier()" (change)="modifier.set(valueOf($event))">
+          <select dvInput [value]="modifier()" (change)="modifier.set(fieldValue($event))">
             <option value="">nenhum</option>
             @for (item of data.rules.modifiers; track item.id) {
               <option [value]="item.id">{{ item.name }} ({{ item.value }})</option>
@@ -48,7 +48,7 @@ export interface CheckSheetData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckSheet {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   protected readonly data = inject(SHEET_DATA) as CheckSheetData;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
 

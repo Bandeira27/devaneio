@@ -5,7 +5,7 @@ import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { HomeStore } from '../../home.store';
-import { valueOf } from '@shared/ui/field/value-of';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-home-page',
@@ -16,7 +16,7 @@ import { valueOf } from '@shared/ui/field/value-of';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePage implements OnInit {
-  protected readonly valueOf = valueOf;
+  protected readonly fieldValue = fieldValue;
   protected readonly store = inject(HomeStore);
 
   ngOnInit(): void {

@@ -12,6 +12,7 @@ import { SheetRef } from './sheet';
       <button dvButton type="button" (click)="ref.close()">Fechar</button>
     </div>
   `,
+  styles: ':host { display: block; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvSheetHead {
