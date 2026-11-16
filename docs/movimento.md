@@ -40,6 +40,7 @@ Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o es
 | Envelhecimento                       | opacidade por idade                                  | 4        | `slow` ao mudar o turno                |
 | Mudança de hp                        | pontos de vida                                       | 1, 2     | `base`                                 |
 | Cópia feita                          | campo de cópia                                       | 2        | `fast`                                 |
+| Aviso "N novas"                      | feed da mesa                                         | 2, 5     | `base` ao entrar, `fast` ao sair       |
 | Troca de rota                        | páginas                                              | 3        | `base` (`withViewTransitions`)         |
 | Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça, só enquanto pendente |
 
