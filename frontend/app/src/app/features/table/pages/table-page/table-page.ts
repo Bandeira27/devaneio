@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } fro
 import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { ActionDock } from '../../components/action-dock/action-dock';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
 import { FeedList } from '../../components/feed-list/feed-list';
 import { PartyStrip } from '../../components/party-strip/party-strip';
@@ -10,7 +11,16 @@ import { TableStore } from '../../table.store';
 
 @Component({
   selector: 'dv-table-page',
-  imports: [RouterLink, DvButton, DvNotice, ConnectionBadge, FeedList, PartyStrip, SceneCard],
+  imports: [
+    RouterLink,
+    DvButton,
+    DvNotice,
+    ActionDock,
+    ConnectionBadge,
+    FeedList,
+    PartyStrip,
+    SceneCard,
+  ],
   providers: [TableStore],
   templateUrl: './table-page.html',
   styleUrl: './table-page.css',

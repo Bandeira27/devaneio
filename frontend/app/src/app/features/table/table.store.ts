@@ -6,7 +6,9 @@ import type {
   Character,
   EventView,
   GameState,
+  NpcView,
   RulesView,
+  WeaponInfo,
   TableView,
   TalkView,
 } from '@contract/api_responses';
@@ -16,7 +18,13 @@ import { LiveFeed, LiveStatus } from '@core/live/live-feed';
 import { TableLive } from '@core/live/table-live';
 import { SessionStore } from '@core/session/session-store';
 import { buildFeed } from '@shared/game/feed';
-import { ACT_BLOCK_TEXT, actBlock } from '@shared/game/rules';
+import {
+  ACT_BLOCK_TEXT,
+  AttackTarget,
+  actBlock,
+  attackTargets,
+  usableWeapons,
+} from '@shared/game/rules';
 import { sceneOf } from '@shared/game/scene';
 
 export type TableState = 'loading' | 'ready' | 'failed';
@@ -83,6 +91,34 @@ export class TableStore implements OnDestroy {
     return block === null ? '' : ACT_BLOCK_TEXT[block];
   });
 
+  /** Resposta de comando que não gerou evento (`olhar`, `ficha`...): aparece até a próxima ação. */
+  readonly reply = signal('');
+  readonly actionBusy = signal(false);
+  readonly actionError = signal('');
+  readonly canSay = computed(() => this.table()?.llm.enabled === true);
+  readonly weapons = computed<WeaponInfo[]>(() => {
+    const rules = this.rules();
+    return rules === null ? [] : usableWeapons(rules, this.character()?.inventory ?? []);
+  });
+  readonly targets = computed<AttackTarget[]>(() => {
+    const table = this.table();
+    const scene = this.scene();
+    if (table === null || scene === null) {
+      return [];
+    }
+    const views: Record<string, NpcView> = {};
+    for (const [id, npc] of Object.entries(table.state.npcs)) {
+      // O anfitrião recebe o estado completo (sem `hostile`): só o jogador comum recebe a visão pronta.
+      views[id] = {
+        alive: npc.alive,
+        hp: npc.hp,
+        max_hp: npc.max_hp,
+        hostile: 'hostile' in npc && npc.hostile,
+      };
+    }
+    return attackTargets(scene.npcs, views);
+  });
+
   constructor() {
     // A cada revisão nova do fluxo, relê a foto da mesa: hp, turno, quem já agiu, onde o grupo está.
     effect(() => {
@@ -141,6 +177,53 @@ export class TableStore implements OnDestroy {
     })();
     this.refreshing = run;
     return run;
+  }
+
+  /** Manda uma linha de comando. Se a mesa andou (`stale_revision`), relê e tenta de novo, uma vez. */
+  async run(line: string): Promise<boolean> {
+    return this.act(async () => {
+      const send = async (revision: number) =>
+        firstValueFrom(this.api.command(this.tableId(), { line, revision }));
+      const result = await this.withRetry(send);
+      this.reply.set(result.events.length === 0 ? result.text : '');
+    });
+  }
+
+  /** Texto livre para o mestre de IA (o servidor propõe e aplica as ações, ou só responde). */
+  async say(text: string): Promise<boolean> {
+    return this.act(async () => {
+      const send = async (revision: number) =>
+        firstValueFrom(this.api.say(this.tableId(), { text, revision }));
+      const result = await this.withRetry(send);
+      this.reply.set(result.events.length === 0 ? result.say : '');
+    });
+  }
+
+  private async act(work: () => Promise<void>): Promise<boolean> {
+    this.actionBusy.set(true);
+    this.actionError.set('');
+    try {
+      await work();
+      void this.refresh();
+      return true;
+    } catch (error) {
+      this.actionError.set(messageOf(error));
+      return false;
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
+  private async withRetry<T>(send: (revision: number) => Promise<T>): Promise<T> {
+    try {
+      return await send(this.table()?.revision ?? 0);
+    } catch (error) {
+      if (!(error instanceof ApiFailure) || error.code !== 'stale_revision') {
+        throw error;
+      }
+      await this.refresh();
+      return send(this.table()?.revision ?? 0);
+    }
   }
 
   ngOnDestroy(): void {

@@ -1,0 +1,56 @@
+<section class="dock" aria-label="Ações">
+  @if (store.blockedReason()) {
+    <p class="dock__reason dv-note" role="status">{{ store.blockedReason() }}</p>
+  }
+  @if (store.actionError()) {
+    <dv-notice kind="error">{{ store.actionError() }}</dv-notice>
+  }
+  @if (store.reply()) {
+    <dv-notice>{{ store.reply() }}</dv-notice>
+  }
+  @if (store.actionBusy()) {
+    <p class="dock__reason dv-note" role="status">O mestre está pensando…</p>
+  }
+  <div class="dock__buttons">
+    <button
+      dvButton
+      type="button"
+      [disabled]="!!store.blockedReason() || store.actionBusy()"
+      (click)="go()"
+    >
+      Ir
+    </button>
+    <button
+      dvButton
+      type="button"
+      [disabled]="!!store.blockedReason() || store.actionBusy()"
+      (click)="check()"
+    >
+      Testar
+    </button>
+    <button
+      dvButton
+      type="button"
+      [disabled]="!!store.blockedReason() || store.actionBusy()"
+      (click)="attack()"
+    >
+      Atacar
+    </button>
+    <button dvButton type="button" [disabled]="!store.character()" (click)="sheetOfCharacter()">
+      Ficha
+    </button>
+    @if (store.canSay()) {
+      <button
+        dvButton="primary"
+        type="button"
+        [disabled]="!!store.blockedReason() || store.actionBusy()"
+        (click)="say()"
+      >
+        Falar
+      </button>
+    }
+    <button dvButton type="button" [disabled]="store.actionBusy()" (click)="command()">
+      Comando
+    </button>
+  </div>
+</section>
