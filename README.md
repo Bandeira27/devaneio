@@ -23,7 +23,7 @@ usuário, [`docs/desenho-sistemas-do-usuario.md`](docs/desenho-sistemas-do-usuar
 
 ```
 backend/    Python (Pydantic v2, pytest) — esquema, motor, orquestração (game), CLI e servidor da mesa
-frontend/   TypeScript strict — tipos do contrato e, em frontend/app/, a UI Angular (docs/desenho-ui.md)
+frontend/   TypeScript strict — tipos do contrato (a UI Angular em frontend/app/ está em construção: docs/desenho-ui.md)
 contract/   JSON Schema gerado a partir do backend (dados do jogo e API)
 ```
 

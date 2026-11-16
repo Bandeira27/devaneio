@@ -14,7 +14,7 @@ o **app do jogador** (Angular), o painel do anfitrião com o copiloto e, depois,
 - **Roteamento por hash** (`/#/mesa/...`): o servidor não precisa de fallback de SPA e o código do convite fica no
   fragmento, que nunca chega ao servidor nem ao log.
 - **Token no navegador** (`Authorization: Bearer`, `localStorage`), sem cookie. Risco aceito: exposição a XSS, mitigada
-  por CSP restrita, escape do Angular e proibição de `innerHTML` e `bypassSecurityTrust*` por lint.
+  por CSP restrita, escape do Angular e proibição de `innerHTML` e `bypassSecurityTrust*` por lint (que entra com o app).
 - **Estado:** signals em serviços por feature. **Um tema**, com todas as cores em OKLCH num arquivo de tokens.
 - **Botões** para as ações, com chat opcional para digitar comandos; o texto livre pelo LLM segue como ação.
 - **Mesa primeiro, editor depois.** O editor (depois) só existe com `--editor` e só em localhost.
@@ -50,8 +50,8 @@ frontend/app/src/
 ```
 
 `features` e `layout` usam `shared` e `core`; `shared` e `core` não dependem de `features`, de `layout` nem um do outro;
-uma feature não importa outra; só `shared/ui` importa o CDK. Isso é imposto por ESLint, como o import-linter faz no
-backend.
+uma feature não importa outra; só `shared/ui` importa o CDK. Isso será imposto por ESLint (configurado no primeiro
+passo do app, antes de qualquer tela), como o import-linter faz no backend.
 
 ## Dependências novas (regra 5)
 
@@ -70,10 +70,10 @@ A lista final (com versões) sai do primeiro passo do app, que fixa a versão do
 
 ## Segurança no navegador
 
-- **CSP** em tudo que o servidor serve: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-  img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self';
-  frame-ancestors 'none'; form-action 'self'`, mais `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `nosniff`.
-  `'unsafe-inline'` em estilos é um risco aceito: o Angular injeta estilos de componente em tempo de execução.
+- **CSP** em tudo que o servidor serve de arquivo (o valor exato está em `server/static.py`, `CSP`, com o teste que o
+  prova): scripts, fontes, imagens e conexões só de `'self'`, sem plugins, sem `<base>` externo e sem moldura, mais
+  `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `nosniff`. `'unsafe-inline'` em estilos é um risco
+  aceito: o Angular injeta estilos de componente em tempo de execução.
 - **Estáticos confinados** à pasta do build: sem `..`, sem symlink para fora, sem diretório, MIME por lista fechada.
 - **O front renderiza tudo como texto.** O servidor remove caracteres de controle de nomes e falas, mas não escapa
   marcação: um nome `<img onerror=...>` precisa aparecer como texto.

@@ -42,8 +42,10 @@ SECURITY_HEADERS = {
 }
 IMMUTABLE = "public, max-age=31536000, immutable"
 REVALIDATE = "no-cache"
-# O build do Angular põe um hash no nome (``main-3F8K2LQA.js``); o que não tem hash revalida sempre.
-_HASHED = re.compile(r"[-.][A-Za-z0-9_]{8,}\.[A-Za-z0-9]+$")
+# O build do Angular põe um hash em maiúsculas e dígitos no nome (``main-3F8K2LQA.js``); o que não tem
+# hash revalida sempre. Só maiúsculas e dígitos: ``logo-devaneio.svg`` não é hash e não pode ficar um ano
+# em cache ``immutable``.
+_HASHED = re.compile(r"[-.][A-Z0-9]{8,}\.[A-Za-z0-9]+$")
 
 
 class StaticError(ValueError):
@@ -55,6 +57,7 @@ class StaticFile:
     path: Path
     content_type: str
     cache_control: str
+    size: int
 
 
 class StaticSite:
@@ -80,18 +83,22 @@ class StaticSite:
         if any(p in ("", ".", "..") or p.startswith(".") for p in parts):
             return None
         candidate = self.root.joinpath(*parts)
-        content_type = MIME.get(candidate.suffix.lower())
-        if content_type is None:
+        if MIME.get(candidate.suffix.lower()) is None:
             return None
         try:
             resolved = candidate.resolve()
-            if (
-                not resolved.is_relative_to(self.root)
-                or not resolved.is_file()
-                or resolved.stat().st_size > MAX_STATIC_BYTES
-            ):
+            if not resolved.is_relative_to(self.root) or not resolved.is_file():
                 return None
+            size = resolved.stat().st_size
         except OSError:
             return None
+        # O nome pedido já passou; o ALVO também precisa passar (um symlink dentro da pasta não pode
+        # apontar para um segmento oculto nem para um tipo fora da lista, como ``.map``).
+        content_type = MIME.get(resolved.suffix.lower())
+        target_parts = resolved.relative_to(self.root).parts
+        if content_type is None or any(p.startswith(".") for p in target_parts):
+            return None
+        if size > MAX_STATIC_BYTES:
+            return None
         cache = IMMUTABLE if _HASHED.search(resolved.name) else REVALIDATE
-        return StaticFile(resolved, content_type, cache)
+        return StaticFile(resolved, content_type, cache, size)

@@ -3,6 +3,7 @@
 import http.client
 import json
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -29,7 +30,12 @@ def web(tmp_path):
     (root / "script.py").write_text("print(1)", encoding="utf-8")
     (tmp_path / "fora.txt").write_text("fora da pasta", encoding="utf-8")
     (root / "ligacao.txt").symlink_to(tmp_path / "fora.txt")
+    (root / "logo-devaneio.svg").write_text(
+        "<svg xmlns='http://www.w3.org/2000/svg'/>", encoding="utf-8"
+    )
     (root / "dentro.txt").write_text("dentro", encoding="utf-8")
+    (root / "interno.js").symlink_to(root / "main.js.map")
+    (root / "oculto.txt").symlink_to(root / ".segredo.txt")
     (root / "apelido.txt").symlink_to(root / "dentro.txt")
     return root
 
@@ -102,6 +108,51 @@ def test_assets_have_their_type_and_files_with_a_hash_are_immutable(server, path
     assert headers["Content-Security-Policy"] == CSP
 
 
+def test_a_long_lowercase_word_in_the_name_is_not_a_hash(server):
+    status, headers, _ = fetch(server, "GET", "/logo-devaneio.svg")
+    assert status == 200
+    assert headers["Cache-Control"] == "no-cache"  # nunca um ano de immutable por engano
+
+
+def test_a_file_that_grows_past_the_limit_after_the_lookup_is_still_refused(
+    server, web, monkeypatch
+):
+    monkeypatch.setattr("devaneio.server.http.MAX_STATIC_BYTES", 5)
+    status, _, body = fetch(server, "GET", f"/{HASHED_JS}")
+    assert status == 404
+    assert json.loads(body)["error"]["code"] == "not_found"
+
+
+def test_a_file_that_vanishes_after_the_lookup_is_a_404(server, web, monkeypatch):
+    real_open = Path.open
+
+    def vanishing(self, *args, **kwargs):
+        if self.name == HASHED_JS:
+            raise FileNotFoundError(str(self))
+        return real_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", vanishing)
+    assert fetch(server, "GET", f"/{HASHED_JS}")[0] == 404
+
+
+def test_a_leading_double_slash_is_normalized_by_the_stdlib_and_stays_confined(server):
+    """``http.server`` troca ``//x`` por ``/x`` antes de o handler ver o caminho: nunca vira host."""
+    assert fetch(server, "GET", "//index.html")[0] == 200
+    assert fetch(server, "GET", "///index.html")[0] == 200
+    assert fetch(server, "GET", "//../fora.txt")[0] == 404
+    assert fetch(server, "GET", "//etc/passwd")[0] == 404
+
+
+def test_head_does_not_read_the_file_and_still_has_the_right_length(server, web, monkeypatch):
+    def no_reading(self, *args, **kwargs):
+        raise AssertionError("HEAD não deve abrir o arquivo")
+
+    monkeypatch.setattr(Path, "open", no_reading)
+    status, headers, body = fetch(server, "HEAD", f"/{HASHED_JS}")
+    assert (status, body) == (200, b"")
+    assert headers["Content-Length"] == str((web / HASHED_JS).stat().st_size)
+
+
 def test_head_has_the_headers_and_no_body(server):
     _, get_headers, get_body = fetch(server, "GET", f"/{HASHED_JS}")
     status, headers, body = fetch(server, "HEAD", f"/{HASHED_JS}")
@@ -126,6 +177,8 @@ def test_head_has_the_headers_and_no_body(server):
         "/index.html%00.js",
         "/%00",
         "/ligacao.txt",
+        "/interno.js",
+        "/oculto.txt",
         "/.segredo.txt",
         "/%2esegredo.txt",
         "/media",

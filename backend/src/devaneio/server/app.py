@@ -63,6 +63,7 @@ from .turns import apply, authenticate, events_view
 
 MAX_PLAYERS = 8
 SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
+HOST_ID = "p1"  # o anfitrião é sempre o primeiro jogador da mesa
 COPILOT_COOLDOWN = 5.0  # segundos entre duas consultas ao copiloto da mesa
 
 
@@ -131,7 +132,7 @@ class TableService:
             raise ApiFailure(409, "table_limit", "este servidor já tem o máximo de mesas")
         token, invite = self._token_source(), self._invite_source()
         host = Player(name=request.host_name, role="host", token_hash=hash_secret(token))
-        table = TableMeta(invite_hash=hash_secret(invite), players={"p1": host})
+        table = TableMeta(invite_hash=hash_secret(invite), players={HOST_ID: host})
         table_id, save_path = self.storage.new_table_path()
         with self.storage.lock(table_id):
             session = replace(new_game(campaign_path, save_path, request.seed), table=table)
@@ -140,7 +141,7 @@ class TableService:
             table_id=table_id,
             host_token=token,
             invite_code=invite,
-            table=self._view(table_id, session, table, "host", "p1"),
+            table=self._view(table_id, session, table, "host", HOST_ID),
         )
 
     def join_table(self, table_id: str, request: JoinRequest) -> TableJoined:

@@ -29,7 +29,7 @@ from .models import (
     JoinRequest,
     SayRequest,
 )
-from .static import SECURITY_HEADERS, StaticFile, StaticSite
+from .static import MAX_STATIC_BYTES, SECURITY_HEADERS, StaticFile, StaticSite
 
 MAX_BODY = 64 * 1024
 MAX_WAIT = 30  # segundos de long-poll
@@ -158,7 +158,10 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 # A API vem sempre antes: só o que nenhuma rota de API reconhece pode ser arquivo.
                 site = self.server.static
-                found = site.lookup(path) if site and method in ("GET", "HEAD") else None
+                raw = self.path.split("?", 1)[
+                    0
+                ]  # sem urlsplit: ``//x`` não vira "host x" e some o ``//``
+                found = site.lookup(raw) if site and method in ("GET", "HEAD") else None
                 if found is None:
                     raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
                 self._send_file(found, head_only=method == "HEAD")
@@ -249,16 +252,20 @@ class Handler(BaseHTTPRequestHandler):
             {
                 "Content-Type": f"{JSON}; charset=utf-8",
                 "Cache-Control": "no-store",
-                "X-Content-Type-Options": "nosniff",
+                "X-Content-Type-Options": SECURITY_HEADERS["X-Content-Type-Options"],
             },
         )
 
     def _send_file(self, found: StaticFile, *, head_only: bool) -> None:
-        try:
-            body = found.path.read_bytes()
-        except OSError:  # sumiu entre o lookup e a leitura
-            self._send_error(404, "not_found", f"rota desconhecida: {urlsplit(self.path).path}")
-            return
+        body = b""
+        if not head_only:  # HEAD só precisa do tamanho que o lookup já mediu
+            try:
+                with found.path.open("rb") as handle:
+                    body = handle.read(MAX_STATIC_BYTES + 1)  # o teto vale para o que foi lido
+            except OSError:  # sumiu entre o lookup e a leitura
+                raise ApiFailure(404, "not_found", "arquivo não encontrado") from None
+            if len(body) > MAX_STATIC_BYTES:
+                raise ApiFailure(404, "not_found", "arquivo não encontrado")
         self._respond(
             200,
             body,
@@ -268,10 +275,17 @@ class Handler(BaseHTTPRequestHandler):
                 **SECURITY_HEADERS,
             },
             head_only=head_only,
+            length=found.size if head_only else None,
         )
 
     def _respond(
-        self, status: int, body: bytes, headers: dict[str, str], *, head_only: bool = False
+        self,
+        status: int,
+        body: bytes,
+        headers: dict[str, str],
+        *,
+        head_only: bool = False,
+        length: int | None = None,
     ) -> None:
         # HEAD leva os mesmos cabeçalhos (Content-Length inclusive) e nenhum corpo.
         head_only = head_only or self.command == "HEAD"
@@ -279,7 +293,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(status)
             for name, value in headers.items():
                 self.send_header(name, value)
-            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Content-Length", str(len(body) if length is None else length))
             if self.close_connection:
                 self.send_header("Connection", "close")
             self.end_headers()
