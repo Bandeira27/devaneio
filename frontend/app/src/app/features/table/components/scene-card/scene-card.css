@@ -1,0 +1,28 @@
+.scene {
+  display: grid;
+  gap: var(--dv-space-3);
+}
+
+.scene__text {
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.scene__facts {
+  display: grid;
+  gap: var(--dv-space-1);
+  margin: 0;
+}
+
+.scene__row {
+  display: flex;
+  gap: var(--dv-space-3);
+}
+
+.scene__row dt {
+  min-width: 4.5rem;
+}
+
+.scene__row dd {
+  margin: 0;
+}
