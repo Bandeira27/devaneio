@@ -246,6 +246,126 @@ def test_a_file_over_the_limit_is_not_served(server, web, monkeypatch):
     assert MAX_STATIC_BYTES > 10
 
 
+def test_an_empty_file_is_served_with_length_zero(server, web):
+    (web / "vazio.txt").write_bytes(b"")
+    status, headers, body = fetch(server, "GET", "/vazio.txt")
+    assert (status, body) == (200, b"")
+    assert headers["Content-Length"] == "0"
+    assert headers["Content-Type"] == "text/plain; charset=utf-8"
+
+
+@pytest.mark.parametrize(
+    ("name", "content_type"),
+    [
+        ("app.webmanifest", "application/manifest+json"),
+        ("logo-devaneio.svg", "image/svg+xml"),
+        ("fonte.woff2", "font/woff2"),
+        ("logo.png", "image/png"),
+        ("chunk.mjs", "text/javascript; charset=utf-8"),
+    ],
+)
+def test_every_listed_extension_has_its_content_type(server, web, name, content_type):
+    (web / name).write_bytes(b"x")
+    status, headers, _ = fetch(server, "GET", f"/{name}")
+    assert status == 200
+    assert headers["Content-Type"] == content_type
+    assert headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_an_uppercase_extension_is_served_with_the_type_of_the_lowercase_one(server, web):
+    (web / "LOGO.SVG").write_bytes(b"<svg/>")
+    status, headers, _ = fetch(server, "GET", "/LOGO.SVG")
+    assert status == 200
+    assert headers["Content-Type"] == "image/svg+xml"
+
+
+def test_an_uppercase_map_extension_is_still_refused(server, web):
+    (web / "main.JS.MAP").write_text("{}", encoding="utf-8")
+    assert fetch(server, "GET", "/main.JS.MAP")[0] == 404
+
+
+def test_the_query_string_does_not_change_which_file_is_served(server):
+    status, headers, body = fetch(server, "GET", "/index.html?x=1")
+    assert status == 200
+    assert body == b"<!doctype html><title>mesa</title>"
+    assert headers["Cache-Control"] == "no-cache"
+    assert fetch(server, "GET", "/?x=1&y=2")[2] == body
+    assert fetch(server, "GET", f"/{HASHED_JS}?v=2")[0] == 200
+
+
+def test_a_query_string_cannot_smuggle_a_path(server):
+    assert fetch(server, "GET", "/nao-existe.js?/index.html")[0] == 404
+    assert fetch(server, "GET", "/?../fora.txt")[2] == b"<!doctype html><title>mesa</title>"
+
+
+def test_head_on_index_html_keeps_the_revalidation_and_the_security_headers(server):
+    _, get_headers, _ = fetch(server, "GET", "/index.html")
+    status, headers, body = fetch(server, "HEAD", "/index.html")
+    assert (status, body) == (200, b"")
+    assert headers["Cache-Control"] == "no-cache"
+    for name in (
+        "Content-Security-Policy",
+        "Referrer-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "Content-Type",
+    ):
+        assert headers[name] == get_headers[name]
+
+
+def test_head_on_a_hashed_file_is_immutable(server):
+    headers = fetch(server, "HEAD", f"/{HASHED_JS}")[1]
+    assert headers["Cache-Control"] == "public, max-age=31536000, immutable"
+
+
+@pytest.mark.parametrize("path", ["/media//fonte-AB12CD34.woff2", "//media//fonte-AB12CD34.woff2"])
+def test_repeated_slashes_in_the_middle_of_the_path_are_not_a_file(server, path):
+    assert fetch(server, "GET", path)[0] == 404
+
+
+def test_a_very_long_path_is_a_404_and_not_a_crash(server):
+    status, _, body = fetch(server, "GET", "/" + "a" * 5000 + ".js")
+    assert status == 404
+    assert json.loads(body)["error"]["code"] == "not_found"
+    assert fetch(server, "GET", "/" + "/".join(["d"] * 500) + "/x.js")[0] == 404
+    assert fetch(server, "GET", "/index.html")[0] == 200  # o servidor segue de pé
+
+
+def test_the_api_stays_json_with_the_front_on_even_for_a_name_that_looks_like_a_file(server):
+    status, headers, body = fetch(server, "GET", "/tables/abc/rules")
+    assert status == 404  # mesa que não existe: erro da API, não "arquivo não encontrado"
+    assert headers["Content-Type"].startswith("application/json")
+    assert "Content-Security-Policy" not in headers
+    assert "mesa" in json.loads(body)["error"]["message"]
+    status, _, body = fetch(server, "GET", "/tables/abc/nada.js")
+    assert (status, json.loads(body)["error"]["code"]) == (404, "not_found")
+
+
+def test_one_keep_alive_connection_serves_files_and_api_back_to_back(server):
+    conn = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=5)
+    try:
+        seen = []
+        for method, path in [
+            ("GET", "/index.html"),
+            ("HEAD", f"/{HASHED_JS}"),
+            ("GET", "/campaigns"),
+            ("GET", "/nao-existe.js"),
+            ("GET", f"/{HASHED_JS}"),
+            ("HEAD", "/index.html"),
+            ("GET", "/"),
+        ]:
+            conn.request(method, path)
+            response = conn.getresponse()
+            body = response.read()  # esvazia: um HEAD com corpo desalinharia a próxima resposta
+            seen.append((response.status, len(body)))
+        assert [status for status, _ in seen] == [200, 200, 200, 404, 200, 200, 200]
+        assert [size for _, size in seen][1] == 0
+        assert [size for _, size in seen][5] == 0
+        assert seen[0][1] == seen[6][1] > 0
+    finally:
+        conn.close()
+
+
 def test_the_site_needs_an_existing_folder_with_an_index(tmp_path):
     with pytest.raises(StaticError, match="não existe"):
         StaticSite(tmp_path / "nada")

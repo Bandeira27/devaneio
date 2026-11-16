@@ -493,3 +493,13 @@ def test_the_rules_catalog_shows_the_authors_system_when_the_campaign_extends_on
     rules = service.get_rules(created.table_id, created.host_token)
     assert rules.name == "Meu Sistema"
     assert "magia" in {s.id for s in rules.skills}
+
+
+def test_the_last_seat_of_a_full_table_knows_it_is_p8(service, created):
+    joined = None
+    for number in range(2, 9):
+        joined = join(service, created, name=f"Jogador {number}")
+    assert joined.player_id == "p8"
+    assert joined.table.you == "p8"
+    assert service.get_table(created.table_id, joined.token).you == "p8"
+    assert service.get_table(created.table_id, created.host_token).you == "p1"
