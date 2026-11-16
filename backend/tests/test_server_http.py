@@ -773,3 +773,18 @@ def test_the_copilot_route_without_content_type_is_415(client):
     body = json.loads(response.read())
     conn.close()
     assert (response.status, body["error"]["code"]) == (415, "unsupported_media_type")
+
+
+def test_the_rules_route_over_http(client, issued):
+    _, created, _ = create(client)
+    table, host = created["table_id"], created["host_token"]
+    assert created["table"]["you"] == "p1"
+    status, body, headers = client.call("GET", f"/tables/{table}/rules", auth=host)
+    assert status == 200
+    assert headers["Cache-Control"] == "no-store"
+    assert body["id"] == "default"
+    assert body["combat"] == {"default_weapon": "punhos", "fallen_can_act": False}
+    assert client.call("GET", f"/tables/{table}/rules")[0] == 401
+    assert client.call("GET", f"/tables/{'0' * 16}/rules", auth=host)[0] == 404
+    assert client.call("POST", f"/tables/{table}/rules", body={}, auth=host)[0] == 405
+    assert client.call("GET", f"/tables/{table}", auth=host)[1]["you"] == "p1"

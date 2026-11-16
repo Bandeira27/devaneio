@@ -417,3 +417,79 @@ def test_the_notice_tells_everyone_about_the_hosts_copilot(tmp_path):
         notice = service.get_table(created.table_id, created.host_token).llm.notice
         assert "copiloto" in notice
         assert "volta só ao anfitrião" in notice
+
+
+# --- catálogo de regras e quem sou eu -----------------------------------------------------
+
+
+def test_every_view_says_who_is_asking(service, created):
+    host_view = service.get_table(created.table_id, created.host_token)
+    assert host_view.you == "p1"
+    assert created.table.you == "p1"  # a resposta da criação já diz
+    joined = join(service, created)
+    assert joined.table.you == "p2"
+    assert service.get_table(created.table_id, joined.token).you == "p2"
+    assert service.get_table(created.table_id, created.host_token).you == "p1"
+
+
+def test_the_rules_catalog_is_open_to_any_player_with_a_token(service, created):
+    joined = join(service, created)
+    for token in (created.host_token, joined.token):
+        rules = service.get_rules(created.table_id, bearer(token))
+        assert rules.id == "default"
+        assert [a.id for a in rules.attributes] == ["FOR", "AGI", "MEN", "PRE"]
+        attribute = rules.attributes[0]
+        assert (attribute.min, attribute.max, attribute.default) == (1, 5, 2)
+        assert {s.id for s in rules.skills} >= {"lutar", "persuadir"}
+        assert next(s for s in rules.skills if s.id == "lutar").formula == "2d6 + FOR"
+        assert [d.id for d in rules.difficulties] == ["facil", "normal", "dificil", "heroica"]
+        assert {w.id for w in rules.weapons} >= {"punhos", "adaga"}
+        assert {m.id for m in rules.modifiers} == {"vantagem", "desvantagem"}
+        assert rules.combat.default_weapon == "punhos"
+        assert rules.combat.fallen_can_act is False
+
+
+def test_the_rules_catalog_leaves_out_what_no_screen_uses(service, created):
+    dumped = service.get_rules(created.table_id, bearer(created.host_token)).model_dump_json()
+    for left_out in ("max_hp", "hostile_below", "critical_success_margin", "heal"):
+        assert left_out not in dumped
+
+
+def test_the_rules_catalog_needs_a_valid_token_and_an_existing_table(service, created):
+    with pytest.raises(ApiFailure) as info:
+        service.get_rules(created.table_id, None)
+    assert info.value.status == 401
+    with pytest.raises(ApiFailure) as info:
+        service.get_rules(created.table_id, "token-errado")
+    assert info.value.status == 401
+    with pytest.raises(ApiFailure) as info:
+        service.get_rules("0" * 16, bearer(created.host_token))
+    assert info.value.status == 404
+
+
+def test_the_rules_catalog_shows_the_authors_system_when_the_campaign_extends_one(tmp_path):
+    data = json.loads(CAMPAIGN_PATH.read_text(encoding="utf-8"))
+    data["id"] = "com-magia"
+    data["rules_id"] = "meu-sistema"
+    folder = tmp_path / "campanhas"
+    (folder / "sistemas").mkdir(parents=True)
+    (folder / "campanha.json").write_text(json.dumps(data), encoding="utf-8")
+    system = {
+        "id": "meu-sistema",
+        "extends": "default",
+        "name": "Meu Sistema",
+        "skills": [{"id": "magia", "name": "Magia", "formula": "2d6 + MEN"}],
+    }
+    (folder / "sistemas" / "meu-sistema.json").write_text(json.dumps(system), encoding="utf-8")
+    service = TableService(
+        Catalog(folder),
+        Storage(tmp_path / "mesas", max_tables=2),
+        token_source=lambda: "token-x",
+        invite_source=lambda: "convite-x",
+    )
+    created = service.create_table(
+        CreateTableRequest(campaign_id="com-magia", host_name="Ana", seed=1)
+    )
+    rules = service.get_rules(created.table_id, created.host_token)
+    assert rules.name == "Meu Sistema"
+    assert "magia" in {s.id for s in rules.skills}

@@ -71,6 +71,9 @@ class Handler(BaseHTTPRequestHandler):
     def _get_campaign(self, match: re.Match[str]) -> tuple[int, Payload]:
         return 200, self.server.service.get_campaign(match.group(1), self._token())
 
+    def _get_rules(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self.server.service.get_rules(match.group(1), self._token())
+
     def _join_table(self, match: re.Match[str]) -> tuple[int, Payload]:
         request = self._read_json(JoinRequest)
         return 201, self.server.service.join_table(match.group(1), request)
@@ -102,6 +105,7 @@ class Handler(BaseHTTPRequestHandler):
         ("POST", re.compile(r"^/tables$"), _create_table),
         ("GET", re.compile(r"^/tables/([^/]+)$"), _get_table),
         ("GET", re.compile(r"^/tables/([^/]+)/campaign$"), _get_campaign),
+        ("GET", re.compile(r"^/tables/([^/]+)/rules$"), _get_rules),
         ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
         ("POST", re.compile(r"^/tables/([^/]+)/commands$"), _command),
         ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),
