@@ -1,10 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiClient } from '../api/api-client';
+import { abortable } from './abortable';
 import { LiveEnv, LiveFeed } from './live-feed';
-
-function abortError(): DOMException {
-  return new DOMException('abortado', 'AbortError');
-}
 
 /** Abre o fluxo ao vivo de uma mesa, ligando o laço à API, aos temporizadores e à visibilidade da aba. */
 @Injectable({ providedIn: 'root' })
@@ -14,65 +11,31 @@ export class TableLive {
   open(tableId: string, startRevision: number): LiveFeed {
     const env: LiveEnv = {
       fetchEvents: (query, signal) =>
-        new Promise((resolve, reject) => {
-          if (signal.aborted) {
-            reject(abortError());
-            return;
-          }
-          const onAbort = (): void => {
-            subscription.unsubscribe();
-            reject(abortError());
-          };
+        abortable(signal, (resolve, reject) => {
           const subscription = this.api.events(tableId, query).subscribe({
-            next: (view) => {
-              signal.removeEventListener('abort', onAbort);
-              resolve(view);
-            },
-            error: (error: unknown) => {
-              signal.removeEventListener('abort', onAbort);
-              reject(error);
-            },
+            next: resolve,
+            error: reject,
           });
-          signal.addEventListener('abort', onAbort, { once: true });
+          return () => subscription.unsubscribe();
         }),
       sleep: (ms, signal) =>
-        new Promise((resolve, reject) => {
-          if (signal.aborted) {
-            reject(abortError());
-            return;
-          }
-          const onAbort = (): void => {
-            clearTimeout(timer);
-            reject(abortError());
-          };
-          const timer = setTimeout(() => {
-            signal.removeEventListener('abort', onAbort);
-            resolve();
-          }, ms);
-          signal.addEventListener('abort', onAbort, { once: true });
+        abortable<undefined>(signal, (resolve) => {
+          const timer = setTimeout(() => resolve(undefined), ms);
+          return () => clearTimeout(timer);
         }),
       random: () => Math.random(),
       now: () => performance.now(),
       hidden: () => document.visibilityState === 'hidden',
       whenVisible: (signal) =>
-        new Promise((resolve, reject) => {
-          if (signal.aborted) {
-            reject(abortError());
-            return;
-          }
-          const onAbort = (): void => {
-            document.removeEventListener('visibilitychange', onChange);
-            reject(abortError());
-          };
+        abortable<undefined>(signal, (resolve) => {
           const onChange = (): void => {
             if (document.visibilityState === 'visible') {
               document.removeEventListener('visibilitychange', onChange);
-              signal.removeEventListener('abort', onAbort);
-              resolve();
+              resolve(undefined);
             }
           };
           document.addEventListener('visibilitychange', onChange);
-          signal.addEventListener('abort', onAbort, { once: true });
+          return () => document.removeEventListener('visibilitychange', onChange);
         }),
     };
     return new LiveFeed(env, startRevision);
