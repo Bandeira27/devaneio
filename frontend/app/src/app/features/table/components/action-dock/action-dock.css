@@ -1,0 +1,16 @@
+.dock {
+  display: grid;
+  gap: var(--dv-space-3);
+  padding-top: var(--dv-space-4);
+  border-top: 1px dotted var(--dv-line);
+}
+
+.dock__reason {
+  margin: 0;
+}
+
+.dock__buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--dv-space-2);
+}

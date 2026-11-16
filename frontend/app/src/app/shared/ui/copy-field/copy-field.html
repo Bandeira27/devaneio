@@ -1,0 +1,23 @@
+<label class="copy__label" [for]="inputId">{{ label() }}</label>
+<div class="copy__row">
+  <input
+    #field
+    [id]="inputId"
+    class="dv-input copy__input"
+    type="text"
+    readonly
+    [value]="text()"
+    (focus)="select()"
+  />
+  <button dvButton type="button" (click)="copy()">Copiar</button>
+</div>
+<p class="copy__status" role="status">
+  @switch (state()) {
+    @case ('copied') {
+      Copiado.
+    }
+    @case ('manual') {
+      Não consegui copiar sozinho: o texto está selecionado, copie à mão.
+    }
+  }
+</p>

@@ -1,0 +1,36 @@
+<div class="dv-page">
+  <h2 class="dv-title">Entrar na mesa</h2>
+  <p class="dv-lede">Você foi convidado para uma mesa. Diga como quer ser chamado.</p>
+
+  <form class="dv-card dv-stack" (submit)="$event.preventDefault(); store.join()">
+    <dv-field label="Seu nome" [error]="store.nameError()">
+      <input
+        dvInput
+        type="text"
+        autocomplete="nickname"
+        maxlength="40"
+        [value]="store.name()"
+        (input)="store.name.set(text($event))"
+      />
+    </dv-field>
+    @if (!invite()) {
+      <dv-field label="Código do convite" [error]="store.codeError()">
+        <input
+          dvInput
+          type="text"
+          autocomplete="off"
+          [value]="store.code()"
+          (input)="store.code.set(text($event))"
+        />
+      </dv-field>
+    } @else {
+      <p class="dv-note">Convite recebido pelo link.</p>
+    }
+    @if (store.error()) {
+      <dv-notice kind="error">{{ store.error() }}</dv-notice>
+    }
+    <button dvButton="primary" type="submit" [disabled]="store.joining()">
+      {{ store.joining() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+</div>

@@ -1,0 +1,64 @@
+<div class="dv-page">
+  <h2 class="dv-title">Seu personagem</h2>
+
+  @switch (store.state()) {
+    @case ('loading') {
+      <p class="dv-note" role="status">Abrindo a mesa…</p>
+    }
+    @case ('failed') {
+      <dv-notice kind="error">{{ store.loadError() }}</dv-notice>
+      <a dvButton routerLink="/">Voltar ao início</a>
+    }
+    @case ('ready') {
+      @if (store.llmNotice()) {
+        <dv-notice>
+          <strong>Sobre o mestre de IA desta mesa.</strong> {{ store.llmNotice() }}
+        </dv-notice>
+      }
+      <p class="dv-lede">
+        Dê um nome a quem você vai ser e distribua os atributos. O mestre cuida do resto.
+        @if (store.isHost()) {
+          Como anfitrião você também pode jogar.
+        }
+      </p>
+      <form class="dv-card dv-stack" (submit)="$event.preventDefault(); store.submit()">
+        <dv-field label="Nome do personagem" [error]="store.nameError()">
+          <input
+            dvInput
+            type="text"
+            autocomplete="off"
+            maxlength="40"
+            [value]="store.name()"
+            (input)="store.name.set(text($event))"
+          />
+        </dv-field>
+        @if (store.rules(); as rules) {
+          <div class="dv-stack" role="group" aria-label="Atributos">
+            @for (attribute of rules.attributes; track attribute.id) {
+              <dv-stepper
+                [label]="attribute.name"
+                [hint]="attribute.description"
+                [min]="attribute.min"
+                [max]="attribute.max"
+                [value]="store.values()[attribute.id] ?? attribute.default"
+                (valueChange)="store.setAttribute(attribute.id, $event)"
+              />
+            }
+          </div>
+          <button dvButton type="button" (click)="store.useDefaults()">
+            Usar os valores padrão
+          </button>
+        }
+        @if (store.error()) {
+          <dv-notice kind="error">{{ store.error() }}</dv-notice>
+        }
+        <button dvButton="primary" type="submit" [disabled]="store.saving()">
+          {{ store.saving() ? 'Entrando…' : 'Entrar na mesa' }}
+        </button>
+      </form>
+      @if (store.isHost()) {
+        <a dvButton [routerLink]="['/mesa', tableId()]">Ir para a mesa sem personagem</a>
+      }
+    }
+  }
+</div>

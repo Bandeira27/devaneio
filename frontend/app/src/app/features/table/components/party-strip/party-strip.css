@@ -1,0 +1,32 @@
+.party {
+  display: grid;
+  gap: var(--dv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.party__member {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--dv-space-1) var(--dv-space-3);
+}
+
+.party__name {
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+}
+
+.party__member > .dv-note {
+  grid-column: 1 / -1;
+}
+
+.party__member > .dv-note:empty {
+  display: none;
+}
+
+.party__member--down .party__name {
+  text-decoration: line-through;
+  text-decoration-style: dotted;
+}

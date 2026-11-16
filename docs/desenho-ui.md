@@ -44,14 +44,15 @@ frontend/app/src/
   styles/        tokens.css (OKLCH), base.css, fontes
   app/
     core/        singletons sem UI: api (HttpClient + interceptor de Bearer + ApiError), session, live (long-poll)
-    shared/      ui/ (componentes dv-* sobre o CDK), game/ (lógica pura: commands, feed, rules), util/
+    shared/      ui/ (componentes dv-* sobre o CDK), game/ (lógica pura: commands, feed, rules)
     layout/      shell
     features/    home/  join/  character/  table/   (host/ e editor/ depois)
 ```
 
 `features` e `layout` usam `shared` e `core`; `shared` e `core` não dependem de `features`, de `layout` nem um do outro;
-uma feature não importa outra; só `shared/ui` importa o CDK. Isso será imposto por ESLint (configurado no primeiro
-passo do app, antes de qualquer tela), como o import-linter faz no backend.
+uma feature não importa outra; só `shared/ui` importa o CDK. Isso é imposto por ESLint
+(`frontend/app/eslint.config.mjs`, provado por `tools/eslint-rules.spec.ts`), como o import-linter faz no backend.
+`src/app/testing/` é infraestrutura de teste e fica fora das camadas.
 
 ## Dependências novas (regra 5)
 
@@ -62,11 +63,14 @@ Só do front, em `frontend/app/`; o backend continua só com a stdlib.
 | `@angular/*` (core, common, router, platform-browser, compiler, build, cli, compiler-cli) | o framework escolhido |
 | `@angular/cdk` | comportamento acessível (overlay, diálogo, foco) por baixo dos componentes `dv-*` |
 | `rxjs` | exigido pelo Angular (HttpClient e router) |
-| Vitest (e o ambiente DOM que o Angular usar) | executor de testes padrão do Angular |
-| `eslint`, `typescript-eslint`, `@angular-eslint/*` | camadas, proibições de segurança e acessibilidade de template |
+| `vitest` 5 e `jsdom` 30 | executor de testes padrão do Angular e o DOM dele |
+| `tslib` | exigido pelo Angular |
+| `eslint`, `@eslint/js`, `typescript-eslint`, `angular-eslint` | camadas, proibições de segurança e acessibilidade de template |
 | `@fontsource/im-fell-english`, `@fontsource/special-elite` | as duas fontes (licença OFL) copiadas pelo build: nenhuma carga de CDN externa |
 
-A lista final (com versões) sai do primeiro passo do app, que fixa a versão do Angular e do TypeScript compatível.
+As versões ficam fixadas em `frontend/app/package-lock.json`: Angular 22 e TypeScript ~6.0 (a faixa que o Angular
+aceita). **Duas versões de TypeScript convivem:** `frontend/` usa o 7 só para os tipos do contrato e o `tsc` dele não
+valida o app; o app é validado pelo `ng build`.
 
 ## Segurança no navegador
 
@@ -93,3 +97,8 @@ dele ficam para o painel do anfitrião.
   backoff e um laço por aba.
 - Sem teste ponta a ponta automatizado: há testes de integração por feature com HTTP simulado e verificação manual.
 - HTTP em claro na rede local, como hoje.
+- O aviso de privacidade do LLM (`TableView.llm.notice`) só chega depois de entrar, pois a leitura da mesa exige o
+  token. Ele aparece na criação do personagem e na mesa (em `<details>`), não antes do nome. Mostrá-lo antes pediria
+  um endpoint novo, sem token, que descreva só o LLM da mesa.
+- `Falar` e `Comando` esperam a resposta do servidor (o LLM pode levar segundos): o dock mostra "O mestre está pensando…"
+  e desabilita as ações. Em `stale_revision` o cliente relê e repete uma vez; qualquer outro erro vira texto na tela.

@@ -1,0 +1,66 @@
+@switch (store.state()) {
+  @case ('loading') {
+    <p class="dv-note" role="status">Abrindo a mesa…</p>
+  }
+  @case ('failed') {
+    <div class="dv-page">
+      <dv-notice kind="error">{{ store.loadError() }}</dv-notice>
+      <a dvButton routerLink="/">Voltar ao início</a>
+    </div>
+  }
+  @case ('ready') {
+    <div class="table">
+      <header class="table__bar">
+        <h2 class="dv-title">{{ store.title() }}</h2>
+        <span class="dv-note">Turno {{ store.turn() }}</span>
+        <dv-connection-badge [status]="store.liveStatus()" />
+      </header>
+
+      @if (store.liveStatus() === 'expired' || store.liveStatus() === 'gone') {
+        <dv-notice kind="error">
+          {{
+            store.liveStatus() === 'expired'
+              ? 'Sua sessão nesta mesa não vale mais.'
+              : 'Esta mesa não existe mais neste servidor.'
+          }}
+          <a routerLink="/">Voltar ao início</a>
+        </dv-notice>
+      }
+      @if (store.status() === 'won') {
+        <dv-notice kind="ok">A partida terminou: vitória.</dv-notice>
+      } @else if (store.status() === 'lost') {
+        <dv-notice kind="error">A partida terminou: derrota.</dv-notice>
+      }
+
+      @if (store.scene(); as scene) {
+        <dv-scene-card [scene]="scene" />
+      }
+      <dv-party-strip
+        [characters]="store.party()"
+        [mine]="store.character()?.id ?? null"
+        [acted]="store.table()?.acted ?? {}"
+        [turn]="store.turn()"
+      />
+      @if (!store.character()) {
+        <dv-notice>
+          Você ainda não tem personagem nesta mesa.
+          <a [routerLink]="['/mesa', tableId(), 'personagem']">Criar personagem</a>
+        </dv-notice>
+      }
+      <dv-feed-list [items]="store.feedItems()" />
+      <dv-action-dock />
+
+      <footer class="table__foot">
+        @if (store.isHost()) {
+          <a dvButton [routerLink]="['/mesa', tableId(), 'convite']">Convidar</a>
+        }
+        @if (store.llmNotice()) {
+          <details class="table__llm">
+            <summary>Sobre o mestre de IA desta mesa</summary>
+            <p>{{ store.llmNotice() }}</p>
+          </details>
+        }
+      </footer>
+    </div>
+  }
+}

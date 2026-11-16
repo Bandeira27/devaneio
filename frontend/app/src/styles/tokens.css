@@ -1,0 +1,54 @@
+/*
+ * Tokens do tema "Desbotado" (docs/desenho-ui.md): fonte única de cor, tipografia, espaço e raio.
+ * Cores só em OKLCH, sem hex (tools/tokens.spec.ts confere), e o contraste dos pares essenciais é medido
+ * por teste (WCAG >= 4,5:1). Incerteza só na atmosfera: nada essencial fica abaixo disso; só decoração
+ * (linhas, manchas) pode ficar fraca. Um segundo tema seria só um bloco novo de variáveis.
+ */
+:root {
+  /* Paleta base */
+  --dv-smoke: oklch(27.4% 0.01 81);
+  --dv-sepia: oklch(87.8% 0.045 90);
+  --dv-ink: oklch(72% 0.052 93); /* tinta velha */
+  --dv-rose: oklch(72% 0.063 38); /* rosa de poeira */
+  --dv-verdigris: oklch(72% 0.034 171);
+  --dv-stain: oklch(54.8% 0.078 74); /* mancha: só decoração */
+  --dv-brick: oklch(73% 0.11 28); /* erro: nítido, nunca desbotado */
+
+  /* Superfícies, da mais funda à mais alta */
+  --dv-surface-0: var(--dv-smoke);
+  --dv-surface-1: oklch(31% 0.012 81);
+  --dv-surface-2: oklch(34% 0.014 81);
+
+  /* Papéis */
+  --dv-text: var(--dv-sepia);
+  --dv-text-muted: var(--dv-ink);
+  --dv-accent: var(--dv-rose);
+  --dv-accent-hover: oklch(77% 0.063 38);
+  --dv-on-accent: oklch(24% 0.01 81);
+  --dv-ok: var(--dv-verdigris);
+  --dv-danger: var(--dv-brick);
+  --dv-line: oklch(48% 0.03 90); /* bordas pontilhadas: decoração */
+
+  /* Memória por idade: o piso de opacidade do que já passou (5,3:1 sobre a fumaça) */
+  --dv-fade-floor: 0.65;
+
+  /* Tipografia: narração em IM Fell English (>= 15 px, é irregular em tamanho pequeno), notas mecânicas em
+     Special Elite, controles na fonte do sistema */
+  --dv-font-narration: 'IM Fell English', Georgia, 'Times New Roman', serif;
+  --dv-font-note: 'Special Elite', 'Courier New', monospace;
+  --dv-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --dv-text-narration: 1.0625rem;
+  --dv-text-title: 1.5rem;
+  --dv-text-ui: 1rem;
+  --dv-text-note: 0.8125rem;
+
+  /* Espaço, forma e toque */
+  --dv-space-1: 0.25rem;
+  --dv-space-2: 0.5rem;
+  --dv-space-3: 0.75rem;
+  --dv-space-4: 1rem;
+  --dv-space-6: 1.5rem;
+  --dv-space-8: 2rem;
+  --dv-radius: 2px;
+  --dv-touch: 2.75rem; /* 44 px: alvo mínimo de toque */
+}

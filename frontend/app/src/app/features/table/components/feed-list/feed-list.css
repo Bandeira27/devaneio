@@ -1,0 +1,84 @@
+.feed {
+  display: grid;
+  gap: var(--dv-space-3);
+}
+
+.feed__turn {
+  margin: var(--dv-space-3) 0 0;
+  padding-bottom: var(--dv-space-1);
+  border-bottom: 1px dotted var(--dv-line);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  font-weight: 400;
+  color: var(--dv-text-muted);
+}
+
+.feed__turn--current {
+  color: var(--dv-accent);
+}
+
+.feed__event,
+.feed__talk {
+  animation: reveal 0.5s ease-out both;
+}
+
+.feed__narration {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  line-height: 1.55;
+}
+
+.feed__event[data-tone='danger'] .feed__narration {
+  color: var(--dv-danger);
+}
+
+.feed__event[data-tone='good'] .feed__narration {
+  color: var(--dv-ok);
+}
+
+.feed__note {
+  margin-top: var(--dv-space-1);
+  padding-left: var(--dv-space-3);
+  border-left: 1px dotted var(--dv-line);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}
+
+.feed__note summary {
+  cursor: pointer;
+}
+
+.feed__note p {
+  margin: var(--dv-space-1) 0 0;
+}
+
+.feed__talk {
+  margin: 0;
+  padding-left: var(--dv-space-4);
+  border-left: 2px dotted var(--dv-accent);
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.feed__speaker {
+  display: block;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  font-style: normal;
+  color: var(--dv-accent);
+}
+
+.feed__end {
+  height: 1px;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+}

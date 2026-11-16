@@ -1,0 +1,39 @@
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-3);
+  padding-block: var(--dv-space-2);
+  border-bottom: 1px dotted var(--dv-line);
+}
+
+.stepper__text {
+  display: grid;
+}
+
+.stepper__label {
+  font-size: var(--dv-text-ui);
+}
+
+.stepper__hint {
+  color: var(--dv-text-muted);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+}
+
+.stepper__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--dv-space-2);
+}
+
+.stepper__button {
+  min-width: var(--dv-touch);
+}
+
+.stepper__value {
+  min-width: 2ch;
+  text-align: center;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-title);
+}
