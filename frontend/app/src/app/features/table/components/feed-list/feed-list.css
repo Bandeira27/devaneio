@@ -6,10 +6,10 @@
 .feed__turn {
   margin: var(--dv-space-3) 0 0;
   padding-bottom: var(--dv-space-1);
-  border-bottom: 1px dotted var(--dv-line);
+  border-bottom: var(--dv-border-width) dotted var(--dv-line);
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
-  font-weight: 400;
+  font-weight: var(--dv-weight-regular);
   color: var(--dv-text-muted);
 }
 
@@ -17,16 +17,27 @@
   color: var(--dv-accent);
 }
 
+/*
+ * Memória por idade: `--fade` vai de 0 (agora) a 1 (o mais antigo). Cada papel desbota até o seu piso: o texto de
+ * leitura até --dv-fade-floor-text; o que é cor de tom (nota, falante, dano, cura) até --dv-fade-floor-quiet, que é
+ * onde essas cores ainda passam no contraste (tools/tokens.spec.ts).
+ */
 .feed__event,
 .feed__talk {
-  animation: reveal 0.5s ease-out both;
+  --fade: 0;
+  animation: reveal var(--dv-duration-narrative) var(--dv-ease-decelerate) both;
+}
+
+.feed__narration,
+.feed__talk-text {
+  opacity: calc(1 - var(--fade) * (1 - var(--dv-fade-floor-text)));
 }
 
 .feed__narration {
   margin: 0;
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
-  line-height: 1.55;
+  line-height: var(--dv-leading-narration);
 }
 
 .feed__event[data-tone='danger'] .feed__narration {
@@ -37,10 +48,17 @@
   color: var(--dv-ok);
 }
 
+.feed__event[data-tone='danger'] .feed__narration,
+.feed__event[data-tone='good'] .feed__narration,
+.feed__note,
+.feed__speaker {
+  opacity: calc(1 - var(--fade) * (1 - var(--dv-fade-floor-quiet)));
+}
+
 .feed__note {
   margin-top: var(--dv-space-1);
   padding-left: var(--dv-space-3);
-  border-left: 1px dotted var(--dv-line);
+  border-left: var(--dv-border-width) dotted var(--dv-line);
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
   color: var(--dv-text-muted);
@@ -57,11 +75,15 @@
 .feed__talk {
   margin: 0;
   padding-left: var(--dv-space-4);
-  border-left: 2px dotted var(--dv-accent);
+  border-left: var(--dv-border-width-strong) dotted var(--dv-accent);
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
   font-style: italic;
-  line-height: 1.5;
+  line-height: var(--dv-leading-ui);
+}
+
+.feed__talk-text {
+  display: block;
 }
 
 .feed__speaker {
@@ -79,6 +101,6 @@
 @keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(0.25rem);
+    transform: translateY(var(--dv-motion-distance));
   }
 }

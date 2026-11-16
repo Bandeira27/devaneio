@@ -1,6 +1,9 @@
 import type { EventView, TalkView } from '@contract/api_responses';
 
-/** Piso de opacidade do que já passou: o desbotado nunca tira a leitura (tools/tokens.spec.ts confere). */
+/**
+ * Piso de opacidade do texto de leitura que já passou: o desbotado nunca tira a leitura (`--dv-fade-floor-text`;
+ * tools/tokens.spec.ts confere que é o mesmo no CSS).
+ */
 export const FADE_FLOOR = 0.65;
 /** O quanto cada turno de idade desbota. */
 export const FADE_PER_TURN = 0.1;
@@ -16,7 +19,7 @@ export interface FeedTurn {
   current: boolean;
 }
 
-/** Um evento do log, com a narração, a nota mecânica e a opacidade pela idade. */
+/** Um evento do log, com a narração, a nota mecânica e o quanto já desbotou pela idade. */
 export interface FeedEvent {
   type: 'event';
   key: string;
@@ -28,7 +31,8 @@ export interface FeedEvent {
   /** A linha mecânica, como nota de margem. */
   note: string;
   tone: FeedTone;
-  opacity: number;
+  /** De 0 (agora) a 1 (o mais antigo): cada papel do texto desbota até o seu piso (feed-list.css). */
+  fade: number;
 }
 
 /** Uma fala do mestre ou de um NPC. */
@@ -37,7 +41,8 @@ export interface FeedTalk {
   key: string;
   seq: number;
   text: string;
-  opacity: number;
+  /** De 0 (agora) a 1 (o mais antigo). */
+  fade: number;
 }
 
 /** Um item do feed: marcador de turno, evento ou fala. */
@@ -51,6 +56,11 @@ export function ageOpacity(age: number, floor = FADE_FLOOR): number {
     return 1;
   }
   return Math.max(floor, Math.round((1 - age * FADE_PER_TURN) * 100) / 100);
+}
+
+/** O quanto já desbotou, de 0 (agora) a 1 (no piso): a opacidade que `ageOpacity` dá, reescalada pelo piso. */
+export function ageFade(age: number, floor = FADE_FLOOR): number {
+  return Math.round(((1 - ageOpacity(age, floor)) / (1 - floor)) * 100) / 100;
 }
 
 /**
@@ -78,7 +88,7 @@ export function buildFeed(
         key: `talk-${t.seq}`,
         seq: t.seq,
         text: t.text,
-        opacity: ageOpacity(currentTurn - lastEventTurn, floor),
+        fade: ageFade(currentTurn - lastEventTurn, floor),
       });
       talkAt++;
     }
@@ -105,7 +115,7 @@ export function buildFeed(
       narration: event.narration ?? event.prose,
       note: event.text,
       tone: TONES[event.kind] ?? 'neutral',
-      opacity: ageOpacity(currentTurn - event.turn, floor),
+      fade: ageFade(currentTurn - event.turn, floor),
     });
   }
   flushTalk(Number.POSITIVE_INFINITY);

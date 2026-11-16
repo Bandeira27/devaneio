@@ -143,8 +143,8 @@ describe('Mesa', () => {
     events('0').flush(eventsView(3, [event(0, 0), event(1, 2)]));
     await settle();
     const [old, current] = Array.from(root().querySelectorAll<HTMLElement>('.feed__event'));
-    expect(old?.style.opacity).toBe('0.8');
-    expect(current?.style.opacity).toBe('1');
+    expect(old?.style.getPropertyValue('--fade')).toBe('0.57');
+    expect(current?.style.getPropertyValue('--fade')).toBe('0');
   });
 
   it('texto com HTML na narração e na fala aparece como texto', async () => {

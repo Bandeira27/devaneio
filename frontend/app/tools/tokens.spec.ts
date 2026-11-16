@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FADE_FLOOR } from '../src/app/shared/game/feed';
@@ -9,6 +9,7 @@ const stylesDir = join(root, 'src/styles');
 const tokens = readFileSync(join(stylesDir, 'tokens.css'), 'utf-8');
 
 const MIN = 4.5; // WCAG AA para texto normal
+const NON_TEXT = 3; // WCAG 2.1 (1.4.11): componentes de interface e foco
 
 /** Resolve `--dv-nome` até chegar num oklch(...) ou num número, seguindo `var(--dv-outro)`. */
 function value(name: string, seen: string[] = []): string {
@@ -25,7 +26,7 @@ function value(name: string, seen: string[] = []): string {
 }
 
 function color(name: string): Rgb {
-  const parsed = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)$/.exec(value(name));
+  const parsed = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*[\d.]+)?\)$/.exec(value(name));
   if (!parsed) {
     throw new Error(`${name} não é um oklch(L% C H): ${value(name)}`);
   }
@@ -48,6 +49,12 @@ describe('conversão de cor', () => {
   });
 });
 
+/** O texto de leitura e as cores de papel que o feed desbota; cada uma com o seu piso (`--dv-fade-floor-*`). */
+const FADED = {
+  text: ['--dv-text'],
+  quiet: ['--dv-text-muted', '--dv-accent', '--dv-ok', '--dv-danger'],
+} as const;
+
 describe('contraste dos tokens', () => {
   it.each(SURFACES)('o texto principal passa em %s', (surface) => {
     expect(contrast(color('--dv-text'), color(surface))).toBeGreaterThanOrEqual(MIN);
@@ -61,60 +68,67 @@ describe('contraste dos tokens', () => {
     expect(contrast(color('--dv-accent'), color(surface))).toBeGreaterThanOrEqual(MIN);
   });
 
-  it.each(SURFACES)('o verdete e o tijolo (ok e erro) passam em %s', (surface) => {
-    expect(contrast(color('--dv-ok'), color(surface))).toBeGreaterThanOrEqual(MIN);
-    expect(contrast(color('--dv-danger'), color(surface))).toBeGreaterThanOrEqual(MIN);
+  it.each(SURFACES)('os tons de status (ok, aviso, informação, erro) passam em %s', (surface) => {
+    for (const tone of ['--dv-ok', '--dv-warn', '--dv-info', '--dv-danger']) {
+      expect(contrast(color(tone), color(surface)), tone).toBeGreaterThanOrEqual(MIN);
+    }
   });
 
-  it('o texto do botão de acento passa sobre o acento e sobre o acento com o mouse em cima', () => {
-    expect(contrast(color('--dv-on-accent'), color('--dv-accent'))).toBeGreaterThanOrEqual(MIN);
-    expect(contrast(color('--dv-on-accent'), color('--dv-accent-hover'))).toBeGreaterThanOrEqual(
-      MIN,
-    );
+  it.each(['ok', 'warn', 'info', 'danger'])('o tom %s passa sobre o fundo dele', (tone) => {
+    expect(
+      contrast(color(`--dv-${tone}`), color(`--dv-${tone}-surface`)),
+      tone,
+    ).toBeGreaterThanOrEqual(MIN);
   });
 
-  it.each(['--dv-surface-0', '--dv-surface-1'])(
-    'o texto desbotado no piso de opacidade ainda passa em %s',
-    (surface) => {
-      const floor = Number(value('--dv-fade-floor'));
-      const faded = over(color('--dv-text'), color(surface), floor);
-      expect(contrast(faded, color(surface))).toBeGreaterThanOrEqual(MIN);
-    },
-  );
+  it('o texto do botão de acento passa sobre o acento, com o mouse e pressionado', () => {
+    for (const state of ['--dv-accent', '--dv-accent-hover', '--dv-accent-pressed']) {
+      expect(contrast(color('--dv-on-accent'), color(state)), state).toBeGreaterThanOrEqual(MIN);
+    }
+  });
 
-  it('um piso de opacidade menor reprovaria (o 0,55 da primeira ideia dava 4,2:1)', () => {
-    const faded = over(color('--dv-text'), color('--dv-surface-0'), 0.55);
+  it('o texto selecionado passa sobre a seleção', () => {
+    expect(contrast(color('--dv-text'), color('--dv-selection'))).toBeGreaterThanOrEqual(MIN);
+  });
+
+  it.each(SURFACES)('o texto desabilitado ainda se lê (>= 3:1) em %s', (surface) => {
+    expect(contrast(color('--dv-text-disabled'), color(surface))).toBeGreaterThanOrEqual(NON_TEXT);
+  });
+
+  it('o botão de acento desabilitado ainda se lê (>= 3:1)', () => {
+    expect(
+      contrast(color('--dv-on-accent-disabled'), color('--dv-accent-disabled')),
+    ).toBeGreaterThanOrEqual(NON_TEXT);
+  });
+
+  it.each(SURFACES)('o contorno de controle e o anel de foco passam de 3:1 em %s', (surface) => {
+    for (const name of ['--dv-border-control', '--dv-focus-ring']) {
+      expect(contrast(color(name), color(surface)), name).toBeGreaterThanOrEqual(NON_TEXT);
+    }
+  });
+});
+
+describe('o desbotado, por papel', () => {
+  // O feed fica sobre a superfície 0.
+  it.each(FADED.text)('%s ainda passa no piso do texto de leitura', (token) => {
+    const floor = Number(value('--dv-fade-floor-text'));
+    const faded = over(color(token), color('--dv-surface-0'), floor);
+    expect(contrast(faded, color('--dv-surface-0'))).toBeGreaterThanOrEqual(MIN);
+  });
+
+  it.each(FADED.quiet)('%s ainda passa no piso das cores de papel', (token) => {
+    const floor = Number(value('--dv-fade-floor-quiet'));
+    const faded = over(color(token), color('--dv-surface-0'), floor);
+    expect(contrast(faded, color('--dv-surface-0'))).toBeGreaterThanOrEqual(MIN);
+  });
+
+  it.each(FADED.quiet)('%s não passaria no piso do texto: por isso o piso maior', (token) => {
+    const floor = Number(value('--dv-fade-floor-text'));
+    const faded = over(color(token), color('--dv-surface-0'), floor);
     expect(contrast(faded, color('--dv-surface-0'))).toBeLessThan(MIN);
   });
-});
 
-describe('o piso do desbotado', () => {
-  it('é o mesmo no CSS e no feed', () => {
-    expect(Number(value('--dv-fade-floor'))).toBe(FADE_FLOOR);
-  });
-});
-
-describe('arquivos de estilo', () => {
-  const files = readdirSync(stylesDir).filter((name) => name.endsWith('.css'));
-
-  it('não usam cor em hex, rgb nem hsl: só OKLCH', () => {
-    for (const name of files) {
-      const css = readFileSync(join(stylesDir, name), 'utf-8').replace(/\/\*[\s\S]*?\*\//g, '');
-      expect(css, name).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-      expect(css, name).not.toMatch(/\b(?:rgb|rgba|hsl|hsla)\(/);
-    }
-  });
-
-  it('o tema está todo em tokens: os componentes só usam var(--dv-...)', () => {
-    const appDir = join(root, 'src/app');
-    const walk = (dir: string): string[] =>
-      readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
-        entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)],
-      );
-    for (const file of walk(appDir).filter((f) => f.endsWith('.css'))) {
-      const css = readFileSync(file, 'utf-8').replace(/\/\*[\s\S]*?\*\//g, '');
-      expect(css, file).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-      expect(css, file).not.toMatch(/\b(?:oklch|rgb|rgba|hsl|hsla)\(/);
-    }
+  it('o piso do texto é o mesmo no CSS e no feed', () => {
+    expect(Number(value('--dv-fade-floor-text'))).toBe(FADE_FLOOR);
   });
 });

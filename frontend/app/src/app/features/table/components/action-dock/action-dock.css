@@ -2,7 +2,7 @@
   display: grid;
   gap: var(--dv-space-3);
   padding-top: var(--dv-space-4);
-  border-top: 1px dotted var(--dv-line);
+  border-top: var(--dv-border-width) dotted var(--dv-line);
 }
 
 .dock__reason {

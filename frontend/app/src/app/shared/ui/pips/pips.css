@@ -1,13 +1,13 @@
 :host {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--dv-space-1);
 }
 
 .pip {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: var(--dv-size-pip);
+  height: var(--dv-size-pip);
+  border-radius: var(--dv-radius-round);
 }
 
 .pip--full {
@@ -15,5 +15,5 @@
 }
 
 .pip--empty {
-  border: 1px solid var(--dv-text-muted);
+  border: var(--dv-border-width) solid var(--dv-border-control);
 }

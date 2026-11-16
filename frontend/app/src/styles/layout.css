@@ -1,0 +1,13 @@
+/* Disposição: pilha de blocos e a coluna de uma página. */
+
+.dv-stack {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+.dv-page {
+  display: grid;
+  gap: var(--dv-space-6);
+  max-width: var(--dv-measure-page);
+  margin-inline: auto;
+}
