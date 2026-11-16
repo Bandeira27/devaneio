@@ -21,6 +21,10 @@ def classify_outcome(margin: int, outcomes: Outcomes) -> CheckOutcome:
     """Converte a margem de um teste (resultado menos dificuldade) em um dos quatro graus."""
 ```
 
+**Modelos Pydantic:** a docstring de um modelo (e a `description` de um campo) vira `description` no JSON Schema de
+`contract/` e comentário nos tipos TypeScript gerados. Escreva-a para quem usa o contrato, sem detalhe interno, e
+regenere o contrato ao mudá-la (skill `change-contract`).
+
 **TypeScript:** JSDoc `/** ... */` sem tipos (o TypeScript já os tem); `@param` e `@returns` só quando acrescentam algo.
 
 ```ts
@@ -30,10 +34,10 @@ refresh(): Promise<void> {
 
 ## Comentário: só o porquê, curto e local
 
-`#` e `//` servem para **uma nota curta ao lado do código** que explica uma restrição ou uma armadilha que o código
+`#` e `//` servem para **uma nota curta (uma ou duas linhas) ao lado do código** que explica uma restrição ou uma armadilha que o código
 sozinho não mostra ("antes da carga: uma gravação no meio deixaria a versão adiante da visão").
 
-- Nunca um bloco de várias linhas. Se precisa de um parágrafo, é docstring/JSDoc do item que ele descreve.
+- Nunca um bloco de três ou mais linhas. Se precisa de um parágrafo, é docstring/JSDoc do item que ele descreve.
 - Nunca decisão de produto ou história ("decisão do dono", "como era antes"). Isso mora em `docs/desenho-*` e no
   histórico do git.
 - Nunca o "como" da linha. Se o código precisa de comentário para ser entendido, troque o nome ou extraia uma função.

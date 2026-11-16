@@ -9,6 +9,7 @@ import { normalizeName, validateName } from '@shared/game/names';
 import { parseInvite } from '@shared/game/invite';
 import type { LoadState } from '@shared/game/load-state';
 
+/** Estado da tela inicial: campanhas, mesas guardadas, criar mesa e entrar por link. */
 @Injectable()
 export class HomeStore {
   private readonly api = inject(ApiClient);

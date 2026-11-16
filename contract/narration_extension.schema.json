@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Pacote que estende outro. Só ``id`` e ``extends`` são obrigatórios; ``language`` é herdada\nse omitida e cada chave de ``rules`` substitui a de mesmo nome do pai.",
+  "description": "Pacote de narração que estende outro.\n\nSó ``id`` e ``extends`` são obrigatórios; ``language`` é herdada se omitida e cada chave de\n``rules`` substitui a de mesmo nome do pai.",
   "properties": {
     "schema_version": {
       "const": 1,

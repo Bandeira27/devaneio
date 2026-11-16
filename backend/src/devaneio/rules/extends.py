@@ -37,28 +37,39 @@ class RulesExtendsError(ValueError):
 
 
 class OutcomesPatch(StrictModel):
+    """O que um sistema filho muda nos graus de resultado."""
+
     critical_failure_margin: int | None = None
     critical_success_margin: int | None = None
 
 
 class CombatPatch(StrictModel):
+    """O que um sistema filho muda nas regras de combate."""
+
     attack_difficulty: Id | None = None
     default_weapon: Id | None = None
     fallen_can_act: bool | None = None
 
 
 class DispositionsPatch(StrictModel):
+    """O que um sistema filho muda no limiar de hostilidade."""
+
     hostile_below: int | None = None
 
 
 class RestPatch(StrictModel):
+    """O que um sistema filho muda no descanso."""
+
     heal: Formula | None = None
 
 
 class RuleSystemExtension(StrictModel):
-    """Arquivo de sistema que estende outro. Só ``id`` e ``extends`` são obrigatórios. Item de
-    lista com o id de um item do pai o substitui por inteiro; id novo é acrescentado. Blocos
-    mudam campo a campo; ``default_weapon: null`` explícito limpa a arma padrão do pai."""
+    """Arquivo de sistema de regras que estende outro.
+
+    Só ``id`` e ``extends`` são obrigatórios. Item de lista com o id de um item do pai o
+    substitui por inteiro; id novo é acrescentado. Blocos mudam campo a campo; ``default_weapon:
+    null`` explícito limpa a arma padrão do pai.
+    """
 
     schema_version: Literal[1] = 1
     id: Id
@@ -78,9 +89,12 @@ class RuleSystemExtension(StrictModel):
 
     @model_validator(mode="after")
     def _explicit_values_are_usable(self) -> RuleSystemExtension:
-        """``null`` explícito não significa "herdar" (omitir é que herda); só ``default_weapon``,
-        dentro de ``combat``, usa ``null`` para limpar. Id repetido numa lista do filho seria um
-        item perdido em silêncio na mescla."""
+        """Mescla o filho sobre o pai, campo a campo.
+
+        ``null`` explícito não significa "herdar" (omitir é que herda); só
+        ``default_weapon``, dentro de ``combat``, usa ``null`` para limpar. Id repetido numa
+        lista do filho seria um item perdido em silêncio na mescla.
+        """
         errors = [
             f"'{name}' não pode ser null (omita o campo para herdar do pai)"
             for name in self.model_fields_set
@@ -128,8 +142,11 @@ def builtin_rules_dict(rules_id: str) -> dict[str, Any]:
 
 
 def load_rules_extending(data: Any, load_parent: Callable[[str], dict[str, Any]]) -> RuleSystem:
-    """Carrega um sistema, resolvendo ``extends`` por ``load_parent`` (id -> dict do pai, que
-    levanta ``ValueError`` se não existe). Sem ``extends``, é um ``load_rules`` comum."""
+    """Carrega um sistema de regras, resolvendo o que ele estende.
+
+    O pai vem de ``load_parent`` (id -> dict, que levanta ``ValueError`` se não existe). Sem
+    ``extends``, é um ``load_rules`` comum.
+    """
     raw = json.loads(data) if isinstance(data, (str, bytes, bytearray)) else data
     if not isinstance(raw, dict) or "extends" not in raw:
         return load_rules(raw)

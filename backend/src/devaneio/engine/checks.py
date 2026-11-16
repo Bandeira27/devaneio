@@ -42,6 +42,8 @@ def classify_outcome(margin: int, outcomes: Outcomes) -> CheckOutcome:
 
 @dataclass(frozen=True)
 class CheckResult:
+    """O novo estado depois de um teste, com quem testou e o grau obtido."""
+
     state: GameState
     actor_kind: str  # "character" | "npc"
     actor_id: str
@@ -65,8 +67,11 @@ def resolve_check(
     difficulty_id: str,
     modifier_id: str | None = None,
 ) -> CheckResult:
-    """Teste de um personagem. Não altera ``state``: devolve um novo estado com ``rng_draws``
-    avançado e um ``Event`` de tipo ``check`` no log. O turno não muda aqui."""
+    """Teste de um personagem.
+
+    Não altera ``state``: devolve um novo estado com ``rng_draws`` avançado e um ``Event`` de
+    tipo ``check`` no log. O turno não muda aqui.
+    """
     character = state.characters.get(character_id)
     if character is None:
         raise EngineError(f"personagem '{character_id}' não está no estado")

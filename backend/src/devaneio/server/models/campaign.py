@@ -13,21 +13,28 @@ from devaneio.schema import (
 
 
 class CampaignSummary(StrictModel):
+    """Uma campanha do catálogo: id, título e premissa."""
+
     id: Id
     title: str
     premise: str
 
 
 def summarize(campaign: Campaign) -> CampaignSummary:
+    """O resumo de uma campanha para o catálogo."""
     return CampaignSummary(id=campaign.id, title=campaign.title, premise=campaign.premise)
 
 
 class ExitView(StrictModel):
+    """Uma saída do local atual."""
+
     id: Id
     name: str
 
 
 class LocationView(StrictModel):
+    """O local atual, com a descrição e as saídas."""
+
     id: Id
     name: str
     description: str
@@ -35,27 +42,35 @@ class LocationView(StrictModel):
 
 
 class NpcInfo(StrictModel):
+    """Um NPC que o grupo vê no local."""
+
     id: Id
     name: str
 
 
 class BeatInfo(StrictModel):
+    """Um marco que já começou."""
+
     id: Id
     title: str
 
 
 class FactInfo(StrictModel):
+    """Um fato já revelado."""
+
     id: Id
     text: str
     about: Id | None
 
 
 class CampaignView(StrictModel):
-    """A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
-    local atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos
-    ocultos, ``private_notes``, facções, condições dos
-    marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
-    anfitrião, que recebe a ``Campaign`` inteira."""
+    """A campanha como um jogador comum a vê.
+
+    Só o que o ``olhar`` do CLI mostra (título, premissa, local atual com saídas, NPCs ali,
+    marcos que já começaram e fatos já revelados). Fatos ocultos, ``private_notes``, facções,
+    condições dos marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com
+    o anfitrião, que recebe a ``Campaign`` inteira.
+    """
 
     id: Id
     title: str
@@ -67,6 +82,7 @@ class CampaignView(StrictModel):
 
     @classmethod
     def of(cls, campaign: Campaign, state: GameState) -> CampaignView:
+        """A visão do jogador, derivada da campanha e do estado atual."""
         names = {loc.id: loc.name for loc in campaign.locations}
         here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
         present = npc_ids_at(state, here.id)

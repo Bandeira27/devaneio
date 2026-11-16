@@ -1,5 +1,7 @@
-// Cliente fino: mostra o estado e envia ações. Por enquanto só prova que os tipos
-// derivados do contrato (contract/*.schema.json) compilam em modo strict.
+/**
+ * Os tipos do contrato (`contract/*.schema.json`) que o cliente usa, com nomes curtos. Este arquivo também
+ * prova que eles compilam em modo strict.
+ */
 import type { ApiRequests } from "./contract/api_requests";
 import type { ApiResponses } from "./contract/api_responses";
 import type { Campaign } from "./contract/campaign";

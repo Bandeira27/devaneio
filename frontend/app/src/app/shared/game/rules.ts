@@ -13,10 +13,12 @@ export function attributeDefaults(rules: RulesView): Record<string, number> {
   return Object.fromEntries(rules.attributes.map((a) => [a.id, a.default]));
 }
 
+/** O valor dentro dos limites do atributo, arredondado. */
 export function clampAttribute(attribute: AttributeInfo, value: number): number {
   return Math.min(attribute.max, Math.max(attribute.min, Math.round(value)));
 }
 
+/** Se o atributo pode subir (`1`) ou descer (`-1`) um ponto. */
 export function canStep(attribute: AttributeInfo, value: number, delta: 1 | -1): boolean {
   return delta === 1 ? value < attribute.max : value > attribute.min;
 }
@@ -33,6 +35,7 @@ export function usableWeapons(rules: RulesView, inventory: readonly string[]): W
   return [...first, ...rest];
 }
 
+/** Por que o personagem não pode gastar a ação principal agora. */
 export type ActBlock = 'no-character' | 'over' | 'acted' | 'fallen';
 
 export const ACT_BLOCK_TEXT: Record<ActBlock, string> = {
@@ -42,6 +45,7 @@ export const ACT_BLOCK_TEXT: Record<ActBlock, string> = {
   fallen: 'Seu personagem está fora de combate.',
 };
 
+/** O que decide se o personagem pode agir: ele, o turno, quem já agiu, o desfecho e as regras. */
 export interface ActContext {
   character: Character | null;
   turn: number;
@@ -69,6 +73,7 @@ export function actBlock(context: ActContext): ActBlock | null {
   return null;
 }
 
+/** Um alvo possível de ataque, com o hp que o jogador pode ver. */
 export interface AttackTarget {
   id: string;
   name: string;

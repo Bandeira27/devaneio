@@ -14,18 +14,18 @@ Toda ação do motor (`backend/src/devaneio/engine/`) é uma função pura: rece
 avançado e um `Event` no log. O estado de entrada nunca é alterado. O acerto de um ataque
 é um `resolve_check`; o dano é um `deal_damage` separado, para quem orquestra decidir.
 
-| Ação | Precisa de | Evento |
-|---|---|---|
-| `initial_state` | campanha, regras | — |
-| `add_character` | regras | `character_joined` |
-| `move` | campanha | `move` |
-| `resolve_check` | regras | `check` |
-| `deal_damage` / `apply_damage` | campanha (+ regras) | `damage` |
-| `heal` / `rest` | campanha (+ regras) | `heal` / `rest` |
-| `activate_beat` / `complete_beat` / `fail_beat` | campanha | `beat_activated` / `beat_done` / `beat_failed` |
-| `direct` / `pass_turn` | campanha, regras | `director` (+ os eventos das ações que dispara) |
-| `reveal_facts` / `reveal_fact` | campanha | `reveal` |
-| `end_turn` | — | `turn_end` |
+| Ação                                            | Precisa de          | Evento                                          |
+| ----------------------------------------------- | ------------------- | ----------------------------------------------- |
+| `initial_state`                                 | campanha, regras    | —                                               |
+| `add_character`                                 | regras              | `character_joined`                              |
+| `move`                                          | campanha            | `move`                                          |
+| `resolve_check`                                 | regras              | `check`                                         |
+| `deal_damage` / `apply_damage`                  | campanha (+ regras) | `damage`                                        |
+| `heal` / `rest`                                 | campanha (+ regras) | `heal` / `rest`                                 |
+| `activate_beat` / `complete_beat` / `fail_beat` | campanha            | `beat_activated` / `beat_done` / `beat_failed`  |
+| `direct` / `pass_turn`                          | campanha, regras    | `director` (+ os eventos das ações que dispara) |
+| `reveal_facts` / `reveal_fact`                  | campanha            | `reveal`                                        |
+| `end_turn`                                      | —                   | `turn_end`                                      |
 
 ## Diretor de narrativa
 

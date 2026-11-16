@@ -3,6 +3,7 @@
   "$defs": {
     "Attribute": {
       "additionalProperties": false,
+      "description": "Um atributo dos personagens, com limites e valor padrão.",
       "properties": {
         "id": {
           "pattern": "^[A-Z][A-Z0-9_]*$",
@@ -37,6 +38,7 @@
     },
     "Combat": {
       "additionalProperties": false,
+      "description": "Regras de combate: dificuldade dos ataques, arma padrão e se caído age.",
       "properties": {
         "attack_difficulty": {
           "description": "dificuldade dos ataques (jogadores e NPCs)",
@@ -70,6 +72,7 @@
     },
     "Difficulty": {
       "additionalProperties": false,
+      "description": "Um nível de dificuldade, com o valor que o teste precisa alcançar.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -92,6 +95,7 @@
     },
     "Dispositions": {
       "additionalProperties": false,
+      "description": "Quando um NPC passa a atacar o grupo.",
       "properties": {
         "hostile_below": {
           "description": "NPC com disposition abaixo disto ataca o grupo",
@@ -129,7 +133,7 @@
     },
     "Outcomes": {
       "additionalProperties": false,
-      "description": "Graus de resultado por margem (total - dificuldade). Margem < 0 é falha, >= 0 sucesso;\nos críticos são as caudas.",
+      "description": "Os graus de resultado de um teste, por margem.\n\nA margem é total menos dificuldade: < 0 é falha, >= 0 sucesso; os críticos são as caudas.",
       "properties": {
         "critical_failure_margin": {
           "description": "margem <= este valor é falha crítica",
@@ -149,6 +153,7 @@
     },
     "Rest": {
       "additionalProperties": false,
+      "description": "Quanto o descanso cura.",
       "properties": {
         "heal": {
           "description": "hp recuperado por personagem ao descansar",
@@ -163,7 +168,7 @@
     },
     "Skill": {
       "additionalProperties": false,
-      "description": "Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no\ninterpretador para 'o atributo da habilidade'.",
+      "description": "Uma habilidade testável.\n\nA fórmula é completa (``2d6 + FOR``): sem caso especial no interpretador para 'o atributo da\nhabilidade'.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -190,6 +195,7 @@
     },
     "Weapon": {
       "additionalProperties": false,
+      "description": "Uma arma: a habilidade que a usa e a fórmula de dano.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -222,6 +228,7 @@
     }
   },
   "additionalProperties": false,
+  "description": "Um sistema de regras completo, descrito só por dados.",
   "properties": {
     "schema_version": {
       "const": 1,

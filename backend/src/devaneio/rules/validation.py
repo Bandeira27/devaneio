@@ -78,6 +78,7 @@ def builtin_rules_json(rules_id: str) -> str:
 
 
 def load_builtin_rules(rules_id: str = "default") -> RuleSystem:
+    """Carrega e valida um sistema de regras embutido."""
     return load_rules(builtin_rules_json(rules_id))
 
 

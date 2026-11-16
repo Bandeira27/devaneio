@@ -12,14 +12,18 @@ from devaneio.schema import BeatStatus, GameState
 
 
 class GameStatus(str, Enum):
+    """Como a partida está: em andamento, vencida ou perdida."""
+
     ACTIVE = "active"
     WON = "won"
     LOST = "lost"
 
 
 def game_status(state: GameState) -> GameStatus:
-    """Vitória: há marcos e todos concluídos (vale mesmo com o grupo caído, a história
-    terminou). Derrota: há personagens e todos com hp 0. Senão, em andamento."""
+    """Vitória: há marcos e todos concluídos (vale mesmo com o grupo caído, a história terminou).
+
+    Derrota: há personagens e todos com hp 0. Senão, em andamento.
+    """
     if state.beats and all(s is BeatStatus.DONE for s in state.beats.values()):
         return GameStatus.WON
     if state.characters and all(c.hp == 0 for c in state.characters.values()):

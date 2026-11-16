@@ -12,8 +12,7 @@ from devaneio.schema.common import Id, StrictModel
 
 from .grammar import MAX_EXPANDED_CHARS, Grammar
 
-# Variáveis que cada tipo de evento oferece aos templates. Regras cujo nome começa com o
-# tipo ("check.success", "move") só podem usar estas; auxiliares herdam das raízes.
+# Variáveis que cada tipo de evento oferece aos templates das regras que começam por ele.
 EVENT_VARIABLES: dict[str, tuple[str, ...]] = {
     "check": ("ator", "habilidade", "dificuldade", "total", "margem", "desfecho"),
     "damage": ("atacante", "alvo", "arma", "fonte", "dano", "hp", "hp_max"),
@@ -30,8 +29,8 @@ EVENT_VARIABLES: dict[str, tuple[str, ...]] = {
 }
 
 
-# Variantes que o narrador escolhe por tipo de evento (regras "tipo.variante"). Um teste confere
-# que ``Narrator`` só usa estas; o aviso de autoria usa a mesma tabela.
+# Variantes que o narrador escolhe por tipo de evento (regras "tipo.variante"). Tabela compartilhada
+# com o aviso de autoria; um teste confere que o ``Narrator`` só usa estas.
 EVENT_VARIANTS: dict[str, tuple[str, ...]] = {
     "check": ("critical_failure", "failure", "success", "critical_success"),
     "damage": ("golpe", "golpe_queda", "fonte", "fonte_queda"),
@@ -40,6 +39,8 @@ EVENT_VARIANTS: dict[str, tuple[str, ...]] = {
 
 
 class NarrationIntegrityError(ValueError):
+    """Pacote de narração com referências que não existem; `errors` lista todas."""
+
     def __init__(self, errors: Iterable[str]) -> None:
         self.errors = list(errors)
         super().__init__(
@@ -48,6 +49,8 @@ class NarrationIntegrityError(ValueError):
 
 
 class NarrationPack(StrictModel):
+    """Um pacote de narração: regras de texto por tipo de evento, em JSON."""
+
     schema_version: Literal[1] = 1
     id: Id
     language: str
@@ -77,6 +80,7 @@ def validate_pack(pack: NarrationPack) -> list[str]:
 
 
 def load_pack(data: Any) -> NarrationPack:
+    """Valida um pacote (texto JSON ou dicionário) e confere as referências das regras."""
     if isinstance(data, (str, bytes, bytearray)):
         pack = NarrationPack.model_validate_json(data)
     else:
@@ -88,6 +92,7 @@ def load_pack(data: Any) -> NarrationPack:
 
 
 def builtin_pack_json(pack_id: str) -> str:
+    """O JSON de um pacote de narração embutido; `ValueError` se não existe."""
     resource = resources.files("devaneio.narration").joinpath(f"data/{pack_id}.json")
     if not resource.is_file():
         raise ValueError(f"pacote de narração '{pack_id}' não encontrado")
@@ -95,4 +100,5 @@ def builtin_pack_json(pack_id: str) -> str:
 
 
 def load_builtin_pack(pack_id: str = "pt-br") -> NarrationPack:
+    """Carrega e valida um pacote de narração embutido."""
     return load_pack(builtin_pack_json(pack_id))

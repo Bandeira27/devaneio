@@ -13,8 +13,11 @@ from devaneio.schema import Campaign, GameState
 def narrate_batch(
     client: ChatClient, campaign: Campaign, after: GameState, texts: Sequence[str]
 ) -> tuple[str | None, str]:
-    """Um parágrafo do LLM para o lote de eventos e, se ele falhar, ``None`` e o aviso de que
-    vale a gramática. É o único lugar com esse fallback: CLI e servidor o usam."""
+    """Narra um lote de eventos com o LLM, ou avisa que vale a gramática.
+
+    Um parágrafo do LLM para o lote de eventos e, se ele falhar, ``None`` e o aviso de que vale
+    a gramática. É o único lugar com esse fallback: CLI e servidor o usam.
+    """
     try:
         return narrate_with_llm(client, campaign, after, texts), ""
     except LlmError as exc:
@@ -28,10 +31,12 @@ def format_output(
     fallback: str,
     llm: ChatClient | None = None,
 ) -> str:
-    """Para os eventos novos: prosa e, abaixo, a linha mecânica de cada um entre colchetes.
-    A prosa vem do LLM (um parágrafo para o lote) ou, sem LLM ou se ele falhar, da
-    gramática, evento a evento. Sem evento novo (olhar, ficha, ajuda...), o texto do
-    comando como veio."""
+    """Monta o texto de saída dos eventos novos: prosa e linha mecânica.
+
+    Prosa e, abaixo, a linha mecânica de cada um entre colchetes. A prosa vem do LLM (um
+    parágrafo para o lote) ou, sem LLM ou se ele falhar, da gramática, evento a evento. Sem
+    evento novo (olhar, ficha, ajuda...), o texto do comando como veio.
+    """
     indexes = range(len(before.events), len(after.events))
     if not indexes:
         return fallback

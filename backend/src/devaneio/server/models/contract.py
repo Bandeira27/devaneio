@@ -22,15 +22,21 @@ from .state import TableView
 
 
 class ApiError(StrictModel):
+    """Um erro da API: um código estável e a mensagem em português."""
+
     code: str
     message: str
 
 
 class ErrorResponse(StrictModel):
+    """O corpo de toda resposta de erro."""
+
     error: ApiError
 
 
 class ApiRequests(StrictModel):
+    """Todos os corpos de requisição, reunidos só para gerar o contrato."""
+
     create_table: CreateTableRequest
     join_table: JoinRequest
     command: CommandRequest
@@ -39,6 +45,8 @@ class ApiRequests(StrictModel):
 
 
 class ApiResponses(StrictModel):
+    """Todas as respostas, reunidas só para gerar o contrato."""
+
     campaigns: list[CampaignSummary]
     table: TableView
     table_created: TableCreated

@@ -14,19 +14,13 @@ from devaneio.schema import GameState
 
 Kind = Literal["read", "join", "action", "host"]
 
-# `marcos` lista também os marcos pendentes e seus requisitos: spoiler da trama. O jogador
-# vê os marcos que já começaram pelo `olhar` e pela CampaignView.
-# `fatos` lista também os fatos ainda ocultos: segredo da trama. O jogador vê os revelados
-# pelo `olhar`.
-# `log` lista todos os eventos, inclusive os sobre NPC escondido: o jogador lê o log
-# filtrado por `GET .../events`.
+# Só o anfitrião: `marcos` e `fatos` listam o que ainda é segredo, e `log` inclui NPC escondido.
 HOST_ONLY = frozenset(
     {"descansar", "fim", "ferir", "curar", "marco", "marcos", "fatos", "revelar", "log"}
 )
 PLAYER_READ = frozenset(READ_ONLY) - {"marcos", "fatos", "log"}
 JOIN = frozenset({"entrar"})
-# Gastam a ação principal do personagem no turno. `ir` move o grupo todo, e `atacar`
-# aceita o personagem de outro jogador como alvo: ficam como no motor (decisão do dono).
+# Gastam a ação principal do personagem no turno. `ir` move o grupo todo e `atacar` aceita personagem alheio.
 ACTIONS = frozenset({"testar", "atacar", "ir"})
 
 
@@ -44,8 +38,11 @@ def classify(name: str) -> Kind | None:
 
 
 def eligible(table: TableMeta, state: GameState) -> list[str]:
-    """Personagens que ainda contam para o fim automático do turno: ligados a um jogador e
-    de pé (hp 0 fica fora de combate e não segura o turno)."""
+    """Os personagens que ainda seguram o fim automático do turno.
+
+    Personagens que ainda contam para o fim automático do turno: ligados a um jogador e de pé
+    (hp 0 fica fora de combate e não segura o turno).
+    """
     return [
         character_id
         for player in table.players.values()

@@ -21,6 +21,8 @@ TargetKind = Literal["character", "npc"]
 
 @dataclass(frozen=True)
 class DamageResult:
+    """O novo estado depois de um dano, com o alvo, a quantia e o hp restante."""
+
     state: GameState
     target_kind: TargetKind
     target_id: str
@@ -44,8 +46,10 @@ def deal_damage(
     target_id: str,
 ) -> DamageResult:
     """Rola a fórmula da arma com os atributos do atacante e aplica ao alvo.
+
     Resultado negativo da fórmula vira 0. Não decide acerto: isso é um ``resolve_check``
-    anterior, a cargo de quem orquestra."""
+    anterior, a cargo de quem orquestra.
+    """
     attacker_name, attacker_attrs, _ = combatant(state, campaign, attacker_kind, attacker_id)
     weapon = next((w for w in rules.weapons if w.id == weapon_id), None)
     if weapon is None:

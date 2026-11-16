@@ -22,10 +22,7 @@ from .server.models import ApiRequests, ApiResponses
 # <raiz>/backend/src/devaneio/export_schema.py -> <raiz>/contract
 DEFAULT_OUT = Path(__file__).resolve().parents[3] / "contract"
 
-# Campaign, RuleSystem, NarrationPack e as requisições da API são documentos de ENTRADA
-# (autorados por pessoas ou pelo cliente): modo "validation", campos com default são
-# opcionais. GameState e as respostas da API são SAÍDA: modo "serialization", todo campo
-# está sempre presente, e os tipos TypeScript do cliente não ficam cheios de opcionais.
+# Entradas (autoradas por pessoas ou pelo cliente) em "validation"; saídas em "serialization".
 SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
     "campaign.schema.json": (Campaign, "validation"),
     "rules.schema.json": (RuleSystem, "validation"),
@@ -39,14 +36,19 @@ SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
 
 
 class _NoFieldTitles(GenerateJsonSchema):
-    """Sem ``title`` por campo: o gerador de tipos TS transformaria cada um em um alias
-    ruidoso (``Id1``, ``Turn2``). Títulos de modelo (Character, Fact...) continuam."""
+    """Remove os títulos de campo do esquema gerado.
+
+    Sem ``title`` por campo, o gerador de tipos TS transformaria cada um em um alias ruidoso
+    (``Id1``, ``Turn2``).
+    Títulos de modelo (Character, Fact...) continuam.
+    """
 
     def field_title_should_be_set(self, schema: object) -> bool:  # noqa: ARG002 — assinatura herdada de GenerateJsonSchema
         return False
 
 
 def render(model: type[BaseModel], mode: JsonSchemaMode) -> str:
+    """O JSON Schema de um modelo, num modo, pronto para gravar em arquivo."""
     schema = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         **model.model_json_schema(mode=mode, schema_generator=_NoFieldTitles),
@@ -55,6 +57,7 @@ def render(model: type[BaseModel], mode: JsonSchemaMode) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Grava todos os esquemas na pasta de saída; devolve o código de saída do processo."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="pasta de saída")
     args = parser.parse_args(argv)

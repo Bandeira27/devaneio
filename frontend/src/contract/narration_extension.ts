@@ -6,8 +6,10 @@
  */
 
 /**
- * Pacote que estende outro. Só ``id`` e ``extends`` são obrigatórios; ``language`` é herdada
- * se omitida e cada chave de ``rules`` substitui a de mesmo nome do pai.
+ * Pacote de narração que estende outro.
+ *
+ * Só ``id`` e ``extends`` são obrigatórios; ``language`` é herdada se omitida e cada chave de
+ * ``rules`` substitui a de mesmo nome do pai.
  */
 export interface NarrationPackExtension {
   schema_version?: 1;

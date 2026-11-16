@@ -2,18 +2,18 @@
 
 Referência da API que o servidor expõe para jogar em grupo. Para subir o servidor, veja o [README](../README.md); as decisões por trás da UI estão em [`desenho-ui.md`](desenho-ui.md).
 
-| Rota | Auth | Resposta |
-|---|---|---|
-| `GET /campaigns` | — | `[{id, title, premise}]` do catálogo (`--campanhas`) |
-| `POST /tables` `{campaign_id, host_name, seed?}` | — | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui |
-| `POST /tables/{id}/players` `{invite_code, name}` | — | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos |
-| `POST /tables/{id}/commands` `{line, revision}` | Bearer | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem) |
-| `POST /tables/{id}/say` `{text, revision}` | Bearer | texto livre: o LLM do anfitrião propõe ações e o servidor aplica; `SayResult` = `CommandResult` + `say` (fala do mestre, só para quem enviou) e `commands`. `409 llm_disabled` sem LLM |
-| `POST /tables/{id}/copilot` `{text}` | Bearer (anfitrião) | pergunta ao copiloto do anfitrião (ver abaixo); resposta `{text}` só para ele. `403` para jogador, `409 llm_disabled` sem LLM, `409 copilot_busy`, `429 copilot_rate_limited` |
-| `GET /tables/{id}/events?since=N&since_talk=T&wait=S` | Bearer | `EventsView {revision, events, talk, talk_seq}`: eventos de posição `N` em diante (cada um com `prose` da gramática e sem `data`) e falas com `seq` > `T`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
-| `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
-| `GET /tables/{id}/rules` | Bearer | `RulesView`: o catálogo do sistema de regras (atributos com limites, habilidades e armas com fórmula, dificuldades, modificadores, `combat`) para montar botões e o formulário de personagem |
-| `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
+| Rota                                                  | Auth               | Resposta                                                                                                                                                                                                                                  |
+| ----------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /campaigns`                                      | —                  | `[{id, title, premise}]` do catálogo (`--campanhas`)                                                                                                                                                                                      |
+| `POST /tables` `{campaign_id, host_name, seed?}`      | —                  | `201 {table_id, host_token, invite_code, table}`; o token só aparece aqui                                                                                                                                                                 |
+| `POST /tables/{id}/players` `{invite_code, name}`     | —                  | `201 {player_id, token, table}`; convite errado e mesa inexistente respondem igual (401); até 8 jogadores, nomes únicos                                                                                                                   |
+| `POST /tables/{id}/commands` `{line, revision}`       | Bearer             | `CommandResult {revision, events, text, status, turn_ended}`; `line` é um comando do CLI (sem `id:` para o seu personagem)                                                                                                                |
+| `POST /tables/{id}/say` `{text, revision}`            | Bearer             | texto livre: o LLM do anfitrião propõe ações e o servidor aplica; `SayResult` = `CommandResult` + `say` (fala do mestre, só para quem enviou) e `commands`. `409 llm_disabled` sem LLM                                                    |
+| `POST /tables/{id}/copilot` `{text}`                  | Bearer (anfitrião) | pergunta ao copiloto do anfitrião (ver abaixo); resposta `{text}` só para ele. `403` para jogador, `409 llm_disabled` sem LLM, `409 copilot_busy`, `429 copilot_rate_limited`                                                             |
+| `GET /tables/{id}/events?since=N&since_talk=T&wait=S` | Bearer             | `EventsView {revision, events, talk, talk_seq}`: eventos de posição `N` em diante (cada um com `prose` da gramática e sem `data`) e falas com `seq` > `T`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
+| `GET /tables/{id}`                                    | Bearer             | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state`                                                                                                                                                    |
+| `GET /tables/{id}/rules`                              | Bearer             | `RulesView`: o catálogo do sistema de regras (atributos com limites, habilidades e armas com fórmula, dificuldades, modificadores, `combat`) para montar botões e o formulário de personagem                                              |
+| `GET /tables/{id}/campaign`                           | Bearer             | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra)                                                                                                                                                      |
 
 Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token, 404 mesa/campanha/rota,
 409 limite de mesas, 411/413/415 corpo, 500 genérico). O contrato da API está em `contract/api_requests.schema.json`
@@ -41,12 +41,12 @@ continua 404 JSON. Desenho em [`desenho-ui.md`](desenho-ui.md).
 
 ## Quem age e quando
 
-| Comando | Quem | Gasta a ação do turno |
-|---|---|---|
-| `olhar`, `ficha`, `ajuda` | todos | não |
-| `entrar` | jogador (um personagem só) e anfitrião (quantos quiser) | não |
-| `testar`, `atacar`, `ir` | o dono do personagem; o anfitrião por qualquer um (`id: comando`) | sim |
-| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos`, `log` | só o anfitrião | não (`descansar` e `fim` encerram o turno) |
+| Comando                                                        | Quem                                                              | Gasta a ação do turno                      |
+| -------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
+| `olhar`, `ficha`, `ajuda`                                      | todos                                                             | não                                        |
+| `entrar`                                                       | jogador (um personagem só) e anfitrião (quantos quiser)           | não                                        |
+| `testar`, `atacar`, `ir`                                       | o dono do personagem; o anfitrião por qualquer um (`id: comando`) | sim                                        |
+| `descansar`, `fim`, `ferir`, `curar`, `marco`, `marcos`, `log` | só o anfitrião                                                    | não (`descansar` e `fim` encerram o turno) |
 
 Cada personagem faz **uma ação principal por turno**; quando todos os personagens de pé ligados a um jogador agiram, o
 servidor encerra o turno na mesma requisição (`turn_ended: true`) e o diretor age. O anfitrião pode encerrar antes
@@ -69,7 +69,8 @@ O cliente guarda o `revision` da última resposta e chama `GET /tables/{id}/even
 laço: a resposta volta assim que alguém grava um comando (ou vazia, com o mesmo `revision`, ao fim do prazo). Só
 gravação acorda quem espera: comando recusado ou de consulta não acorda ninguém. Cada mesa aceita até 16 esperas
 simultâneas; acima disso a resposta é imediata (o cliente deve esperar um pouco antes de tentar de novo). Uma espera
-ocupa uma thread do servidor por até 30 s. 
+ocupa uma thread do servidor por até 30 s.
+
 ## Copiloto do anfitrião
 
 `POST /tables/{id}/copilot` `{"text": "..."}` (até 500 caracteres) é uma pergunta avulsa ao LLM, **só do anfitrião**.

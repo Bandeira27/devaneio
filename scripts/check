@@ -32,6 +32,8 @@ in_dir() {
 
 # --- backend ---------------------------------------------------------------------
 run "ruff check" in_dir backend .venv/bin/ruff check . ../scripts --config pyproject.toml
+# D105/D107 (métodos mágicos e __init__) ficam de fora: o nome e a classe já dizem (rule 10).
+run "ruff docstrings" in_dir backend .venv/bin/ruff check src --select D --ignore D105,D107 --config pyproject.toml
 run "ruff format" in_dir backend .venv/bin/ruff format --check . ../scripts --config pyproject.toml
 run "mypy" in_dir backend .venv/bin/mypy
 run "import-linter" in_dir backend .venv/bin/lint-imports

@@ -1,7 +1,9 @@
 /** Uma mesa em que este navegador entrou, como fica guardada, e a validação do que volta do armazenamento. */
 
+/** Se quem guardou a mesa é o anfitrião ou um jogador. */
 export type StoredRole = 'host' | 'player';
 
+/** Uma mesa em que este navegador entrou, como fica guardada no armazenamento. */
 export interface StoredTable {
   token: string;
   playerId: string;

@@ -89,6 +89,11 @@ ignore = [
     "ARG001",   # fixtures pedidas só pelo efeito
 ]
 
+# Docstrings: estilo Google. O portão roda à parte, só em src/ (scripts/check, passo "ruff docstrings"),
+# para os testes se descreverem pelo nome. Ver .agents/rules/10-documentacao.md.
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.pylint]
 allow-magic-value-types = ["str", "bytes", "int"]
 

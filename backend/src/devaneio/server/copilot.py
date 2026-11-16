@@ -33,6 +33,8 @@ TABLE_KEY = "mesa"  # só o anfitrião consulta: o intervalo vale para a mesa, n
 
 
 class CopilotDesk:
+    """O balcão do copiloto: valida o pedido do anfitrião e chama o LLM fora do lock da mesa."""
+
     def __init__(
         self,
         storage: Storage,
@@ -46,6 +48,7 @@ class CopilotDesk:
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
 
     def run(self, table_id: str, path: Path, token: str, request: CopilotRequest) -> CopilotAnswer:
+        """Responde uma pergunta do anfitrião; só ele vê a resposta."""
         storage = self._storage
         with storage.lock(table_id):  # fase 1
             session = self._load(path)

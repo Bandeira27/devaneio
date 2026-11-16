@@ -95,8 +95,10 @@ def _condition_errors(
     known: _KnownIds,
     own_beat_id: str | None = None,
 ) -> list[str]:
-    """Referências das condições a ids que não existem. ``own_beat_id``: o marco dono da
-    condição, que não pode depender da própria conclusão."""
+    """Referências das condições a ids que não existem.
+
+    ``own_beat_id``: o marco dono da condição, que não pode depender da própria conclusão.
+    """
     errors: list[str] = []
     for cond in conditions:
         if isinstance(cond, AtLocation) and cond.location_id not in known.locations:

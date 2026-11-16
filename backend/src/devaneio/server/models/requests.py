@@ -22,9 +22,12 @@ _FORBIDDEN_CATEGORIES = {"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"}
 
 
 def clean_name(value: object) -> object:
-    """Nome de jogador: NFKC, sem caracteres de controle, formatação ou separadores de
-    linha (ANSI, zero-width, bidi), espaços colapsados. Sem isso, "Ana\u200b" passaria por
-    outro jogador e o nome chegaria sujo ao log, ao prompt do LLM e à tela dos outros."""
+    """Limpa um nome de jogador.
+
+    NFKC, sem caracteres de controle, formatação ou separadores de linha (ANSI, zero-width,
+    bidi), espaços colapsados. Sem isso, "Ana\u200b" passaria por outro jogador e o nome chegaria
+    sujo ao log, ao prompt do LLM e à tela dos outros.
+    """
     if not isinstance(value, str):
         return value
     text = unicodedata.normalize("NFKC", value)
@@ -37,9 +40,12 @@ PlayerName = Annotated[str, BeforeValidator(clean_name), Field(min_length=1, max
 
 
 def clean_line(value: object) -> object:
-    """Linha de comando: mesma regra dos nomes quanto a caracteres de controle e invisíveis
-    (um nome de personagem entre aspas viraria ANSI ou bidi na tela dos outros), sem
-    colapsar espaços, que podem estar entre aspas."""
+    """Limpa uma linha de comando.
+
+    Mesma regra dos nomes quanto a caracteres de controle e invisíveis (um nome de personagem
+    entre aspas viraria ANSI ou bidi na tela dos outros), sem colapsar espaços, que podem estar
+    entre aspas.
+    """
     if not isinstance(value, str):
         return value
     text = unicodedata.normalize("NFKC", value).strip()
@@ -55,23 +61,31 @@ CommandLine = Annotated[str, BeforeValidator(clean_line), Field(min_length=1, ma
 
 
 class CreateTableRequest(StrictModel):
+    """Criar uma mesa: a campanha, o nome do anfitrião e, opcionalmente, a semente."""
+
     campaign_id: Id
     host_name: PlayerName
     seed: int | None = Field(default=None, ge=0, lt=MAX_SEED)
 
 
 class JoinRequest(StrictModel):
+    """Entrar numa mesa: o código de convite e o nome."""
+
     invite_code: str = Field(min_length=1, max_length=64)
     name: PlayerName
 
 
 class CommandRequest(StrictModel):
+    """Um comando: a linha e a revisão da mesa que o cliente viu."""
+
     line: CommandLine
     # Número de eventos que o cliente viu: comando que muda a partida com revisão velha é recusado.
     revision: int = Field(ge=0)
 
 
 class SayRequest(StrictModel):
+    """Um texto livre para o mestre de IA: o texto e a revisão que o cliente viu."""
+
     text: CommandLine
     revision: int = Field(ge=0)
 

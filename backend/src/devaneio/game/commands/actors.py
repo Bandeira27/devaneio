@@ -10,6 +10,7 @@ from .errors import CommandError
 
 
 def resolve_actor(session: Session, actor: str | None) -> Character:
+    """O personagem que age: o nomeado, ou o único da partida."""
     characters = session.state.characters
     if actor is not None:
         character = characters.get(actor)
@@ -25,6 +26,7 @@ def resolve_actor(session: Session, actor: str | None) -> Character:
 
 
 def kind_of_target(state: GameState, target_id: str) -> TargetKind:
+    """Se um id é de personagem ou de NPC; ids ambíguos ou ausentes são `CommandError`."""
     is_char, is_npc = target_id in state.characters, target_id in state.npcs
     if is_char and is_npc:
         raise CommandError(f"'{target_id}' é personagem e NPC ao mesmo tempo; ids ambíguos")
@@ -36,7 +38,10 @@ def kind_of_target(state: GameState, target_id: str) -> TargetKind:
 
 
 def ensure_can_act(session: Session, character: Character) -> None:
-    """Personagem fora de combate (hp 0) não age, a menos que o sistema de regras diga que
-    pode (``combat.fallen_can_act``). Morte continua sendo decisão narrativa."""
+    """Recusa a ação de quem está fora de combate.
+
+    Personagem fora de combate (hp 0) não age, a menos que o sistema de regras diga que pode
+    (``combat.fallen_can_act``). Morte continua sendo decisão narrativa.
+    """
     if character.hp <= 0 and not session.rules.combat.fallen_can_act:
         raise CommandError(f"{character.name} está fora de combate e não pode agir")

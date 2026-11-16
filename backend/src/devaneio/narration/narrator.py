@@ -1,6 +1,9 @@
-"""Do evento mecânico à prosa. Função pura: mesmo evento, mesmo índice, mesma semente →
-mesmo texto. Não consome ``rng_draws``: a variedade vem de um Rng próprio semeado por
-(semente da partida, índice do evento), então narrar não altera nada no jogo."""
+"""Do evento mecânico à prosa.
+
+Função pura: mesmo evento, mesmo índice, mesma semente → mesmo texto. Não consome ``rng_draws``: a
+variedade vem de um Rng próprio semeado por (semente da partida, índice do evento), então narrar não
+altera nada no jogo.
+"""
 
 from __future__ import annotations
 
@@ -18,6 +21,8 @@ _SALT = 0x9E3779B97F4A7C15
 
 @dataclass
 class Narrator:
+    """Transforma os eventos do log em prosa a partir de um pacote de narração."""
+
     campaign: Campaign
     rules: RuleSystem
     pack: NarrationPack
@@ -27,8 +32,11 @@ class Narrator:
         self.grammar = Grammar(self.pack.rules)
 
     def narrate(self, event: Event, index: int, state: GameState) -> str:
-        """Prosa para o evento de posição ``index`` no log. Sem regra, devolve o texto
-        mecânico do evento."""
+        """A prosa do evento na posição ``index`` do log.
+
+        O índice entra no sorteio das alternativas: mesmo evento, índice e semente dão o mesmo texto.
+        Sem regra, devolve o texto mecânico do evento.
+        """
         variant, variables = self._prepare(event, state)
         key = next(
             (k for k in (f"{event.kind}.{variant}", event.kind) if k in self.grammar.rules),
@@ -43,6 +51,7 @@ class Narrator:
             return event.text
 
     def narrate_all(self, state: GameState) -> list[str]:
+        """A prosa de todos os eventos do log, na ordem."""
         return [self.narrate(e, i, state) for i, e in enumerate(state.events)]
 
     def rule_key(self, event: Event, state: GameState) -> str | None:

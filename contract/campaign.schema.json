@@ -3,6 +3,7 @@
   "$defs": {
     "AtLocation": {
       "additionalProperties": false,
+      "description": "Vale quando o grupo está num local.",
       "properties": {
         "kind": {
           "const": "at_location",
@@ -126,6 +127,7 @@
     },
     "BeatDone": {
       "additionalProperties": false,
+      "description": "Vale quando um marco foi concluído.",
       "properties": {
         "kind": {
           "const": "beat_done",
@@ -145,7 +147,7 @@
     },
     "CheckPassed": {
       "additionalProperties": false,
-      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\nTestes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.",
+      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\n\nTestes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.",
       "properties": {
         "kind": {
           "const": "check_passed",
@@ -229,6 +231,7 @@
     },
     "Faction": {
       "additionalProperties": false,
+      "description": "Uma facção da campanha.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -265,6 +268,7 @@
     },
     "Location": {
       "additionalProperties": false,
+      "description": "Um local da campanha, ligado a outros por `connections`.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -302,6 +306,7 @@
     },
     "Npc": {
       "additionalProperties": false,
+      "description": "Um NPC da campanha: onde começa, como se comporta e o que sabe.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -378,6 +383,7 @@
     },
     "NpcDown": {
       "additionalProperties": false,
+      "description": "Vale quando um NPC caiu.",
       "properties": {
         "kind": {
           "const": "npc_down",
@@ -397,6 +403,7 @@
     },
     "TurnAtLeast": {
       "additionalProperties": false,
+      "description": "Vale a partir de um turno.",
       "properties": {
         "kind": {
           "const": "turn_at_least",
@@ -416,6 +423,7 @@
     }
   },
   "additionalProperties": false,
+  "description": "A campanha: locais, NPCs, marcos e fatos, tudo estático (o que muda fica no `GameState`).",
   "properties": {
     "schema_version": {
       "const": 1,

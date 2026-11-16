@@ -8,6 +8,7 @@ import { DvStepper } from '@shared/ui/stepper/stepper';
 import { CharacterStore } from '../../character.store';
 import { fieldValue } from '@shared/ui/field/field-value';
 
+/** Tela de criar o personagem: nome e atributos do sistema. */
 @Component({
   selector: 'dv-character-page',
   imports: [RouterLink, DvButton, DvField, DvInput, DvNotice, DvStepper],

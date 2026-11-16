@@ -1,6 +1,11 @@
-"""``python -m devaneio.cli nova <campanha.json> <partida.json> [--seed N]``
-``python -m devaneio.cli jogar <partida.json>``
-``python -m devaneio.cli verificar <campanha.json>``"""
+"""Linha de comando do Devaneio: criar uma partida, jogá-la e conferir uma campanha.
+
+Uso::
+
+    python -m devaneio.cli nova <campanha.json> <partida.json> [--seed N]
+    python -m devaneio.cli jogar <partida.json>
+    python -m devaneio.cli verificar <campanha.json>
+"""
 
 from __future__ import annotations
 
@@ -36,6 +41,7 @@ QUIT = ("sair", "quit", "exit")
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Roda a linha de comando; devolve o código de saída do processo."""
     parser = argparse.ArgumentParser(prog="devaneio", description="Devaneio: mesa de RPG.")
     sub = parser.add_subparsers(dest="command", required=True)
 

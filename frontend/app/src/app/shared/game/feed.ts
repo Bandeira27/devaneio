@@ -5,8 +5,10 @@ export const FADE_FLOOR = 0.65;
 /** O quanto cada turno de idade desbota. */
 export const FADE_PER_TURN = 0.1;
 
+/** O tom de um evento no feed: normal, de dano ou de cura. */
 export type FeedTone = 'neutral' | 'danger' | 'good';
 
+/** O marcador de início de um turno. */
 export interface FeedTurn {
   type: 'turn';
   key: string;
@@ -14,6 +16,7 @@ export interface FeedTurn {
   current: boolean;
 }
 
+/** Um evento do log, com a narração, a nota mecânica e a opacidade pela idade. */
 export interface FeedEvent {
   type: 'event';
   key: string;
@@ -28,6 +31,7 @@ export interface FeedEvent {
   opacity: number;
 }
 
+/** Uma fala do mestre ou de um NPC. */
 export interface FeedTalk {
   type: 'talk';
   key: string;
@@ -36,6 +40,7 @@ export interface FeedTalk {
   opacity: number;
 }
 
+/** Um item do feed: marcador de turno, evento ou fala. */
 export type FeedItem = FeedTurn | FeedEvent | FeedTalk;
 
 const TONES: Record<string, FeedTone> = { damage: 'danger', heal: 'good', rest: 'good' };

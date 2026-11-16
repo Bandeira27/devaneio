@@ -17,6 +17,8 @@ from .storage import Storage
 
 @dataclass(frozen=True)
 class LlmSlot:
+    """Um tipo de chamada ao LLM (texto livre, copiloto) e as mensagens de recusa dele."""
+
     kind: str
     rate_code: str
     rate_text: str  # com {seconds}
@@ -41,8 +43,11 @@ COPILOT = LlmSlot(
 
 
 def reserve(storage: Storage, table_id: str, slot: LlmSlot, key: str, cooldown: float) -> None:
-    """Confere o intervalo de ``key``, reserva a vaga e conta o pedido. ``ApiFailure`` 429 ou 409 se
-    recusar (nada fica reservado). Depois de reservar, quem chama deve devolver a vaga num ``finally``."""
+    """Reserva a vaga de uma chamada ao LLM, respeitando o intervalo.
+
+    ``ApiFailure`` 429 ou 409 se recusar (nada fica reservado). Depois de reservar, quem chama
+    deve devolver a vaga num ``finally``.
+    """
     left = storage.slot_cooldown_left(table_id, slot.kind, key, cooldown)
     if left > 0:
         raise ApiFailure(429, slot.rate_code, slot.rate_text.format(seconds=math.ceil(left)))

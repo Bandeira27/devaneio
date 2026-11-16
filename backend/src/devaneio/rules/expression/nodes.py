@@ -7,27 +7,37 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Num:
+    """Um número literal."""
+
     value: int
 
 
 @dataclass(frozen=True)
 class Dice:
+    """Um grupo de dados: `count` dados de `sides` lados."""
+
     count: int
     sides: int
 
 
 @dataclass(frozen=True)
 class Attr:
+    """Um atributo do personagem, pelo id."""
+
     name: str
 
 
 @dataclass(frozen=True)
 class Neg:
+    """A negação de uma expressão."""
+
     operand: Node
 
 
 @dataclass(frozen=True)
 class BinOp:
+    """Uma conta de dois lados: soma, subtração ou multiplicação."""
+
     op: str  # "+", "-", "*"
     left: Node
     right: Node

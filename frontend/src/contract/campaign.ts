@@ -5,6 +5,9 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * A campanha: locais, NPCs, marcos e fatos, tudo estático (o que muda fica no `GameState`).
+ */
 export interface Campaign {
   schema_version?: 1;
   id: string;
@@ -19,6 +22,9 @@ export interface Campaign {
   beats?: Beat[];
   facts?: FactDef[];
 }
+/**
+ * Um local da campanha, ligado a outros por `connections`.
+ */
 export interface Location {
   id: string;
   name: string;
@@ -26,6 +32,9 @@ export interface Location {
   connections?: string[];
   private_notes?: string[];
 }
+/**
+ * Uma facção da campanha.
+ */
 export interface Faction {
   id: string;
   name: string;
@@ -33,6 +42,9 @@ export interface Faction {
   goals?: string[];
   private_notes?: string[];
 }
+/**
+ * Um NPC da campanha: onde começa, como se comporta e o que sabe.
+ */
 export interface Npc {
   id: string;
   name: string;
@@ -63,24 +75,37 @@ export interface Beat {
   complete_when?: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
   private_notes?: string[];
 }
+/**
+ * Vale quando o grupo está num local.
+ */
 export interface AtLocation {
   kind: "at_location";
   location_id: string;
 }
+/**
+ * Vale quando um NPC caiu.
+ */
 export interface NpcDown {
   kind: "npc_down";
   npc_id: string;
 }
+/**
+ * Vale quando um marco foi concluído.
+ */
 export interface BeatDone {
   kind: "beat_done";
   beat_id: string;
 }
+/**
+ * Vale a partir de um turno.
+ */
 export interface TurnAtLeast {
   kind: "turn_at_least";
   turn: number;
 }
 /**
  * Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
+ *
  * Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.
  */
 export interface CheckPassed {

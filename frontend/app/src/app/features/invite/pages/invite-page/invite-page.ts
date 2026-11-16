@@ -8,6 +8,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { InviteStore } from '../../invite.store';
 import { fieldValue } from '@shared/ui/field/field-value';
 
+/** Tela do convite do anfitrião: o link para mandar aos jogadores. */
 @Component({
   selector: 'dv-invite-page',
   imports: [RouterLink, DvButton, DvCopyField, DvField, DvInput, DvNotice],

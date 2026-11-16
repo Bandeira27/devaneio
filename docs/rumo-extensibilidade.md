@@ -19,11 +19,11 @@ em parte; esta direção formaliza a fronteira e fecha as lacunas.
 
 ## Vocabulário (a detalhar)
 
-| Termo | O que é | Onde vive hoje |
-|---|---|---|
-| **Primitiva** | verbo do motor: teste, dano, cura, mover, descansar, marcos, fim de turno | `backend/src/devaneio/engine/`, código |
-| **Sistema** | regras como dado: atributos, habilidades, armas, fórmulas, dificuldades, graus, combate, descanso | `rules/data/default.json` |
-| **Conteúdo** | campanha (locais, NPCs, facções, marcos, condições) e pacote de narração | `campaigns/*.json`, `narration/data/pt-br.json` |
+| Termo         | O que é                                                                                           | Onde vive hoje                                  |
+| ------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Primitiva** | verbo do motor: teste, dano, cura, mover, descansar, marcos, fim de turno                         | `backend/src/devaneio/engine/`, código          |
+| **Sistema**   | regras como dado: atributos, habilidades, armas, fórmulas, dificuldades, graus, combate, descanso | `rules/data/default.json`                       |
+| **Conteúdo**  | campanha (locais, NPCs, facções, marcos, condições) e pacote de narração                          | `campaigns/*.json`, `narration/data/pt-br.json` |
 
 ## Decisões
 

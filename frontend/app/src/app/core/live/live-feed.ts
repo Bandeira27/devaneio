@@ -7,6 +7,7 @@ import { MAX_EVENTS, MAX_TALK, mergeEvents, mergeTalk } from './live-merge';
 
 export { MAX_EVENTS, MAX_TALK };
 
+/** Como está a conexão ao vivo: conectando, no ar, sem rede, token vencido, mesa sumida ou falha definitiva. */
 export type LiveStatus = 'connecting' | 'live' | 'offline' | 'expired' | 'gone' | 'failed';
 
 /** Tudo que o laço pede ao mundo: assim ele é testável sem rede, sem relógio e sem DOM. */

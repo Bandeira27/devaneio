@@ -21,18 +21,24 @@ class DiceRoll:
 
     @property
     def total(self) -> int:
+        """A soma dos dados do grupo."""
         return sum(self.values)
 
 
 @dataclass(frozen=True)
 class EvalResult:
+    """O total de uma expressão e os dados que foram rolados para chegar nele."""
+
     total: int
     rolls: tuple[DiceRoll, ...]
 
 
 def evaluate(node: Node, attributes: Mapping[str, int], rng: Rng) -> EvalResult:
-    """Avalia a AST. Cada ``Dice`` consome ``count`` sorteios do ``rng``, da esquerda
-    para a direita. Atributo ausente é ``ExpressionError``."""
+    """Avalia uma expressão, sorteando os dados.
+
+    Cada ``Dice`` consome ``count`` sorteios do ``rng``, da esquerda para a direita. Atributo
+    ausente é ``ExpressionError``.
+    """
     rolls: list[DiceRoll] = []
 
     def go(n: Node) -> int:

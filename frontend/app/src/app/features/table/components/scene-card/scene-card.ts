@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { Scene } from '@shared/game/scene';
 
+/** O cartão da cena atual: local, descrição, saídas e quem está aqui. */
 @Component({
   selector: 'dv-scene-card',
   templateUrl: './scene-card.html',

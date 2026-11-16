@@ -11,6 +11,8 @@ from .errors import EngineError
 
 @dataclass(frozen=True)
 class MoveResult:
+    """O novo estado depois de o grupo andar."""
+
     state: GameState
     from_location_id: str
     to_location_id: str
@@ -18,8 +20,11 @@ class MoveResult:
 
 
 def move(state: GameState, campaign: Campaign, *, to_location_id: str) -> MoveResult:
-    """O grupo anda junto (``current_location_id`` é do estado). Só para um local ligado ao
-    atual por ``connections``; viagem sem conexão não é movimento, é outra ação."""
+    """O grupo anda junto (``current_location_id`` é do estado).
+
+    Só para um local ligado ao atual por ``connections``; viagem sem conexão não é movimento, é
+    outra ação.
+    """
     locations = {loc.id: loc for loc in campaign.locations}
     here = locations.get(state.current_location_id)
     if here is None:

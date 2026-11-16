@@ -5,6 +5,9 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * Um pacote de narração: regras de texto por tipo de evento, em JSON.
+ */
 export interface NarrationPack {
   schema_version?: 1;
   id: string;

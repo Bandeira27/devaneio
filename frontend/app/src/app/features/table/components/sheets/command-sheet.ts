@@ -6,6 +6,7 @@ import { SheetRef } from '@shared/ui/sheet/sheet';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
+/** Folha de digitar um comando; devolve a linha escrita. */
 @Component({
   selector: 'dv-command-sheet',
   imports: [DvSheetHead, DvButton, DvField, DvInput],

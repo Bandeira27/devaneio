@@ -4,11 +4,13 @@ import { DvPips } from '@shared/ui/pips/pips';
 import { SHEET_DATA } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
+/** O que a ficha recebe: o personagem e o sistema de regras. */
 export interface CharacterSheetData {
   character: Character;
   rules: RulesView;
 }
 
+/** Ficha do personagem: hp, atributos e inventário. */
 @Component({
   selector: 'dv-character-sheet',
   imports: [DvSheetHead, DvPips],

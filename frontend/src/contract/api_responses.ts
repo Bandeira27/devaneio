@@ -5,8 +5,13 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * Como a partida está: em andamento, vencida ou perdida.
+ */
 export type GameStatus = "active" | "won" | "lost";
 /**
+ * Em que ponto um marco da trama está.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  *
@@ -15,6 +20,9 @@ export type GameStatus = "active" | "won" | "lost";
  */
 export type BeatStatus = "pending" | "active" | "done" | "failed";
 
+/**
+ * Todas as respostas, reunidas só para gerar o contrato.
+ */
 export interface ApiResponses {
   campaigns: CampaignSummary[];
   table: TableView;
@@ -29,11 +37,17 @@ export interface ApiResponses {
   rules: RulesView;
   error: ErrorResponse;
 }
+/**
+ * Uma campanha do catálogo: id, título e premissa.
+ */
 export interface CampaignSummary {
   id: string;
   title: string;
   premise: string;
 }
+/**
+ * A mesa: campanha, jogadores, turno, estado e o aviso do LLM, como o papel de quem pergunta vê.
+ */
 export interface TableView {
   table_id: string;
   role: "host" | "player";
@@ -53,6 +67,9 @@ export interface TableView {
   you: string;
   state: GameState | PlayerStateView;
 }
+/**
+ * Um jogador da mesa, sem o hash do token.
+ */
 export interface PlayerView {
   id: string;
   name: string;
@@ -60,8 +77,10 @@ export interface PlayerView {
   character_ids: string[];
 }
 /**
- * O LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se
- * está ligado e para onde o contexto da partida vai, antes de entrar.
+ * O LLM da mesa como os jogadores o veem.
+ *
+ * O LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se está ligado
+ * e para onde o contexto da partida vai, antes de entrar.
  */
 export interface LlmView {
   enabled: boolean;
@@ -69,6 +88,9 @@ export interface LlmView {
   notice: string | null;
   secrets: boolean;
 }
+/**
+ * O estado inteiro de uma partida: tudo que muda, em JSON puro.
+ */
 export interface GameState {
   state_version: 1;
   campaign_id: string;
@@ -95,6 +117,8 @@ export interface GameState {
   events: Event[];
 }
 /**
+ * Um personagem de jogador, com atributos, hp e inventário.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  *
@@ -112,6 +136,11 @@ export interface Character {
   inventory: string[];
 }
 /**
+ * O que muda num NPC durante a partida: hp, onde está, se está de pé.
+ *
+ * hp 0 derruba o NPC (`alive=False`). Para personagens, hp 0 é "fora de combate": morte é
+ * decisão narrativa, não do motor.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */
@@ -126,8 +155,9 @@ export interface NpcState {
   location_id: string | null;
 }
 /**
- * Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir
- * os tipos de evento (aí vira união discriminada por ``kind``).
+ * Entrada do log.
+ *
+ * ``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.
  */
 export interface Event {
   turn: number;
@@ -138,12 +168,12 @@ export interface Event {
   };
 }
 /**
- * O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles
- * o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``).
- * ``revealed_facts`` vai inteiro: só tem fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local
- * atual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o
- * ``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em
- * ``of`` (e ``tests/test_server_models.py`` obriga a decidir).
+ * O estado do jogo como um jogador comum o vê.
+ *
+ * Fica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível) e
+ * ``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem fatos
+ * já públicos. NPCs só os do local atual e só como ``NpcView``; marcos só os que já começaram.
+ * O anfitrião recebe o ``GameState`` inteiro.
  */
 export interface PlayerStateView {
   state_version: 1;
@@ -168,8 +198,10 @@ export interface PlayerStateView {
   };
 }
 /**
- * NPC como o ``olhar`` o mostra: vivo, hp e se está hostil. Atributos e disposição
- * numéricos (que revelam defesas e o limiar de hostilidade) ficam com o anfitrião.
+ * Um NPC como o `olhar` o mostra.
+ *
+ * Vivo, hp e se está hostil. Atributos e disposição numéricos (que revelam defesas e o limiar
+ * de hostilidade) ficam com o anfitrião.
  *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
@@ -180,17 +212,26 @@ export interface NpcView {
   max_hp: number;
   hostile: boolean;
 }
+/**
+ * A mesa recém-criada: o id, o token do anfitrião (que só aparece aqui) e o convite.
+ */
 export interface TableCreated {
   table_id: string;
   host_token: string;
   invite_code: string;
   table: TableView;
 }
+/**
+ * A entrada numa mesa: o jogador, o token dele (que só aparece aqui) e a mesa.
+ */
 export interface TableJoined {
   player_id: string;
   token: string;
   table: TableView;
 }
+/**
+ * O resultado de um comando: o que ele produziu e como a mesa ficou.
+ */
 export interface CommandResult {
   revision: number;
   events: EventView[];
@@ -199,10 +240,11 @@ export interface CommandResult {
   turn_ended: boolean;
 }
 /**
- * Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática
- * do próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto
- * livre, só no primeiro evento visível do lote (nos outros é ``None``) e só enquanto o
- * servidor não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para
+ * Um evento do log como o cliente o recebe.
+ *
+ * Sem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é
+ * o parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do
+ * lote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para
  * todos os jogadores.
  */
 export interface EventView {
@@ -213,6 +255,9 @@ export interface EventView {
   prose: string;
   narration: string | null;
 }
+/**
+ * O resultado de um texto livre: o de um comando, mais a fala do mestre.
+ */
 export interface SayResult {
   revision: number;
   events: EventView[];
@@ -222,9 +267,15 @@ export interface SayResult {
   say: string;
   commands: string[];
 }
+/**
+ * A resposta do copiloto, só para o anfitrião.
+ */
 export interface CopilotAnswer {
   text: string;
 }
+/**
+ * Eventos e falas novos desde a última leitura, com as posições para a próxima.
+ */
 export interface EventsView {
   revision: number;
   events: EventView[];
@@ -232,8 +283,9 @@ export interface EventsView {
   talk_seq: number;
 }
 /**
- * Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.
- * ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
+ * Uma fala do mestre ou de um NPC.
+ *
+ * Vem de uma ação de texto livre e é igual para todos. ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
  * personagem que a provocou. Não é evento: o LLM nunca escreve no estado.
  */
 export interface TalkView {
@@ -242,6 +294,9 @@ export interface TalkView {
   to: string;
   text: string;
 }
+/**
+ * A campanha: locais, NPCs, marcos e fatos, tudo estático (o que muda fica no `GameState`).
+ */
 export interface Campaign {
   schema_version: 1;
   id: string;
@@ -256,6 +311,9 @@ export interface Campaign {
   beats: Beat[];
   facts: FactDef[];
 }
+/**
+ * Um local da campanha, ligado a outros por `connections`.
+ */
 export interface Location {
   id: string;
   name: string;
@@ -263,6 +321,9 @@ export interface Location {
   connections: string[];
   private_notes: string[];
 }
+/**
+ * Uma facção da campanha.
+ */
 export interface Faction {
   id: string;
   name: string;
@@ -270,6 +331,9 @@ export interface Faction {
   goals: string[];
   private_notes: string[];
 }
+/**
+ * Um NPC da campanha: onde começa, como se comporta e o que sabe.
+ */
 export interface Npc {
   id: string;
   name: string;
@@ -300,24 +364,37 @@ export interface Beat {
   complete_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
   private_notes: string[];
 }
+/**
+ * Vale quando o grupo está num local.
+ */
 export interface AtLocation {
   kind: "at_location";
   location_id: string;
 }
+/**
+ * Vale quando um NPC caiu.
+ */
 export interface NpcDown {
   kind: "npc_down";
   npc_id: string;
 }
+/**
+ * Vale quando um marco foi concluído.
+ */
 export interface BeatDone {
   kind: "beat_done";
   beat_id: string;
 }
+/**
+ * Vale a partir de um turno.
+ */
 export interface TurnAtLeast {
   kind: "turn_at_least";
   turn: number;
 }
 /**
  * Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
+ *
  * Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.
  */
 export interface CheckPassed {
@@ -338,11 +415,12 @@ export interface FactDef {
   reveal_when: (AtLocation | NpcDown | BeatDone | TurnAtLeast | CheckPassed)[];
 }
 /**
- * A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,
- * local atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos
- * ocultos, ``private_notes``, facções, condições dos
- * marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o
- * anfitrião, que recebe a ``Campaign`` inteira.
+ * A campanha como um jogador comum a vê.
+ *
+ * Só o que o ``olhar`` do CLI mostra (título, premissa, local atual com saídas, NPCs ali,
+ * marcos que já começaram e fatos já revelados). Fatos ocultos, ``private_notes``, facções,
+ * condições dos marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com
+ * o anfitrião, que recebe a ``Campaign`` inteira.
  */
 export interface CampaignView {
   id: string;
@@ -353,34 +431,50 @@ export interface CampaignView {
   beats: BeatInfo[];
   facts: FactInfo[];
 }
+/**
+ * O local atual, com a descrição e as saídas.
+ */
 export interface LocationView {
   id: string;
   name: string;
   description: string;
   exits: ExitView[];
 }
+/**
+ * Uma saída do local atual.
+ */
 export interface ExitView {
   id: string;
   name: string;
 }
+/**
+ * Um NPC que o grupo vê no local.
+ */
 export interface NpcInfo {
   id: string;
   name: string;
 }
+/**
+ * Um marco que já começou.
+ */
 export interface BeatInfo {
   id: string;
   title: string;
 }
+/**
+ * Um fato já revelado.
+ */
 export interface FactInfo {
   id: string;
   text: string;
   about: string | null;
 }
 /**
- * O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de
- * ação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público
- * (não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,
- * ``rest``, ``outcomes``, ``dispositions``).
+ * O sistema de regras como os jogadores precisam dele.
+ *
+ * O catálogo para montar as ações da tela e o formulário de personagem. Regra do sistema é
+ * dado público; ficam de fora só os campos que a tela não usa (``max_hp``, ``rest``,
+ * ``outcomes``, ``dispositions``).
  */
 export interface RulesView {
   id: string;
@@ -393,6 +487,9 @@ export interface RulesView {
   modifiers: ModifierInfo[];
   combat: CombatInfo;
 }
+/**
+ * Um atributo, com os limites e o valor padrão.
+ */
 export interface AttributeInfo {
   id: string;
   name: string;
@@ -401,17 +498,26 @@ export interface AttributeInfo {
   max: number;
   default: number;
 }
+/**
+ * Uma habilidade, com a fórmula.
+ */
 export interface SkillInfo {
   id: string;
   name: string;
   description: string;
   formula: string;
 }
+/**
+ * Uma dificuldade e o valor que o teste precisa alcançar.
+ */
 export interface DifficultyInfo {
   id: string;
   name: string;
   value: number;
 }
+/**
+ * Uma arma, com a habilidade e o dano.
+ */
 export interface WeaponInfo {
   id: string;
   name: string;
@@ -419,18 +525,30 @@ export interface WeaponInfo {
   skill: string;
   damage: string;
 }
+/**
+ * Um modificador de teste e o quanto ele soma.
+ */
 export interface ModifierInfo {
   id: string;
   name: string;
   value: number;
 }
+/**
+ * As regras de combate que mudam o que a tela oferece.
+ */
 export interface CombatInfo {
   default_weapon: string | null;
   fallen_can_act: boolean;
 }
+/**
+ * O corpo de toda resposta de erro.
+ */
 export interface ErrorResponse {
   error: ApiError;
 }
+/**
+ * Um erro da API: um código estável e a mensagem em português.
+ */
 export interface ApiError {
   code: string;
   message: string;

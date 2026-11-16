@@ -1,9 +1,11 @@
-"""Texto livre pela mesa: o LLM do anfitrião PROPÕE ações, cada uma passa pela política do
-jogador e pelo motor, e a proposta inteira gasta uma ação principal do personagem.
+"""Texto livre pela mesa.
 
-Três fases: (1) sob o lock da mesa, confere tudo e para se algo recusa; (2) SEM o lock,
-chama o LLM (pode levar minutos e não pode travar os comandos); (3) sob o lock de novo,
-grava só se a mesa continua como era, senão ``409`` e a tentativa se perde.
+O LLM do anfitrião PROPÕE ações, cada uma passa pela política do jogador e pelo motor, e a proposta
+inteira gasta uma ação principal do personagem.
+
+Três fases: (1) sob o lock da mesa, confere tudo e para se algo recusa; (2) SEM o lock, chama o LLM
+(pode levar minutos e não pode travar os comandos); (3) sob o lock de novo, grava só se a mesa
+continua como era, senão ``409`` e a tentativa se perde.
 """
 
 from __future__ import annotations
@@ -47,6 +49,8 @@ from .turns import (
 
 
 class SayDesk:
+    """O balcão do texto livre: valida o pedido, chama o LLM fora do lock da mesa e aplica o que ele propôs."""
+
     def __init__(
         self,
         storage: Storage,
@@ -62,6 +66,7 @@ class SayDesk:
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
 
     def run(self, table_id: str, path: Path, token: str, request: SayRequest) -> SayResult:
+        """Aplica um texto livre: o LLM propõe ações, cada uma passa pela política da mesa, e a proposta inteira gasta uma ação."""
         storage = self._storage
         with storage.lock(table_id):  # fase 1
             session = self._load(path)
@@ -142,9 +147,11 @@ class SayDesk:
 
     @staticmethod
     def _narration(client: ChatClient, session: Session, start: int) -> dict[int, str]:
-        """O parágrafo do LLM no primeiro evento novo que os JOGADORES veem: é igual para todos,
-        então não pode citar o que só o anfitrião vê (evento sobre NPC escondido). Se o LLM
-        falhar, nada: ``narration`` fica ``None`` e vale a prosa da gramática."""
+        """A narração do LLM no primeiro evento novo que os jogadores veem.
+
+        O parágrafo é igual para todos os jogadores, então não pode citar o que só o anfitrião vê (evento sobre NPC escondido). Se
+        o LLM falhar, nada: ``narration`` fica ``None`` e vale a prosa da gramática.
+        """
         state = session.state
         hidden = hidden_events(state, session.campaign)
         visible = [i for i in range(start, len(state.events)) if i not in hidden]

@@ -20,6 +20,8 @@ ENV_TIMEOUT = "DEVANEIO_LLM_TIMEOUT"
 
 @dataclass(frozen=True)
 class LlmConfig:
+    """Para onde e como falar com o LLM, lido do ambiente."""
+
     base_url: str  # ex.: https://api.openai.com/v1 ou http://localhost:11434/v1
     model: str
     api_key: str | None = field(default=None, repr=False)
@@ -34,6 +36,7 @@ class LlmConfig:
 
     @property
     def description(self) -> str:
+        """Modelo e servidor, sem a chave."""
         return f"{self.model} em {self.host}"
 
     @classmethod

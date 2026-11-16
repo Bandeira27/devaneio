@@ -11,6 +11,8 @@ _MASK = (1 << 64) - 1
 
 
 class Rng:
+    """Gerador SplitMix64 que lembra a semente e quantos sorteios já deu."""
+
     def __init__(self, seed: int, draws: int = 0) -> None:
         if draws < 0:
             raise ValueError("draws não pode ser negativo")

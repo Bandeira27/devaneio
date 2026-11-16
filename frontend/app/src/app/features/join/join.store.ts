@@ -7,6 +7,7 @@ import { SessionStore } from '@core/session/session-store';
 import { normalizeName, validateName } from '@shared/game/names';
 import { isInviteCode } from '@shared/game/invite';
 
+/** Estado da tela de entrar numa mesa pelo convite. */
 @Injectable()
 export class JoinStore {
   private readonly api = inject(ApiClient);

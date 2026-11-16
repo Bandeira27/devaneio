@@ -1,5 +1,8 @@
-"""Catálogo de campanhas: os arquivos de uma pasta, lidos na subida. A API só conhece
-campanhas por id; nenhum caminho vem da requisição."""
+"""Catálogo de campanhas lido de uma pasta.
+
+Os arquivos de uma pasta, lidos na subida. A API só conhece campanhas por id; nenhum caminho vem da
+requisição.
+"""
 
 from __future__ import annotations
 
@@ -18,6 +21,8 @@ class CatalogError(ValueError):
 
 
 class Catalog:
+    """As campanhas de uma pasta, lidas uma vez na subida do servidor."""
+
     def __init__(self, root: Path) -> None:
         self.root = Path(root).resolve()
         self._paths: dict[str, Path] = {}
@@ -39,7 +44,9 @@ class Catalog:
             raise CatalogError(f"campanha '{path.name}' inválida: {exc}") from exc
 
     def summaries(self) -> list[CampaignSummary]:
+        """Título e premissa de cada campanha."""
         return list(self._summaries)
 
     def path(self, campaign_id: str) -> Path | None:
+        """O arquivo de uma campanha pelo id, ou nada se o id não existe."""
         return self._paths.get(campaign_id)

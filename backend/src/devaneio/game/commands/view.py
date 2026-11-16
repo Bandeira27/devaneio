@@ -13,10 +13,12 @@ from .labels import BEAT_LABELS, STATUS_LABELS
 
 
 def cmd_help(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
+    """`ajuda`: a lista de comandos."""
     return session.state, HELP
 
 
 def cmd_look(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
+    """`olhar`: onde o grupo está, saídas, quem está aqui e o que o grupo sabe."""
     state, campaign = session.state, session.campaign
     here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
     names = {loc.id: loc.name for loc in campaign.locations}
@@ -62,6 +64,7 @@ def cmd_look(session: Session, _actor: str | None, _args: list[str]) -> tuple[Ga
 
 
 def cmd_sheet(session: Session, actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    """`ficha [id]`: atributos, hp e inventário de um personagem."""
     if len(args) > 1:
         raise CommandError("uso: ficha [id]")
     character = resolve_actor(session, args[0] if args else actor)
@@ -76,6 +79,7 @@ def cmd_sheet(session: Session, actor: str | None, args: list[str]) -> tuple[Gam
 
 
 def cmd_log(session: Session, _actor: str | None, args: list[str]) -> tuple[GameState, str]:
+    """`log [n]`: os últimos eventos (padrão 10)."""
     count = 10
     if args:
         if len(args) != 1 or not args[0].isdigit():
@@ -88,6 +92,7 @@ def cmd_log(session: Session, _actor: str | None, args: list[str]) -> tuple[Game
 
 
 def cmd_beats(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
+    """`marcos`: os marcos da trama e seus estados."""
     lines = []
     for beat in session.campaign.beats:
         status = session.state.beats[beat.id]
@@ -97,6 +102,7 @@ def cmd_beats(session: Session, _actor: str | None, _args: list[str]) -> tuple[G
 
 
 def cmd_facts(session: Session, _actor: str | None, _args: list[str]) -> tuple[GameState, str]:
+    """`fatos`: os fatos da campanha, revelados e ocultos."""
     lines = []
     for fact in session.campaign.facts:
         label = "revelado" if fact.id in session.state.revealed_facts else "oculto"

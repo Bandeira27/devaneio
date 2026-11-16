@@ -6,11 +6,16 @@
  */
 
 /**
+ * Em que ponto um marco da trama está.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */
 export type BeatStatus = "pending" | "active" | "done" | "failed";
 
+/**
+ * O estado inteiro de uma partida: tudo que muda, em JSON puro.
+ */
 export interface GameState {
   state_version: 1;
   campaign_id: string;
@@ -37,6 +42,8 @@ export interface GameState {
   events: Event[];
 }
 /**
+ * Um personagem de jogador, com atributos, hp e inventário.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */
@@ -51,6 +58,11 @@ export interface Character {
   inventory: string[];
 }
 /**
+ * O que muda num NPC durante a partida: hp, onde está, se está de pé.
+ *
+ * hp 0 derruba o NPC (`alive=False`). Para personagens, hp 0 é "fora de combate": morte é
+ * decisão narrativa, não do motor.
+ *
  * This interface was referenced by `undefined`'s JSON-Schema definition
  * via the `patternProperty` "^[a-z0-9][a-z0-9_-]*$".
  */
@@ -65,8 +77,9 @@ export interface NpcState {
   location_id: string | null;
 }
 /**
- * Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir
- * os tipos de evento (aí vira união discriminada por ``kind``).
+ * Entrada do log.
+ *
+ * ``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.
  */
 export interface Event {
   turn: number;

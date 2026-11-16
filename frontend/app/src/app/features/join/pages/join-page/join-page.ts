@@ -7,6 +7,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { JoinStore } from '../../join.store';
 import { fieldValue } from '@shared/ui/field/field-value';
 
+/** Tela de entrar numa mesa: o nome do jogador e o convite que veio no link. */
 @Component({
   selector: 'dv-join-page',
   imports: [DvButton, DvField, DvInput, DvNotice],

@@ -1,8 +1,10 @@
-"""Serviço da mesa, sem HTTP além do status das falhas: cada operação carrega a partida do
-arquivo dentro do lock da mesa, aplica a regra da mesa e grava. O arquivo é a fonte única da
-verdade (campanha e regras são relidas com a partida); em memória ficam só a coordenação
-(locks, versão, vagas de espera) e os parágrafos de narração do LLM, que são exibição
-descartável."""
+"""Serviço da mesa: cada operação da API, sem HTTP.
+
+Só o status das falhas lembra HTTP. Cada operação carrega a partida do arquivo dentro do lock
+da mesa, aplica a regra da mesa e grava. O arquivo é a fonte única da verdade
+(campanha e regras são relidas com a partida); em memória ficam só a coordenação (locks, versão,
+vagas de espera) e os parágrafos de narração do LLM, que são exibição descartável.
+"""
 
 from __future__ import annotations
 
@@ -68,8 +70,10 @@ COPILOT_COOLDOWN = 5.0  # segundos entre duas consultas ao copiloto da mesa
 
 
 class Cursor(NamedTuple):
-    """Até onde o cliente já leu: a posição do primeiro evento que ainda não viu e o ``seq`` da
-    última fala que viu."""
+    """Até onde o cliente já leu a mesa.
+
+    A posição do primeiro evento que ainda não viu e o ``seq`` da última fala que viu.
+    """
 
     events: int
     talk: int
@@ -87,6 +91,8 @@ NOTICE_WITHOUT_SECRETS = ("", "Segredos, fatos ocultos e notas privadas não vã
 
 
 class TableService:
+    """As operações da mesa em grupo (criar, entrar, comandar, ler), sem HTTP."""
+
     def __init__(
         self,
         catalog: Catalog,
@@ -120,9 +126,11 @@ class TableService:
     # --- operações ---------------------------------------------------------------
 
     def list_campaigns(self) -> list[CampaignSummary]:
+        """As campanhas do catálogo, só com título e premissa."""
         return self.catalog.summaries()
 
     def create_table(self, request: CreateTableRequest) -> TableCreated:
+        """Cria uma mesa a partir de uma campanha do catálogo e devolve o token do anfitrião e o convite."""
         campaign_path = self.catalog.path(request.campaign_id)
         if campaign_path is None:
             raise ApiFailure(
@@ -145,8 +153,11 @@ class TableService:
         )
 
     def join_table(self, table_id: str, request: JoinRequest) -> TableJoined:
-        """Entrada por convite. Mesa inexistente e convite errado respondem igual (401), para
-        o convite não servir de oráculo de existência; o limite de jogadores só vale depois."""
+        """Entrada de um jogador por convite.
+
+        Mesa inexistente e convite errado respondem igual (401), para o convite não servir
+        de oráculo de existência; o limite de jogadores só vale depois.
+        """
         path = self.storage.path_for(table_id)
         if path is None:
             raise ApiFailure(401, "invalid_invite", "convite inválido")
@@ -184,16 +195,18 @@ class TableService:
         wait: float = 0,
         since_talk: int = 0,
     ) -> EventsView:
-        """Eventos de posição ``since`` em diante e falas com ``seq`` > ``since_talk``. Com
+        """Eventos e falas novos desde a última leitura, com espera opcional.
+
+        Eventos de posição ``since`` em diante e falas com ``seq`` > ``since_talk``. Com
         ``wait`` > 0 e nada novo, espera até ``wait`` segundos por uma gravação da mesa
         (long-poll); acima de ``MAX_WAITERS`` esperas na mesa, responde de imediato.
 
         Com ``wait`` > 0 e sem ``since_talk``, o mural não conta como novidade: só falas
         posteriores a esta chamada acordam a espera (senão um cliente que não devolve
-        ``talk_seq`` giraria sem esperar, relendo o arquivo a cada volta)."""
-        # A versão vem ANTES da carga: uma gravação entre a carga e a espera deixaria a visão
-        # velha com a versão nova, e o leitor dormiria com evento disponível. (Só com mesa
-        # existente: ``version`` cria entrada, e o id ainda não foi validado.)
+        ``talk_seq`` giraria sem esperar, relendo o arquivo a cada volta).
+        """
+        # Antes da carga: uma gravação entre as duas deixaria a visão velha com a versão nova.
+        # Só com mesa existente, porque ``version`` cria entrada e o id ainda não foi validado.
         seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
         cursor = Cursor(since, since_talk)
         view = self._events_view(table_id, token, cursor)
@@ -247,9 +260,12 @@ class TableService:
     def run_command(
         self, table_id: str, token: str | None, request: CommandRequest
     ) -> CommandResult:
-        """Um comando de um jogador: autentica, aplica a política da mesa (papel, dono do
-        personagem, revisão, uma ação principal por personagem por turno), executa no motor
-        e grava. Tudo dentro do lock da mesa; se qualquer passo recusa, nada é gravado."""
+        """Executa um comando de um jogador.
+
+        Autentica, aplica a política da mesa (papel, dono do personagem, revisão, uma ação
+        principal por personagem por turno), executa no motor e grava. Tudo dentro do lock
+        da mesa; se qualquer passo recusa, nada é gravado.
+        """
         path = self.storage.path_for(table_id)
         if path is None:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
@@ -292,29 +308,38 @@ class TableService:
         return self._copilot.run(table_id, path, token, request)
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
+        """A mesa como o papel de quem pergunta pode ver."""
         session, table, player_id, player = self._open(table_id, token)
         return self._view(table_id, session, table, player.role, player_id)
 
     def get_campaign(self, table_id: str, token: str | None) -> Campaign | CampaignView:
-        """A campanha inteira só para o anfitrião (o mestre); o jogador comum recebe a visão
-        do que o ``olhar`` mostra, derivada do estado atual."""
+        """A campanha como o papel de quem pergunta pode ver.
+
+        A campanha inteira só para o anfitrião (o mestre); o jogador comum recebe a visão do
+        que o ``olhar`` mostra, derivada do estado atual.
+        """
         session, _, _, player = self._open(table_id, token)
         if player.role == "host":
             return session.campaign
         return CampaignView.of(session.campaign, session.state)
 
     def get_rules(self, table_id: str, token: str | None) -> RulesView:
-        """O catálogo do sistema de regras da mesa, para qualquer jogador: alimenta os botões de
-        ação e o formulário de personagem. Regra do sistema é dado público."""
+        """O sistema de regras da mesa, para qualquer jogador.
+
+        Alimenta os botões de ação e o formulário de personagem. Regra do sistema é dado público.
+        """
         session, _, _, _ = self._open(table_id, token)
         return RulesView.of(session.rules)
 
     # --- apoio -------------------------------------------------------------------
 
     def _open(self, table_id: str, token: str | None) -> tuple[Session, TableMeta, str, Player]:
-        """Carrega a mesa e autentica o jogador. 404 e 401 saem daqui; partida ilegível
-        é erro interno (a mensagem citaria caminho e trechos do arquivo). Limite conhecido:
-        os hashes vivem no arquivo, então um token errado custa uma carga da partida."""
+        """Carrega a mesa e autentica o jogador.
+
+        404 e 401 saem daqui; partida ilegível é erro interno (a mensagem citaria caminho e
+        trechos do arquivo). Limite conhecido: os hashes vivem no arquivo, então um token
+        errado custa uma carga da partida.
+        """
         path = self.storage.path_for(table_id)
         if path is None:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
@@ -326,6 +351,7 @@ class TableService:
         return session, table, player_id, player
 
     def load_session(self, path: Path) -> Session:
+        """Carrega a partida de uma mesa; arquivo ilegível é erro interno, sem citar caminho."""
         try:
             session = load_game(path, campaign_root=self.catalog.root)
         except (GameError, ValidationError, OSError) as exc:
