@@ -5,14 +5,8 @@ import type { RulesView, TableView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
 import { SessionStore } from '@core/session/session-store';
-import {
-  CommandError,
-  join,
-  normalizeName,
-  slugify,
-  uniqueId,
-  validateName,
-} from '@shared/game/commands';
+import { CommandError, join } from '@shared/game/commands';
+import { normalizeName, slugify, uniqueId, validateName } from '@shared/game/names';
 import { attributeDefaults, clampAttribute } from '@shared/game/rules';
 import { llmNoticeOf } from '@shared/game/llm-notice';
 import type { LoadState } from '@shared/game/load-state';

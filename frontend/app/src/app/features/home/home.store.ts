@@ -5,7 +5,7 @@ import type { CampaignSummary } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
 import { messageOf } from '@core/api/api-failure';
 import { SessionStore } from '@core/session/session-store';
-import { normalizeName, validateName } from '@shared/game/commands';
+import { normalizeName, validateName } from '@shared/game/names';
 import { parseInvite } from '@shared/game/invite';
 import type { LoadState } from '@shared/game/load-state';
 
