@@ -186,7 +186,9 @@ describe('Personagem', () => {
     app.http.expectOne(`/tables/${TABLE_ID}`).flush(reject, { status: 401, statusText: 'x' });
     app.http.match(() => true).forEach((r) => r.flush(reject, { status: 401, statusText: 'x' }));
     await app.settle();
-    expect(app.root().querySelector('[role="alert"]')?.textContent).toContain('token inválido');
+    expect(app.root().querySelector('[role="alert"]')?.textContent).toContain(
+      'sessão nesta mesa expirou',
+    );
     expect(app.session.get(TABLE_ID)).toBeNull();
     expect(app.root().querySelector('a[href="/"]')).not.toBeNull();
   });

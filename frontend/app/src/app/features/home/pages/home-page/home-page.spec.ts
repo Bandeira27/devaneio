@@ -56,12 +56,12 @@ describe('Home', () => {
     http
       .expectOne('/tables')
       .flush(
-        { error: { code: 'table_limit', message: 'cheio <img src=x onerror=alert(1)>' } },
+        { error: { code: 'sem_mapa', message: 'cheio <img src=x onerror=alert(1)>' } },
         { status: 409, statusText: 'Conflict' },
       );
     await settle();
     expect(root().querySelector('[role="alert"]')?.textContent).toContain(
-      'cheio <img src=x onerror=alert(1)>',
+      'Cheio <img src=x onerror=alert(1)>.',
     );
     expect(root().querySelector('img')).toBeNull();
   });
@@ -71,7 +71,7 @@ describe('Home', () => {
     app.http.expectOne('/campaigns').error(new ProgressEvent('error'));
     await app.settle();
     expect(app.root().querySelector('[role="alert"]')?.textContent).toContain(
-      'Sem conexão com o servidor.',
+      'Sem conexão com o servidor',
     );
     await app.click('button');
     app.http.expectOne('/campaigns').flush(CAMPAIGNS);
