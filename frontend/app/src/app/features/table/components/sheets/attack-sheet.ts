@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import type { ModifierInfo, WeaponInfo } from '@contract/api_responses';
+import { modifierOptions } from '@shared/game/modifiers';
 import { attack } from '@shared/game/commands';
 import type { AttackTarget } from '@shared/game/rules';
 import { DvButton } from '@shared/ui/button/button';
@@ -28,9 +40,10 @@ export interface AttackSheetData {
     } @else if (data.weapons.length === 0) {
       <p class="dv-note">Você não tem nenhuma arma.</p>
     } @else if (confirming()) {
-      <p>
-        Atacar <strong>{{ targetName() }}</strong> com <strong>{{ weaponName() }}</strong>. Gasta a
-        sua ação.
+      <p cdkFocusInitial tabindex="-1" #confirm>
+        Atacar <strong>{{ targetName() }}</strong> com <strong>{{ weaponName() }}</strong>{{
+          modifierName() ? ' (' + modifierName() + ')' : ''
+        }}. Gasta a sua ação.
       </p>
       <div class="dv-sheet__foot">
         <button dvButton type="button" (click)="confirming.set(false)">Voltar</button>
@@ -39,7 +52,12 @@ export interface AttackSheetData {
         </button>
       </div>
     } @else {
-      <form class="dv-stack" (submit)="$event.preventDefault(); confirming.set(true)">
+      <form
+        class="dv-stack"
+        #form
+        tabindex="-1"
+        (submit)="$event.preventDefault(); confirming.set(true)"
+      >
         <dv-choice legend="Alvo" [options]="targets()" [(value)]="target" />
         <dv-choice legend="Arma" [options]="weapons()" [(value)]="weapon" />
         @if (data.modifiers.length > 0) {
@@ -63,6 +81,19 @@ export class AttackSheet {
   protected readonly weapon = signal(this.data.weapons[0]?.id ?? '');
   protected readonly modifier = signal('');
   protected readonly confirming = signal(false);
+  private readonly injector = inject(Injector);
+  private readonly confirm = viewChild<ElementRef<HTMLElement>>('confirm');
+  private readonly form = viewChild<ElementRef<HTMLElement>>('form');
+
+  constructor() {
+    // Ao trocar de etapa o botão clicado some: o foco vai para o texto da confirmação ou, ao voltar, para o formulário.
+    effect(() => {
+      const confirming = this.confirming();
+      afterNextRender(() => (confirming ? this.confirm() : this.form())?.nativeElement.focus(), {
+        injector: this.injector,
+      });
+    });
+  }
 
   protected readonly targets = computed<ChoiceOption[]>(() =>
     this.data.targets.map((t) => ({
@@ -74,16 +105,12 @@ export class AttackSheet {
   protected readonly weapons = computed<ChoiceOption[]>(() =>
     this.data.weapons.map((w) => ({ value: w.id, label: w.name, detail: `Dano ${w.damage}` })),
   );
-  protected readonly modifiers = computed<ChoiceOption[]>(() => [
-    { value: '', label: 'Nenhum' },
-    ...this.data.modifiers.map((m) => ({
-      value: m.id,
-      label: m.name,
-      detail: m.value > 0 ? `+${m.value}` : String(m.value),
-    })),
-  ]);
+  protected readonly modifiers = computed(() => modifierOptions(this.data.modifiers));
   protected readonly targetName = computed(
     () => this.data.targets.find((t) => t.id === this.target())?.name ?? '',
+  );
+  protected readonly modifierName = computed(
+    () => this.data.modifiers.find((m) => m.id === this.modifier())?.name ?? '',
   );
   protected readonly weaponName = computed(
     () => this.data.weapons.find((w) => w.id === this.weapon())?.name ?? '',

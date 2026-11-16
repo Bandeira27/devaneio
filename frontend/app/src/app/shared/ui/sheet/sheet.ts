@@ -2,6 +2,7 @@ import { DIALOG_DATA, Dialog, DialogRef } from '@angular/cdk/dialog';
 import { createGlobalPositionStrategy } from '@angular/cdk/overlay';
 import { Injectable, InjectionToken, Injector, Type, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { isWide } from '../wide';
 
 /** Dados que quem abre a folha passa ao componente dela. */
 export const SHEET_DATA = DIALOG_DATA as InjectionToken<unknown>;
@@ -19,7 +20,8 @@ export interface SheetOptions {
 }
 
 /**
- * Folha que sobe do pé da tela no celular e vira diálogo centralizado na tela larga (diálogo modal do CDK com foco preso e foco devolvido a quem abriu). O visual e o
+ * Folha que sobe do pé da tela no celular e vira diálogo centralizado na tela larga. É um diálogo modal do CDK, com
+ * foco preso e devolvido a quem abriu. O visual e o
  * movimento estão em `styles/sheet.css`. Resolve com o resultado, ou `undefined` se foi fechada sem escolher.
  *
  * O CDK remove o painel assim que fecha, então o fechamento é feito aqui: `Esc`, clique no fundo e `SheetRef.close`
@@ -32,8 +34,7 @@ export class Sheet {
   private readonly injector = inject(Injector);
 
   open<R = void>(component: Type<unknown>, options: SheetOptions): Promise<R | undefined> {
-    // Tela larga: diálogo no meio. Lido ao abrir (uma folha dura segundos; girar o aparelho não a refaz).
-    const dialog = typeof matchMedia === 'function' && matchMedia('(min-width: 64rem)').matches;
+    const dialog = isWide(); // tela larga: diálogo no meio
     const ref = this.dialog.open<R>(component, {
       ariaLabel: options.label,
       data: options.data,

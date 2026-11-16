@@ -56,6 +56,36 @@ describe('Home', () => {
     expect(root().textContent).not.toContain('esquecida neste aparelho');
   });
 
+  it('o "desfazer" expira em 8 s e o foco vai para ele ao esquecer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const app = await setup('/');
+      app.session.save(TABLE_ID, {
+        token: 'tk',
+        playerId: 'p1',
+        role: 'player',
+        title: 'A Sombra do Vale',
+        savedAt: Date.now(),
+      });
+      app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+      await app.settle();
+      const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+      await app.click('.saved__forget');
+      await app.settle();
+      await Promise.resolve();
+      expect(
+        focus.mock.contexts.some((el) => (el as HTMLElement).classList.contains('home__undo')),
+      ).toBe(true);
+      focus.mockRestore();
+      vi.advanceTimersByTime(8001);
+      await app.settle();
+      expect(app.root().textContent).not.toContain('esquecida neste aparelho');
+      expect(app.session.get(TABLE_ID)).toBeNull(); // passou o prazo: o esquecimento vale
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('exige o nome do anfitrião antes de criar a mesa', async () => {
     const { root, http, submit } = await open();
     await submit();

@@ -22,7 +22,7 @@
                 dvButton
                 type="button"
                 class="saved__forget"
-                (click)="store.forget(table.tableId)"
+                (click)="forget(table.tableId)"
                 [attr.aria-label]="'Esquecer a mesa ' + table.title"
               >
                 Esquecer
@@ -33,7 +33,7 @@
         @if (store.forgotten(); as gone) {
           <dv-notice animate.enter="dv-enter" animate.leave="dv-leave">
             Mesa “{{ gone.title }}” esquecida neste aparelho.
-            <button dvButton type="button" (click)="store.restore()">Desfazer</button>
+            <button dvButton type="button" class="home__undo" (click)="restore()">Desfazer</button>
           </dv-notice>
         }
       </section>

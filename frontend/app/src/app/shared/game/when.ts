@@ -2,7 +2,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 /** Quando algo aconteceu, em palavras que cabem numa lista: "hoje", "ontem", "há 3 dias" ou a data. */
 export function whenOf(time: number, now: number): string {
-  const days = Math.floor((startOfDay(now) - startOfDay(time)) / DAY);
+  const days = Math.round((startOfDay(now) - startOfDay(time)) / DAY);
   if (days <= 0) {
     return 'hoje';
   }

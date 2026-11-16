@@ -10,6 +10,11 @@ describe('whenOf', () => {
     expect(whenOf(ago(3), NOW)).toBe('há 3 dias');
   });
 
+  it('a virada do horário de verão não muda a conta de dias', () => {
+    const now = new Date(2026, 2, 10, 12).getTime();
+    expect(whenOf(new Date(2026, 2, 3, 12).getTime(), now)).not.toBe('há 6 dias');
+  });
+
   it('depois de uma semana mostra a data', () => {
     expect(whenOf(ago(10), NOW)).toMatch(/6/);
   });

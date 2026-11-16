@@ -101,5 +101,5 @@ export function humanizeFormula(
   attributes: readonly { id: string; name: string }[],
 ): string {
   const names = new Map(attributes.map((a) => [a.id, a.name]));
-  return formula.replace(/[A-Za-z_]\w*/g, (word) => names.get(word) ?? word);
+  return formula.replace(/\b[A-Za-z_]\w*/g, (word) => names.get(word) ?? word);
 }

@@ -56,6 +56,14 @@ describe('ApiFailure', () => {
 });
 
 describe('messageOf', () => {
+  it.each(['copilot_rate_limited', 'llm_unavailable', 'context_too_large', 'campaign_not_found'])(
+    'o código %s tem mensagem humana própria',
+    (code) => {
+      const text = messageOf(new ApiFailure(502, code, 'texto técnico do servidor'));
+      expect(text).not.toContain('técnico');
+    },
+  );
+
   it('traduz o código conhecido para uma frase humana, sem ids nem jargão', () => {
     const text = messageOf(
       new ApiFailure(409, 'stale_revision', 'a mesa está na revisão 12, não em 10'),

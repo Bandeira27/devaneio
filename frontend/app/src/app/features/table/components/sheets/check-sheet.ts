@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { RulesView } from '@contract/api_responses';
+import { modifierOptions } from '@shared/game/modifiers';
 import { check } from '@shared/game/commands';
 import { humanizeFormula } from '@shared/game/rules';
 import { DvButton } from '@shared/ui/button/button';
@@ -59,14 +60,7 @@ export class CheckSheet {
       detail: `Precisa de ${d.value}`,
     })),
   );
-  protected readonly modifiers = computed<ChoiceOption[]>(() => [
-    { value: '', label: 'Nenhum' },
-    ...this.data.rules.modifiers.map((m) => ({
-      value: m.id,
-      label: m.name,
-      detail: m.value > 0 ? `+${m.value}` : String(m.value),
-    })),
-  ]);
+  protected readonly modifiers = computed(() => modifierOptions(this.data.rules.modifiers));
   protected readonly command = computed(() =>
     check(this.skill(), this.difficulty(), this.modifier()),
   );

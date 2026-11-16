@@ -72,7 +72,8 @@
   background: var(--dv-surface-1);
 }
 
-/* Na tela larga a folha vira um diálogo no meio, com a mesma ação (o fundo e a saída seguem iguais). */
+/* Na tela larga a folha vira um diálogo no meio (continuidade com a folha: pergunta 3 da rule 12). O deslocamento é
+   o token de movimento, que some com movimento reduzido. */
 .dv-sheet--dialog {
   width: min(100vw - 2 * var(--dv-space-4), var(--dv-measure-dialog));
   border-bottom: var(--dv-border-width) dotted var(--dv-line);
@@ -87,13 +88,13 @@
 @keyframes dv-dialog-in {
   from {
     opacity: 0;
-    transform: translateY(var(--dv-space-4));
+    transform: translateY(var(--dv-motion-distance));
   }
 }
 
 @keyframes dv-dialog-out {
   to {
     opacity: 0;
-    transform: translateY(var(--dv-space-2));
+    transform: translateY(var(--dv-motion-distance));
   }
 }

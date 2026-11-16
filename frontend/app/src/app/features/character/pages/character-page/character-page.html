@@ -52,10 +52,14 @@
             dvButton
             type="button"
             [dvBlocked]="!store.changed()"
+            [attr.aria-describedby]="store.changed() ? null : 'restore-reason'"
             (click)="store.useDefaults()"
           >
             Restaurar padrão
           </button>
+          <span id="restore-reason" class="dv-visually-hidden"
+            >Os atributos já estão no padrão.</span
+          >
         }
         @if (store.error()) {
           <dv-notice kind="error">{{ store.error() }}</dv-notice>

@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { go } from '@shared/game/commands';
 import { DvButton } from '@shared/ui/button/button';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
@@ -19,7 +29,7 @@ export interface GoSheetData {
   template: `
     <dv-sheet-head title="Ir" />
     @if (picked(); as exit) {
-      <p class="dv-stack">
+      <p class="dv-stack" cdkFocusInitial tabindex="-1" #confirm>
         Mover o grupo para <strong>{{ exit.name }}</strong>. Gasta a sua ação.
       </p>
       <div class="dv-sheet__foot">
@@ -37,7 +47,7 @@ export interface GoSheetData {
       @if (data.exits.length === 0) {
         <p class="dv-note">Não há saídas daqui.</p>
       }
-      <div class="dv-stack">
+      <div class="dv-stack" #list tabindex="-1">
         @for (exit of data.exits; track exit.id) {
           <button
             dvButton
@@ -57,6 +67,20 @@ export class GoSheet {
   protected readonly data = inject(SHEET_DATA) as GoSheetData;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
   protected readonly picked = signal<{ id: string; name: string } | null>(null);
+  private readonly injector = inject(Injector);
+  private readonly confirm = viewChild<ElementRef<HTMLElement>>('confirm');
+  private readonly list = viewChild<ElementRef<HTMLElement>>('list');
+
+  constructor() {
+    // Trocar de etapa remove o botão clicado: o foco vai para o texto da confirmação (não para "Confirmar", que
+    // gasta a ação) ou, ao voltar, para a lista.
+    effect(() => {
+      const picked = this.picked();
+      afterNextRender(() => (picked ? this.confirm() : this.list())?.nativeElement.focus(), {
+        injector: this.injector,
+      });
+    });
+  }
 
   protected command(id: string): string {
     return go(id);
