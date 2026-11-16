@@ -105,13 +105,8 @@ const source0 = (file: string): string => readFileSync(file, 'utf-8');
 
 /** Tokens declarados para os PRs de componentes e de telas, ainda sem consumidor: a lista só pode encolher. */
 const WAITING = [
-  '--dv-danger-surface',
-  '--dv-info-surface',
-  '--dv-ok-surface',
-  '--dv-warn-surface',
   '--dv-duration-slow',
   '--dv-ease-emphasized',
-  '--dv-stagger',
   '--dv-shadow-float',
   '--dv-space-8',
   '--dv-z-sticky',
