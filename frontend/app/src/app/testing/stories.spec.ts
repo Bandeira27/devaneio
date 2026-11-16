@@ -27,12 +27,11 @@ const FILES: Record<string, Record<string, unknown>> = {
   'shared/ui/stepper/stepper.stories.ts': stepper,
 };
 
-/** Host só para o teste: o template e os imports vêm da receita, então o decorador é aplicado em tempo de execução (JIT). */
-class StoryHost {
-  readonly ready = true;
-}
-
+/** Um componente novo por receita: o template e os imports vêm da story, então o decorador é aplicado em tempo de execução (JIT). */
 function hostOf(recipe: StoryRecipe): Type<unknown> {
+  class StoryHost {
+    readonly ready = true;
+  }
   return Component({ template: recipe.template, imports: recipe.imports })(
     StoryHost,
   ) as Type<unknown>;
@@ -45,15 +44,50 @@ describe('catálogo de componentes (stories)', () => {
       .map(([name, story]) => ({ id: `${file} › ${name}`, story: story as StoryObj })),
   );
 
+  beforeEach(() => {
+    // Elemento ou propriedade desconhecida (um `imports` esquecido, um componente renomeado) é erro, não aviso.
+    TestBed.configureTestingModule({
+      errorOnUnknownElements: true,
+      errorOnUnknownProperties: true,
+    });
+  });
+
   it.each(stories)('renderiza $id sem erro e com conteúdo', async ({ story }) => {
     const recipe = (story.parameters as { dv?: StoryRecipe } | undefined)?.dv;
     expect(recipe, 'a story precisa ser feita com story() para poder ser testada').toBeDefined();
-    const Host = hostOf(recipe as StoryRecipe);
-    const fixture = TestBed.createComponent(Host);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const fixture = TestBed.createComponent(hostOf(recipe as StoryRecipe));
+      await fixture.whenStable();
+      expect((fixture.nativeElement as HTMLElement).children.length).toBeGreaterThan(0);
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('a folha aberta aparece no documento', async () => {
+    const recipe = (sheet.Aberta.parameters as { dv: StoryRecipe }).dv;
+    const fixture = TestBed.createComponent(hostOf(recipe));
     await fixture.whenStable();
-    expect(
-      (fixture.nativeElement as HTMLElement).textContent?.trim() ||
-        fixture.nativeElement.querySelector('*'),
-    ).toBeTruthy();
+    await Promise.resolve();
+    expect(document.querySelector('.dv-sheet')).not.toBeNull();
+    document.querySelectorAll('.cdk-overlay-container').forEach((el) => el.replaceChildren());
+  });
+
+  it('a página de tokens lista os tokens das folhas de estilo carregadas', async () => {
+    const style = document.createElement('style');
+    style.textContent = ':root { --dv-text: oklch(87.8% 0.045 90); --dv-space-1: 0.25rem; }';
+    document.head.append(style);
+    try {
+      const recipe = (tokens.Todos.parameters as { dv: StoryRecipe }).dv;
+      const fixture = TestBed.createComponent(hostOf(recipe));
+      await fixture.whenStable();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelectorAll('.swatch').length).toBeGreaterThan(0);
+      expect(el.textContent).toContain('--dv-space-1');
+    } finally {
+      style.remove();
+    }
   });
 });

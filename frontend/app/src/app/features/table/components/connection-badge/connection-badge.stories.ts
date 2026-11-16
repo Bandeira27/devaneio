@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular-vite';
+import type { LiveStatus } from '@core/live/live-feed';
 import { story } from '../../../../testing/story';
 import { ConnectionBadge } from './connection-badge';
 
@@ -7,7 +8,7 @@ const meta: Meta = {
 };
 export default meta;
 
-const byStatus = (status: string): StoryObj =>
+const byStatus = (status: LiveStatus): StoryObj =>
   story([ConnectionBadge], `<dv-connection-badge status="${status}" />`);
 
 export const Conectando = byStatus('connecting');

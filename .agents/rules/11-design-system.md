@@ -39,6 +39,8 @@ própria rule ([12](12-movimento.md)).
 - **Contrato comportamental:** entradas, saídas, estados, teclado, ARIA, movimento e responsividade estão no JSDoc do
   componente. Estados obrigatórios onde fizerem sentido: repouso, `hover`, `focus-visible`, `active`, `disabled`
   (com motivo), `loading` (`aria-busy`), erro e vazio.
+- As stories mostram os estados que o componente controla (repouso, `disabled`, erro, `loading`...). `hover`, `focus-visible`
+  e `active` são do navegador e se conferem nele; o catálogo não os força.
 - O CDK só entra por `shared/ui` (já imposto pelo ESLint).
 
 ## Acessibilidade é critério de aceitação

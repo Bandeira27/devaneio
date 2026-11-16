@@ -16,3 +16,8 @@ export const NoLimite: StoryObj = story(
   [DvStepper],
   `<dv-stepper label="Agilidade" hint="Rapidez e pontaria." [min]="1" [max]="5" [value]="5" />`,
 );
+
+export const NoMinimo: StoryObj = story(
+  [DvStepper],
+  `<dv-stepper label="Mente" hint="Raciocínio e memória." [min]="1" [max]="5" [value]="1" />`,
+);

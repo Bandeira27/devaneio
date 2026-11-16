@@ -3,14 +3,15 @@ import type { Meta, StoryObj } from '@storybook/angular-vite';
 import { DvButton } from '../shared/ui/button/button';
 import { story } from '../testing/story';
 
-/** Mostra cada duração de movimento e cada curva dos tokens (docs/movimento.md), uma de cada vez. */
+/** Mostra cada duração de movimento dos tokens (docs/movimento.md) com a curva padrão, uma linha por duração. */
 @Component({
   selector: 'dv-demo-motion',
   imports: [DvButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <p class="dv-note">
-      Com movimento reduzido no sistema, todas as durações caem para 1 ms e a distância para 0.
+      Com movimento reduzido no sistema, as durações caem para 1 ms e a distância de entrada
+      (--dv-motion-distance) para 0.
     </p>
     <button dvButton="primary" type="button" (click)="toggle()">Reproduzir</button>
     @for (row of rows; track row.name) {
@@ -25,12 +26,13 @@ import { story } from '../testing/story';
   styles: `
     .row {
       display: grid;
-      grid-template-columns: 12rem 1fr;
+      grid-template-columns: minmax(0, 12rem) 1fr;
       align-items: center;
       gap: var(--dv-space-3);
       margin-top: var(--dv-space-3);
     }
     .track {
+      container-type: inline-size;
       border-bottom: var(--dv-border-width) dotted var(--dv-line);
       padding-block: var(--dv-space-2);
     }
@@ -44,7 +46,7 @@ import { story } from '../testing/story';
       transition-timing-function: var(--dv-ease-standard);
     }
     .moved {
-      transform: translateX(20rem);
+      transform: translateX(calc(100cqw - var(--dv-size-pip)));
     }
     .instant {
       transition-duration: var(--dv-duration-instant);

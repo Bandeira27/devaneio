@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, type AfterViewInit } from '@angular/core';
 import type { Meta, StoryObj } from '@storybook/angular-vite';
 import { story } from '../../../testing/story';
 import { DvButton } from '../button/button';
@@ -30,7 +30,19 @@ class DemoOpener {
   }
 }
 
+/** Abre a folha de exemplo assim que aparece: é o estado real da folha (foco, aria, posição). */
+@Component({ selector: 'dv-demo-auto-open', template: '' })
+class DemoAutoOpen implements AfterViewInit {
+  private readonly sheet = inject(Sheet);
+
+  ngAfterViewInit(): void {
+    void this.sheet.open(DemoSheet, { label: 'Ir para' });
+  }
+}
+
 const meta: Meta = { title: 'UI/Folha' };
 export default meta;
 
 export const Fechada: StoryObj = story([DemoOpener], '<dv-demo-opener />');
+
+export const Aberta: StoryObj = story([DemoAutoOpen], '<dv-demo-auto-open />');

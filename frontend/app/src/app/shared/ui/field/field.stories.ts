@@ -32,3 +32,8 @@ export const AreaDeTexto: StoryObj = story(
   [DvField, DvInput],
   `<dv-field label="O que você diz ou faz" hint="O mestre responde e, se for o caso, resolve a ação por você."><textarea dvInput rows="3"></textarea></dv-field>`,
 );
+
+export const Desabilitado: StoryObj = story(
+  [DvField, DvInput],
+  `<dv-field label="Endereço"><input dvInput type="text" value="localhost:8765" disabled /></dv-field>`,
+);
