@@ -7,8 +7,7 @@ import { messageOf } from '@core/api/api-failure';
 import { SessionStore } from '@core/session/session-store';
 import { normalizeName, validateName } from '@shared/game/commands';
 import { parseInvite } from '@shared/game/invite';
-
-export type LoadState = 'loading' | 'ready' | 'failed';
+import type { LoadState } from '@shared/game/load-state';
 
 @Injectable()
 export class HomeStore {

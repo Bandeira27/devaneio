@@ -26,8 +26,8 @@ import {
   usableWeapons,
 } from '@shared/game/rules';
 import { sceneOf } from '@shared/game/scene';
-
-export type TableState = 'loading' | 'ready' | 'failed';
+import { llmNoticeOf } from '@shared/game/llm-notice';
+import type { LoadState } from '@shared/game/load-state';
 
 /** A mesa em jogo: a foto da mesa (`GET /tables/{id}`), a cena e o fluxo ao vivo, que a mantém atualizada. */
 @Injectable()
@@ -37,7 +37,7 @@ export class TableStore implements OnDestroy {
   private readonly liveFactory = inject(TableLive);
 
   readonly tableId = signal('');
-  readonly state = signal<TableState>('loading');
+  readonly state = signal<LoadState>('loading');
   readonly loadError = signal('');
   readonly table = signal<TableView | null>(null);
   readonly rules = signal<RulesView | null>(null);
@@ -52,10 +52,7 @@ export class TableStore implements OnDestroy {
   readonly turn = computed(() => this.table()?.state.turn ?? 0);
   readonly status = computed(() => this.table()?.status ?? 'active');
   readonly isHost = computed(() => this.table()?.role === 'host');
-  readonly llmNotice = computed(() => {
-    const llm = this.table()?.llm;
-    return llm?.enabled === true && llm.notice ? llm.notice : '';
-  });
+  readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   readonly title = computed(() => this.table()?.campaign.title ?? '');
   readonly party = computed<Character[]>(() => Object.values(this.table()?.state.characters ?? {}));
   /** O personagem de quem está olhando (o primeiro do jogador), ou `null` se ainda não criou. */

@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import type { EventView, EventsView, TalkView } from '@contract/api_responses';
-import type { EventsQuery } from '../api/api-client';
+import type { EventsQuery } from '../api/api-types';
 import { ApiFailure } from '../api/api-failure';
 
 export type LiveStatus = 'connecting' | 'live' | 'offline' | 'expired' | 'gone' | 'failed';

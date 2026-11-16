@@ -20,12 +20,7 @@ import type {
   SayRequest,
 } from '@contract/api_requests';
 import { TABLE } from './api.interceptor';
-
-export interface EventsQuery {
-  since: number;
-  sinceTalk: number;
-  wait: number;
-}
+import type { EventsQuery } from './api-types';
 
 /** Cliente tipado da API da mesa. Toda falha chega como `ApiFailure` (ver o interceptor). */
 @Injectable({ providedIn: 'root' })

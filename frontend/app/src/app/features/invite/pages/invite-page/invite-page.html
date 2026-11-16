@@ -13,7 +13,7 @@
         type="text"
         autocomplete="off"
         [value]="store.addressText()"
-        (input)="store.addressText.set(text($event))"
+        (input)="store.addressText.set(valueOf($event))"
       />
     </dv-field>
     @if (store.localWarning()) {

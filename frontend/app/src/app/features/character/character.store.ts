@@ -14,8 +14,8 @@ import {
   validateName,
 } from '@shared/game/commands';
 import { attributeDefaults, clampAttribute } from '@shared/game/rules';
-
-export type CharacterState = 'loading' | 'ready' | 'failed';
+import { llmNoticeOf } from '@shared/game/llm-notice';
+import type { LoadState } from '@shared/game/load-state';
 
 /** Criar o personagem: nome e atributos do sistema viram uma linha `entrar` que o motor valida. */
 @Injectable()
@@ -25,7 +25,7 @@ export class CharacterStore {
   private readonly router = inject(Router);
 
   readonly tableId = signal('');
-  readonly state = signal<CharacterState>('loading');
+  readonly state = signal<LoadState>('loading');
   readonly loadError = signal('');
   readonly table = signal<TableView | null>(null);
   readonly rules = signal<RulesView | null>(null);
@@ -38,10 +38,7 @@ export class CharacterStore {
   readonly error = signal('');
 
   readonly isHost = computed(() => this.table()?.role === 'host');
-  readonly llmNotice = computed(() => {
-    const llm = this.table()?.llm;
-    return llm?.enabled === true && llm.notice ? llm.notice : '';
-  });
+  readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   /** O id do personagem: o nome em slug, com sufixo se já houver outro (ou um NPC) com ele. */
   readonly characterId = computed(() =>
     uniqueId(slugify(normalizeName(this.name())), this.taken()),

@@ -6,6 +6,8 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
+import { valueOf } from '@shared/ui/field/value-of';
+import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export interface AttackSheetData {
   weapons: WeaponInfo[];
@@ -15,12 +17,9 @@ export interface AttackSheetData {
 
 @Component({
   selector: 'dv-attack-sheet',
-  imports: [DvButton, DvField, DvInput],
+  imports: [DvSheetHead, DvButton, DvField, DvInput],
   template: `
-    <div class="dv-sheet__head">
-      <h2 class="dv-title">Atacar</h2>
-      <button dvButton type="button" (click)="ref.close()">Fechar</button>
-    </div>
+    <dv-sheet-head title="Atacar" />
     @if (data.targets.length === 0) {
       <p class="dv-note">Não há ninguém aqui para atacar.</p>
     } @else if (data.weapons.length === 0) {
@@ -28,7 +27,7 @@ export interface AttackSheetData {
     } @else {
       <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
         <dv-field label="Alvo">
-          <select dvInput [value]="target()" (change)="target.set(value($event))">
+          <select dvInput [value]="target()" (change)="target.set(valueOf($event))">
             @for (item of data.targets; track item.id) {
               <option [value]="item.id">
                 {{ item.name }} ({{ item.hp }}/{{ item.maxHp }}){{
@@ -39,7 +38,7 @@ export interface AttackSheetData {
           </select>
         </dv-field>
         <dv-field label="Arma" [hint]="damage()">
-          <select dvInput [value]="weapon()" (change)="weapon.set(value($event))">
+          <select dvInput [value]="weapon()" (change)="weapon.set(valueOf($event))">
             @for (item of data.weapons; track item.id) {
               <option [value]="item.id">{{ item.name }}</option>
             }
@@ -47,7 +46,7 @@ export interface AttackSheetData {
         </dv-field>
         @if (data.modifiers.length > 0) {
           <dv-field label="Modificador">
-            <select dvInput [value]="modifier()" (change)="modifier.set(value($event))">
+            <select dvInput [value]="modifier()" (change)="modifier.set(valueOf($event))">
               <option value="">nenhum</option>
               @for (item of data.modifiers; track item.id) {
                 <option [value]="item.id">{{ item.name }} ({{ item.value }})</option>
@@ -62,6 +61,7 @@ export interface AttackSheetData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AttackSheet {
+  protected readonly valueOf = valueOf;
   protected readonly data = inject(SHEET_DATA) as AttackSheetData;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
 
@@ -75,8 +75,4 @@ export class AttackSheet {
   protected readonly command = computed(() =>
     attack(this.weapon(), this.target(), this.modifier()),
   );
-
-  protected value(event: Event): string {
-    return (event.target as HTMLSelectElement).value;
-  }
 }
