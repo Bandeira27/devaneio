@@ -35,10 +35,12 @@ própria rule ([12](12-movimento.md)).
 
 - **Reutilize antes de criar.** Componente novo só com **dois ou mais usos reais** ou um problema de UX comprovado;
   abstração genérica demais dificulta o uso. Todo componente de `shared/ui` tem spec, JSDoc ([rule 10](10-documentacao.md))
-  e, quando o catálogo existir, story com os estados.
+  e story com os estados (`story()` de `src/app/testing/story.ts`; o teste de fumaça as renderiza).
 - **Contrato comportamental:** entradas, saídas, estados, teclado, ARIA, movimento e responsividade estão no JSDoc do
   componente. Estados obrigatórios onde fizerem sentido: repouso, `hover`, `focus-visible`, `active`, `disabled`
   (com motivo), `loading` (`aria-busy`), erro e vazio.
+- As stories mostram os estados que o componente controla (repouso, `disabled`, erro, `loading`...). `hover`, `focus-visible`
+  e `active` são do navegador e se conferem nele; o catálogo não os força.
 - O CDK só entra por `shared/ui` (já imposto pelo ESLint).
 
 ## Acessibilidade é critério de aceitação

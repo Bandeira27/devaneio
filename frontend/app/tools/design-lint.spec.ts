@@ -184,7 +184,9 @@ describe('o estilo do app só consome tokens', () => {
 describe('tokens sem uso', () => {
   const tokensCss = readFileSync(join(src, 'styles/tokens.css'), 'utf-8');
   const usedIn = walk(src)
-    .filter((f) => /\.(css|ts|html)$/.test(f) && !f.endsWith('.spec.ts'))
+    .filter(
+      (f) => /\.(css|ts|html)$/.test(f) && !f.endsWith('.spec.ts') && !f.endsWith('.stories.ts'),
+    )
     .map((f) => readFileSync(f, 'utf-8'))
     .join('\n');
   const unused = [...definedTokens(tokensCss)].filter((t) => !usedIn.includes(`var(${t}`));

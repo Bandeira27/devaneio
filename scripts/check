@@ -77,6 +77,7 @@ if [[ $FAST -eq 0 ]]; then
     if [[ $HAS_APP -eq 1 ]]; then
         run "lint (app)" in_dir frontend/app npm run --silent lint
         run "build (app)" in_dir frontend/app npm run --silent build
+        run "build (catálogo)" in_dir frontend/app npm run --silent build-storybook
         run "testes (app)" in_dir frontend/app npm run --silent test
     fi
 fi
