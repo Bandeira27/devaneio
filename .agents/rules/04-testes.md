@@ -33,4 +33,4 @@ Ferramenta: `pytest` (`backend/tests/`), cobertura de linhas **e ramos** via `py
 - `scripts/check` roda tudo em hook de push e no CI (Python 3.10 e 3.12).
 - Contrato desatualizado, camada violada, tipo errado e supressão sem justificativa **quebram a construção**:
   não dependem de revisão humana.
-- Mudou comportamento observável de um comando do CLI? Ajuste `README.md` (lista de comandos) no mesmo commit.
+- Mudou comportamento observável de um comando do CLI? Ajuste `docs/motor.md` (comandos do CLI) e, se mudou os mais usados, o `README.md` no mesmo commit.

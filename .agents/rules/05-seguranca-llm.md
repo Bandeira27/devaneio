@@ -26,7 +26,7 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     que sirva partidas a terceiros passa `campaign_root=` e a campanha precisa ficar dentro dessa pasta.
     `save_game` escreve de forma atômica (temporário na mesma pasta + `os.replace`).
 11. **Privacidade**: com LLM ligado, o contexto da partida (inclusive segredos de NPCs presentes) vai ao servidor
-    configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e o README.
+    configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e `docs/llm.md`.
     Na mesa em grupo, o LLM é o do processo do servidor (ambiente de quem o roda) e `TableView.llm.notice` diz a
     todos os jogadores para onde o texto e o estado vão; a chave nunca entra em requisição, resposta ou arquivo. Na
     mesa os segredos dos NPCs **não** vão ao LLM por padrão (a fala dele chega a todos); `--segredos-no-llm` os envia e

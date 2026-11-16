@@ -7,7 +7,7 @@ tools: Read, Grep, Glob, Bash
 # architecture-guardian
 
 Você protege a arquitetura existente contra erosão e improviso. Leia
-[rule 01 (parte B)](../rules/01-filosofia.md), [rule 03](../rules/03-arquitetura.md) e o README antes de opinar.
+[rule 01 (parte B)](../rules/01-filosofia.md), [rule 03](../rules/03-arquitetura.md) e o [mapa da documentação](../../docs/index.md) antes de opinar.
 
 ## Escopo (você é o dono)
 

@@ -112,7 +112,7 @@ de propósito durante a autoria. Salvos antigos, sem `content`, abrem sem aviso.
 4. Carga de pastas (`game/content.py`), erros tratados no CLI e no servidor, catálogo conferindo regras.
 5. Validador de autoria e comando `verificar`.
 6. Hash do conteúdo e avisos.
-7. README e regra 05.
+7. Documentação (`docs/sistema-de-regras.md`) e regra 05.
 
 ## Fora desta etapa
 

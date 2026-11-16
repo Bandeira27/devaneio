@@ -1,7 +1,7 @@
 # Devaneio: instruções para qualquer IA ou pessoa
 
 Mesa de RPG com mestre de IA (monorepo: `backend/` Python + Pydantic v2, `frontend/` TypeScript strict,
-`contract/` JSON Schema gerado). Os princípios do produto estão no [README](README.md); aqui está só o
+`contract/` JSON Schema gerado). Os princípios do produto estão no [README](README.md) e a documentação em [`docs/`](docs/index.md); aqui está só o
 que muda como se trabalha. Idioma: **pt-br** em documentação, comentários, mensagens e commits;
 identificadores de código em inglês.
 

@@ -55,4 +55,4 @@ saída; sem efeito escondido; nomes que dispensam comentário. Comentário expli
 | Narração é camada de exibição | `narration/`, `llm/narration.py` | prosa gravada no estado; narração consumindo `rng_draws` |
 | Tensão é derivada e só observada | `engine/director.py` | usá-la para decidir ritmo sem o dono pedir |
 
-Leia também o [README](../../README.md) (princípios e etapas) antes de propor mudança que cruze essas linhas.
+Leia também o [README](../../README.md) (ideias que guiam o projeto) e o [histórico](../../docs/historico.md) (etapas) antes de propor mudança que cruze essas linhas.
