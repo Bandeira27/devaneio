@@ -36,7 +36,7 @@ describe('Shell', () => {
 
   it('o link de pular leva o foco ao conteúdo sem mexer na rota', async () => {
     const root = await render();
-    const skip = root.querySelector('a.shell__skip') as HTMLAnchorElement;
+    const skip = root.querySelector('a.dv-skip') as HTMLAnchorElement;
     expect(skip.textContent?.trim()).toBe('Pular para o conteúdo');
     skip.click();
     expect(document.activeElement).toBe(root.querySelector('main#conteudo'));

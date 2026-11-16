@@ -104,6 +104,10 @@
   --dv-measure-page: 36rem;
   --dv-measure-table: 40rem;
   --dv-measure-sheet: 40rem;
+  --dv-measure-wide: 70rem;
+  --dv-measure-feed: 42rem;
+  --dv-rail-width: 22rem;
+  --dv-dock-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da barra de ações fixa */
   --dv-sheet-max-height: 85dvh;
 
   /* Camadas (o CDK usa 1000 no overlay) */

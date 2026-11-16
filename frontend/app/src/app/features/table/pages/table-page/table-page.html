@@ -15,10 +15,15 @@
   }
   @case ('ready') {
     <div class="table">
+      <a class="dv-skip" href="#acoes" (click)="skipToActions($event)">Pular para as ações</a>
       <header class="table__bar">
         <h1 class="dv-title">{{ store.title() }}</h1>
-        <span class="dv-note">Turno {{ store.turn() }}</span>
         <dv-connection-badge [status]="store.liveStatus()" />
+        @if (store.isHost()) {
+          <a dvButton class="table__invite" [routerLink]="['/mesa', tableId(), 'convite']">
+            <dv-icon name="say" size="sm" />Convidar
+          </a>
+        }
       </header>
 
       @if (store.liveStatus() === 'expired' || store.liveStatus() === 'gone') {
@@ -37,34 +42,57 @@
         <dv-notice kind="error">A partida terminou: derrota.</dv-notice>
       }
 
-      @if (store.scene(); as scene) {
-        <dv-scene-card [scene]="scene" />
-      }
-      <dv-party-strip
-        [characters]="store.party()"
-        [mine]="store.character()?.id ?? null"
-        [acted]="store.table()?.acted ?? {}"
-        [turn]="store.turn()"
-      />
-      @if (!store.character()) {
-        <dv-notice>
-          Você ainda não tem personagem nesta mesa.
-          <a [routerLink]="['/mesa', tableId(), 'personagem']">Criar personagem</a>
-        </dv-notice>
-      }
-      <dv-feed-list [items]="store.feedItems()" />
-      <dv-action-dock />
+      <div class="table__layout">
+        <div class="table__rail">
+          <div class="table__side">
+            <p class="table__turn" role="status">
+              <span class="dv-note">Turno {{ store.turn() }}</span>
+              <span class="table__turn-status">{{ store.turnStatus() }}</span>
+            </p>
+            @if (store.scene(); as scene) {
+              <dv-scene-card [scene]="scene" />
+            }
+            <dv-party-strip
+              [characters]="store.party()"
+              [mine]="store.character()?.id ?? null"
+              [acted]="store.table()?.acted ?? {}"
+              [turn]="store.turn()"
+            />
+            @if (!store.character()) {
+              <dv-notice>
+                Você ainda não tem personagem nesta mesa.
+                <a [routerLink]="['/mesa', tableId(), 'personagem']">Criar personagem</a>
+              </dv-notice>
+            }
+          </div>
 
-      <footer class="table__foot">
-        @if (store.isHost()) {
-          <a dvButton [routerLink]="['/mesa', tableId(), 'convite']">Convidar</a>
-        }
-        @if (store.llmNotice()) {
-          <dv-disclosure class="table__llm" label="Sobre o mestre de IA desta mesa">
-            <p>{{ store.llmNotice() }}</p>
-          </dv-disclosure>
-        }
-      </footer>
+          <div #dock class="table__dock" id="acoes" tabindex="-1">
+            @if (unseen() > 0) {
+              <button
+                dvButton
+                type="button"
+                class="table__new"
+                animate.enter="dv-enter"
+                animate.leave="dv-leave"
+                (click)="toEnd()"
+              >
+                <dv-icon name="go" size="sm" class="table__down" />
+                {{ unseen() === 1 ? '1 nova' : unseen() + ' novas' }}
+              </button>
+            }
+            <dv-action-dock />
+          </div>
+        </div>
+
+        <section class="table__feed" aria-label="A história">
+          <dv-feed-list (unseen)="unseen.set($event)" [items]="store.feedItems()" />
+          @if (store.llmNotice()) {
+            <dv-disclosure class="table__llm" label="Sobre o mestre de IA desta mesa">
+              <p>{{ store.llmNotice() }}</p>
+            </dv-disclosure>
+          }
+        </section>
+      </div>
     </div>
   }
 }

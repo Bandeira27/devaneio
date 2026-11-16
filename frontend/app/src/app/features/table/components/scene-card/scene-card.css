@@ -1,9 +1,4 @@
 .scene {
   display: grid;
-  gap: var(--dv-space-3);
-}
-
-.scene__text {
-  max-height: 9rem;
-  overflow-y: auto;
+  gap: var(--dv-space-2);
 }

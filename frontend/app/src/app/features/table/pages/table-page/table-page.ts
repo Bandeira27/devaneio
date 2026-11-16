@@ -1,8 +1,19 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnInit,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
+import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { ActionDock } from '../../components/action-dock/action-dock';
@@ -19,6 +30,7 @@ import { TableStore } from '../../table.store';
     RouterLink,
     DvButton,
     DvDisclosure,
+    DvIcon,
     DvNotice,
     DvState,
     ActionDock,
@@ -38,9 +50,14 @@ export class TablePage implements OnInit {
   protected readonly store = inject(TableStore);
 
   private readonly documentTitle = inject(Title);
+  private readonly feed = viewChild(FeedList);
+  private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
+  /** Quantos itens do feed chegaram enquanto se lia mais acima. */
+  protected readonly unseen = signal(0);
 
   constructor() {
     effect(() => this.store.tableId.set(this.tableId()));
+    this.keepDockHeight();
     effect(() => {
       const campaign = this.store.title();
       if (campaign) {
@@ -52,5 +69,38 @@ export class TablePage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
     void this.store.load();
+  }
+
+  /** Leva a tela ao fim da história e tira o aviso de novidades. */
+  protected toEnd(): void {
+    this.feed()?.scrollToEnd();
+  }
+
+  /** O link "Pular para as ações": com rota por hash, `href="#..."` navegaria, então o foco é movido à mão. */
+  protected skipToActions(event: Event): void {
+    event.preventDefault();
+    this.dock()?.nativeElement.focus();
+  }
+
+  /**
+   * Mede a barra de ações quando ela é fixa no pé (celular) e publica a altura em `--dv-dock-height`, para o fim do
+   * feed parar acima dela. Na tela larga a barra não é fixa e a altura é zero.
+   */
+  private keepDockHeight(): void {
+    effect((onCleanup) => {
+      const dock = this.dock()?.nativeElement;
+      if (!dock || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const host = dock.parentElement?.closest<HTMLElement>('.table');
+      const publish = (): void => {
+        const fixed = getComputedStyle(dock).position === 'sticky';
+        host?.style.setProperty('--dv-dock-height', fixed ? `${dock.offsetHeight}px` : '0px');
+      };
+      const observer = new ResizeObserver(publish);
+      observer.observe(dock);
+      publish();
+      onCleanup(() => observer.disconnect());
+    });
   }
 }

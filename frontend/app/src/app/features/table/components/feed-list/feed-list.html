@@ -1,9 +1,19 @@
 <h2 class="dv-visually-hidden">O que aconteceu</h2>
-<div class="feed" role="log" aria-live="polite" aria-label="O que aconteceu na mesa">
+<div
+  class="feed"
+  role="log"
+  [attr.aria-live]="announce() ? 'polite' : 'off'"
+  aria-label="O que aconteceu na mesa"
+>
   @for (item of items(); track item.key) {
     @switch (item.type) {
       @case ('turn') {
-        <h3 class="feed__turn" [class.feed__turn--current]="item.current">Turno {{ item.turn }}</h3>
+        <h3 class="feed__turn" [class.feed__turn--current]="item.current">
+          Turno {{ item.turn }}
+          @if (item.current) {
+            · agora
+          }
+        </h3>
       }
       @case ('event') {
         <article
@@ -12,7 +22,18 @@
           [attr.data-tone]="item.tone"
           [style.--fade]="item.fade"
         >
-          <p class="feed__narration">{{ item.narration }}</p>
+          <p class="feed__narration">
+            @if (item.tone === 'danger') {
+              <dv-icon class="feed__tag" name="danger" size="sm" /><span class="dv-visually-hidden"
+                >Dano.
+              </span>
+            } @else if (item.tone === 'good') {
+              <dv-icon class="feed__tag" name="ok" size="sm" /><span class="dv-visually-hidden"
+                >Cura.
+              </span>
+            }
+            {{ item.narration }}
+          </p>
           <dv-disclosure class="feed__note" label="Como foi resolvido">
             <p>{{ item.note }}</p>
           </dv-disclosure>

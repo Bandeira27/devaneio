@@ -66,6 +66,70 @@ async function open(
   return { ...app, events };
 }
 
+describe('Mesa: situação, novidades e acessibilidade', () => {
+  it('diz de quem é a vez (quem está caído não segura o turno)', async () => {
+    const { root, events, settle } = await open(withCharacter({ acted: { bia: 2 } }));
+    events('0').flush(eventsView(3));
+    await settle();
+    const turn = root().querySelector('.table__turn') as HTMLElement;
+    expect(turn.textContent).toContain('Turno 2');
+    expect(turn.textContent).toContain('Você já agiu'); // Zed está fora de combate
+    expect(turn.textContent).not.toContain('falta');
+    expect(turn.getAttribute('role')).toBe('status');
+  });
+
+  it('o anfitrião tem "Convidar" no cabeçalho; o jogador comum não', async () => {
+    const player = await open();
+    player.events('0').flush(eventsView(3));
+    await player.settle();
+    expect(player.root().querySelector('.table__bar .table__invite')).toBeNull();
+  });
+
+  it('o log só anuncia depois da carga inicial', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3, [event(1, 1)]));
+    await settle();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await settle();
+    expect(root().querySelector('[role="log"]')?.getAttribute('aria-live')).toBe('polite');
+  });
+
+  it('quem leu mais acima vê "novas" quando chega algo, e o toque leva ao fim', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3, [event(1, 1)]));
+    await settle();
+    Object.defineProperty(document.documentElement, 'scrollHeight', {
+      value: 5000,
+      configurable: true,
+    });
+    try {
+      events('20').flush(eventsView(4, [event(2, 1)]));
+      await settle();
+      const pill = root().querySelector('.table__new') as HTMLButtonElement;
+      expect(pill.textContent).toContain('1 nova');
+      pill.click();
+      await settle();
+      expect(root().querySelector('.table__new')).toBeNull();
+    } finally {
+      Reflect.deleteProperty(document.documentElement, 'scrollHeight');
+    }
+  });
+
+  it('sem conexão, as ações ficam bloqueadas com o motivo', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(
+      { error: { code: 'x', message: 'falhou' } } as never,
+      { status: 500, statusText: 'x' } as never,
+    );
+    await settle();
+    expect(root().querySelector('#dock-reason')?.textContent).toContain('Sem conexão com a mesa');
+    const ir = Array.from(root().querySelectorAll('dv-action-dock button')).find(
+      (b) => b.textContent?.trim() === 'Ir',
+    );
+    expect(ir?.getAttribute('aria-disabled')).toBe('true');
+  });
+});
+
 describe('Mesa', () => {
   it('sair da página no meio da carga não deixa um laço ao vivo órfão', async () => {
     const app = await setup(url);

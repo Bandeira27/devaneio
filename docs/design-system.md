@@ -101,6 +101,20 @@ stories se escrevem com o helper `story(imports, template)` de `src/app/testing/
 e **Design/Movimento** vêm de `src/app/design/`. A aba de acessibilidade (axe) mostra as violações de cada story. Stories não
 entram no build do app (`tsconfig.app.json`) nem exigem JSDoc.
 
+## A mesa
+
+Pensada pela tarefa: quem joga lê a história o tempo todo e age uma vez por turno.
+
+- **Celular:** uma coluna. Situação do turno ("Sua vez de agir", "Você já agiu · falta Zed"), cena compacta (descrição
+  recolhida em "Ver a cena") e grupo, depois a história; a **barra de ações fica fixa no pé** (ícone sobre o rótulo, uma
+  linha só). O fim da história para acima da barra (a mesa mede a barra e publica `--dv-dock-height`). Quem leu mais
+  acima vê "N novas" quando chega algo; tocar leva ao fim.
+- **Tela larga (≥ 64rem):** a lateral (situação, cena, grupo, ações) fica presa à esquerda e a história corre numa coluna de
+  leitura (42rem) ao lado. A página rola; **não há rolagem aninhada**.
+- Sem conexão, sessão vencida ou mesa sumida, as ações ficam **bloqueadas com o motivo** (em vez de falhar com erro cru).
+- O leitor de tela só anuncia o que chega depois do carregamento; dano e cura levam ícone e texto, não só cor; o turno
+  atual diz "agora".
+
 ## Como mudar ou criar
 
 1. **Valor novo?** Entra em `tokens.css` com o papel comentado e, se for cor, com o par de contraste em `tokens.spec.ts`.

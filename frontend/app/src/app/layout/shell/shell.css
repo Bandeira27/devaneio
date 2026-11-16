@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow: clip; /* as manchas não criam rolagem; `clip` (ao contrário de `hidden`) não quebra o `sticky` */
 }
 
 /* Manchas de oxidação: só decoração, atrás de tudo e fora do caminho do toque e do leitor de tela. */
@@ -62,22 +62,6 @@
   flex: 1;
   padding-block: var(--dv-space-6);
   padding-bottom: max(var(--dv-space-6), env(safe-area-inset-bottom));
-}
-
-/* Fica fora da tela até receber o foco do teclado. */
-.shell__skip {
-  position: absolute;
-  top: var(--dv-space-2);
-  left: var(--dv-space-2);
-  z-index: var(--dv-z-sticky);
-  padding: var(--dv-space-2) var(--dv-space-3);
-  background: var(--dv-surface-3);
-  color: var(--dv-text);
-  transform: translateY(-200%);
-}
-
-.shell__skip:focus-visible {
-  transform: none;
 }
 
 .shell__main:focus {

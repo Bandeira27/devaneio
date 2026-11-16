@@ -1,3 +1,4 @@
+import type { LiveStatus } from '@core/live/live-feed';
 import type {
   Campaign,
   CampaignView,
@@ -63,4 +64,47 @@ export function targetsOf(table: TableView | null, scene: Scene | null): AttackT
     };
   }
   return attackTargets(scene.npcs, views);
+}
+
+/**
+ * Por que a conexão impede agir agora (texto), ou `''` se está tudo certo. Sem a mesa ao vivo qualquer ação falharia
+ * com um erro cru: melhor bloquear com o motivo.
+ */
+export function connectionBlockOf(status: LiveStatus): string {
+  switch (status) {
+    case 'offline':
+      return 'Sem conexão com a mesa. Tentando de novo…';
+    case 'expired':
+      return 'Sua sessão nesta mesa não vale mais.';
+    case 'gone':
+      return 'Esta mesa não existe mais neste servidor.';
+    case 'failed':
+      return 'A conexão com a mesa falhou.';
+    default:
+      return '';
+  }
+}
+
+/** Uma linha sobre a vez de quem olha: se pode agir, se já agiu e quem falta. */
+export function turnStatusOf(table: TableView | null, character: Character | null): string {
+  if (table === null) {
+    return '';
+  }
+  if (table.status !== 'active') {
+    return 'Partida encerrada';
+  }
+  if (character === null) {
+    return 'Você ainda não tem personagem';
+  }
+  if (character.hp <= 0) {
+    return 'Você está fora de combate';
+  }
+  const turn = table.state.turn;
+  if (table.acted[character.id] !== turn) {
+    return 'Sua vez de agir';
+  }
+  const waiting = Object.values(table.state.characters)
+    .filter((c) => c.id !== character.id && c.hp > 0 && table.acted[c.id] !== turn)
+    .map((c) => c.name);
+  return waiting.length > 0 ? `Você já agiu · falta ${waiting.join(', ')}` : 'Você já agiu';
 }

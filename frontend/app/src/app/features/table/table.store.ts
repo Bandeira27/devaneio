@@ -17,7 +17,14 @@ import { llmNoticeOf } from '@shared/game/llm-notice';
 import type { LoadState } from '@shared/game/load-state';
 import { usableWeapons } from '@shared/game/rules';
 import { TableActions } from './table.actions';
-import { blockedReasonOf, characterOf, sceneFor, targetsOf } from './table.derived';
+import {
+  blockedReasonOf,
+  characterOf,
+  connectionBlockOf,
+  sceneFor,
+  targetsOf,
+  turnStatusOf,
+} from './table.derived';
 import { TableSnapshot } from './table.snapshot';
 
 /**
@@ -60,9 +67,12 @@ export class TableStore implements OnDestroy {
   readonly character = computed(() => characterOf(this.table()));
   readonly scene = computed(() => sceneFor(this.table(), this.campaign()));
   readonly feedItems = computed(() => buildFeed(this.events(), this.talk(), this.turn()));
-  readonly blockedReason = computed(() =>
-    blockedReasonOf(this.table(), this.rules(), this.character()),
+  readonly blockedReason = computed(
+    () =>
+      connectionBlockOf(this.liveStatus()) ||
+      blockedReasonOf(this.table(), this.rules(), this.character()),
   );
+  readonly turnStatus = computed(() => turnStatusOf(this.table(), this.character()));
   readonly weapons = computed<WeaponInfo[]>(() => {
     const rules = this.rules();
     return rules === null ? [] : usableWeapons(rules, this.character()?.inventory ?? []);

@@ -1,16 +1,42 @@
 .dock {
   display: grid;
-  gap: var(--dv-space-3);
-  padding-top: var(--dv-space-4);
-  border-top: var(--dv-border-width) dotted var(--dv-line);
+  gap: var(--dv-space-2);
 }
 
 .dock__reason {
   margin: 0;
 }
 
+/* Respostas e erros longos não cobrem a história: a barra fixa tem altura limitada. */
+.dock dv-notice {
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
+/* Celular: ícone sobre o rótulo, uma linha só, para a barra fixa ocupar pouco. */
 .dock__buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
-  gap: var(--dv-space-2);
+  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
+  gap: var(--dv-space-1);
+}
+
+.dock__buttons .dv-button {
+  flex-direction: column;
+  gap: 0;
+  padding: var(--dv-space-1);
+  font-size: var(--dv-text-note);
+}
+
+@media (min-width: 64rem) {
+  .dock__buttons {
+    grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+    gap: var(--dv-space-2);
+  }
+
+  .dock__buttons .dv-button {
+    flex-direction: row;
+    gap: var(--dv-space-2);
+    padding: 0 var(--dv-space-4);
+    font-size: var(--dv-text-ui);
+  }
 }
