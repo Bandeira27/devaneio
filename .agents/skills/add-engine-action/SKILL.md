@@ -1,6 +1,6 @@
 ---
 name: add-engine-action
-description: Use ao criar uma nova ação do motor de regras em backend/src/devaneio/engine/ (nova função que altera o GameState e gera um Event), do código aos testes, README e narração.
+description: Use ao criar uma nova ação do motor de regras em backend/src/devaneio/engine/ (nova função que altera o GameState e gera um Event), do código aos testes, documentação e narração.
 ---
 
 # Adicionar uma ação ao motor
@@ -29,8 +29,8 @@ com novo estado e um `Event`. Leia antes `engine/damage.py` e `engine/heal.py` c
 8. **Testes** em `backend/tests/test_<nome>.py` (modelo: `test_damage.py`): pureza (entrada intacta), evento
    (kind, turn, text, data), `rng_draws`, e cada `EngineError` com `match=`. Fixtures de `conftest.py`.
 9. **Se mudou algum modelo** (campo novo no estado, em `Event` ou nas regras): skill `change-contract`.
-10. **README**: nova linha na tabela "Motor" (ação, precisa de, evento).
-11. `scripts/check` completo verde. Commit atômico `feat: ...` (motor + testes + README juntos).
+10. **Documentação**: nova linha na tabela "Motor" de `docs/motor.md` (ação, precisa de, evento).
+11. `scripts/check` completo verde. Commit atômico `feat: ...` (motor + testes + docs juntos).
 
 ## Armadilhas
 

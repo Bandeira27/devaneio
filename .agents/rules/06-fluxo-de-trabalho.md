@@ -32,7 +32,7 @@ Descrição curta: o que mudou, por quê, como foi verificado. Sem atribuição 
 
 1. `scripts/check` completo verde (não só o que você acha relevante).
 2. Testes novos para o comportamento novo; teste de regressão para bug.
-3. `README.md` atualizado se mudou comando do CLI, ação do motor (tabela), contrato ou configuração.
+3. Documentação atualizada: `docs/motor.md` se mudou ação do motor ou comando do CLI, `docs/api-http.md` se mudou a API, `docs/llm.md` se mudou configuração do LLM; o `README.md` só se mudou o passo a passo de rodar.
 4. Contrato regenerado se um modelo mudou.
 5. Resumo ao usuário diz o que foi feito, o que **não** foi verificado, e propõe **um** próximo passo.
 
