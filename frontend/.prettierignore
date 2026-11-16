@@ -1,3 +1,7 @@
 # Gerado por `npm run types` a partir de ../contract; nunca editar nem formatar à mão.
 src/contract/
 node_modules/
+# Saída e cache do app Angular (o node_modules já é ignorado por padrão).
+app/dist/
+app/.angular/
+app/coverage/

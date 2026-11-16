@@ -50,6 +50,18 @@ else
     printf '\n=== frontend\n!!! SKIP: frontend/node_modules ausente (rode: cd frontend && npm install).\n!!! Prettier, tsc e contrato NÃO foram verificados.\n'
 fi
 
+# O app Angular tem o próprio package.json (TypeScript na faixa do Angular). Em CI, faltar o
+# node_modules dele é erro: um SKIP verde esconderia um front quebrado.
+HAS_APP=0
+if [[ -d frontend/app/node_modules ]]; then
+    HAS_APP=1
+elif [[ -n "${CI:-}" ]]; then
+    printf '\n=== frontend/app\n!!! FALHA: frontend/app/node_modules ausente em CI (falta o npm ci).\n'
+    FAILED+=("frontend/app sem dependências")
+else
+    printf '\n=== frontend/app\n!!! SKIP: frontend/app/node_modules ausente (rode: cd frontend/app && npm install).\n!!! Lint, testes e build do app NÃO foram verificados.\n'
+fi
+
 if [[ $HAS_NODE -eq 1 ]]; then
     run "prettier" in_dir frontend npx --no-install prettier --check .
 fi
@@ -59,6 +71,12 @@ if [[ $FAST -eq 0 ]]; then
     if [[ $HAS_NODE -eq 1 ]]; then
         run "tsc" in_dir frontend npm run --silent typecheck
         run "contrato em dia" bash scripts/check_contract.sh
+    fi
+    if [[ $HAS_APP -eq 1 ]]; then
+        run "lint (app)" in_dir frontend/app npm run --silent lint
+        run "testes de ferramenta (app)" in_dir frontend/app npm run --silent test:tools
+        run "build (app)" in_dir frontend/app npm run --silent build
+        run "testes (app)" in_dir frontend/app npm run --silent test
     fi
 fi
 

@@ -2,7 +2,9 @@
 """Política de supressões (.agents/rules/07-qualidade-e-supressoes.md), aplicada por máquina.
 
 1. Toda supressão inline (`# noqa`, `# type: ignore`) cita o código e traz justificativa
-   na mesma linha (` — motivo`) ou num comentário na linha de cima.
+   na mesma linha (` — motivo`) ou num comentário na linha de cima. No front (TS, HTML, JS):
+   `@ts-ignore` e `@ts-nocheck` são proibidos, `@ts-expect-error` e `eslint-disable*` citam a regra
+   e trazem justificativa (` -- motivo`); `frontend/src/contract/` é gerado e fica fora.
 2. A configuração das ferramentas não pode enfraquecer em relação à branch base: menos regras
    selecionadas, mais `ignore`/`per-file-ignores`/`exclude`/`omit`, `fail_under` menor,
    mypy sem `strict`. Quem decide aceitar um enfraquecimento é o dono do repositório,
@@ -29,6 +31,21 @@ errors: list[str] = []
 NOQA = re.compile(r"#\s*noqa\b(?P<rest>.*)$", re.IGNORECASE)
 TYPE_IGNORE = re.compile(r"#\s*type:\s*ignore\b(?P<rest>.*)$")
 JUSTIFIED = re.compile(r"\s—\s*\S")  # travessão com espaços e texto depois
+
+# Front: a justificativa é ` -- motivo` (a sintaxe de descrição do ESLint) ou o travessão.
+FRONT_PATHSPECS = (
+    "frontend/*.ts",
+    "frontend/*.mts",
+    "frontend/*.html",
+    "frontend/*.js",
+    "frontend/*.mjs",
+)
+FRONT_SKIP = ("frontend/src/contract/",)  # gerado pelo json-schema-to-typescript
+TS_FORBIDDEN = re.compile(r"@ts-(?:ignore|nocheck)\b")
+TS_EXPECT = re.compile(r"@ts-expect-error\b(?P<rest>.*)$")
+ESLINT_DISABLE = re.compile(r"eslint-disable(?:-next-line|-line)?\b(?P<rest>.*)$")
+FRONT_JUSTIFIED = re.compile(r"\s(?:—|--)\s*\S")
+RULE_NAME = re.compile(r"^\s+[@\w/.-]+(?:\s*,\s*[@\w/.-]+)*\s*(?:\s(?:—|--)\s|$)")
 
 
 def git(*args: str) -> str | None:
@@ -69,6 +86,45 @@ def check_inline() -> None:
                 errors.append(
                     f"{where}: supressão sem justificativa (` — motivo` ou comentário acima)"
                 )
+
+
+def tracked_front_files() -> list[Path]:
+    listing = git("ls-files", "--", *FRONT_PATHSPECS) or ""
+    return [
+        ROOT / line
+        for line in listing.splitlines()
+        if line and not any(line.startswith(prefix) for prefix in FRONT_SKIP)
+    ]
+
+
+def check_front_line(where: str, line: str) -> list[str]:
+    """Problemas de supressão numa linha de TS, HTML ou JS."""
+    problems: list[str] = []
+    if TS_FORBIDDEN.search(line):
+        problems.append(
+            f"{where}: @ts-ignore e @ts-nocheck são proibidos (corrija o tipo ou use "
+            "`@ts-expect-error -- motivo`)"
+        )
+    expect = TS_EXPECT.search(line)
+    if expect and not FRONT_JUSTIFIED.search(expect.group("rest")):
+        problems.append(f"{where}: @ts-expect-error sem justificativa (` -- motivo`)")
+    disable = ESLINT_DISABLE.search(line)
+    if disable:
+        rest = re.sub(r"\s*(?:\*/|-->)\s*$", "", disable.group("rest"))
+        if not RULE_NAME.match(rest):
+            problems.append(
+                f"{where}: eslint-disable sem a regra (use `eslint-disable-next-line regra -- motivo`)"
+            )
+        if not FRONT_JUSTIFIED.search(rest):
+            problems.append(f"{where}: eslint-disable sem justificativa (` -- motivo`)")
+    return problems
+
+
+def check_front_inline(paths: list[Path] | None = None) -> None:
+    for path in tracked_front_files() if paths is None else paths:
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            where = f"{path.relative_to(ROOT)}:{number}"
+            errors.extend(check_front_line(where, line))
 
 
 def facts(text: str) -> dict[str, Any]:
@@ -129,6 +185,7 @@ def check_config() -> None:
 
 def main() -> int:
     check_inline()
+    check_front_inline()
     check_config()
     for message in errors:
         print(f"supressões: {message}", file=sys.stderr)
