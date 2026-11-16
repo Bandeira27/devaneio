@@ -29,6 +29,7 @@ from .models import (
     JoinRequest,
     SayRequest,
 )
+from .static import SECURITY_HEADERS, StaticFile, StaticSite
 
 MAX_BODY = 64 * 1024
 MAX_WAIT = 30  # segundos de long-poll
@@ -44,9 +45,15 @@ Route: TypeAlias = tuple[
 class ApiServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address: tuple[str, int], service: TableService) -> None:
+    def __init__(
+        self,
+        address: tuple[str, int],
+        service: TableService,
+        static: StaticSite | None = None,
+    ) -> None:
         super().__init__(address, Handler)
         self.service = service
+        self.static = static  # o front, só com --web; sem ele a API é só JSON
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -149,7 +156,13 @@ class Handler(BaseHTTPRequestHandler):
                 status, payload = handler(self, match)
                 break
             else:
-                raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
+                # A API vem sempre antes: só o que nenhuma rota de API reconhece pode ser arquivo.
+                site = self.server.static
+                found = site.lookup(path) if site and method in ("GET", "HEAD") else None
+                if found is None:
+                    raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
+                self._send_file(found, head_only=method == "HEAD")
+                return
         except ApiFailure as exc:
             self._send_error(exc.status, exc.code, exc.message)
             return
@@ -230,16 +243,48 @@ class Handler(BaseHTTPRequestHandler):
         self._send_bytes(status, body.model_dump_json().encode("utf-8"))
 
     def _send_bytes(self, status: int, body: bytes) -> None:
+        self._respond(
+            status,
+            body,
+            {
+                "Content-Type": f"{JSON}; charset=utf-8",
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+
+    def _send_file(self, found: StaticFile, *, head_only: bool) -> None:
+        try:
+            body = found.path.read_bytes()
+        except OSError:  # sumiu entre o lookup e a leitura
+            self._send_error(404, "not_found", f"rota desconhecida: {urlsplit(self.path).path}")
+            return
+        self._respond(
+            200,
+            body,
+            {
+                "Content-Type": found.content_type,
+                "Cache-Control": found.cache_control,
+                **SECURITY_HEADERS,
+            },
+            head_only=head_only,
+        )
+
+    def _respond(
+        self, status: int, body: bytes, headers: dict[str, str], *, head_only: bool = False
+    ) -> None:
+        # HEAD leva os mesmos cabeçalhos (Content-Length inclusive) e nenhum corpo.
+        head_only = head_only or self.command == "HEAD"
         try:
             self.send_response(status)
-            self.send_header("Content-Type", f"{JSON}; charset=utf-8")
+            for name, value in headers.items():
+                self.send_header(name, value)
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("X-Content-Type-Options", "nosniff")
             if self.close_connection:
                 self.send_header("Connection", "close")
             self.end_headers()
-            self.wfile.write(body)
+            if not head_only:
+                self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError):
             # O cliente foi embora no meio da resposta: nada a fazer além de não derrubar a thread.
             self.close_connection = True
@@ -254,5 +299,7 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write(f"{self.address_string()} {format % args}\n")
 
 
-def make_server(host: str, port: int, service: TableService) -> ApiServer:
-    return ApiServer((host, port), service)
+def make_server(
+    host: str, port: int, service: TableService, static: StaticSite | None = None
+) -> ApiServer:
+    return ApiServer((host, port), service, static)

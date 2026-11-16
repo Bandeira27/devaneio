@@ -17,6 +17,7 @@ from devaneio.game import LlmConfig, LlmError
 from .app import COPILOT_COOLDOWN, SAY_COOLDOWN, TableService
 from .catalog import Catalog, CatalogError
 from .http import make_server
+from .static import StaticError, StaticSite
 from .storage import Storage
 
 
@@ -60,6 +61,12 @@ def main(argv: list[str] | None = None) -> int:
         help="envia os segredos dos NPCs ao LLM da mesa (a fala dele chega a todos os jogadores)",
     )
     parser.add_argument(
+        "--web",
+        type=Path,
+        default=None,
+        help="pasta do build do front (index.html); sem ela o servidor responde só a API JSON",
+    )
+    parser.add_argument(
         "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
     )
     args = parser.parse_args(argv)
@@ -67,7 +74,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         catalog = Catalog(args.campanhas)
         llm = None if args.sem_llm else LlmConfig.from_env(os.environ)
-    except (CatalogError, LlmError, OSError) as exc:
+        static = StaticSite(args.web) if args.web is not None else None
+    except (CatalogError, LlmError, StaticError, OSError) as exc:
         print(f"erro: {exc}", file=sys.stderr)
         return 1
     service = TableService(
@@ -78,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         copilot_cooldown=args.intervalo_copiloto,
         llm_secrets=args.segredos_no_llm,
     )
-    server = make_server(args.host, args.porta, service)
+    server = make_server(args.host, args.porta, service, static)
     port = server.server_address[1]
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         print(

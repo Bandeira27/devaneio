@@ -612,7 +612,7 @@ class FakeServer:
 def test_main_warns_on_stderr_when_listening_outside_loopback(tmp_path, monkeypatch, capsys):
     servers = []
 
-    def fake_make_server(host, port, _service):
+    def fake_make_server(host, port, _service, _static=None):
         servers.append(FakeServer(host, port))
         return servers[-1]
 
@@ -651,7 +651,8 @@ def test_the_say_interval_flag_reaches_the_service(tmp_path, monkeypatch, raw, e
 
     monkeypatch.setattr("devaneio.server.__main__.TableService", spy)
     monkeypatch.setattr(
-        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+        "devaneio.server.__main__.make_server",
+        lambda host, port, _service, _static=None: FakeServer(host, port),
     )
     assert main(main_args(tmp_path, "--porta", "0", "--intervalo-say", raw)) == 0
     assert seen == [expected]
@@ -663,7 +664,8 @@ def test_the_secrets_flag_reaches_the_service(tmp_path, monkeypatch):
         "devaneio.server.__main__.TableService", lambda *_a, **kw: seen.append(kw["llm_secrets"])
     )
     monkeypatch.setattr(
-        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+        "devaneio.server.__main__.make_server",
+        lambda host, port, _service, _static=None: FakeServer(host, port),
     )
     assert main(main_args(tmp_path, "--porta", "0", "--segredos-no-llm")) == 0
     assert seen == [True]
@@ -737,7 +739,8 @@ def test_the_copilot_interval_flag_reaches_the_service(tmp_path, monkeypatch, ar
         lambda *_a, **kw: seen.append(kw["copilot_cooldown"]),
     )
     monkeypatch.setattr(
-        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+        "devaneio.server.__main__.make_server",
+        lambda host, port, _service, _static=None: FakeServer(host, port),
     )
     assert main(main_args(tmp_path, "--porta", "0", *args)) == 0
     assert seen == [expected]

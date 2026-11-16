@@ -51,7 +51,7 @@ servidor usa só a biblioteca padrão e escuta em `127.0.0.1` por padrão.
 
 ```bash
 cd backend
-.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --intervalo-say 5, --sem-llm
+.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas   # --host, --porta 8765, --max-mesas 100, --intervalo-say 5, --sem-llm, --web DIR (serve o front)
 curl -s localhost:8765/campaigns
 curl -s -X POST localhost:8765/tables -H 'Content-Type: application/json' \
      -d '{"campaign_id": "sombra-do-vale", "host_name": "Ana"}'          # 201: table_id, host_token, invite_code, table
@@ -68,6 +68,7 @@ curl -s localhost:8765/tables/<table_id> -H 'Authorization: Bearer <host_token>'
 | `POST /tables/{id}/copilot` `{text}` | Bearer (anfitrião) | pergunta ao copiloto do anfitrião (ver abaixo); resposta `{text}` só para ele. `403` para jogador, `409 llm_disabled` sem LLM, `409 copilot_busy`, `429 copilot_rate_limited` |
 | `GET /tables/{id}/events?since=N&since_talk=T&wait=S` | Bearer | `EventsView {revision, events, talk, talk_seq}`: eventos de posição `N` em diante (cada um com `prose` da gramática e sem `data`) e falas com `seq` > `T`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
 | `GET /tables/{id}` | Bearer | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state` |
+| `GET /tables/{id}/rules` | Bearer | `RulesView`: o catálogo do sistema de regras (atributos com limites, habilidades e armas com fórmula, dificuldades, modificadores, `combat`) para montar botões e o formulário de personagem |
 | `GET /tables/{id}/campaign` | Bearer | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra) |
 
 Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token, 404 mesa/campanha/rota,
@@ -84,6 +85,15 @@ a mesma partida no CLI com o servidor aberto**: não há bloqueio entre processo
 claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a conexão ao recusar um corpo e não
 limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado no ambiente do servidor,
 `table.llm.notice` avisa todos os jogadores de que o texto e o estado da partida vão a esse servidor.
+
+### Servir o front (`--web`)
+
+Com `--web DIR`, o servidor entrega o build do app (`DIR/index.html` e seus arquivos) pela mesma origem da API, sem CORS.
+A API vem sempre antes; só o que nenhuma rota de API reconhece pode ser arquivo, e só por `GET` e `HEAD`. Os arquivos
+ficam confinados à pasta (sem `..`, `%2e%2e`, NUL, barra invertida, segmento oculto, diretório nem symlink para fora),
+o tipo sai de uma lista fechada de extensões (sem `.map`) e toda resposta estática leva CSP, `Referrer-Policy`,
+`X-Frame-Options` e `nosniff`. Arquivos com hash no nome são `immutable`; o resto revalida. Sem a flag, a rota `/`
+continua 404 JSON. Desenho em [`docs/desenho-ui.md`](docs/desenho-ui.md).
 
 ### Quem age e quando
 
