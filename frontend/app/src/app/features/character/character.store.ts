@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { RulesView, TableView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
-import { ApiFailure, messageOf } from '@core/api/api-failure';
+import { messageOf } from '@core/api/api-failure';
+import { withStaleRetry } from '@core/api/stale-retry';
 import { SessionStore } from '@core/session/session-store';
 import { CommandError, join } from '@shared/game/commands';
 import { normalizeName, slugify, uniqueId, validateName } from '@shared/game/names';
@@ -62,9 +63,7 @@ export class CharacterStore {
       this.values.set(attributeDefaults(rules));
       this.state.set('ready');
     } catch (error) {
-      if (error instanceof ApiFailure && (error.status === 401 || error.status === 404)) {
-        this.session.forget(tableId); // o token ou a mesa não valem mais neste servidor
-      }
+      this.session.forgetIfLost(tableId, error);
       this.loadError.set(messageOf(error));
       this.state.set('failed');
     }
@@ -95,17 +94,13 @@ export class CharacterStore {
     }
     this.saving.set(true);
     try {
-      try {
-        await this.send(name, table.revision);
-      } catch (error) {
-        if (!(error instanceof ApiFailure) || error.code !== 'stale_revision') {
-          throw error;
-        }
-        // A mesa andou enquanto o formulário estava aberto: relê a revisão e tenta de novo, uma vez.
-        const fresh = await firstValueFrom(this.api.table(this.tableId()));
-        this.table.set(fresh);
-        await this.send(name, fresh.revision);
-      }
+      await withStaleRetry(
+        (revision) => this.send(name, revision),
+        () => this.table()?.revision ?? 0,
+        async () => {
+          this.table.set(await firstValueFrom(this.api.table(this.tableId())));
+        },
+      );
     } catch (error) {
       this.error.set(error instanceof CommandError ? error.message : messageOf(error));
     } finally {

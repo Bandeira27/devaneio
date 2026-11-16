@@ -1,4 +1,5 @@
 import { Injectable, InjectionToken, computed, inject, signal } from '@angular/core';
+import { ApiFailure } from '../api/api-failure';
 
 export type StoredRole = 'host' | 'player';
 
@@ -89,6 +90,13 @@ export class SessionStore {
 
   forget(tableId: string): void {
     this.commit(Object.fromEntries(Object.entries(this.tables()).filter(([id]) => id !== tableId)));
+  }
+
+  /** Esquece a mesa se o servidor disse que o token não vale mais (401) ou que a mesa sumiu (404). */
+  forgetIfLost(tableId: string, error: unknown): void {
+    if (error instanceof ApiFailure && (error.status === 401 || error.status === 404)) {
+      this.forget(tableId);
+    }
   }
 
   private commit(tables: Record<string, StoredTable>): void {
