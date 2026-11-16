@@ -19,8 +19,8 @@ export class DvPips {
     () => `${this.noun()}: ${this.value()} de ${this.max()}`,
   );
   protected readonly filled = computed(() => Math.min(MAX_PIPS, Math.max(0, this.value())));
-  protected readonly empty = computed(() =>
-    Math.max(0, Math.min(MAX_PIPS, this.max()) - this.filled()),
+  protected readonly total = computed(() =>
+    Math.max(this.filled(), Math.min(MAX_PIPS, this.max())),
   );
   protected readonly range = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
 }

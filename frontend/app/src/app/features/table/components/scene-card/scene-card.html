@@ -1,16 +1,7 @@
 <section class="dv-card scene" aria-label="Cena">
-  <h3 class="dv-title">{{ scene().name }}</h3>
+  <h2 class="dv-title">{{ scene().name }}</h2>
   @if (scene().description) {
     <p class="dv-lede scene__text">{{ scene().description }}</p>
   }
-  <dl class="scene__facts">
-    <div class="scene__row">
-      <dt class="dv-note">Saídas</dt>
-      <dd>{{ scene().exits.length > 0 ? names(scene().exits) : 'nenhuma' }}</dd>
-    </div>
-    <div class="scene__row">
-      <dt class="dv-note">Aqui</dt>
-      <dd>{{ scene().npcs.length > 0 ? names(scene().npcs) : 'ninguém' }}</dd>
-    </div>
-  </dl>
+  <dv-key-value [items]="facts()" />
 </section>

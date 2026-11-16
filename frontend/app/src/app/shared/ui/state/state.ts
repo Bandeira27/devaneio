@@ -1,0 +1,45 @@
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { DvIcon, type IconName } from '../icon/icon';
+
+/** O que a tela está dizendo: carregando, vazio, erro ou indisponível. */
+export type StateKind = 'loading' | 'empty' | 'error' | 'unavailable';
+
+/**
+ * O estado de uma tela ou de uma região: carregando (três pontos de fumaça e `role="status"`), vazio,
+ * erro (`role="alert"`) ou indisponível. A mensagem é o conteúdo; uma ação opcional (tentar de novo, voltar) entra
+ * em `[dvStateAction]`.
+ */
+@Component({
+  selector: 'dv-state',
+  imports: [DvIcon],
+  template: `
+    @if (kind() === 'loading') {
+      <span class="pending" aria-hidden="true"><i></i><i></i><i></i></span>
+    } @else {
+      <dv-icon [name]="icon()" />
+    }
+    <p class="message"><ng-content /></p>
+    <ng-content select="[dvStateAction]" />
+  `,
+  styleUrl: './state.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class]': "'state state--' + kind()",
+    '[attr.role]': 'role()',
+  },
+})
+export class DvState {
+  readonly kind = input<StateKind>('empty');
+  protected readonly icon = computed<IconName>(() => {
+    const kind = this.kind();
+    return kind === 'error' ? 'danger' : kind === 'unavailable' ? 'warn' : 'info';
+  });
+  protected readonly role = computed(() => {
+    const kind = this.kind();
+    return kind === 'error'
+      ? 'alert'
+      : kind === 'loading' || kind === 'unavailable'
+        ? 'status'
+        : null;
+  });
+}

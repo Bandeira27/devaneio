@@ -238,18 +238,25 @@ describe('Ações da mesa', () => {
     expect(dock.querySelector<HTMLButtonElement>('button')?.disabled).toBe(false);
   });
 
-  it('já agiu neste turno: desabilita as ações com o motivo, mas deixa Ficha e Comando', async () => {
+  it('já agiu neste turno: bloqueia as ações com o motivo ligado a cada botão, mas deixa Ficha e Comando', async () => {
     const app = await open(table({ acted: { bia: 0 } }));
     const dock = app.root().querySelector('dv-action-dock') as HTMLElement;
-    const state = (label: string) =>
-      Array.from(dock.querySelectorAll('button')).find((b) => b.textContent?.trim() === label)
-        ?.disabled;
-    expect(state('Ir')).toBe(true);
-    expect(state('Testar')).toBe(true);
-    expect(state('Atacar')).toBe(true);
-    expect(state('Ficha')).toBe(false);
-    expect(state('Comando')).toBe(false);
-    expect(dock.querySelector('.dock__reason')?.textContent?.trim()).not.toBe('');
+    const button = (label: string) =>
+      Array.from(dock.querySelectorAll('button')).find((b) => b.textContent?.trim() === label);
+    for (const label of ['Ir', 'Testar', 'Atacar']) {
+      expect(button(label)?.getAttribute('aria-disabled'), label).toBe('true');
+      expect(button(label)?.disabled, label).toBe(false); // continua no foco: o motivo se lê
+      expect(button(label)?.getAttribute('aria-describedby'), label).toBe('dock-reason');
+    }
+    expect(button('Ficha')?.disabled).toBe(false);
+    expect(button('Comando')?.getAttribute('aria-disabled')).toBeNull();
+    expect(dock.querySelector('#dock-reason')?.textContent?.trim()).not.toBe('');
+  });
+
+  it('um botão bloqueado não abre a folha', async () => {
+    const app = await open(table({ acted: { bia: 0 } }));
+    await app.press('Ir');
+    expect(app.sheet()).toBeNull();
   });
 
   it('Falar só existe com o LLM ligado e manda o texto livre', async () => {

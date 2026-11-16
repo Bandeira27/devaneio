@@ -23,5 +23,18 @@
   min-height: 1.25em;
   margin: 0;
   font-size: var(--dv-text-note);
+}
+
+.copy__tone {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dv-space-1);
+}
+
+.copy__tone--ok {
   color: var(--dv-ok);
+}
+
+.copy__tone--warn {
+  color: var(--dv-warn);
 }

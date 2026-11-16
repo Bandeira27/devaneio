@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { Character } from '@contract/api_responses';
+import { DvBadge } from '@shared/ui/badge/badge';
 import { DvPips } from '@shared/ui/pips/pips';
+import { DvState } from '@shared/ui/state/state';
 
 /** A faixa do grupo: cada personagem com o hp em pontos. */
 @Component({
   selector: 'dv-party-strip',
-  imports: [DvPips],
+  imports: [DvBadge, DvPips, DvState],
   templateUrl: './party-strip.html',
   styleUrl: './party-strip.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

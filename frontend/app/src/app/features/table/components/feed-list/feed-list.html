@@ -1,3 +1,4 @@
+<h2 class="dv-visually-hidden">O que aconteceu</h2>
 <div class="feed" role="log" aria-live="polite" aria-label="O que aconteceu na mesa">
   @for (item of items(); track item.key) {
     @switch (item.type) {
@@ -12,10 +13,9 @@
           [style.--fade]="item.fade"
         >
           <p class="feed__narration">{{ item.narration }}</p>
-          <details class="feed__note">
-            <summary>detalhes</summary>
+          <dv-disclosure class="feed__note" label="Como foi resolvido">
             <p>{{ item.note }}</p>
-          </details>
+          </dv-disclosure>
         </article>
       }
       @case ('talk') {
@@ -30,7 +30,7 @@
       }
     }
   } @empty {
-    <p class="dv-note">Nada aconteceu ainda. A história começa quando alguém agir.</p>
+    <dv-state>Nada aconteceu ainda. A história começa quando alguém agir.</dv-state>
   }
   <div #end class="feed__end"></div>
 </div>

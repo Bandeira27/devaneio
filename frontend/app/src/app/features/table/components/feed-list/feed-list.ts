@@ -7,6 +7,8 @@ import {
   viewChild,
 } from '@angular/core';
 import type { FeedItem } from '@shared/game/feed';
+import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
+import { DvState } from '@shared/ui/state/state';
 
 const NEAR_BOTTOM_PX = 160;
 
@@ -17,6 +19,7 @@ const NEAR_BOTTOM_PX = 160;
  */
 @Component({
   selector: 'dv-feed-list',
+  imports: [DvDisclosure, DvState],
   templateUrl: './feed-list.html',
   styleUrl: './feed-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

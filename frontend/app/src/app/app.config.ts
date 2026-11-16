@@ -1,7 +1,14 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding, withHashLocation } from '@angular/router';
+import {
+  TitleStrategy,
+  provideRouter,
+  withComponentInputBinding,
+  withHashLocation,
+  withViewTransitions,
+} from '@angular/router';
 import { apiInterceptor } from '@core/api/api.interceptor';
+import { PageTitle } from './layout/shell/page-title';
 import { routes } from './app.routes';
 
 /**
@@ -11,7 +18,23 @@ import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withHashLocation(), withComponentInputBinding()),
+    provideRouter(
+      routes,
+      withHashLocation(),
+      withComponentInputBinding(),
+      // Cross-fade entre telas; com movimento reduzido, ou sem quadros sendo desenhados (aba escondida), troca na hora.
+      withViewTransitions({
+        onViewTransitionCreated: ({ transition }) => {
+          if (
+            document.visibilityState !== 'visible' ||
+            matchMedia('(prefers-reduced-motion: reduce)').matches
+          ) {
+            transition.skipTransition();
+          }
+        },
+      }),
+    ),
+    { provide: TitleStrategy, useExisting: PageTitle },
     provideHttpClient(withFetch(), withInterceptors([apiInterceptor])),
   ],
 };

@@ -60,20 +60,12 @@
 }
 
 .feed__note {
+  display: block;
   margin-top: var(--dv-space-1);
-  padding-left: var(--dv-space-3);
-  border-left: var(--dv-border-width) dotted var(--dv-line);
-  font-family: var(--dv-font-note);
-  font-size: var(--dv-text-note);
-  color: var(--dv-text-muted);
-}
-
-.feed__note summary {
-  cursor: pointer;
 }
 
 .feed__note p {
-  margin: var(--dv-space-1) 0 0;
+  margin: 0 0 var(--dv-space-2);
 }
 
 .feed__talk {

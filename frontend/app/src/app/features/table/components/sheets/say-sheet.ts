@@ -22,6 +22,7 @@ export const MAX_SAY = 500;
       >
         <textarea
           dvInput
+          cdkFocusInitial
           rows="3"
           [attr.maxlength]="max"
           [value]="text()"

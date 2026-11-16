@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
+import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { DvState } from '@shared/ui/state/state';
 import { ActionDock } from '../../components/action-dock/action-dock';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
 import { FeedList } from '../../components/feed-list/feed-list';
@@ -15,7 +18,9 @@ import { TableStore } from '../../table.store';
   imports: [
     RouterLink,
     DvButton,
+    DvDisclosure,
     DvNotice,
+    DvState,
     ActionDock,
     ConnectionBadge,
     FeedList,
@@ -32,8 +37,16 @@ export class TablePage implements OnInit {
 
   protected readonly store = inject(TableStore);
 
+  private readonly documentTitle = inject(Title);
+
   constructor() {
     effect(() => this.store.tableId.set(this.tableId()));
+    effect(() => {
+      const campaign = this.store.title();
+      if (campaign) {
+        this.documentTitle.setTitle(`${campaign} · Devaneio`);
+      }
+    });
   }
 
   ngOnInit(): void {

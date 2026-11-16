@@ -7,6 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { DvButton } from '../button/button';
+import { DvIcon } from '../icon/icon';
 
 let nextId = 0;
 
@@ -19,7 +20,7 @@ type CopyState = 'idle' | 'copied' | 'manual';
  */
 @Component({
   selector: 'dv-copy-field',
-  imports: [DvButton],
+  imports: [DvButton, DvIcon],
   templateUrl: './copy-field.html',
   styleUrl: './copy-field.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

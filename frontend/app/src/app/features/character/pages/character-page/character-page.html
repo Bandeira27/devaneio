@@ -1,12 +1,15 @@
 <div class="dv-page">
-  <h2 class="dv-title">Seu personagem</h2>
+  <h1 class="dv-title">Seu personagem</h1>
 
   @switch (store.state()) {
     @case ('loading') {
-      <p class="dv-note" role="status">Abrindo a mesa…</p>
+      <dv-state kind="loading">Abrindo a mesa…</dv-state>
     }
     @case ('failed') {
-      <dv-notice kind="error">{{ store.loadError() }}</dv-notice>
+      <dv-state kind="error">
+        {{ store.loadError() }}
+        <button dvStateAction dvButton type="button" (click)="store.load()">Tentar de novo</button>
+      </dv-state>
       <a dvButton routerLink="/">Voltar ao início</a>
     }
     @case ('ready') {

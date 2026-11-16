@@ -62,6 +62,30 @@ Móvel primeiro. Dois pontos de quebra, **fixos e documentados** (CSS não aceit
 **64rem**. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
 Áreas seguras (`env(safe-area-inset-*)`) e `dvh` onde há barra fixa.
 
+## Componentes
+
+Todos em `frontend/app/src/app/shared/ui/`, com spec e story. O contrato (entradas, estados, teclado, ARIA, movimento)
+está no JSDoc de cada um.
+
+| Componente                               | Para quê                                                                                             |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `dvButton` (diretiva)                    | botão: `dvBlocked` (bloqueado com motivo, continua focável), `dvLoading` (em envio), `:active`, tons |
+| `dv-field` + `dvInput`                   | rótulo, dica e erro de `input`, `select` e `textarea`                                                |
+| `dv-stepper`, `dv-copy-field`, `dv-pips` | valor com − e +, texto para copiar, pontos de vida (mudança animada)                                 |
+| `dv-notice`                              | aviso com ícone: informação, confirmação, atenção, erro; dispensável                                 |
+| `dv-badge`                               | selo de estado curto, com texto, tom e ícone; `pending` pulsa                                        |
+| `dv-state`                               | carregando, vazio, erro ou indisponível, com ação opcional                                           |
+| `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                          |
+| `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                           |
+| `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                    |
+| `dv-icon`                                | conjunto fechado de ícones decorativos                                                               |
+| `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                        |
+
+`dvLoading` e `dv-choice` ainda não têm uso em tela: entram com as folhas e os formulários do PR de entrada.
+
+O **cartão** e a **lista** não são componentes: são as classes `.dv-card` e `.dv-stack` (não havia comportamento a
+encapsular). Não há _tabs_ nem _toast_ (o feedback é contextual).
+
 ## Catálogo (Storybook)
 
 ```bash

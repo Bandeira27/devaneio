@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
+import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { TableStore } from '../../table.store';
@@ -13,7 +15,7 @@ import { SaySheet } from '../sheets/say-sheet';
 /** As ações da mesa em botões. Cada uma abre uma folha, monta a linha de comando e o servidor decide. */
 @Component({
   selector: 'dv-action-dock',
-  imports: [DvButton, DvNotice],
+  imports: [DvBadge, DvButton, DvIcon, DvNotice],
   templateUrl: './action-dock.html',
   styleUrl: './action-dock.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,7 +71,7 @@ export class ActionDock {
     const rules = this.store.rules();
     if (character !== null && rules !== null) {
       await this.sheet.open(CharacterSheet, {
-        label: 'Ficha do personagem',
+        label: `Ficha de ${character.name}`,
         data: { character, rules },
       });
     }

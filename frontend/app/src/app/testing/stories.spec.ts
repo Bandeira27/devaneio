@@ -4,9 +4,15 @@ import type { StoryObj } from '@storybook/angular-vite';
 import * as connectionBadge from '../features/table/components/connection-badge/connection-badge.stories';
 import * as tokens from '../design/tokens.stories';
 import * as motion from '../design/movimento.stories';
+import * as badgeS from '../shared/ui/badge/badge.stories';
+import * as keyValueS from '../shared/ui/key-value/key-value.stories';
+import * as disclosureS from '../shared/ui/disclosure/disclosure.stories';
+import * as stateS from '../shared/ui/state/state.stories';
+import * as choiceS from '../shared/ui/choice/choice.stories';
 import * as button from '../shared/ui/button/button.stories';
 import * as copyField from '../shared/ui/copy-field/copy-field.stories';
 import * as field from '../shared/ui/field/field.stories';
+import * as icon from '../shared/ui/icon/icon.stories';
 import * as notice from '../shared/ui/notice/notice.stories';
 import * as pips from '../shared/ui/pips/pips.stories';
 import * as sheet from '../shared/ui/sheet/sheet.stories';
@@ -18,9 +24,15 @@ const FILES: Record<string, Record<string, unknown>> = {
   'design/movimento.stories.ts': motion,
   'design/tokens.stories.ts': tokens,
   'features/table/components/connection-badge/connection-badge.stories.ts': connectionBadge,
+  'shared/ui/badge/badge.stories.ts': badgeS,
+  'shared/ui/key-value/key-value.stories.ts': keyValueS,
+  'shared/ui/disclosure/disclosure.stories.ts': disclosureS,
+  'shared/ui/state/state.stories.ts': stateS,
+  'shared/ui/choice/choice.stories.ts': choiceS,
   'shared/ui/button/button.stories.ts': button,
   'shared/ui/copy-field/copy-field.stories.ts': copyField,
   'shared/ui/field/field.stories.ts': field,
+  'shared/ui/icon/icon.stories.ts': icon,
   'shared/ui/notice/notice.stories.ts': notice,
   'shared/ui/pips/pips.stories.ts': pips,
   'shared/ui/sheet/sheet.stories.ts': sheet,

@@ -21,7 +21,7 @@ export interface CheckSheetData {
     <dv-sheet-head title="Testar uma habilidade" />
     <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
       <dv-field label="Habilidade" [hint]="formula()">
-        <select dvInput [value]="skill()" (change)="skill.set(fieldValue($event))">
+        <select dvInput cdkFocusInitial [value]="skill()" (change)="skill.set(fieldValue($event))">
           @for (item of data.rules.skills; track item.id) {
             <option [value]="item.id">{{ item.name }}</option>
           }

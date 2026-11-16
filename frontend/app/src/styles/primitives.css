@@ -15,10 +15,19 @@
   font: inherit;
   text-decoration: none;
   cursor: pointer;
+  transition:
+    background-color var(--dv-duration-fast) var(--dv-ease-standard),
+    border-color var(--dv-duration-fast) var(--dv-ease-standard);
 }
 
 .dv-button:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--dv-surface-hover);
+}
+
+.dv-button:active:not(:disabled):not([aria-disabled='true']) {
+  background: var(--dv-surface-pressed);
+  box-shadow: var(--dv-shadow-press);
+  transition-duration: var(--dv-duration-instant);
 }
 
 .dv-button--primary {
@@ -29,6 +38,25 @@
 
 .dv-button--primary:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--dv-accent-hover);
+}
+
+.dv-button--primary:active:not(:disabled):not([aria-disabled='true']) {
+  background: var(--dv-accent-pressed);
+}
+
+/* Em envio: o botão fica como "bloqueado" (aria-disabled, o foco não se perde) e um ponto pulsa até terminar. */
+.dv-button--loading {
+  cursor: progress;
+}
+
+.dv-button--loading::after {
+  content: '';
+  width: var(--dv-size-dot);
+  height: var(--dv-size-dot);
+  border-radius: var(--dv-radius-round);
+  background: currentcolor;
+  animation: dv-pulse var(--dv-duration-narrative) var(--dv-ease-standard)
+    var(--dv-iterations-pending);
 }
 
 .dv-button:disabled,

@@ -94,6 +94,9 @@
   --dv-border-width-strong: 2px;
   --dv-focus-width: 2px;
   --dv-focus-offset: 2px;
+  --dv-icon-sm: 1rem;
+  --dv-icon-md: 1.25rem;
+  --dv-icon-stroke: 1.5;
   --dv-size-pip: 0.625rem;
   --dv-size-dot: 0.5rem;
 

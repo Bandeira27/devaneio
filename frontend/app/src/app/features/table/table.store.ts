@@ -44,6 +44,7 @@ export class TableStore implements OnDestroy {
   readonly reply = this.actions.reply;
   readonly actionBusy = this.actions.busy;
   readonly actionError = this.actions.error;
+  readonly thinking = this.actions.thinking;
 
   readonly liveStatus = computed<LiveStatus>(() => this.feed()?.status() ?? 'connecting');
   readonly events = computed<EventView[]>(() => this.feed()?.events() ?? []);
@@ -108,6 +109,11 @@ export class TableStore implements OnDestroy {
       this.loadError.set(messageOf(error));
       this.state.set('failed');
     }
+  }
+
+  /** Tira da tela a resposta e o erro da última ação. */
+  dismissFeedback(): void {
+    this.actions.dismiss();
   }
 
   /** Manda uma linha de comando; devolve se o servidor a aceitou. */

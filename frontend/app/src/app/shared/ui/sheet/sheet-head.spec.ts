@@ -14,7 +14,9 @@ describe('DvSheetHead', () => {
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('h2')?.textContent).toBe('Ir para');
-    (root.querySelector('button') as HTMLButtonElement).click();
+    const button = root.querySelector('button') as HTMLButtonElement;
+    expect(button.getAttribute('aria-label')).toBe('Fechar'); // só ícone: o nome vem do aria-label
+    button.click();
     expect(close).toHaveBeenCalledWith();
   });
 });

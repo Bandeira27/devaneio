@@ -13,6 +13,8 @@ export class TableActions {
   /** Resposta que não gerou evento (`olhar`, `ficha`, a fala do mestre): aparece até a próxima ação. */
   readonly reply = signal('');
   readonly busy = signal(false);
+  /** Verdadeiro só enquanto o mestre de IA pensa (texto livre); um comando comum não chama o LLM. */
+  readonly thinking = signal(false);
   readonly error = signal('');
 
   constructor(
@@ -34,6 +36,7 @@ export class TableActions {
   /** Manda um texto livre; o servidor propõe e aplica as ações, ou só responde. */
   say(text: string): Promise<boolean> {
     return this.act(async () => {
+      this.thinking.set(true);
       const result = await this.send((revision) =>
         firstValueFrom(this.api.say(this.tableId(), { text, revision })),
       );
@@ -64,7 +67,14 @@ export class TableActions {
       this.error.set(messageOf(error));
       return false;
     } finally {
+      this.thinking.set(false);
       this.busy.set(false);
     }
+  }
+
+  /** Tira da tela a resposta e o erro da última ação. */
+  dismiss(): void {
+    this.reply.set('');
+    this.error.set('');
   }
 }

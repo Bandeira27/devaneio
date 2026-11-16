@@ -18,11 +18,14 @@
   font-size: var(--dv-text-narration);
 }
 
-.party__member > .dv-note {
+.party__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-1);
   grid-column: 1 / -1;
 }
 
-.party__member > .dv-note:empty {
+.party__badges:empty {
   display: none;
 }
 

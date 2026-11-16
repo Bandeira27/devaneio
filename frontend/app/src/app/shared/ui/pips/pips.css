@@ -10,10 +10,18 @@
   border-radius: var(--dv-radius-round);
 }
 
+.pip {
+  border: var(--dv-border-width) solid var(--dv-border-control);
+  transition:
+    background-color var(--dv-duration-base) var(--dv-ease-standard),
+    border-color var(--dv-duration-base) var(--dv-ease-standard);
+}
+
 .pip--full {
+  border-color: var(--dv-text);
   background: var(--dv-text);
 }
 
 .pip--empty {
-  border: var(--dv-border-width) solid var(--dv-border-control);
+  background: transparent;
 }
