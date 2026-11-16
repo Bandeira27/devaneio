@@ -26,6 +26,7 @@ export interface ApiResponses {
   events: EventsView;
   campaign: Campaign;
   campaign_view: CampaignView;
+  rules: RulesView;
   error: ErrorResponse;
 }
 export interface CampaignSummary {
@@ -49,6 +50,7 @@ export interface TableView {
   revision: number;
   status: GameStatus;
   llm: LlmView;
+  you: string;
   state: GameState | PlayerStateView;
 }
 export interface PlayerView {
@@ -373,6 +375,58 @@ export interface FactInfo {
   id: string;
   text: string;
   about: string | null;
+}
+/**
+ * O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de
+ * ação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público
+ * (não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,
+ * ``rest``, ``outcomes``, ``dispositions``).
+ */
+export interface RulesView {
+  id: string;
+  name: string;
+  description: string;
+  attributes: AttributeInfo[];
+  skills: SkillInfo[];
+  difficulties: DifficultyInfo[];
+  weapons: WeaponInfo[];
+  modifiers: ModifierInfo[];
+  combat: CombatInfo;
+}
+export interface AttributeInfo {
+  id: string;
+  name: string;
+  description: string;
+  min: number;
+  max: number;
+  default: number;
+}
+export interface SkillInfo {
+  id: string;
+  name: string;
+  description: string;
+  formula: string;
+}
+export interface DifficultyInfo {
+  id: string;
+  name: string;
+  value: number;
+}
+export interface WeaponInfo {
+  id: string;
+  name: string;
+  description: string;
+  skill: string;
+  damage: string;
+}
+export interface ModifierInfo {
+  id: string;
+  name: string;
+  value: number;
+}
+export interface CombatInfo {
+  default_weapon: string | null;
+  fallen_can_act: boolean;
 }
 export interface ErrorResponse {
   error: ApiError;

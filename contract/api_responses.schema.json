@@ -37,6 +37,39 @@
       "title": "AtLocation",
       "type": "object"
     },
+    "AttributeInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "min": {
+          "type": "integer"
+        },
+        "max": {
+          "type": "integer"
+        },
+        "default": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "min",
+        "max",
+        "default"
+      ],
+      "title": "AttributeInfo",
+      "type": "object"
+    },
     "Beat": {
       "additionalProperties": false,
       "description": "Marco da trama. ``requires`` lista marcos que precisam estar concluídos antes.\n\n``activate_when``: condições para passar de pendente a ativo (além dos requisitos);\nvazia, ativa assim que os requisitos estiverem concluídos.\n``complete_when``: condições para concluir automaticamente; vazia, só conclui por ação\nexplícita (o mestre/jogador decide).",
@@ -411,6 +444,31 @@
       "title": "CheckPassed",
       "type": "object"
     },
+    "CombatInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "default_weapon": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fallen_can_act": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "default_weapon",
+        "fallen_can_act"
+      ],
+      "title": "CombatInfo",
+      "type": "object"
+    },
     "CommandResult": {
       "additionalProperties": false,
       "properties": {
@@ -454,6 +512,28 @@
         "text"
       ],
       "title": "CopilotAnswer",
+      "type": "object"
+    },
+    "DifficultyInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value"
+      ],
+      "title": "DifficultyInfo",
       "type": "object"
     },
     "ErrorResponse": {
@@ -936,6 +1016,28 @@
       "title": "LocationView",
       "type": "object"
     },
+    "ModifierInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value"
+      ],
+      "title": "ModifierInfo",
+      "type": "object"
+    },
     "Npc": {
       "additionalProperties": false,
       "properties": {
@@ -1230,6 +1332,68 @@
       "title": "PlayerView",
       "type": "object"
     },
+    "RulesView": {
+      "additionalProperties": false,
+      "description": "O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de\nação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público\n(não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,\n``rest``, ``outcomes``, ``dispositions``).",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "attributes": {
+          "items": {
+            "$ref": "#/$defs/AttributeInfo"
+          },
+          "type": "array"
+        },
+        "skills": {
+          "items": {
+            "$ref": "#/$defs/SkillInfo"
+          },
+          "type": "array"
+        },
+        "difficulties": {
+          "items": {
+            "$ref": "#/$defs/DifficultyInfo"
+          },
+          "type": "array"
+        },
+        "weapons": {
+          "items": {
+            "$ref": "#/$defs/WeaponInfo"
+          },
+          "type": "array"
+        },
+        "modifiers": {
+          "items": {
+            "$ref": "#/$defs/ModifierInfo"
+          },
+          "type": "array"
+        },
+        "combat": {
+          "$ref": "#/$defs/CombatInfo"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "attributes",
+        "skills",
+        "difficulties",
+        "weapons",
+        "modifiers",
+        "combat"
+      ],
+      "title": "RulesView",
+      "type": "object"
+    },
     "SayResult": {
       "additionalProperties": false,
       "properties": {
@@ -1271,6 +1435,32 @@
         "commands"
       ],
       "title": "SayResult",
+      "type": "object"
+    },
+    "SkillInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "formula": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "formula"
+      ],
+      "title": "SkillInfo",
       "type": "object"
     },
     "TableCreated": {
@@ -1365,6 +1555,10 @@
         "llm": {
           "$ref": "#/$defs/LlmView"
         },
+        "you": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
         "state": {
           "anyOf": [
             {
@@ -1386,6 +1580,7 @@
         "revision",
         "status",
         "llm",
+        "you",
         "state"
       ],
       "title": "TableView",
@@ -1436,6 +1631,37 @@
       ],
       "title": "TurnAtLeast",
       "type": "object"
+    },
+    "WeaponInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "skill": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "damage": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "skill",
+        "damage"
+      ],
+      "title": "WeaponInfo",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -1473,6 +1699,9 @@
     "campaign_view": {
       "$ref": "#/$defs/CampaignView"
     },
+    "rules": {
+      "$ref": "#/$defs/RulesView"
+    },
     "error": {
       "$ref": "#/$defs/ErrorResponse"
     }
@@ -1488,6 +1717,7 @@
     "events",
     "campaign",
     "campaign_view",
+    "rules",
     "error"
   ],
   "title": "ApiResponses",

@@ -1,8 +1,8 @@
 # Rumo: o Devaneio como plataforma de campanhas extensível
 
-**Status: direção definida em 2026-11-15, ainda não implementada.** Este documento registra o que o dono
-decidiu e o que ficou por detalhar. Não muda regras duras nem escopo: o que depende de abrir a regra 9 do
-[AGENTS.md](../AGENTS.md) (UI) está marcado. Os princípios do produto continuam no [README](../README.md).
+**Status: direção definida em 2026-11-15; os passos 1 a 3 estão implementados.** Este documento registra o que o dono
+decidiu e o que ficou por detalhar. A regra 9 do [AGENTS.md](../AGENTS.md) liberou a UI da mesa (desenho em
+[`desenho-ui.md`](desenho-ui.md)); o que depende de abri-la de novo (o editor de campanhas) está marcado. Os princípios do produto continuam no [README](../README.md).
 
 ## A ideia
 
@@ -77,7 +77,8 @@ Um assistente separado, só do anfitrião, com o contexto **privado** completo. 
 3. Copiloto do anfitrião (precisa do passo 1).
 4. Ações declarativas, com a classificação como metadado.
 5. Editor com formulários gerados do schema. Um mínimo, só de campanha, já depois do passo 2, para ter retorno
-   cedo. **Exige abrir a regra 9 do AGENTS.md.**
+   cedo. **Segue fora de escopo na regra 9 do AGENTS.md** (a UI da mesa já foi liberada: ela vem antes do editor, e o
+   editor só existirá com `--editor` e em localhost, ver [`desenho-ui.md`](desenho-ui.md)).
 
 Antes de qualquer implementação, um documento de desenho detalhando o vocabulário acima.
 

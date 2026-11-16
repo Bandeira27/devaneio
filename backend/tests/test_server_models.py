@@ -4,7 +4,13 @@ import pytest
 from pydantic import ValidationError
 
 from devaneio.schema import GameState
-from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest, PlayerStateView
+from devaneio.server.models import (
+    CommandRequest,
+    CreateTableRequest,
+    JoinRequest,
+    PlayerStateView,
+    RulesView,
+)
 
 # O que um jogador comum nunca recebe de GameState, de propósito (ver PlayerStateView).
 HIDDEN_FROM_PLAYERS = {"rng_seed", "rng_draws", "events"}
@@ -110,3 +116,17 @@ def test_a_command_line_that_is_not_text_is_refused():
 def test_a_name_that_is_not_text_is_refused():
     with pytest.raises(ValidationError):
         JoinRequest.model_validate({"invite_code": "x", "name": 5})
+
+
+def test_the_rules_view_of_a_system_without_weapons_and_without_a_default_weapon(rules):
+    bare = rules.model_copy(
+        update={
+            "weapons": [],
+            "combat": rules.combat.model_copy(update={"default_weapon": None}),
+        }
+    )
+    view = RulesView.of(bare)
+    assert view.weapons == []
+    assert view.combat.default_weapon is None
+    assert view.combat.fallen_can_act == rules.combat.fallen_can_act
+    assert [a.id for a in view.attributes] == [a.id for a in rules.attributes]

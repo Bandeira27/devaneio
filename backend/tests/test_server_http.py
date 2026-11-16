@@ -612,7 +612,7 @@ class FakeServer:
 def test_main_warns_on_stderr_when_listening_outside_loopback(tmp_path, monkeypatch, capsys):
     servers = []
 
-    def fake_make_server(host, port, _service):
+    def fake_make_server(host, port, _service, _static=None):
         servers.append(FakeServer(host, port))
         return servers[-1]
 
@@ -651,7 +651,8 @@ def test_the_say_interval_flag_reaches_the_service(tmp_path, monkeypatch, raw, e
 
     monkeypatch.setattr("devaneio.server.__main__.TableService", spy)
     monkeypatch.setattr(
-        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+        "devaneio.server.__main__.make_server",
+        lambda host, port, _service, _static=None: FakeServer(host, port),
     )
     assert main(main_args(tmp_path, "--porta", "0", "--intervalo-say", raw)) == 0
     assert seen == [expected]
@@ -663,7 +664,8 @@ def test_the_secrets_flag_reaches_the_service(tmp_path, monkeypatch):
         "devaneio.server.__main__.TableService", lambda *_a, **kw: seen.append(kw["llm_secrets"])
     )
     monkeypatch.setattr(
-        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+        "devaneio.server.__main__.make_server",
+        lambda host, port, _service, _static=None: FakeServer(host, port),
     )
     assert main(main_args(tmp_path, "--porta", "0", "--segredos-no-llm")) == 0
     assert seen == [True]
@@ -737,7 +739,8 @@ def test_the_copilot_interval_flag_reaches_the_service(tmp_path, monkeypatch, ar
         lambda *_a, **kw: seen.append(kw["copilot_cooldown"]),
     )
     monkeypatch.setattr(
-        "devaneio.server.__main__.make_server", lambda host, port, _service: FakeServer(host, port)
+        "devaneio.server.__main__.make_server",
+        lambda host, port, _service, _static=None: FakeServer(host, port),
     )
     assert main(main_args(tmp_path, "--porta", "0", *args)) == 0
     assert seen == [expected]
@@ -773,3 +776,18 @@ def test_the_copilot_route_without_content_type_is_415(client):
     body = json.loads(response.read())
     conn.close()
     assert (response.status, body["error"]["code"]) == (415, "unsupported_media_type")
+
+
+def test_the_rules_route_over_http(client, issued):
+    _, created, _ = create(client)
+    table, host = created["table_id"], created["host_token"]
+    assert created["table"]["you"] == "p1"
+    status, body, headers = client.call("GET", f"/tables/{table}/rules", auth=host)
+    assert status == 200
+    assert headers["Cache-Control"] == "no-store"
+    assert body["id"] == "default"
+    assert body["combat"] == {"default_weapon": "punhos", "fallen_can_act": False}
+    assert client.call("GET", f"/tables/{table}/rules")[0] == 401
+    assert client.call("GET", f"/tables/{'0' * 16}/rules", auth=host)[0] == 404
+    assert client.call("POST", f"/tables/{table}/rules", body={}, auth=host)[0] == 405
+    assert client.call("GET", f"/tables/{table}", auth=host)[1]["you"] == "p1"

@@ -49,6 +49,7 @@ from .models import (
     LlmView,
     PlayerStateView,
     PlayerView,
+    RulesView,
     SayRequest,
     SayResult,
     TableCreated,
@@ -62,6 +63,7 @@ from .turns import apply, authenticate, events_view
 
 MAX_PLAYERS = 8
 SAY_COOLDOWN = 5.0  # segundos entre dois textos livres do mesmo jogador
+HOST_ID = "p1"  # o anfitrião é sempre o primeiro jogador da mesa
 COPILOT_COOLDOWN = 5.0  # segundos entre duas consultas ao copiloto da mesa
 
 
@@ -130,7 +132,7 @@ class TableService:
             raise ApiFailure(409, "table_limit", "este servidor já tem o máximo de mesas")
         token, invite = self._token_source(), self._invite_source()
         host = Player(name=request.host_name, role="host", token_hash=hash_secret(token))
-        table = TableMeta(invite_hash=hash_secret(invite), players={"p1": host})
+        table = TableMeta(invite_hash=hash_secret(invite), players={HOST_ID: host})
         table_id, save_path = self.storage.new_table_path()
         with self.storage.lock(table_id):
             session = replace(new_game(campaign_path, save_path, request.seed), table=table)
@@ -139,7 +141,7 @@ class TableService:
             table_id=table_id,
             host_token=token,
             invite_code=invite,
-            table=self._view(table_id, session, table, "host"),
+            table=self._view(table_id, session, table, "host", HOST_ID),
         )
 
     def join_table(self, table_id: str, request: JoinRequest) -> TableJoined:
@@ -170,7 +172,7 @@ class TableService:
         return TableJoined(
             player_id=player_id,
             token=token,
-            table=self._view(table_id, session, table, "player"),
+            table=self._view(table_id, session, table, "player", player_id),
         )
 
     def get_events(
@@ -206,7 +208,7 @@ class TableService:
             self.storage.leave_wait(table_id)
 
     def _events_view(self, table_id: str, token: str | None, cursor: Cursor) -> EventsView:
-        session, _, player = self._open(table_id, token)
+        session, _, _, player = self._open(table_id, token)
         presentation = self.storage.presentation(table_id)
         talk, talk_seq = presentation.talk_since(cursor.talk)
         return EventsView(
@@ -290,20 +292,26 @@ class TableService:
         return self._copilot.run(table_id, path, token, request)
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
-        session, table, player = self._open(table_id, token)
-        return self._view(table_id, session, table, player.role)
+        session, table, player_id, player = self._open(table_id, token)
+        return self._view(table_id, session, table, player.role, player_id)
 
     def get_campaign(self, table_id: str, token: str | None) -> Campaign | CampaignView:
         """A campanha inteira só para o anfitrião (o mestre); o jogador comum recebe a visão
         do que o ``olhar`` mostra, derivada do estado atual."""
-        session, _, player = self._open(table_id, token)
+        session, _, _, player = self._open(table_id, token)
         if player.role == "host":
             return session.campaign
         return CampaignView.of(session.campaign, session.state)
 
+    def get_rules(self, table_id: str, token: str | None) -> RulesView:
+        """O catálogo do sistema de regras da mesa, para qualquer jogador: alimenta os botões de
+        ação e o formulário de personagem. Regra do sistema é dado público."""
+        session, _, _, _ = self._open(table_id, token)
+        return RulesView.of(session.rules)
+
     # --- apoio -------------------------------------------------------------------
 
-    def _open(self, table_id: str, token: str | None) -> tuple[Session, TableMeta, Player]:
+    def _open(self, table_id: str, token: str | None) -> tuple[Session, TableMeta, str, Player]:
         """Carrega a mesa e autentica o jogador. 404 e 401 saem daqui; partida ilegível
         é erro interno (a mensagem citaria caminho e trechos do arquivo). Limite conhecido:
         os hashes vivem no arquivo, então um token errado custa uma carga da partida."""
@@ -314,8 +322,8 @@ class TableService:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
             session = self.load_session(path)
-        table, _, player = authenticate(session, token)
-        return session, table, player
+        table, player_id, player = authenticate(session, token)
+        return session, table, player_id, player
 
     def load_session(self, path: Path) -> Session:
         try:
@@ -347,7 +355,9 @@ class TableService:
             secrets=self._llm_secrets,
         )
 
-    def _view(self, table_id: str, session: Session, table: TableMeta, role: Role) -> TableView:
+    def _view(
+        self, table_id: str, session: Session, table: TableMeta, role: Role, you: str
+    ) -> TableView:
         state = session.state
         return TableView(
             table_id=table_id,
@@ -362,5 +372,6 @@ class TableService:
             revision=len(session.state.events),
             status=game_status(session.state),
             llm=self._llm_view(),
+            you=you,
             state=state if role == "host" else PlayerStateView.of(state, session.rules),
         )

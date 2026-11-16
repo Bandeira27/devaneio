@@ -29,6 +29,7 @@ from .models import (
     JoinRequest,
     SayRequest,
 )
+from .static import MAX_STATIC_BYTES, SECURITY_HEADERS, StaticFile, StaticSite
 
 MAX_BODY = 64 * 1024
 MAX_WAIT = 30  # segundos de long-poll
@@ -44,9 +45,15 @@ Route: TypeAlias = tuple[
 class ApiServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address: tuple[str, int], service: TableService) -> None:
+    def __init__(
+        self,
+        address: tuple[str, int],
+        service: TableService,
+        static: StaticSite | None = None,
+    ) -> None:
         super().__init__(address, Handler)
         self.service = service
+        self.static = static  # o front, só com --web; sem ele a API é só JSON
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -70,6 +77,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_campaign(self, match: re.Match[str]) -> tuple[int, Payload]:
         return 200, self.server.service.get_campaign(match.group(1), self._token())
+
+    def _get_rules(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self.server.service.get_rules(match.group(1), self._token())
 
     def _join_table(self, match: re.Match[str]) -> tuple[int, Payload]:
         request = self._read_json(JoinRequest)
@@ -102,6 +112,7 @@ class Handler(BaseHTTPRequestHandler):
         ("POST", re.compile(r"^/tables$"), _create_table),
         ("GET", re.compile(r"^/tables/([^/]+)$"), _get_table),
         ("GET", re.compile(r"^/tables/([^/]+)/campaign$"), _get_campaign),
+        ("GET", re.compile(r"^/tables/([^/]+)/rules$"), _get_rules),
         ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
         ("POST", re.compile(r"^/tables/([^/]+)/commands$"), _command),
         ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),
@@ -145,7 +156,16 @@ class Handler(BaseHTTPRequestHandler):
                 status, payload = handler(self, match)
                 break
             else:
-                raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
+                # A API vem sempre antes: só o que nenhuma rota de API reconhece pode ser arquivo.
+                site = self.server.static
+                raw = self.path.split("?", 1)[
+                    0
+                ]  # sem urlsplit: ``//x`` não vira "host x" e some o ``//``
+                found = site.lookup(raw) if site and method in ("GET", "HEAD") else None
+                if found is None:
+                    raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
+                self._send_file(found, head_only=method == "HEAD")
+                return
         except ApiFailure as exc:
             self._send_error(exc.status, exc.code, exc.message)
             return
@@ -226,16 +246,59 @@ class Handler(BaseHTTPRequestHandler):
         self._send_bytes(status, body.model_dump_json().encode("utf-8"))
 
     def _send_bytes(self, status: int, body: bytes) -> None:
+        self._respond(
+            status,
+            body,
+            {
+                "Content-Type": f"{JSON}; charset=utf-8",
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": SECURITY_HEADERS["X-Content-Type-Options"],
+            },
+        )
+
+    def _send_file(self, found: StaticFile, *, head_only: bool) -> None:
+        body = b""
+        if not head_only:  # HEAD só precisa do tamanho que o lookup já mediu
+            try:
+                with found.path.open("rb") as handle:
+                    body = handle.read(MAX_STATIC_BYTES + 1)  # o teto vale para o que foi lido
+            except OSError:  # sumiu entre o lookup e a leitura
+                raise ApiFailure(404, "not_found", "arquivo não encontrado") from None
+            if len(body) > MAX_STATIC_BYTES:
+                raise ApiFailure(404, "not_found", "arquivo não encontrado")
+        self._respond(
+            200,
+            body,
+            {
+                "Content-Type": found.content_type,
+                "Cache-Control": found.cache_control,
+                **SECURITY_HEADERS,
+            },
+            head_only=head_only,
+            length=found.size if head_only else None,
+        )
+
+    def _respond(
+        self,
+        status: int,
+        body: bytes,
+        headers: dict[str, str],
+        *,
+        head_only: bool = False,
+        length: int | None = None,
+    ) -> None:
+        # HEAD leva os mesmos cabeçalhos (Content-Length inclusive) e nenhum corpo.
+        head_only = head_only or self.command == "HEAD"
         try:
             self.send_response(status)
-            self.send_header("Content-Type", f"{JSON}; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("X-Content-Type-Options", "nosniff")
+            for name, value in headers.items():
+                self.send_header(name, value)
+            self.send_header("Content-Length", str(len(body) if length is None else length))
             if self.close_connection:
                 self.send_header("Connection", "close")
             self.end_headers()
-            self.wfile.write(body)
+            if not head_only:
+                self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError):
             # O cliente foi embora no meio da resposta: nada a fazer além de não derrubar a thread.
             self.close_connection = True
@@ -250,5 +313,7 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write(f"{self.address_string()} {format % args}\n")
 
 
-def make_server(host: str, port: int, service: TableService) -> ApiServer:
-    return ApiServer((host, port), service)
+def make_server(
+    host: str, port: int, service: TableService, static: StaticSite | None = None
+) -> ApiServer:
+    return ApiServer((host, port), service, static)
