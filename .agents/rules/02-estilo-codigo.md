@@ -18,7 +18,7 @@ O que `ruff`, `ruff format` e `mypy --strict` já cobrem **não é repetido aqui
 - Um erro de domínio por pacote (`EngineError`, `LlmError`, `ExpressionError`), mensagem em pt-br, e
   `raise NovoErro(...) from exc` ao traduzir outro.
 - Reuso: antes de escrever, procure a função existente (`engine/lookup.py`, `engine/errors.py`,
-  `game/commands.py`). Siga o padrão do vizinho; não crie um segundo mecanismo para a mesma coisa.
+  `game/commands/`). Siga o padrão do vizinho; não crie um segundo mecanismo para a mesma coisa.
 - Quanto cabe em um arquivo: [rule 09](09-responsabilidades.md). Como documentar: [rule 10](10-documentacao.md).
 
 ## Tamanho e complexidade são indicadores, não limites

@@ -1,5 +1,5 @@
 /**
- * Monta as linhas de comando que o servidor entende (`game/commands.py`): o cliente só formata, quem decide
+ * Monta as linhas de comando que o servidor entende (`game/commands/`): o cliente só formata, quem decide
  * é o motor. Todo id vem de dado do servidor, mas vira texto de uma linha de comando: por isso cada pedaço
  * passa por uma checagem de formato antes (um id com espaço ou aspas viraria outro comando).
  */
