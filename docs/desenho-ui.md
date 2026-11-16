@@ -93,3 +93,8 @@ dele ficam para o painel do anfitrião.
   backoff e um laço por aba.
 - Sem teste ponta a ponta automatizado: há testes de integração por feature com HTTP simulado e verificação manual.
 - HTTP em claro na rede local, como hoje.
+- O aviso de privacidade do LLM (`TableView.llm.notice`) só chega depois de entrar, pois a leitura da mesa exige o
+  token. Ele aparece na criação do personagem e na mesa (em `<details>`), não antes do nome. Mostrá-lo antes pediria
+  um endpoint novo, sem token, que descreva só o LLM da mesa.
+- `Falar` e `Comando` esperam a resposta do servidor (o LLM pode levar segundos): o dock mostra "O mestre está pensando…"
+  e desabilita as ações. Em `stale_revision` o cliente relê e repete uma vez; qualquer outro erro vira texto na tela.

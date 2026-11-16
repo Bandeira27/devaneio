@@ -23,7 +23,7 @@ usuário, [`docs/desenho-sistemas-do-usuario.md`](docs/desenho-sistemas-do-usuar
 
 ```
 backend/    Python (Pydantic v2, pytest) — esquema, motor, orquestração (game), CLI e servidor da mesa
-frontend/   TypeScript strict — tipos do contrato (a UI Angular em frontend/app/ está em construção: docs/desenho-ui.md)
+frontend/   TypeScript strict — tipos do contrato; frontend/app/ é o app Angular do jogador (docs/desenho-ui.md)
 contract/   JSON Schema gerado a partir do backend (dados do jogo e API)
 ```
 
@@ -195,6 +195,24 @@ npm install
 npm run types        # gera src/contract/*.ts a partir de ../contract/*.json
 npm run typecheck
 ```
+
+### App do jogador (`frontend/app`)
+
+SPA Angular (standalone, signals, sem zone), mobile-first, tema "Desbotado" em OKLCH. Precisa de Node >= 24.15.
+Jogar é criar a mesa, abrir o convite no celular, montar o personagem e agir por botões (Ir, Testar, Atacar,
+Ficha), por um comando digitado ou, com o LLM ligado, por texto livre ("Falar").
+
+```bash
+cd frontend/app && npm install
+npm run build                                          # saída em dist/devaneio/browser
+cd ../../backend && .venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas \
+  --web ../frontend/app/dist/devaneio/browser          # app e API na mesma origem
+npm --prefix ../frontend/app start                     # alternativa em dev: ng serve com proxy para a API (8765)
+```
+
+O convite vai no fragmento da URL (`/#/entrar/<mesa>/<código>`), que não chega ao servidor nem ao log. Limite
+conhecido: o aviso de privacidade do LLM só chega com a mesa, que exige o token; por isso ele aparece na criação do
+personagem e na mesa, não antes de entrar. O painel do anfitrião, o copiloto na UI e o editor de campanhas ainda não existem.
 
 ## Qualidade e governança
 
