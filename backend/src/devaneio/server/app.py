@@ -1,7 +1,7 @@
 """Serviço da mesa: cada operação da API, sem HTTP.
 
-Serviço da mesa, sem HTTP além do status das falhas: cada operação carrega a partida do arquivo
-dentro do lock da mesa, aplica a regra da mesa e grava. O arquivo é a fonte única da verdade
+Só o status das falhas lembra HTTP. Cada operação carrega a partida do arquivo dentro do lock
+da mesa, aplica a regra da mesa e grava. O arquivo é a fonte única da verdade
 (campanha e regras são relidas com a partida); em memória ficam só a coordenação (locks, versão,
 vagas de espera) e os parágrafos de narração do LLM, que são exibição descartável.
 """
@@ -326,8 +326,7 @@ class TableService:
     def get_rules(self, table_id: str, token: str | None) -> RulesView:
         """O sistema de regras da mesa, para qualquer jogador.
 
-        O catálogo do sistema de regras da mesa, para qualquer jogador: alimenta os botões
-        de ação e o formulário de personagem. Regra do sistema é dado público.
+        Alimenta os botões de ação e o formulário de personagem. Regra do sistema é dado público.
         """
         session, _, _, _ = self._open(table_id, token)
         return RulesView.of(session.rules)

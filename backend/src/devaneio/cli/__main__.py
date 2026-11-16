@@ -1,7 +1,10 @@
-"""Linha de comando do Devaneio: criar uma partida e jogá-la.
+"""Linha de comando do Devaneio: criar uma partida, jogá-la e conferir uma campanha.
 
-``python -m devaneio.cli nova <campanha.json> <partida.json> [--seed N]`` ``python -m devaneio.cli
-jogar <partida.json>`` ``python -m devaneio.cli verificar <campanha.json>``
+Uso::
+
+    python -m devaneio.cli nova <campanha.json> <partida.json> [--seed N]
+    python -m devaneio.cli jogar <partida.json>
+    python -m devaneio.cli verificar <campanha.json>
 """
 
 from __future__ import annotations

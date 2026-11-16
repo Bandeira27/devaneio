@@ -1,7 +1,9 @@
 """Sobe a mesa em grupo.
 
-Uso: ``python -m devaneio.server --campanhas DIR --dados DIR [--host H] [--porta P]``. Por padrão escuta só em 127.0.0.1: com ``--host 0.0.0.0`` o tráfego
-é HTTP em claro (tokens inclusive); use rede local, VPN ou um proxy TLS na frente.
+Uso: ``python -m devaneio.server --campanhas DIR --dados DIR [--host H] [--porta P]``.
+
+Por padrão escuta só em 127.0.0.1. Com ``--host 0.0.0.0`` o tráfego é HTTP em claro (tokens
+inclusive): use rede local, VPN ou um proxy TLS na frente.
 """
 
 from __future__ import annotations

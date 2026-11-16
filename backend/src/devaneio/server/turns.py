@@ -158,8 +158,7 @@ def apply(
 def authenticate(session: Session, token: str) -> tuple[TableMeta, str, Player]:
     """A mesa da partida e o jogador dono do token.
 
-    A mesa da partida e o jogador dono do token: 404 se a partida não é uma mesa, 401 se o token
-    não é de ninguém.
+    404 se a partida não é uma mesa, 401 se o token não é de ninguém.
     """
     table = session.table
     if table is None:
@@ -173,8 +172,7 @@ def authenticate(session: Session, token: str) -> tuple[TableMeta, str, Player]:
 def resolve(player: Player, line: str, state: GameState) -> Plan:
     """Decide se o jogador pode dar o comando e com qual linha.
 
-    Decide se o jogador pode dar este comando e com qual linha final: papel, personagem que age,
-    alvo visível, limites do ``entrar``. Não olha revisão nem turno (isso é ``check_turn``) e
+    Confere papel, personagem que age, alvo visível e limites do ``entrar``. Não olha revisão nem turno (isso é ``check_turn``) e
     não muda nada. Comando que o jogo não conhece (``kind`` ``None``) segue direto para o
     ``execute``, que o recusa com a mensagem de sempre. A linha final é remontada com o prefixo
     do personagem, e ``parse_line`` a lê de volta como (ator, comando) esperados: classificação

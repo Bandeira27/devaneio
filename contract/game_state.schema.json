@@ -58,7 +58,7 @@
     },
     "Event": {
       "additionalProperties": false,
-      "description": "Entrada do log.\n\nProvisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira\nunião discriminada por ``kind``).",
+      "description": "Entrada do log.\n\n``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.",
       "properties": {
         "turn": {
           "minimum": 0,

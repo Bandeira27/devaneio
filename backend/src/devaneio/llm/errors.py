@@ -1,4 +1,4 @@
-"""O erro do pacote do LLM."""
+"""Erro único do pacote do LLM, levantado quando o servidor falha ou responde fora do formato."""
 
 
 class LlmError(RuntimeError):

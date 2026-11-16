@@ -11,9 +11,8 @@ def split_actor(line: str) -> tuple[str | None, str]:
     """Separa o prefixo ``id:`` (primeira palavra, sem aspas) do resto da linha.
 
     É o único analisador do prefixo: comandos, texto livre e quem orquestra por cima (CLI,
-    servidor) usam esta regra. Sem shlex,
-    para que aspas soltas em texto livre não escondam um comando, e para que ``'id:'`` entre
-    aspas não seja prefixo.
+    servidor) usam esta regra. Sem shlex, para que aspas soltas em texto livre não escondam um
+    comando, e para que ``'id:'`` entre aspas não seja prefixo.
     """
     parts = line.split(maxsplit=1)
     head, rest = (parts[0], parts[1].strip()) if len(parts) == 2 else (line.strip(), "")

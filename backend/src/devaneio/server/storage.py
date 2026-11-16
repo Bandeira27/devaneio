@@ -120,8 +120,7 @@ class Storage:
     def enter_slot(self, table_id: str, kind: str) -> bool:
         """Reserva a única chamada em curso de um tipo ao LLM na mesa.
 
-        Reserva a única chamada ao LLM de um tipo na mesa; ``False`` se já há uma em curso
-        (cada uma custa chamadas ao LLM de quem roda o servidor).
+        ``False`` se já há uma em curso: cada uma custa chamadas ao LLM de quem roda o servidor.
         """
         table = self._table(table_id)
         with self._registry:
@@ -140,8 +139,7 @@ class Storage:
     def slot_cooldown_left(self, table_id: str, kind: str, key: str, cooldown: float) -> float:
         """Quanto falta até poder fazer outra chamada ao LLM.
 
-        Segundos até ``key`` (o jogador, ou a mesa) poder pedir outra chamada deste tipo (0
-        se já pode). Cada pedido custa chamadas ao LLM de quem roda o servidor.
+        São segundos para ``key`` (o jogador, ou a mesa) poder pedir de novo; 0 se já pode.
         """
         table = self._table(table_id)
         with self._registry:

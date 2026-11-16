@@ -79,8 +79,7 @@ export interface NpcState {
 /**
  * Entrada do log.
  *
- * Provisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira
- * união discriminada por ``kind``).
+ * ``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.
  */
 export interface Event {
   turn: number;

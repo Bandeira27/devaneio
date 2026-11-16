@@ -1,7 +1,7 @@
 """Mesa: quem joga uma partida em grupo.
 
-Quem joga uma partida em grupo. Persistida dentro do arquivo de partida (``SaveFile.table``), fora
-do contrato; o CLI preserva o campo sem interpretá-lo.
+Fica dentro do arquivo de partida (``SaveFile.table``), fora do contrato; o CLI preserva o campo
+sem interpretá-lo.
 
 Só hashes de segredo ficam aqui; token e convite em claro nunca são gravados. A política de turnos
 (quem já agiu) vive em ``acted``: personagem → turno em que fez a ação principal.

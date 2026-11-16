@@ -21,6 +21,7 @@ from .text import clean_multiline
 RECENT_EVENTS = 15
 MAX_ANSWER_CHARS = 2000
 COPILOT_TEMPERATURE = 0.5
+# Cerca de 15 mil tokens: campanha maior que isso estouraria a janela e o pedido falharia sem explicação.
 MAX_CONTEXT_CHARS = 60_000
 REDUCED_EVENTS = 5
 TEXT_CUT = 200  # tamanho máximo de cada texto livre na última etapa de encolhimento

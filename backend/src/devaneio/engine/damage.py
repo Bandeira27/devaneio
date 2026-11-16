@@ -47,7 +47,8 @@ def deal_damage(
 ) -> DamageResult:
     """Rola a fórmula da arma com os atributos do atacante e aplica ao alvo.
 
-    Resultado negativo da fórmula vira 0. Não decide acerto: isso é um ``resolve_check`` anterior, a cargo de quem orquestra.
+    Resultado negativo da fórmula vira 0. Não decide acerto: isso é um ``resolve_check``
+    anterior, a cargo de quem orquestra.
     """
     attacker_name, attacker_attrs, _ = combatant(state, campaign, attacker_kind, attacker_id)
     weapon = next((w for w in rules.weapons if w.id == weapon_id), None)

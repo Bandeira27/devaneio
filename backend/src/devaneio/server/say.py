@@ -149,8 +149,7 @@ class SayDesk:
     def _narration(client: ChatClient, session: Session, start: int) -> dict[int, str]:
         """A narração do LLM no primeiro evento novo que os jogadores veem.
 
-        O parágrafo do LLM no primeiro evento novo que os JOGADORES veem: é igual para
-        todos, então não pode citar o que só o anfitrião vê (evento sobre NPC escondido). Se
+        O parágrafo é igual para todos os jogadores, então não pode citar o que só o anfitrião vê (evento sobre NPC escondido). Se
         o LLM falhar, nada: ``narration`` fica ``None`` e vale a prosa da gramática.
         """
         state = session.state

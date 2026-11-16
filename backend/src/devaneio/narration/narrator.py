@@ -32,8 +32,9 @@ class Narrator:
         self.grammar = Grammar(self.pack.rules)
 
     def narrate(self, event: Event, index: int, state: GameState) -> str:
-        """A prosa de um evento do log.
+        """A prosa do evento na posição ``index`` do log.
 
+        O índice entra no sorteio das alternativas: mesmo evento, índice e semente dão o mesmo texto.
         Sem regra, devolve o texto mecânico do evento.
         """
         variant, variables = self._prepare(event, state)

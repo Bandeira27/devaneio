@@ -45,7 +45,7 @@ class NpcState(StrictModel):
     alive: bool = True
     hp: int
     max_hp: int = Field(ge=0)
-    # Resolvidos na criação do estado (campanha + padrões do sistema): efeitos futuros podem alterá-los.
+    # Resolvidos na criação do estado (campanha + padrões do sistema): o motor age só sobre estado e regras.
     attributes: dict[str, int] = {}
     # Sem limites: os limiares (hostil, neutro, aliado...) virão do sistema de regras.
     disposition: int = 0
@@ -61,8 +61,7 @@ class NpcState(StrictModel):
 class Event(StrictModel):
     """Entrada do log.
 
-    Provisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira
-    união discriminada por ``kind``).
+    ``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.
     """
 
     turn: int = Field(ge=0)

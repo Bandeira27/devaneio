@@ -157,8 +157,7 @@ export interface NpcState {
 /**
  * Entrada do log.
  *
- * Provisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira
- * união discriminada por ``kind``).
+ * ``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.
  */
 export interface Event {
   turn: number;
@@ -171,12 +170,10 @@ export interface Event {
 /**
  * O estado do jogo como um jogador comum o vê.
  *
- * Fica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível),
- * ``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem
- * fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local atual e só como
- * ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o ``GameState``
- * inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em ``of`` (e
- * ``tests/test_server_models.py`` obriga a decidir).
+ * Fica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível) e
+ * ``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem fatos
+ * já públicos. NPCs só os do local atual e só como ``NpcView``; marcos só os que já começaram.
+ * O anfitrião recebe o ``GameState`` inteiro.
  */
 export interface PlayerStateView {
   state_version: 1;
@@ -247,8 +244,8 @@ export interface CommandResult {
  *
  * Sem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é
  * o parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do
- * lote (nos outros é ``None``) e só enquanto o servidor não reinicia. Os dois são exibição,
- * nunca voltam ao estado, e são iguais para todos os jogadores.
+ * lote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para
+ * todos os jogadores.
  */
 export interface EventView {
   index: number;
@@ -288,8 +285,7 @@ export interface EventsView {
 /**
  * Uma fala do mestre ou de um NPC.
  *
- * Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.
- * ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
+ * Vem de uma ação de texto livre e é igual para todos. ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
  * personagem que a provocou. Não é evento: o LLM nunca escreve no estado.
  */
 export interface TalkView {
@@ -476,10 +472,9 @@ export interface FactInfo {
 /**
  * O sistema de regras como os jogadores precisam dele.
  *
- * O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de
- * ação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público
- * (não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,
- * ``rest``, ``outcomes``, ``dispositions``).
+ * O catálogo para montar as ações da tela e o formulário de personagem. Regra do sistema é
+ * dado público; ficam de fora só os campos que a tela não usa (``max_hp``, ``rest``,
+ * ``outcomes``, ``dispositions``).
  */
 export interface RulesView {
   id: string;

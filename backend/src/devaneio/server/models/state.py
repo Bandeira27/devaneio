@@ -61,13 +61,13 @@ class NpcView(StrictModel):
 class PlayerStateView(StrictModel):
     """O estado do jogo como um jogador comum o vê.
 
-    Fica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível),
-    ``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem
-    fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local atual e só como
-    ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o ``GameState``
-    inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em ``of`` (e
-    ``tests/test_server_models.py`` obriga a decidir).
+    Fica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível) e
+    ``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem fatos
+    já públicos. NPCs só os do local atual e só como ``NpcView``; marcos só os que já começaram.
+    O anfitrião recebe o ``GameState`` inteiro.
     """
+
+    # Campo novo de GameState só chega aqui se listado em `of` (tests/test_server_models.py obriga).
 
     state_version: Literal[1]
     campaign_id: Id

@@ -144,8 +144,8 @@ def builtin_rules_dict(rules_id: str) -> dict[str, Any]:
 def load_rules_extending(data: Any, load_parent: Callable[[str], dict[str, Any]]) -> RuleSystem:
     """Carrega um sistema de regras, resolvendo o que ele estende.
 
-    Carrega um sistema, resolvendo ``extends`` por ``load_parent`` (id -> dict do pai, que
-    levanta ``ValueError`` se não existe). Sem ``extends``, é um ``load_rules`` comum.
+    O pai vem de ``load_parent`` (id -> dict, que levanta ``ValueError`` se não existe). Sem
+    ``extends``, é um ``load_rules`` comum.
     """
     raw = json.loads(data) if isinstance(data, (str, bytes, bytearray)) else data
     if not isinstance(raw, dict) or "extends" not in raw:

@@ -27,8 +27,8 @@ class EventView(StrictModel):
 
     Sem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é
     o parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do
-    lote (nos outros é ``None``) e só enquanto o servidor não reinicia. Os dois são exibição,
-    nunca voltam ao estado, e são iguais para todos os jogadores.
+    lote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para
+    todos os jogadores.
     """
 
     index: int
@@ -42,8 +42,7 @@ class EventView(StrictModel):
 class TalkView(StrictModel):
     """Uma fala do mestre ou de um NPC.
 
-    Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.
-    ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
+    Vem de uma ação de texto livre e é igual para todos. ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o
     personagem que a provocou. Não é evento: o LLM nunca escreve no estado.
     """
 

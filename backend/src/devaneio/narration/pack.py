@@ -29,7 +29,8 @@ EVENT_VARIABLES: dict[str, tuple[str, ...]] = {
 }
 
 
-# Variantes que o narrador escolhe por tipo de evento (regras "tipo.variante").
+# Variantes que o narrador escolhe por tipo de evento (regras "tipo.variante"). Tabela compartilhada
+# com o aviso de autoria; um teste confere que o ``Narrator`` só usa estas.
 EVENT_VARIANTS: dict[str, tuple[str, ...]] = {
     "check": ("critical_failure", "failure", "success", "critical_success"),
     "damage": ("golpe", "golpe_queda", "fonte", "fonte_queda"),

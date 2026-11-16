@@ -565,7 +565,7 @@
     },
     "Event": {
       "additionalProperties": false,
-      "description": "Entrada do log.\n\nProvisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira\nunião discriminada por ``kind``).",
+      "description": "Entrada do log.\n\n``kind`` diz o tipo do evento e ``data`` traz os detalhes dele, que variam por tipo.",
       "properties": {
         "turn": {
           "minimum": 0,
@@ -595,7 +595,7 @@
     },
     "EventView": {
       "additionalProperties": false,
-      "description": "Um evento do log como o cliente o recebe.\n\nSem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é\no parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do\nlote (nos outros é ``None``) e só enquanto o servidor não reinicia. Os dois são exibição,\nnunca voltam ao estado, e são iguais para todos os jogadores.",
+      "description": "Um evento do log como o cliente o recebe.\n\nSem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é\no parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do\nlote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para\ntodos os jogadores.",
       "properties": {
         "index": {
           "type": "integer"
@@ -1262,7 +1262,7 @@
     },
     "PlayerStateView": {
       "additionalProperties": false,
-      "description": "O estado do jogo como um jogador comum o vê.\n\nFica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível),\n``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem\nfatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local atual e só como\n``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o ``GameState``\ninteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em ``of`` (e\n``tests/test_server_models.py`` obriga a decidir).",
+      "description": "O estado do jogo como um jogador comum o vê.\n\nFica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível) e\n``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem fatos\njá públicos. NPCs só os do local atual e só como ``NpcView``; marcos só os que já começaram.\nO anfitrião recebe o ``GameState`` inteiro.",
       "properties": {
         "state_version": {
           "const": 1,
@@ -1362,7 +1362,7 @@
     },
     "RulesView": {
       "additionalProperties": false,
-      "description": "O sistema de regras como os jogadores precisam dele.\n\nO sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de\nação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público\n(não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,\n``rest``, ``outcomes``, ``dispositions``).",
+      "description": "O sistema de regras como os jogadores precisam dele.\n\nO catálogo para montar as ações da tela e o formulário de personagem. Regra do sistema é\ndado público; ficam de fora só os campos que a tela não usa (``max_hp``, ``rest``,\n``outcomes``, ``dispositions``).",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1621,7 +1621,7 @@
     },
     "TalkView": {
       "additionalProperties": false,
-      "description": "Uma fala do mestre ou de um NPC.\n\nFala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.\n``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o\npersonagem que a provocou. Não é evento: o LLM nunca escreve no estado.",
+      "description": "Uma fala do mestre ou de um NPC.\n\nVem de uma ação de texto livre e é igual para todos. ``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o\npersonagem que a provocou. Não é evento: o LLM nunca escreve no estado.",
       "properties": {
         "seq": {
           "type": "integer"

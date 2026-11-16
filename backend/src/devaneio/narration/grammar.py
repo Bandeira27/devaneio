@@ -14,6 +14,8 @@ from collections.abc import Collection, Iterable, Mapping, Sequence
 from devaneio.rng import Rng
 
 MAX_DEPTH = 24
+# Limites contra pacote que explode ao expandir (3^n): o pior caso é conferido na carga e as
+# expansões são contadas ao narrar.
 MAX_EXPANSIONS = 500
 MAX_EXPANDED_CHARS = 2000
 VARIABLE_CHARS = 100  # tamanho presumido de uma variável (nome, local...) no pior caso
@@ -92,8 +94,7 @@ class Grammar:
     def worst_length(self, symbol: str, variables: Collection[str]) -> int:
         """Maior texto possível ao expandir um símbolo.
 
-        Maior texto possível ao expandir ``symbol`` (variável conta ``VARIABLE_CHARS``). Só
-        vale sem ciclos: confira ``cycles()`` antes.
+        Cada variável conta ``VARIABLE_CHARS``. Só vale sem ciclos: confira ``cycles()`` antes.
         """
         memo: dict[str, int] = {}
 

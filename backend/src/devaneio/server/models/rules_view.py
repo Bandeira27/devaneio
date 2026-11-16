@@ -65,10 +65,9 @@ class CombatInfo(StrictModel):
 class RulesView(StrictModel):
     """O sistema de regras como os jogadores precisam dele.
 
-    O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de
-    ação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público
-    (não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,
-    ``rest``, ``outcomes``, ``dispositions``).
+    O catálogo para montar as ações da tela e o formulário de personagem. Regra do sistema é
+    dado público; ficam de fora só os campos que a tela não usa (``max_hp``, ``rest``,
+    ``outcomes``, ``dispositions``).
     """
 
     id: Id

@@ -20,7 +20,7 @@ HOST_ONLY = frozenset(
 )
 PLAYER_READ = frozenset(READ_ONLY) - {"marcos", "fatos", "log"}
 JOIN = frozenset({"entrar"})
-# Gastam a ação principal do personagem no turno.
+# Gastam a ação principal do personagem no turno. `ir` move o grupo todo e `atacar` aceita personagem alheio.
 ACTIONS = frozenset({"testar", "atacar", "ir"})
 
 

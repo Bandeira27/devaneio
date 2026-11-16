@@ -25,8 +25,7 @@ from .table import TableMeta
 class ContentHashes(StrictModel):
     """Impressão digital do conteúdo com que a partida foi jogada.
 
-    Impressão digital do conteúdo com que a partida foi jogada (modelos já mesclados). Serve só
-    para avisar que o autor mudou o sistema ou a narração; nunca recusa a partida.
+    Calculada sobre os modelos já mesclados. Serve só para avisar que o autor mudou o sistema ou a narração; nunca recusa a partida.
     """
 
     rules_sha256: str

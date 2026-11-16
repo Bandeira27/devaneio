@@ -38,7 +38,8 @@ SCHEMAS: dict[str, tuple[type[BaseModel], JsonSchemaMode]] = {
 class _NoFieldTitles(GenerateJsonSchema):
     """Remove os títulos de campo do esquema gerado.
 
-    Sem ``title`` por campo, o gerador de tipos TS transformaria cada um em um alias ruidoso (``Id1``, ``Turn2``).
+    Sem ``title`` por campo, o gerador de tipos TS transformaria cada um em um alias ruidoso
+    (``Id1``, ``Turn2``).
     Títulos de modelo (Character, Fact...) continuam.
     """
 

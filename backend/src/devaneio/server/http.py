@@ -127,32 +127,32 @@ class Handler(BaseHTTPRequestHandler):
     # --- despacho ----------------------------------------------------------------
 
     def do_GET(self) -> None:
-        """Trata GET."""
+        """Trata GET: rota da API ou arquivo do app."""
         self._dispatch("GET")
 
     def do_POST(self) -> None:
-        """Trata POST."""
+        """Trata POST: rota da API; corpo sempre JSON."""
         self._dispatch("POST")
 
     # Métodos sem rota respondem em JSON (405/404) em vez do HTML da stdlib.
     def do_PUT(self) -> None:
-        """Responde 405 em JSON."""
+        """405 em JSON: a API não tem rota PUT."""
         self._dispatch("PUT")
 
     def do_PATCH(self) -> None:
-        """Responde 405 em JSON."""
+        """405 em JSON: a API não tem rota PATCH."""
         self._dispatch("PATCH")
 
     def do_DELETE(self) -> None:
-        """Responde 405 em JSON."""
+        """405 em JSON: a API não tem rota DELETE."""
         self._dispatch("DELETE")
 
     def do_HEAD(self) -> None:
-        """Trata HEAD (só vale para arquivos)."""
+        """Trata HEAD: só arquivos do app respondem, sem corpo."""
         self._dispatch("HEAD")
 
     def do_OPTIONS(self) -> None:
-        """Responde 405 em JSON."""
+        """405 em JSON: não há CORS, porque o app vem da mesma origem."""
         self._dispatch("OPTIONS")
 
     def _dispatch(self, method: str) -> None:
