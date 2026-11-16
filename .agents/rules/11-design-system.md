@@ -14,7 +14,8 @@ própria rule ([12](12-movimento.md)).
   token inexistente e animação de propriedade que força layout. Exceção só com justificativa na lista do próprio lint.
 - Token novo entra com o uso que o motivou, em `tokens.css`, com comentário de papel. Valor que só um componente usa
   e que é geometria dele (uma largura mínima em `rem`) fica no componente; valor que dois usam sobe para token.
-- **Contraste é medido, não declarado.** Todo par de cor que carrega informação entra em `tools/tokens.spec.ts`:
+- **Contraste é medido, não declarado.** Todo par de cor que carrega informação entra em `tools/tokens.spec.ts` (por
+  revisão: o spec lista os pares à mão, nada acusa um par esquecido):
   texto ≥ 4,5:1, contorno de controle, anel de foco e texto desabilitado ≥ 3:1. O que desbota tem piso por papel
   (`--dv-fade-floor-*`): a cor perde contraste mais que a sépia.
 - Elevação: o que repousa se separa por superfície e contorno; **sombra só em quem flutua** (folha, diálogo) ou está

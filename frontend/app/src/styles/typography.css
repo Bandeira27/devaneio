@@ -12,7 +12,7 @@
   margin: 0;
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
-  line-height: var(--dv-leading-ui);
+  line-height: var(--dv-leading-narration);
 }
 
 .dv-note {

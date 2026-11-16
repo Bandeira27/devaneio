@@ -22,20 +22,20 @@ estética e da arquitetura do app está em [`desenho-ui.md`](desenho-ui.md).
 
 Todos começam por `--dv-`. Mudar um valor é mudar o tema inteiro; por isso nenhum estilo escreve valor próprio.
 
-| Grupo              | Tokens                                                                                                                                       |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Paleta**         | `smoke`, `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                               |
-| **Superfícies**    | `surface-0` (página), `-1` (cartão), `-2` (hover), `-3` (o que flutua)                                                                       |
-| **Papéis**         | `text`, `text-muted`, `text-disabled`, `accent` (+ `hover`, `pressed`, `disabled`), `on-accent`, `ok`, `warn`, `info`, `danger`, `selection` |
-| **Tom de status**  | cada tom tem `-surface`: fundo sobre o qual o texto do tom passa                                                                             |
-| **Contorno**       | `line` (decoração), `border-control` (≥ 3:1, carrega significado), `border-disabled`, `focus-ring`                                           |
-| **Desbotado**      | `fade-floor-text` (0,65, texto de leitura), `fade-floor-quiet` (0,85, cores de tom), `opacity-stain`                                         |
-| **Tipografia**     | famílias (`font-narration`, `font-note`, `font-ui`), tamanhos (`text-*`), `leading-*`, `weight-regular`                                      |
-| **Espaço e forma** | `space-1…8`, `radius`, `radius-lg`, `radius-round`, `touch` (44 px), `border-width`, `focus-*`, `size-pip`, `size-dot`                       |
-| **Medida**         | `measure-page`, `measure-table`, `measure-sheet`, `sheet-max-height`                                                                         |
-| **Camada**         | `z-base`, `z-raised`, `z-sticky`, `z-overlay`                                                                                                |
-| **Elevação**       | `shadow-float` (folha, diálogo), `shadow-press` (pressionado)                                                                                |
-| **Movimento**      | `duration-*`, `ease-*`, `stagger`, `motion-distance`                                                                                         |
+| Grupo              | Tokens                                                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Paleta**         | `smoke`, `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                                 |
+| **Superfícies**    | `surface-0` (página), `-1` (cartão), `-2` (hover), `-3` (o que flutua)                                                                         |
+| **Papéis**         | `text`, `text-muted`, `text-disabled`, `accent` (+ `hover`, `pressed`, `disabled`), `on-accent`, `ok`, `warn`, `info`, `danger`, `selection`   |
+| **Tom de status**  | cada tom tem `-surface`: fundo sobre o qual o texto do tom passa                                                                               |
+| **Contorno**       | `line` (decoração), `border-control` (≥ 3:1, carrega significado), `border-disabled`, `focus-ring`                                             |
+| **Desbotado**      | `fade-floor-text` (0,65, texto de leitura), `fade-floor-quiet` (0,85, cores de tom), `opacity-stain`                                           |
+| **Tipografia**     | famílias (`font-narration`, `font-note`, `font-ui`), tamanhos (`text-*`), `leading-*`, `weight-regular`                                        |
+| **Espaço e forma** | `space-1`, `2`, `3`, `4`, `6` e `8`, `radius`, `radius-lg`, `radius-round`, `touch` (44 px), `border-width`, `focus-*`, `size-pip`, `size-dot` |
+| **Medida**         | `measure-page`, `measure-table`, `measure-sheet`, `sheet-max-height`                                                                           |
+| **Camada**         | `z-base`, `z-raised`, `z-sticky`, `z-overlay`                                                                                                  |
+| **Elevação**       | `shadow-float` (folha, diálogo), `shadow-press` (pressionado)                                                                                  |
+| **Movimento**      | `duration-*`, `ease-*`, `stagger`, `motion-distance`                                                                                           |
 
 ### Contraste
 

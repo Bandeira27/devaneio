@@ -76,10 +76,14 @@ if [[ $FAST -eq 0 ]]; then
     fi
     if [[ $HAS_APP -eq 1 ]]; then
         run "lint (app)" in_dir frontend/app npm run --silent lint
-        run "testes de ferramenta (app)" in_dir frontend/app npm run --silent test:tools
         run "build (app)" in_dir frontend/app npm run --silent build
         run "testes (app)" in_dir frontend/app npm run --silent test
     fi
+fi
+
+# Contraste dos tokens e regra de ouro do estilo (design-lint): rápidos, valem também no pre-commit.
+if [[ $HAS_APP -eq 1 ]]; then
+    run "testes de ferramenta (app)" in_dir frontend/app npm run --silent test:tools
 fi
 
 printf '\n'

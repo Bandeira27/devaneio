@@ -33,7 +33,7 @@ function color(name: string): Rgb {
   return oklchToSrgb(Number(parsed[1]) / 100, Number(parsed[2]), Number(parsed[3]));
 }
 
-const SURFACES = ['--dv-surface-0', '--dv-surface-1', '--dv-surface-2'];
+const SURFACES = ['--dv-surface-0', '--dv-surface-1', '--dv-surface-2', '--dv-surface-3'];
 
 describe('conversão de cor', () => {
   it('converte OKLCH para sRGB (a fumaça e a sépia do mockup)', () => {

@@ -25,7 +25,8 @@ Sem resposta convincente, a animação não existe. O PR que adiciona movimento 
 - **Nunca atrasa a operação:** o estado final vale na hora; a animação só decora a chegada. Nada que bloqueie clique.
 - **Redução de movimento:** os tokens de duração caem para quase zero e a distância para zero em
   `prefers-reduced-motion: reduce` (em `tokens.css`); não há `!important` global. Feedback funcional continua por cor e
-  texto. Quem escreve movimento novo não precisa tratar a preferência: usando os tokens, ela já vale.
+  texto. Usando os tokens, a preferência já vale, com duas exceções que o lint barra: animação `infinite` (use
+  `var(--dv-iterations-pending)`, que vira 1 com movimento reduzido) e `scroll-behavior: smooth`.
 - **Lento só onde é narrativo:** `--dv-duration-narrative` é exclusivo da tinta nova da narração; no máximo um movimento
   narrativo por vez, e lote grande de eventos entra sem escalonamento.
 

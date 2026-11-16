@@ -3,6 +3,10 @@
  * componentes) e devolvem o que foge disso; `design-lint.spec.ts` as roda sobre o app inteiro.
  */
 
+const COLOR_PROPERTIES =
+  /^(?:color|background|background-color|(?:border(?:-(?:top|right|bottom|left))?-color)|outline-color|fill|stroke|caret-color|text-decoration-color)$/;
+const SAFE_COLOR = /^(?:transparent|currentcolor|inherit|none|initial|unset)$/i;
+
 const LAYOUT_PROPERTIES =
   /^(?:width|height|min-width|max-width|min-height|max-height|top|right|bottom|left|inset|margin|padding|border-width|gap|flex-basis|font-size)(?:-[a-z]+)*$/;
 
@@ -16,10 +20,26 @@ export function stripComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
-/** Extrai o CSS do `styles:` inline de um componente, se houver. */
+/**
+ * Extrai o CSS do `styles:` inline de um componente (string ou lista de strings, com aspas simples, duplas ou
+ * crase). Interpolação (`${}`) não é lida: `lintStylesSource` a reprova.
+ */
 export function inlineStyles(source: string): string {
-  const match = /styles:\s*(?:\[\s*)?(?:'([^']*)'|`([^`]*)`)/.exec(source);
-  return match?.[1] ?? match?.[2] ?? '';
+  const start = /\bstyles:\s*/.exec(source);
+  if (!start) {
+    return '';
+  }
+  const rest = source.slice(start.index + start[0].length);
+  const end = rest.startsWith('[') ? rest.indexOf(']') : rest.search(/[,}]\s*(?:\n|$)/);
+  const value = end < 0 ? rest : rest.slice(0, end + 1);
+  return [...value.matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|`([^`]*)`/g)]
+    .map((m) => m[1] ?? m[2] ?? m[3] ?? '')
+    .join('\n');
+}
+
+/** `styles:` que o lint não consegue ler (interpolação), para reprovar em vez de passar em branco. */
+export function unreadableStyles(source: string): boolean {
+  return /\bstyles:/.test(source) && /\bstyles:[^;]*\$\{/.test(source);
 }
 
 /** Declarações `propriedade: valor` de um bloco, uma por entrada. */
@@ -69,6 +89,19 @@ export function lintCss(css: string, file: string, { isTokens = false } = {}): s
       flag('curva literal (use --dv-ease-*)', m[1] ?? '');
     }
     for (const d of declarations(clean)) {
+      if (
+        COLOR_PROPERTIES.test(d.property) &&
+        !SAFE_COLOR.test(d.value) &&
+        !/var\(/.test(d.value)
+      ) {
+        flag('cor nomeada ou literal (use um token)', `${d.property}: ${d.value}`);
+      }
+      if (d.property === 'scroll-behavior' && d.value === 'smooth') {
+        flag('rolagem animada (respeitaria o movimento reduzido só com um token)', d.value);
+      }
+      if (d.property.startsWith('animation') && /\binfinite\b/.test(d.value)) {
+        flag('animação infinita (use var(--dv-iterations-pending))', d.value);
+      }
       if (d.property === 'z-index' && !d.value.startsWith('var(')) {
         flag('z-index literal (use --dv-z-*)', d.value);
       }
@@ -103,7 +136,9 @@ export function lintCss(css: string, file: string, { isTokens = false } = {}): s
     animated.push(...declarations(body).map((d) => d.property));
   }
   for (const property of animated) {
-    if (LAYOUT_PROPERTIES.test(property)) {
+    if (property === 'all') {
+      flag('transition: all anima layout (liste as propriedades)', property);
+    } else if (LAYOUT_PROPERTIES.test(property)) {
       flag('anima propriedade que força layout (use opacity/transform)', property);
     }
   }

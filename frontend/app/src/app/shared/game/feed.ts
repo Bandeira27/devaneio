@@ -59,8 +59,8 @@ export function ageOpacity(age: number, floor = FADE_FLOOR): number {
 }
 
 /** O quanto já desbotou, de 0 (agora) a 1 (no piso): a opacidade que `ageOpacity` dá, reescalada pelo piso. */
-export function ageFade(age: number, floor = FADE_FLOOR): number {
-  return Math.round(((1 - ageOpacity(age, floor)) / (1 - floor)) * 100) / 100;
+export function ageFade(age: number): number {
+  return Math.round(((1 - ageOpacity(age)) / (1 - FADE_FLOOR)) * 100) / 100;
 }
 
 /**
@@ -71,7 +71,6 @@ export function buildFeed(
   events: readonly EventView[],
   talk: readonly TalkView[],
   currentTurn: number,
-  floor = FADE_FLOOR,
 ): FeedItem[] {
   const ordered = [...events].sort((a, b) => a.index - b.index);
   const talks = [...talk].sort((a, b) => a.after - b.after || a.seq - b.seq);
@@ -88,7 +87,7 @@ export function buildFeed(
         key: `talk-${t.seq}`,
         seq: t.seq,
         text: t.text,
-        fade: ageFade(currentTurn - lastEventTurn, floor),
+        fade: ageFade(currentTurn - lastEventTurn),
       });
       talkAt++;
     }
@@ -115,7 +114,7 @@ export function buildFeed(
       narration: event.narration ?? event.prose,
       note: event.text,
       tone: TONES[event.kind] ?? 'neutral',
-      fade: ageFade(currentTurn - event.turn, floor),
+      fade: ageFade(currentTurn - event.turn),
     });
   }
   flushTalk(Number.POSITIVE_INFINITY);

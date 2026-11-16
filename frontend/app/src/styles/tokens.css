@@ -22,7 +22,7 @@
   --dv-surface-0: var(--dv-smoke);
   --dv-surface-1: oklch(31% 0.012 81);
   --dv-surface-2: oklch(34% 0.014 81);
-  --dv-surface-3: oklch(37% 0.016 81); /* o que flutua: folha, diálogo */
+  --dv-surface-3: oklch(34.5% 0.015 81); /* o que flutua: folha, diálogo */
 
   /* Papéis */
   --dv-text: var(--dv-sepia);
@@ -124,6 +124,7 @@
   --dv-ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
   --dv-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
   --dv-stagger: 60ms;
+  --dv-iterations-pending: infinite; /* indicador de pendência: com movimento reduzido roda uma vez */
   --dv-motion-distance: 0.25rem;
 }
 
@@ -136,6 +137,7 @@
     --dv-duration-slow: 1ms;
     --dv-duration-narrative: 1ms;
     --dv-stagger: 0ms;
+    --dv-iterations-pending: 1;
     --dv-motion-distance: 0;
   }
 }
