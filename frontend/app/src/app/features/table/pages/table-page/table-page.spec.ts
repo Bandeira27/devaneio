@@ -143,8 +143,19 @@ describe('Mesa', () => {
     events('0').flush(eventsView(3, [event(0, 0), event(1, 2)]));
     await settle();
     const [old, current] = Array.from(root().querySelectorAll<HTMLElement>('.feed__event'));
-    expect(old?.style.opacity).toBe('0.8');
-    expect(current?.style.opacity).toBe('1');
+    expect(old?.style.getPropertyValue('--fade')).toBe('0.57');
+    expect(current?.style.getPropertyValue('--fade')).toBe('0');
+  });
+
+  it('só o que chegou depois do carregamento anima a tinta nova', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3, [event(1, 1)]));
+    await settle();
+    expect(root().querySelectorAll('.feed__event--new').length).toBe(0); // a carga inicial entra sem animar
+    events('20').flush(eventsView(4, [event(2, 1)]));
+    await settle();
+    expect(root().querySelectorAll('.feed__event--new').length).toBe(1);
+    expect(root().querySelector('.feed__event--new')?.textContent).toContain('prosa 2');
   });
 
   it('texto com HTML na narração e na fala aparece como texto', async () => {

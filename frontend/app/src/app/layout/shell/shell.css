@@ -15,10 +15,10 @@
 .shell::after {
   content: '';
   position: absolute;
-  z-index: 0;
-  border-radius: 50%;
+  z-index: var(--dv-z-base);
+  border-radius: var(--dv-radius-round);
   background: var(--dv-stain);
-  opacity: 0.08;
+  opacity: var(--dv-opacity-stain);
   pointer-events: none;
 }
 
@@ -39,7 +39,7 @@
 .shell__bar,
 .shell__main {
   position: relative;
-  z-index: 1;
+  z-index: var(--dv-z-raised);
   padding-inline: max(var(--dv-space-4), env(safe-area-inset-left))
     max(var(--dv-space-4), env(safe-area-inset-right));
 }
@@ -47,7 +47,7 @@
 .shell__bar {
   padding-block: var(--dv-space-3);
   padding-top: max(var(--dv-space-3), env(safe-area-inset-top));
-  border-bottom: 1px dotted var(--dv-line);
+  border-bottom: var(--dv-border-width) dotted var(--dv-line);
 }
 
 .shell__brand {

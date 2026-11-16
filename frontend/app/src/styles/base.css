@@ -17,7 +17,7 @@ body {
   color: var(--dv-text);
   font-family: var(--dv-font-ui);
   font-size: var(--dv-text-ui);
-  line-height: 1.5;
+  line-height: var(--dv-leading-ui);
 }
 
 a {
@@ -25,12 +25,12 @@ a {
 }
 
 :focus-visible {
-  outline: 2px dotted var(--dv-accent);
-  outline-offset: 3px;
+  outline: var(--dv-focus-width) solid var(--dv-focus-ring);
+  outline-offset: var(--dv-focus-offset);
 }
 
 ::selection {
-  background: var(--dv-stain);
+  background: var(--dv-selection);
   color: var(--dv-text);
 }
 
@@ -44,15 +44,4 @@ a {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
 }

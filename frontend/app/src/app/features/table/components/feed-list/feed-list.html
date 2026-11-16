@@ -5,7 +5,12 @@
         <h3 class="feed__turn" [class.feed__turn--current]="item.current">Turno {{ item.turn }}</h3>
       }
       @case ('event') {
-        <article class="feed__event" [attr.data-tone]="item.tone" [style.opacity]="item.opacity">
+        <article
+          class="feed__event"
+          [class.feed__event--new]="isNew(item.key)"
+          [attr.data-tone]="item.tone"
+          [style.--fade]="item.fade"
+        >
           <p class="feed__narration">{{ item.narration }}</p>
           <details class="feed__note">
             <summary>detalhes</summary>
@@ -14,9 +19,13 @@
         </article>
       }
       @case ('talk') {
-        <blockquote class="feed__talk" [style.opacity]="item.opacity">
+        <blockquote
+          class="feed__talk"
+          [class.feed__talk--new]="isNew(item.key)"
+          [style.--fade]="item.fade"
+        >
           <span class="feed__speaker">Mestre</span>
-          {{ item.text }}
+          <span class="feed__talk-text">{{ item.text }}</span>
         </blockquote>
       }
     }

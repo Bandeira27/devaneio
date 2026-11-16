@@ -1,8 +1,10 @@
 /*
- * Tokens do tema "Desbotado" (docs/desenho-ui.md): fonte única de cor, tipografia, espaço e raio.
- * Cores só em OKLCH, sem hex (tools/tokens.spec.ts confere), e o contraste dos pares essenciais é medido
- * por teste (WCAG >= 4,5:1). Incerteza só na atmosfera: nada essencial fica abaixo disso; só decoração
- * (linhas, manchas) pode ficar fraca. Um segundo tema seria só um bloco novo de variáveis.
+ * Tokens do tema "Desbotado" (docs/design-system.md): a fonte única de cor, tipografia, espaço, forma, elevação e
+ * movimento. Cores só em OKLCH, sem hex, e fora deste arquivo nenhum estilo escreve cor, duração, curva, sombra nem
+ * z-index (tools/design-lint.spec.ts confere). O contraste dos pares essenciais é medido por teste
+ * (tools/tokens.spec.ts, WCAG >= 4,5:1 no texto e >= 3:1 no que não é texto). Incerteza só na atmosfera: nada
+ * essencial fica abaixo disso; só decoração (linhas, manchas) pode ficar fraca. Um segundo tema seria só um bloco novo
+ * de variáveis.
  */
 :root {
   /* Paleta base */
@@ -13,24 +15,56 @@
   --dv-verdigris: oklch(72% 0.034 171);
   --dv-stain: oklch(54.8% 0.078 74); /* mancha: só decoração */
   --dv-brick: oklch(73% 0.11 28); /* erro: nítido, nunca desbotado */
+  --dv-amber: oklch(76% 0.1 85); /* aviso */
+  --dv-dusk: oklch(74% 0.05 230); /* informação */
 
   /* Superfícies, da mais funda à mais alta */
   --dv-surface-0: var(--dv-smoke);
   --dv-surface-1: oklch(31% 0.012 81);
   --dv-surface-2: oklch(34% 0.014 81);
+  --dv-surface-3: oklch(34.5% 0.015 81); /* o que flutua: folha, diálogo */
 
   /* Papéis */
   --dv-text: var(--dv-sepia);
   --dv-text-muted: var(--dv-ink);
+  --dv-text-disabled: oklch(62% 0.03 90);
   --dv-accent: var(--dv-rose);
   --dv-accent-hover: oklch(77% 0.063 38);
+  --dv-accent-pressed: oklch(66% 0.063 38);
+  --dv-accent-disabled: oklch(40% 0.02 38);
   --dv-on-accent: oklch(24% 0.01 81);
+  --dv-on-accent-disabled: oklch(72% 0.04 60);
   --dv-ok: var(--dv-verdigris);
+  --dv-warn: var(--dv-amber);
+  --dv-info: var(--dv-dusk);
   --dv-danger: var(--dv-brick);
-  --dv-line: oklch(48% 0.03 90); /* bordas pontilhadas: decoração */
+  --dv-selection: oklch(44% 0.07 74);
 
-  /* Memória por idade: o piso de opacidade do que já passou (5,3:1 sobre a fumaça) */
-  --dv-fade-floor: 0.65;
+  /* Fundo de cada tom de status (selo e aviso): o texto do tom passa sobre ele */
+  --dv-ok-surface: oklch(32% 0.02 171);
+  --dv-warn-surface: oklch(33% 0.035 85);
+  --dv-info-surface: oklch(32% 0.02 230);
+  --dv-danger-surface: oklch(32% 0.04 28);
+
+  /* Estados das superfícies que se tocam */
+  --dv-surface-hover: var(--dv-surface-2);
+  --dv-surface-pressed: var(--dv-surface-3);
+
+  /* Contornos: o contorno de controle carrega significado (>= 3:1); a linha é decoração */
+  --dv-line: oklch(48% 0.03 90); /* decoração: bordas pontilhadas, divisores */
+  --dv-border-control: var(--dv-text-muted);
+  --dv-border-disabled: var(--dv-line);
+  --dv-focus-ring: var(--dv-accent);
+
+  /* Fundo que escurece o que está atrás de uma folha */
+  --dv-scrim: oklch(10% 0.01 81 / 0.6);
+
+  /* Memória por idade. A opacidade desce até o piso do papel do texto (feed.ts e tokens.spec conferem):
+     o texto de leitura chega a 0,65; o que é cor de tom (nota, falante, dano, cura) tem piso maior,
+     porque a cor perde mais contraste que a sépia. */
+  --dv-fade-floor-text: 0.65;
+  --dv-fade-floor-quiet: 0.85;
+  --dv-opacity-stain: 0.08;
 
   /* Tipografia: narração em IM Fell English (>= 15 px, é irregular em tamanho pequeno), notas mecânicas em
      Special Elite, controles na fonte do sistema */
@@ -41,6 +75,9 @@
   --dv-text-title: 1.5rem;
   --dv-text-ui: 1rem;
   --dv-text-note: 0.8125rem;
+  --dv-leading-ui: 1.5;
+  --dv-leading-narration: 1.55;
+  --dv-weight-regular: 400;
 
   /* Espaço, forma e toque */
   --dv-space-1: 0.25rem;
@@ -50,5 +87,57 @@
   --dv-space-6: 1.5rem;
   --dv-space-8: 2rem;
   --dv-radius: 2px;
+  --dv-radius-lg: 6px;
+  --dv-radius-round: 50%;
   --dv-touch: 2.75rem; /* 44 px: alvo mínimo de toque */
+  --dv-border-width: 1px;
+  --dv-border-width-strong: 2px;
+  --dv-focus-width: 2px;
+  --dv-focus-offset: 2px;
+  --dv-size-pip: 0.625rem;
+  --dv-size-dot: 0.5rem;
+
+  /* Medidas de leitura e de folha */
+  --dv-measure-page: 36rem;
+  --dv-measure-table: 40rem;
+  --dv-measure-sheet: 40rem;
+  --dv-sheet-max-height: 85dvh;
+
+  /* Camadas (o CDK usa 1000 no overlay) */
+  --dv-z-base: 0;
+  --dv-z-raised: 1;
+  --dv-z-sticky: 10;
+  --dv-z-overlay: 1000;
+
+  /* Elevação: só o que flutua ou está pressionado tem sombra; o que repousa se separa por superfície e contorno */
+  --dv-shadow-float: 0 0.5rem 1.5rem oklch(10% 0.01 81 / 0.45);
+  --dv-shadow-press: inset 0 0.0625rem 0.125rem oklch(10% 0.01 81 / 0.4);
+
+  /* Movimento (docs/movimento.md): cada movimento responde a uma pergunta da rule 12 */
+  --dv-duration-instant: 80ms; /* pressionar */
+  --dv-duration-fast: 140ms; /* estado de controle, saída */
+  --dv-duration-base: 220ms; /* entrada, expandir */
+  --dv-duration-slow: 360ms; /* folha, mudança de contexto */
+  --dv-duration-narrative: 600ms; /* só a tinta nova da narração */
+  --dv-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dv-ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --dv-ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --dv-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --dv-stagger: 60ms;
+  --dv-iterations-pending: infinite; /* indicador de pendência: com movimento reduzido roda uma vez */
+  --dv-motion-distance: 0.25rem;
+}
+
+/* Movimento reduzido: sem deslocamento e quase sem duração. O estado final vale na hora (nada espera a animação). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dv-duration-instant: 1ms;
+    --dv-duration-fast: 1ms;
+    --dv-duration-base: 1ms;
+    --dv-duration-slow: 1ms;
+    --dv-duration-narrative: 1ms;
+    --dv-stagger: 0ms;
+    --dv-iterations-pending: 1;
+    --dv-motion-distance: 0;
+  }
 }

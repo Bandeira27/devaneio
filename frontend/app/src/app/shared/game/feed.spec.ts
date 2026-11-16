@@ -2,6 +2,7 @@ import type { EventView, TalkView } from '@contract/api_responses';
 import {
   FADE_FLOOR,
   FADE_PER_TURN,
+  ageFade,
   FeedEvent,
   FeedItem,
   FeedTalk,
@@ -27,6 +28,15 @@ function talk(seq: number, after: number, text = `fala ${seq}`): TalkView {
 
 const types = (items: FeedItem[]): string[] =>
   items.map((i) => (i.type === 'turn' ? `turno ${i.turn}` : i.key));
+
+describe('ageFade', () => {
+  it('vai de 0 (agora) a 1 (no piso), reescalado pelo piso', () => {
+    expect(ageFade(0)).toBe(0);
+    expect(ageFade(2)).toBe(0.57); // opacidade 0,8 de um piso de 0,65
+    expect(ageFade(4)).toBe(1);
+    expect(ageFade(50)).toBe(1);
+  });
+});
 
 describe('ageOpacity', () => {
   it('a cena atual é nítida', () => {
@@ -76,13 +86,13 @@ describe('buildFeed', () => {
 
   it('desbota os turnos passados e mantém a cena atual nítida', () => {
     const feed = buildFeed([event(0, 1), event(1, 3), event(2, 8)], [], 8);
-    const opacities = feed.filter((i): i is FeedEvent => i.type === 'event').map((i) => i.opacity);
-    expect(opacities).toEqual([FADE_FLOOR, FADE_FLOOR, 1]);
+    const fades = feed.filter((i): i is FeedEvent => i.type === 'event').map((i) => i.fade);
+    expect(fades).toEqual([1, 1, 0]);
   });
 
   it('o piso vale para qualquer idade', () => {
     const feed = buildFeed([event(0, 0)], [], 100);
-    expect((feed[1] as FeedEvent).opacity).toBe(FADE_FLOOR);
+    expect((feed[1] as FeedEvent).fade).toBe(1);
   });
 
   it('marca o tom: dano, cura e descanso se destacam', () => {
@@ -124,7 +134,7 @@ describe('buildFeed', () => {
     it('a fala desbota como o evento que a precedeu', () => {
       const feed = buildFeed([event(0, 1), event(1, 6)], [talk(1000, 1), talk(1001, 2)], 6);
       const talks = feed.filter((i): i is FeedTalk => i.type === 'talk');
-      expect(talks.map((t) => t.opacity)).toEqual([FADE_FLOOR, 1]);
+      expect(talks.map((t) => t.fade)).toEqual([1, 0]);
     });
 
     it('só falas, sem eventos', () => {

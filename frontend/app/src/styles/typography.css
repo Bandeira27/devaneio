@@ -1,0 +1,23 @@
+/* A tipografia das páginas: título, abertura e nota. */
+
+.dv-title {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-title);
+  font-style: italic;
+  font-weight: var(--dv-weight-regular);
+}
+
+.dv-lede {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  line-height: var(--dv-leading-narration);
+}
+
+.dv-note {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}

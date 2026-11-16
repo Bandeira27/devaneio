@@ -25,10 +25,20 @@ export class FeedList {
   readonly items = input.required<readonly FeedItem[]>();
   private readonly end = viewChild.required<ElementRef<HTMLElement>>('end');
   private count = 0;
+  private initial: ReadonlySet<string> | null = null;
+
+  /** Só o que chegou depois do carregamento anima a "tinta nova": a carga inicial e a reconexão entram sem animar. */
+  protected isNew(key: string): boolean {
+    return this.initial !== null && !this.initial.has(key);
+  }
 
   constructor() {
     effect(() => {
-      const total = this.items().length;
+      const items = this.items();
+      if (this.initial === null && items.length > 0) {
+        this.initial = new Set(items.map((item) => item.key));
+      }
+      const total = items.length;
       const grew = total > this.count;
       const first = this.count === 0;
       this.count = total;

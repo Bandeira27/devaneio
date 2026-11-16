@@ -20,7 +20,7 @@ export interface SheetOptions {
 
 /**
  * Folha que sobe do pé da tela (diálogo modal do CDK com foco preso, Esc para fechar e foco devolvido a quem
- * abriu). O visual está em `styles/ui.css`. Resolve com o resultado, ou `undefined` se foi fechada sem escolher.
+ * abriu). O visual está em `styles/sheet.css`. Resolve com o resultado, ou `undefined` se foi fechada sem escolher.
  */
 @Injectable({ providedIn: 'root' })
 export class Sheet {

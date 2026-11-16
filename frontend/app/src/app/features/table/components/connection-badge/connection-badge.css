@@ -8,9 +8,9 @@
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: var(--dv-size-dot);
+  height: var(--dv-size-dot);
+  border-radius: var(--dv-radius-round);
   background: var(--dv-text-muted);
 }
 
