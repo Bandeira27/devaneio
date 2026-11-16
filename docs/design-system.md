@@ -62,11 +62,26 @@ Móvel primeiro. Dois pontos de quebra, **fixos e documentados** (CSS não aceit
 **64rem**. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
 Áreas seguras (`env(safe-area-inset-*)`) e `dvh` onde há barra fixa.
 
+## Catálogo (Storybook)
+
+```bash
+cd frontend/app
+npm run storybook          # abre o catálogo em http://localhost:6006
+npm run build-storybook    # gera storybook-static/ (roda no scripts/check completo)
+```
+
+Cada componente de `shared/ui` (e os da mesa que valem catalogar) tem um `*.stories.ts` ao lado, com os estados. As
+stories se escrevem com o helper `story(imports, template)` de `src/app/testing/story.ts`: ele guarda a receita, e
+`src/app/testing/stories.spec.ts` renderiza **todas** no Vitest, então uma story quebrada falha o teste (e
+`tools/stories-list.spec.ts` falha se um arquivo de stories novo não estiver na lista do spec). As páginas **Design/Tokens**
+e **Design/Movimento** vêm de `src/app/design/`. A aba de acessibilidade (axe) mostra as violações de cada story. Stories não
+entram no build do app (`tsconfig.app.json`) nem exigem JSDoc.
+
 ## Como mudar ou criar
 
 1. **Valor novo?** Entra em `tokens.css` com o papel comentado e, se for cor, com o par de contraste em `tokens.spec.ts`.
 2. **Estilo novo?** Só `var(--dv-...)`; `scripts/check` roda o design-lint.
-3. **Componente novo?** Primeiro procure um existente que sirva ([rule 11](../.agents/rules/11-design-system.md)).
+3. **Componente novo?** Primeiro procure um existente que sirva ([rule 11](../.agents/rules/11-design-system.md)); componente de `shared/ui` entra com a story dos estados.
 4. **Movimento novo?** Responda a pergunta da [rule 12](../.agents/rules/12-movimento.md) no PR.
 
 ## Aceitação (por componente e por tela)

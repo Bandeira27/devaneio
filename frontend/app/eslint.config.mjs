@@ -54,7 +54,7 @@ const SECURITY = [
 ];
 
 export default defineConfig([
-  { ignores: ['dist/**', '.angular/**', 'coverage/**', 'node_modules/**'] },
+  { ignores: ['dist/**', '.angular/**', 'coverage/**', 'node_modules/**', 'storybook-static/**'] },
   {
     files: ['**/*.ts'],
     extends: [
@@ -111,10 +111,18 @@ export default defineConfig([
       })),
     ),
   })),
+  // Catálogo (rule 11): stories e a configuração do Storybook não são API do app: sem JSDoc obrigatório.
+  {
+    files: ['src/**/*.stories.ts', '.storybook/**/*.ts'],
+    rules: {
+      '@angular-eslint/component-selector': 'off',
+      '@typescript-eslint/no-extraneous-class': 'off',
+    },
+  },
   // Documentação (rule 10): JSDoc sem tipos em tudo que o app exporta; `@param` só quando acrescenta algo.
   {
     files: ['src/app/**/*.ts'],
-    ignores: ['**/*.spec.ts', 'src/app/testing/**'],
+    ignores: ['**/*.spec.ts', '**/*.stories.ts', 'src/app/testing/**'],
     plugins: { jsdoc },
     rules: {
       'jsdoc/require-jsdoc': [

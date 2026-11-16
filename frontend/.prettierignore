@@ -5,3 +5,4 @@ node_modules/
 app/dist/
 app/.angular/
 app/coverage/
+app/storybook-static/
