@@ -18,3 +18,14 @@ export const Desabilitado: StoryObj = story(
   [DvButton],
   `<button dvButton type="button" disabled>Ir</button>`,
 );
+
+export const Bloqueado: StoryObj = story(
+  [DvButton],
+  `<button dvButton type="button" dvBlocked aria-describedby="motivo">Ir</button>
+   <p id="motivo" class="dv-note">Seu personagem já agiu neste turno. Espere os outros.</p>`,
+);
+
+export const EmEnvio: StoryObj = story(
+  [DvButton],
+  `<button dvButton="primary" type="button" dvLoading>Enviando</button>`,
+);

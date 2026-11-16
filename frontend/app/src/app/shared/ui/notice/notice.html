@@ -1,2 +1,17 @@
-<span class="dv-visually-hidden">{{ prefix() }}</span
-><ng-content />
+<dv-icon class="notice__icon" [name]="icon()" />
+<span class="notice__body">
+  @if (prefix()) {
+    <span class="dv-visually-hidden">{{ prefix() }}</span>
+  }
+  <ng-content />
+</span>
+@if (dismissible()) {
+  <button
+    class="notice__close"
+    type="button"
+    aria-label="Dispensar o aviso"
+    (click)="dismissed.emit()"
+  >
+    <dv-icon name="close" size="sm" />
+  </button>
+}

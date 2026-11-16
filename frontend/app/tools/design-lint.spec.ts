@@ -105,28 +105,17 @@ const source0 = (file: string): string => readFileSync(file, 'utf-8');
 
 /** Tokens declarados para os PRs de componentes e de telas, ainda sem consumidor: a lista só pode encolher. */
 const WAITING = [
-  '--dv-accent-pressed',
   '--dv-danger-surface',
-  '--dv-info',
   '--dv-info-surface',
   '--dv-ok-surface',
-  '--dv-warn',
   '--dv-warn-surface',
-  '--dv-surface-pressed',
-  '--dv-duration-instant',
-  '--dv-duration-fast',
-  '--dv-duration-base',
   '--dv-duration-slow',
-  '--dv-ease-standard',
-  '--dv-ease-accelerate',
   '--dv-ease-emphasized',
   '--dv-stagger',
   '--dv-shadow-float',
-  '--dv-shadow-press',
   '--dv-space-8',
   '--dv-z-sticky',
   '--dv-z-overlay',
-  '--dv-iterations-pending',
 ];
 
 describe('o estilo do app só consome tokens', () => {

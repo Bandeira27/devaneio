@@ -21,3 +21,13 @@ export const Confirmacao: StoryObj = story(
   [DvNotice],
   `<dv-notice kind="ok">A partida terminou: vitória.</dv-notice>`,
 );
+
+export const Atencao: StoryObj = story(
+  [DvNotice],
+  `<dv-notice kind="warn">O mestre de IA não está respondendo.</dv-notice>`,
+);
+
+export const Dispensavel: StoryObj = story(
+  [DvNotice],
+  `<dv-notice dismissible>Você pode dispensar este aviso.</dv-notice>`,
+);

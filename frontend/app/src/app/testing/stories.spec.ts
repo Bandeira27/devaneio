@@ -7,6 +7,7 @@ import * as motion from '../design/movimento.stories';
 import * as button from '../shared/ui/button/button.stories';
 import * as copyField from '../shared/ui/copy-field/copy-field.stories';
 import * as field from '../shared/ui/field/field.stories';
+import * as icon from '../shared/ui/icon/icon.stories';
 import * as notice from '../shared/ui/notice/notice.stories';
 import * as pips from '../shared/ui/pips/pips.stories';
 import * as sheet from '../shared/ui/sheet/sheet.stories';
@@ -21,6 +22,7 @@ const FILES: Record<string, Record<string, unknown>> = {
   'shared/ui/button/button.stories.ts': button,
   'shared/ui/copy-field/copy-field.stories.ts': copyField,
   'shared/ui/field/field.stories.ts': field,
+  'shared/ui/icon/icon.stories.ts': icon,
   'shared/ui/notice/notice.stories.ts': notice,
   'shared/ui/pips/pips.stories.ts': pips,
   'shared/ui/sheet/sheet.stories.ts': sheet,
