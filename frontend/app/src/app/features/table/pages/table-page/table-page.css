@@ -24,6 +24,5 @@
 }
 
 .table__llm {
-  font-size: var(--dv-text-note);
-  color: var(--dv-text-muted);
+  display: block;
 }

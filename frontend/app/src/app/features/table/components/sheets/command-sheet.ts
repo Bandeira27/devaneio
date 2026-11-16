@@ -20,6 +20,7 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
       >
         <input
           dvInput
+          cdkFocusInitial
           type="text"
           autocomplete="off"
           autocapitalize="none"

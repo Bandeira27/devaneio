@@ -55,7 +55,7 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
 | animar, fazer transição ou mexer em estado visual | [12 movimento](.agents/rules/12-movimento.md) |
 
 Procedimentos recorrentes em `.agents/skills/` (cada um é uma pasta com `SKILL.md`):
-`add-engine-action`, `change-contract`, `quality-gate`, `split-module`.
+`add-engine-action`, `change-contract`, `quality-gate`, `split-module`, `add-ui-component`.
 
 ## Papéis de revisão (subagentes) e orquestração
 

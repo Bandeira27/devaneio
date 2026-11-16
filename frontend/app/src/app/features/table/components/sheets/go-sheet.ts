@@ -20,7 +20,12 @@ export interface GoSheetData {
     }
     <div class="dv-stack">
       @for (exit of data.exits; track exit.id) {
-        <button dvButton type="button" (click)="ref.close(command(exit.id))">
+        <button
+          dvButton
+          type="button"
+          [attr.cdkFocusInitial]="$first ? '' : null"
+          (click)="ref.close(command(exit.id))"
+        >
           {{ exit.name }}
         </button>
       }

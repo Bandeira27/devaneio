@@ -43,7 +43,7 @@ Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o es
 | Troca de rota                        | páginas                                              | 3        | `base` (`withViewTransitions`)         |
 | Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça, só enquanto pendente |
 
-Estado atual do app: só a tinta nova (`reveal` do feed, só no que chegou depois do carregamento) existe; o resto entra com os PRs de componentes e de telas. Os tokens de movimento ainda sem uso (`instant`, `fast`, `base`, `slow`, `stagger`, `accent-pressed`...) estão numa lista de espera no `design-lint.spec.ts` que só pode encolher.
+Estado atual do app: pressionar e estados de botão, entrada e saída de avisos e pendências (`dv-enter`/`dv-leave`), folha (`dv-sheet-in`/`-out`, com fundo no mesmo ritmo), mudança de hp, cópia, pendência (`dv-pulse`), cross-fade de rotas e a tinta nova (`reveal` do feed, só no que chegou depois do carregamento) existem. Os tokens ainda sem uso estão numa lista de espera no `design-lint.spec.ts`, que só pode encolher.
 
 ## Rejeitado
 

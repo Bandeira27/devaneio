@@ -99,7 +99,7 @@ describe('Mesa', () => {
     expect(root().querySelector('dv-scene-card')?.textContent).toContain('ferreiro');
     const party = root().querySelector('dv-party-strip') as HTMLElement;
     expect(party.textContent).toContain('Bia');
-    expect(party.textContent).toContain('(você)');
+    expect(party.querySelector('dv-badge')?.textContent?.trim()).toBe('você');
     expect(party.textContent).toContain('fora de combate'); // Zed está com hp 0
     expect(party.querySelector('dv-pips')?.getAttribute('aria-label')).toBe(
       'pontos de vida: 8 de 10',

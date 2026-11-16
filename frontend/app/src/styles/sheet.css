@@ -4,6 +4,17 @@
   background: var(--dv-scrim);
 }
 
+/* O fundo entra e sai no mesmo ritmo da folha (o padrão do CDK é 400 ms). */
+.cdk-overlay-backdrop.dv-sheet-backdrop {
+  transition-duration: var(--dv-duration-slow);
+  transition-timing-function: var(--dv-ease-standard);
+}
+
+.cdk-overlay-backdrop.dv-sheet-backdrop--leaving {
+  opacity: 0;
+  transition-duration: var(--dv-duration-fast);
+}
+
 .dv-sheet {
   display: block;
   width: min(100vw, var(--dv-measure-sheet));
@@ -16,6 +27,26 @@
   border-radius: var(--dv-radius-lg) var(--dv-radius-lg) 0 0;
   background: var(--dv-surface-1);
   color: var(--dv-text);
+  box-shadow: var(--dv-shadow-float);
+  animation: dv-sheet-in var(--dv-duration-slow) var(--dv-ease-emphasized) both;
+}
+
+.dv-sheet--leaving {
+  animation: dv-sheet-out var(--dv-duration-fast) var(--dv-ease-accelerate) both;
+}
+
+@keyframes dv-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+@keyframes dv-sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
 }
 
 .dv-sheet__head {

@@ -1,4 +1,5 @@
 <div class="dv-page">
+  <h1 class="dv-visually-hidden">Início</h1>
   <p class="dv-lede">
     Uma mesa de RPG com um mestre que tece a história enquanto você joga. Crie uma mesa ou entre
     numa que já começou.
@@ -32,15 +33,19 @@
     <h2 class="dv-title" id="titulo-criar">Criar uma mesa</h2>
     @switch (store.state()) {
       @case ('loading') {
-        <p class="dv-note" role="status">Procurando as campanhas…</p>
+        <dv-state kind="loading">Procurando as campanhas…</dv-state>
       }
       @case ('failed') {
-        <dv-notice kind="error">{{ store.loadError() }}</dv-notice>
-        <button dvButton type="button" (click)="store.load()">Tentar de novo</button>
+        <dv-state kind="error">
+          {{ store.loadError() }}
+          <button dvStateAction dvButton type="button" (click)="store.load()">
+            Tentar de novo
+          </button>
+        </dv-state>
       }
       @case ('ready') {
         @if (store.campaigns().length === 0) {
-          <dv-notice>O servidor não tem nenhuma campanha para jogar.</dv-notice>
+          <dv-state>O servidor não tem nenhuma campanha para jogar.</dv-state>
         } @else {
           <form class="dv-stack" (submit)="$event.preventDefault(); store.create()">
             <dv-field label="Campanha">

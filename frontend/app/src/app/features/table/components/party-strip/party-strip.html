@@ -1,22 +1,20 @@
 <section aria-label="Grupo">
   @if (characters().length === 0) {
-    <p class="dv-note">Ninguém entrou na mesa ainda.</p>
+    <dv-state>Ninguém entrou na mesa ainda.</dv-state>
   } @else {
     <ul class="party">
       @for (character of characters(); track character.id) {
         <li class="party__member" [class.party__member--down]="character.hp <= 0">
-          <span class="party__name">
-            {{ character.name }}
-            @if (character.id === mine()) {
-              <span class="dv-note">(você)</span>
-            }
-          </span>
+          <span class="party__name">{{ character.name }}</span>
           <dv-pips [value]="character.hp" [max]="character.max_hp" />
-          <span class="dv-note">
+          <span class="party__badges">
+            @if (character.id === mine()) {
+              <dv-badge>você</dv-badge>
+            }
             @if (character.hp <= 0) {
-              fora de combate
+              <dv-badge tone="danger" icon="danger">fora de combate</dv-badge>
             } @else if (acted()[character.id] === turn()) {
-              já agiu
+              <dv-badge tone="ok" icon="ok">já agiu</dv-badge>
             }
           </span>
         </li>

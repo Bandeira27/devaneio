@@ -29,7 +29,12 @@ export interface AttackSheetData {
     } @else {
       <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
         <dv-field label="Alvo">
-          <select dvInput [value]="target()" (change)="target.set(fieldValue($event))">
+          <select
+            dvInput
+            cdkFocusInitial
+            [value]="target()"
+            (change)="target.set(fieldValue($event))"
+          >
             @for (item of data.targets; track item.id) {
               <option [value]="item.id">
                 {{ item.name }} ({{ item.hp }}/{{ item.maxHp }}){{

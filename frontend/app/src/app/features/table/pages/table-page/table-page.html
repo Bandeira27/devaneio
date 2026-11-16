@@ -1,17 +1,20 @@
 @switch (store.state()) {
   @case ('loading') {
-    <p class="dv-note" role="status">Abrindo a mesa…</p>
+    <dv-state kind="loading">Abrindo a mesa…</dv-state>
   }
   @case ('failed') {
     <div class="dv-page">
-      <dv-notice kind="error">{{ store.loadError() }}</dv-notice>
+      <dv-state kind="error">
+        {{ store.loadError() }}
+        <button dvStateAction dvButton type="button" (click)="store.load()">Tentar de novo</button>
+      </dv-state>
       <a dvButton routerLink="/">Voltar ao início</a>
     </div>
   }
   @case ('ready') {
     <div class="table">
       <header class="table__bar">
-        <h2 class="dv-title">{{ store.title() }}</h2>
+        <h1 class="dv-title">{{ store.title() }}</h1>
         <span class="dv-note">Turno {{ store.turn() }}</span>
         <dv-connection-badge [status]="store.liveStatus()" />
       </header>
@@ -55,10 +58,9 @@
           <a dvButton [routerLink]="['/mesa', tableId(), 'convite']">Convidar</a>
         }
         @if (store.llmNotice()) {
-          <details class="table__llm">
-            <summary>Sobre o mestre de IA desta mesa</summary>
+          <dv-disclosure class="table__llm" label="Sobre o mestre de IA desta mesa">
             <p>{{ store.llmNotice() }}</p>
-          </details>
+          </dv-disclosure>
         }
       </footer>
     </div>

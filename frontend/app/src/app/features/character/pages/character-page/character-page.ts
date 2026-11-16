@@ -4,6 +4,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { DvState } from '@shared/ui/state/state';
 import { DvStepper } from '@shared/ui/stepper/stepper';
 import { CharacterStore } from '../../character.store';
 import { fieldValue } from '@shared/ui/field/field-value';
@@ -11,7 +12,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 /** Tela de criar o personagem: nome e atributos do sistema. */
 @Component({
   selector: 'dv-character-page',
-  imports: [RouterLink, DvButton, DvField, DvInput, DvNotice, DvStepper],
+  imports: [RouterLink, DvButton, DvField, DvInput, DvNotice, DvStepper, DvState],
   providers: [CharacterStore],
   templateUrl: './character-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

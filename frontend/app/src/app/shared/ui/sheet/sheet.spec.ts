@@ -66,4 +66,53 @@ describe('Sheet', () => {
     expect(wrapper).not.toBeNull();
     expect(wrapper.style.justifyContent).toBe('center');
   });
+
+  it('com animação de saída: marca como saindo, espera o fim e só então fecha', async () => {
+    const styles = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ animationDuration: '0.2s' } as CSSStyleDeclaration);
+    try {
+      let closed = false;
+      const result = TestBed.inject(Sheet)
+        .open<string>(Content, { label: 'x', data: 'y' })
+        .then((value) => {
+          closed = true;
+          return value;
+        });
+      await tick();
+      (panel()?.querySelector('#a') as HTMLButtonElement).click();
+      expect(panel()?.classList.contains('dv-sheet--leaving')).toBe(true);
+      expect(document.querySelector('.dv-sheet-backdrop--leaving')).not.toBeNull();
+      expect(closed).toBe(false); // ainda na animação
+      panel()?.dispatchEvent(new Event('animationend'));
+      expect(await result).toBe('ir floresta');
+    } finally {
+      styles.mockRestore();
+    }
+  });
+
+  it('se o fim da animação não vier, um limite de tempo fecha a folha', async () => {
+    vi.useFakeTimers();
+    const styles = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ animationDuration: '0.2s' } as CSSStyleDeclaration);
+    try {
+      const result = TestBed.inject(Sheet).open<string>(Content, { label: 'x', data: 'y' });
+      await vi.advanceTimersByTimeAsync(0);
+      (panel()?.querySelector('#b') as HTMLButtonElement).click();
+      await vi.advanceTimersByTimeAsync(400);
+      expect(await result).toBeUndefined();
+    } finally {
+      styles.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('fechar duas vezes seguidas só vale a primeira', async () => {
+    const result = TestBed.inject(Sheet).open<string>(Content, { label: 'x', data: 'y' });
+    await tick();
+    (panel()?.querySelector('#a') as HTMLButtonElement).click();
+    (panel()?.querySelector('#b') as HTMLButtonElement)?.click();
+    expect(await result).toBe('ir floresta');
+  });
 });
