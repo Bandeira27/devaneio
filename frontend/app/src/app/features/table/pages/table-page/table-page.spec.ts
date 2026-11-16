@@ -67,6 +67,28 @@ async function open(
 }
 
 describe('Mesa', () => {
+  it('sair da página no meio da carga não deixa um laço ao vivo órfão', async () => {
+    const app = await setup(url);
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p2',
+      role: 'player',
+      title: 'x',
+      savedAt: 1,
+    });
+    const pending = [
+      app.http.expectOne(`/tables/${TABLE_ID}`),
+      app.http.expectOne(`/tables/${TABLE_ID}/rules`),
+      app.http.expectOne(`/tables/${TABLE_ID}/campaign`),
+    ];
+    app.harness.fixture.destroy();
+    pending[0]?.flush(withCharacter());
+    pending[1]?.flush(rulesView());
+    pending[2]?.flush(campaignView());
+    await app.settle();
+    app.http.expectNone((r) => r.url === `/tables/${TABLE_ID}/events`);
+  });
+
   it('mostra a cena, o grupo e o título', async () => {
     const { root, events, settle } = await open();
     events('0').flush(eventsView(3));

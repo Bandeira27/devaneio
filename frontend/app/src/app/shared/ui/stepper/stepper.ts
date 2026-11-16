@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { DvButton } from '../button/button';
 
+let nextId = 0;
+
 /** Valor inteiro com − e + dentro de um mínimo e um máximo (os atributos do personagem). */
 @Component({
   selector: 'dv-stepper',
@@ -10,6 +12,7 @@ import { DvButton } from '../button/button';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvStepper {
+  protected readonly labelId = `dv-stepper-${nextId++}`;
   readonly label = input.required<string>();
   readonly min = input.required<number>();
   readonly max = input.required<number>();

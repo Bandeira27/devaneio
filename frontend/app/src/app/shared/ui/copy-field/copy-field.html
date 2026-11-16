@@ -1,8 +1,8 @@
-<label class="copy__label" for="copy-field-input">{{ label() }}</label>
+<label class="copy__label" [for]="inputId">{{ label() }}</label>
 <div class="copy__row">
   <input
     #field
-    id="copy-field-input"
+    [id]="inputId"
     class="dv-input copy__input"
     type="text"
     readonly

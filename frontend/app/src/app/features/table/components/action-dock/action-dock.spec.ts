@@ -190,6 +190,33 @@ describe('Ações da mesa', () => {
     expect(app.root().querySelector('dv-action-dock dv-notice[kind="error"]')).toBeNull();
   });
 
+  it('refresh pedido com outra leitura em voo dispara uma leitura nova depois do pedido', async () => {
+    const app = await open();
+    await app.press('Comando');
+    await app.typeIn('input', 'olhar');
+    (app.sheet()?.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
+    await app.settle();
+    app.commandRequest().flush(commandResult({ text: 'ok' }));
+    await app.settle();
+    // a ação disparou a primeira releitura; enquanto ela voa, o long-poll traz a revisão seguinte
+    const first = app.http.expectOne(`/tables/${TABLE_ID}`);
+    const firstCampaign = app.http.expectOne(`/tables/${TABLE_ID}/campaign`);
+    app.http
+      .expectOne((r) => r.url === `/tables/${TABLE_ID}/events` && r.params.get('wait') === '20')
+      .flush({ revision: 9, events: [], talk: [], talk_seq: 0 });
+    await app.settle();
+    first.flush(table({ revision: 8 }));
+    firstCampaign.flush(campaignView());
+    await app.settle();
+    const second = app.http.expectOne(`/tables/${TABLE_ID}`);
+    app.http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
+    second.flush(table({ revision: 9 }));
+    await app.settle();
+    expect(app.root().querySelector('dv-table-page, .table')).not.toBeNull();
+  });
+
   it('um erro do servidor aparece como texto e não trava os botões', async () => {
     const app = await open();
     await app.press('Comando');

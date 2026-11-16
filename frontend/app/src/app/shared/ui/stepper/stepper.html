@@ -1,10 +1,10 @@
 <div class="stepper__text">
-  <span class="stepper__label" [id]="'stepper-' + label()">{{ label() }}</span>
+  <span class="stepper__label" [id]="labelId">{{ label() }}</span>
   @if (hint()) {
     <span class="stepper__hint">{{ hint() }}</span>
   }
 </div>
-<div class="stepper__controls" role="group" [attr.aria-labelledby]="'stepper-' + label()">
+<div class="stepper__controls" role="group" [attr.aria-labelledby]="labelId">
   <button
     dvButton
     type="button"

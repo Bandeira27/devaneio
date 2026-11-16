@@ -1,14 +1,9 @@
 import { signal } from '@angular/core';
 import type { EventView, EventsView, TalkView } from '@contract/api_responses';
+import type { EventsQuery } from '../api/api-client';
 import { ApiFailure } from '../api/api-failure';
 
 export type LiveStatus = 'connecting' | 'live' | 'offline' | 'expired' | 'gone' | 'failed';
-
-export interface EventsQuery {
-  since: number;
-  sinceTalk: number;
-  wait: number;
-}
 
 /** Tudo que o laço pede ao mundo: assim ele é testável sem rede, sem relógio e sem DOM. */
 export interface LiveEnv {

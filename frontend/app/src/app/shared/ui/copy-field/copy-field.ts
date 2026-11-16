@@ -8,6 +8,8 @@ import {
 } from '@angular/core';
 import { DvButton } from '../button/button';
 
+let nextId = 0;
+
 type CopyState = 'idle' | 'copied' | 'manual';
 
 /**
@@ -23,6 +25,7 @@ type CopyState = 'idle' | 'copied' | 'manual';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvCopyField {
+  protected readonly inputId = `dv-copy-${nextId++}`;
   readonly label = input.required<string>();
   readonly text = input.required<string>();
 

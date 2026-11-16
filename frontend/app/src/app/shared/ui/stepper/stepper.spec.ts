@@ -77,8 +77,9 @@ describe('DvStepper', () => {
     const { root, less, more } = await render();
     expect(less.getAttribute('aria-label')).toBe('Diminuir Força');
     expect(more.getAttribute('aria-label')).toBe('Aumentar Força');
-    expect(root.querySelector('[role="group"]')?.getAttribute('aria-labelledby')).toBe(
-      'stepper-Força',
-    );
+    const labelId = root.querySelector('.stepper__label')?.id ?? '';
+    expect(labelId).not.toBe('');
+    expect(labelId).not.toMatch(/\s/); // o id não depende do nome (que pode ter espaço)
+    expect(root.querySelector('[role="group"]')?.getAttribute('aria-labelledby')).toBe(labelId);
   });
 });

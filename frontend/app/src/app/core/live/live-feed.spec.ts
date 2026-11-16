@@ -1,7 +1,7 @@
 import type { EventView, EventsView, TalkView } from '@contract/api_responses';
+import type { EventsQuery } from '../api/api-client';
 import { ApiFailure } from '../api/api-failure';
 import {
-  EventsQuery,
   FAST_EMPTY_MS,
   INITIAL_WINDOW,
   LONG_POLL_SECONDS,

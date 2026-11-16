@@ -135,6 +135,9 @@ export class TableStore implements OnDestroy {
     });
   }
 
+  private destroyed = false;
+  private again = false;
+
   async load(): Promise<void> {
     const tableId = this.tableId();
     this.state.set('loading');
@@ -145,6 +148,9 @@ export class TableStore implements OnDestroy {
         firstValueFrom(this.api.rules(tableId)),
         firstValueFrom(this.api.campaign(tableId)),
       ]);
+      if (this.destroyed) {
+        return; // saiu da página no meio da carga: não abre um laço que ninguém vai parar
+      }
       this.table.set(table);
       this.rules.set(rules);
       this.campaign.set(campaign);
@@ -155,28 +161,36 @@ export class TableStore implements OnDestroy {
     }
   }
 
-  /** Relê a mesa e a cena; chamadas simultâneas viram uma só (e uma repetição se chegou algo no meio). */
+  /**
+   * Relê a mesa e a cena. Quem chama durante uma leitura em voo recebe uma leitura começada depois do pedido:
+   * o laço repete enquanto chegar pedido novo, então a foto nunca fica atrás da revisão que motivou a chamada.
+   */
   refresh(): Promise<void> {
-    if (this.refreshing !== null) {
-      return this.refreshing;
-    }
-    const run = (async () => {
-      try {
-        const id = this.tableId();
-        const [table, campaign] = await Promise.all([
-          firstValueFrom(this.api.table(id)),
-          firstValueFrom(this.api.campaign(id)),
-        ]);
-        this.table.set(table);
-        this.campaign.set(campaign);
-      } catch {
-        // O fluxo ao vivo já mostra a conexão; a próxima revisão tenta de novo.
-      } finally {
-        this.refreshing = null;
+    this.again = true;
+    this.refreshing ??= this.drain();
+    return this.refreshing;
+  }
+
+  private async drain(): Promise<void> {
+    try {
+      while (this.again && !this.destroyed) {
+        this.again = false;
+        try {
+          const id = this.tableId();
+          const [table, campaign] = await Promise.all([
+            firstValueFrom(this.api.table(id)),
+            firstValueFrom(this.api.campaign(id)),
+          ]);
+          this.table.set(table);
+          this.campaign.set(campaign);
+        } catch {
+          // O fluxo ao vivo já mostra a conexão; a próxima revisão tenta de novo.
+          this.again = false;
+        }
       }
-    })();
-    this.refreshing = run;
-    return run;
+    } finally {
+      this.refreshing = null;
+    }
   }
 
   /** Manda uma linha de comando. Se a mesa andou (`stale_revision`), relê e tenta de novo, uma vez. */
@@ -200,8 +214,12 @@ export class TableStore implements OnDestroy {
   }
 
   private async act(work: () => Promise<void>): Promise<boolean> {
+    if (this.actionBusy()) {
+      return false;
+    }
     this.actionBusy.set(true);
     this.actionError.set('');
+    this.reply.set('');
     try {
       await work();
       void this.refresh();
@@ -227,10 +245,12 @@ export class TableStore implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.feed()?.stop();
   }
 
   private start(revision: number): void {
+    this.feed()?.stop();
     const feed = this.liveFactory.open(this.tableId(), revision);
     this.feed.set(feed);
     void feed.run().then(() => {
