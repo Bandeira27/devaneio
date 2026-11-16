@@ -23,6 +23,39 @@ describe('Home', () => {
     expect((root().querySelector('select') as HTMLSelectElement).value).toBe('sombra-do-vale');
   });
 
+  it('mostra a premissa da campanha escolhida', async () => {
+    const { root, type } = await open();
+    expect(root().querySelector('.home__premise')?.textContent).toContain('Um culto desperta.');
+    await type('select', 'outra');
+    expect(root().querySelector('.home__premise')?.textContent).toBe('x');
+  });
+
+  it('mesa guardada mostra o papel e quando foi; "Esquecer" pode ser desfeito', async () => {
+    const app = await setup('/');
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p1',
+      role: 'host',
+      title: 'A Sombra do Vale',
+      invite: INVITE,
+      savedAt: Date.now(),
+    });
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    await app.settle();
+    const { root, session, click, settle } = app;
+    expect(root().querySelector('.saved__item')?.textContent).toContain('anfitrião · hoje');
+    await click('.saved__forget');
+    expect(session.get(TABLE_ID)).toBeNull();
+    expect(root().textContent).toContain('esquecida neste aparelho');
+    const undo = Array.from(root().querySelectorAll('dv-notice button')).find(
+      (b) => b.textContent?.trim() === 'Desfazer',
+    ) as HTMLButtonElement;
+    undo.click();
+    await settle();
+    expect(session.get(TABLE_ID)?.invite).toBe(INVITE); // o convite do anfitrião volta junto
+    expect(root().textContent).not.toContain('esquecida neste aparelho');
+  });
+
   it('exige o nome do anfitrião antes de criar a mesa', async () => {
     const { root, http, submit } = await open();
     await submit();
@@ -30,7 +63,7 @@ describe('Home', () => {
     http.expectNone('/tables');
   });
 
-  it('cria a mesa, guarda a sessão do anfitrião e vai para o convite', async () => {
+  it('cria a mesa, guarda a sessão do anfitrião e vai para o personagem', async () => {
     const { http, session, router, type, submit, settle } = await open();
     await type('select', 'outra');
     await type('input[autocomplete="nickname"]', '  Ana  ');
@@ -46,7 +79,7 @@ describe('Home', () => {
       invite: INVITE,
       title: 'A Sombra do Vale',
     });
-    await vi.waitFor(() => expect(router.url).toBe(`/mesa/${TABLE_ID}/convite`));
+    await vi.waitFor(() => expect(router.url).toBe(`/mesa/${TABLE_ID}/personagem`));
   });
 
   it('mostra o erro do servidor ao criar a mesa, como texto', async () => {

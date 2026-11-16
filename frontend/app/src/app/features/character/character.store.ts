@@ -61,6 +61,9 @@ export class CharacterStore {
         ...campaign.npcs.map((npc) => npc.id),
       ]);
       this.values.set(attributeDefaults(rules));
+      if (this.name() === '') {
+        this.name.set(me?.name ?? ''); // o personagem nasce com o nome de quem joga; dá para trocar
+      }
       this.state.set('ready');
     } catch (error) {
       this.session.forgetIfLost(tableId, error);
@@ -69,12 +72,30 @@ export class CharacterStore {
     }
   }
 
+  setName(value: string): void {
+    this.name.set(value);
+    this.nameError.set('');
+    this.error.set('');
+  }
+
   setAttribute(id: string, value: number): void {
     const attribute = this.rules()?.attributes.find((a) => a.id === id);
     if (attribute !== undefined) {
       this.values.update((all) => ({ ...all, [id]: clampAttribute(attribute, value) }));
     }
   }
+
+  /** Os atributos diferem dos valores padrão: só então "Restaurar padrão" faz algo. */
+  readonly changed = computed(() => {
+    const rules = this.rules();
+    if (rules === null) {
+      return false;
+    }
+    const defaults = attributeDefaults(rules);
+    return rules.attributes.some(
+      (a) => (this.values()[a.id] ?? a.default) !== (defaults[a.id] ?? a.default),
+    );
+  });
 
   useDefaults(): void {
     const rules = this.rules();

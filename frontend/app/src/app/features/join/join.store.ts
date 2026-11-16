@@ -27,6 +27,18 @@ export class JoinStore {
     return this.session.get(this.tableId()) !== null;
   }
 
+  setName(value: string): void {
+    this.name.set(value);
+    this.nameError.set('');
+    this.error.set('');
+  }
+
+  setCode(value: string): void {
+    this.code.set(value);
+    this.codeError.set('');
+    this.error.set('');
+  }
+
   async join(): Promise<void> {
     const name = normalizeName(this.name());
     const nameProblem = validateName(name, 'Escreva o seu nome.');

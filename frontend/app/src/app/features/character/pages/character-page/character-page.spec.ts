@@ -81,13 +81,33 @@ describe('Personagem', () => {
   });
 
   it('exige o nome e não chama a API sem ele', async () => {
-    const { root, http, submit } = await open();
+    const { root, http, type, submit } = await open();
+    await type('input[type="text"]', '');
     await submit();
     expect(root().textContent).toContain('Dê um nome ao personagem.');
     http.expectNone(`/tables/${TABLE_ID}/commands`);
   });
 
-  it('"usar os valores padrão" desfaz o que foi mexido', async () => {
+  it('o personagem nasce com o nome de quem joga, e o erro some ao digitar', async () => {
+    const { root, type, submit } = await open();
+    const field = () => root().querySelector('input[type="text"]') as HTMLInputElement;
+    expect(field().value).toBe('Bia');
+    await type('input[type="text"]', '');
+    await submit();
+    expect(root().textContent).toContain('Dê um nome ao personagem.');
+    await type('input[type="text"]', 'B');
+    expect(root().textContent).not.toContain('Dê um nome ao personagem.');
+  });
+
+  it('"Restaurar padrão" só vale depois de mexer nos atributos', async () => {
+    const { root, click } = await open();
+    const restore = () => root().querySelector('button[type="button"]:not([aria-label])');
+    expect(restore()?.getAttribute('aria-disabled')).toBe('true');
+    await click('[aria-label="Aumentar Força"]');
+    expect(restore()?.getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('"Restaurar padrão" desfaz o que foi mexido', async () => {
     const { root, click } = await open();
     await click('[aria-label="Aumentar Força"]');
     expect(root().querySelectorAll('output')[0]?.textContent).toBe('3');
@@ -137,7 +157,7 @@ describe('Personagem', () => {
       },
     });
     const { root } = await open(table);
-    expect(root().textContent).toContain('Sobre o mestre de IA desta mesa.');
+    expect(root().textContent).toContain('O que o mestre de IA recebe');
     expect(root().textContent).toContain('O texto vai ao servidor de LLM m em h.');
   });
 

@@ -6,6 +6,7 @@ import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { HomeStore } from '../../home.store';
+import { whenOf } from '@shared/game/when';
 import { fieldValue } from '@shared/ui/field/field-value';
 
 /** Tela inicial: criar uma mesa, entrar por link e retomar mesas guardadas. */
@@ -20,6 +21,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 export class HomePage implements OnInit {
   protected readonly fieldValue = fieldValue;
   protected readonly store = inject(HomeStore);
+  protected readonly when = (time: number): string => whenOf(time, Date.now());
 
   ngOnInit(): void {
     void this.store.load();
