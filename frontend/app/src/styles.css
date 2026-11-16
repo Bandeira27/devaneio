@@ -1,4 +1,3 @@
-html {
-  background: oklch(27.4% 0.01 81);
-  color: oklch(87.8% 0.045 90);
-}
+@import './styles/tokens.css';
+@import './styles/fonts.css';
+@import './styles/base.css';
