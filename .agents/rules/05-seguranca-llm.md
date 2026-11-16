@@ -139,6 +139,21 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     continua virando 500 genérico (item 15). Mudar o limite, a pasta ou a profundidade do `extends` exige atualizar
     este item e o teste que o prova. O hash do conteúdo no `SaveFile` só avisa, nunca decide nada.
 
+## Navegador e UI (`server/static.py`, `frontend/app/`)
+
+23. **Estáticos e cabeçalhos.** O servidor só serve arquivos com `--web DIR`, e a API sempre vem antes (rota de API
+    desconhecida continua 404 JSON). O caminho é decodificado uma vez e confinado à pasta: sem `..`, `%2e%2e`, NUL,
+    barra invertida, diretório nem symlink para fora; MIME por lista fechada (sem `.map`); só `GET` e `HEAD`. Toda
+    resposta estática leva CSP (`script-src 'self'`; `style-src` com `'unsafe-inline'` como risco aceito),
+    `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `nosniff`. Mudar a CSP exige atualizar `docs/desenho-ui.md`
+    e o teste que a prova.
+24. **O front trata todo texto como não confiável.** O servidor sanitiza caracteres de controle em nomes, falas e
+    prosa, mas **não escapa marcação**: nome de jogador, fala do LLM, narração e texto de campanha são exibidos só por
+    interpolação (nunca `innerHTML` nem `bypassSecurityTrust*`, barrados por lint). O token do jogador fica no
+    `localStorage` e só viaja em `Authorization`: nunca em URL (o código do convite vai no fragmento). É um risco
+    aceito (XSS leria o token), reduzido por CSP e pelo lint. **Pré-condição do editor de campanhas:** validar o
+    cabeçalho `Host` e responder só em localhost, contra DNS rebinding.
+
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 
 - O que o modelo pode fazer mudou? Atualize a allow-list *e* o teste que a prova.
