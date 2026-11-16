@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { FADE_FLOOR } from '../src/app/shared/game/feed';
 import { contrast, oklchToSrgb, over, type Rgb } from './color';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -81,6 +82,12 @@ describe('contraste dos tokens', () => {
   it('um piso de opacidade menor reprovaria (o 0,55 da primeira ideia dava 4,2:1)', () => {
     const faded = over(color('--dv-text'), color('--dv-surface-0'), 0.55);
     expect(contrast(faded, color('--dv-surface-0'))).toBeLessThan(MIN);
+  });
+});
+
+describe('o piso do desbotado', () => {
+  it('é o mesmo no CSS e no feed', () => {
+    expect(Number(value('--dv-fade-floor'))).toBe(FADE_FLOOR);
   });
 });
 
