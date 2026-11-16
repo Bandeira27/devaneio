@@ -27,6 +27,7 @@ Fronteira de risco → especialista:
 - `llm/`; carga ou escrita de arquivos (`SaveFile`, campanhas); `subprocess`/`urlopen`; segredos →
   `security-reviewer`
 - dependência nova → `security-reviewer` **e** `architecture-guardian`
+- tela, componente de UI, estilo ou movimento em `frontend/app` (a partir de N2) → `ui-reviewer`
 - estado, `rng`, expressões, laço quente, ou queixa de lentidão → `performance-analyst`, **somente com medição
   em mãos**
 
@@ -41,6 +42,7 @@ por reflexo: custo e ruído crescem mais rápido que o valor.
 | qualquer mudança em `llm/` | `security-reviewer` + `architecture-guardian` + `test-engineer` |
 | dependência nova | `architecture-guardian` + `security-reviewer` |
 | primeira ação do motor de um tipo novo | `architecture-guardian` + `test-engineer` |
+| mudança de tela ou componente de UI | `code-reviewer` + `ui-reviewer` |
 
 ## 3. Comunicação e compartilhamento de descobertas
 

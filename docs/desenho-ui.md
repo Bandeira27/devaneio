@@ -4,6 +4,14 @@ A API da mesa está completa e tipada, mas o único cliente era `curl` e os test
 UI antes do código. A entrega é em partes: o **backend da UI** (rota de regras, `TableView.you`, servir o front com CSP),
 o **app do jogador** (Angular), o painel do anfitrião com o copiloto e, depois, o editor de campanhas.
 
+## Estado do design
+
+O app do jogador tem design system próprio (tokens, componentes com contrato, catálogo em Storybook, movimento com
+regra), mesa pensada pela tarefa e entrada curta. Os textos de referência: [`design-system.md`](design-system.md),
+[`movimento.md`](movimento.md) e [`padroes-de-interacao.md`](padroes-de-interacao.md). A revisão de UI tem papel
+(`ui-reviewer`) e skill (`review-ui`). Fica para depois: o painel do anfitrião, o editor de campanhas e um selo de
+desfecho do teste (exige dado estruturado no evento, mudança de backend).
+
 ## Decisões
 
 - **Angular + TypeScript**, SPA mobile-first (celular na rede local; computador também), em `frontend/app/`.

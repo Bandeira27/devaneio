@@ -55,7 +55,7 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
 | animar, fazer transição ou mexer em estado visual | [12 movimento](.agents/rules/12-movimento.md) |
 
 Procedimentos recorrentes em `.agents/skills/` (cada um é uma pasta com `SKILL.md`):
-`add-engine-action`, `change-contract`, `quality-gate`, `split-module`, `add-ui-component`.
+`add-engine-action`, `change-contract`, `quality-gate`, `split-module`, `add-ui-component`, `review-ui`.
 
 ## Papéis de revisão (subagentes) e orquestração
 
@@ -70,6 +70,7 @@ responde. Subagentes não acionam outros subagentes. Níveis: **N0** docs/format
 | `code-reviewer` | corretude, legibilidade, nomes, erros, duplicação do diff | [arquivo](.agents/agents/code-reviewer.md) |
 | `test-engineer` | qualidade dos testes, regressão, cobertura (único que edita, só `tests/`) | [arquivo](.agents/agents/test-engineer.md) |
 | `security-reviewer` | fronteira do LLM, segredos, arquivos, desserialização | [arquivo](.agents/agents/security-reviewer.md) |
+| `ui-reviewer` | tarefa e fluxo, estados, acessibilidade, tokens e movimento da interface | [arquivo](.agents/agents/ui-reviewer.md) |
 | `performance-analyst` | desempenho, só com medição | [arquivo](.agents/agents/performance-analyst.md) |
 
 ## Compatibilidade entre ferramentas

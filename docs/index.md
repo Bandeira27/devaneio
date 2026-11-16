@@ -16,13 +16,16 @@ as coisas são hoje, e os de **desenho** contam por que foram feitas assim.
 
 ## Por que foram feitas assim
 
-| Assunto                                           | Texto                                                                      |
-| ------------------------------------------------- | -------------------------------------------------------------------------- |
-| Para onde o projeto vai e em que ordem            | [`rumo-extensibilidade.md`](rumo-extensibilidade.md)                       |
-| Visibilidade e revelações pelo motor              | [`desenho-visibilidade-revelacoes.md`](desenho-visibilidade-revelacoes.md) |
-| Sistemas e narrações criados pelo usuário         | [`desenho-sistemas-do-usuario.md`](desenho-sistemas-do-usuario.md)         |
-| Copiloto do anfitrião                             | [`desenho-copiloto.md`](desenho-copiloto.md)                               |
-| O app do jogador (visual, arquitetura, segurança) | [`desenho-ui.md`](desenho-ui.md)                                           |
+| Assunto                                              | Texto                                                                      |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| Para onde o projeto vai e em que ordem               | [`rumo-extensibilidade.md`](rumo-extensibilidade.md)                       |
+| Visibilidade e revelações pelo motor                 | [`desenho-visibilidade-revelacoes.md`](desenho-visibilidade-revelacoes.md) |
+| Sistemas e narrações criados pelo usuário            | [`desenho-sistemas-do-usuario.md`](desenho-sistemas-do-usuario.md)         |
+| Copiloto do anfitrião                                | [`desenho-copiloto.md`](desenho-copiloto.md)                               |
+| O app do jogador (visual, arquitetura, segurança)    | [`desenho-ui.md`](desenho-ui.md)                                           |
+| Visual, componentes e catálogo do app                | [`design-system.md`](design-system.md)                                     |
+| Movimento: o que anima e por quê                     | [`movimento.md`](movimento.md)                                             |
+| Como o app se comporta (estados, formulários, erros) | [`padroes-de-interacao.md`](padroes-de-interacao.md)                       |
 
 ## O que já foi feito
 
