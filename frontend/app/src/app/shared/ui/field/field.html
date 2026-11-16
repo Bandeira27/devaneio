@@ -1,0 +1,8 @@
+<label class="field__label" [for]="control().id">{{ label() }}</label>
+<ng-content />
+@if (hint()) {
+  <p class="field__hint" [id]="control().id + '-hint'">{{ hint() }}</p>
+}
+@if (error()) {
+  <p class="field__error" role="alert" [id]="control().id + '-error'">{{ error() }}</p>
+}

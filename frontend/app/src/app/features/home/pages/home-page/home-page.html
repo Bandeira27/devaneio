@@ -1,0 +1,98 @@
+<div class="dv-page">
+  <p class="dv-lede">
+    Uma mesa de RPG com um mestre que tece a história enquanto você joga. Crie uma mesa ou entre
+    numa que já começou.
+  </p>
+
+  @if (store.saved().length > 0) {
+    <section class="dv-card dv-stack" aria-labelledby="titulo-guardadas">
+      <h2 class="dv-title" id="titulo-guardadas">Suas mesas</h2>
+      <ul class="saved">
+        @for (table of store.saved(); track table.tableId) {
+          <li class="saved__item">
+            <a class="saved__link" [routerLink]="['/mesa', table.tableId]">
+              <span class="saved__title">{{ table.title }}</span>
+              <span class="dv-note">{{ table.role === 'host' ? 'anfitrião' : 'jogador' }}</span>
+            </a>
+            <button
+              dvButton
+              type="button"
+              (click)="store.forget(table.tableId)"
+              [attr.aria-label]="'Esquecer a mesa ' + table.title"
+            >
+              Esquecer
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="dv-card dv-stack" aria-labelledby="titulo-criar">
+    <h2 class="dv-title" id="titulo-criar">Criar uma mesa</h2>
+    @switch (store.state()) {
+      @case ('loading') {
+        <p class="dv-note" role="status">Procurando as campanhas…</p>
+      }
+      @case ('failed') {
+        <dv-notice kind="error">{{ store.loadError() }}</dv-notice>
+        <button dvButton type="button" (click)="store.load()">Tentar de novo</button>
+      }
+      @case ('ready') {
+        @if (store.campaigns().length === 0) {
+          <dv-notice>O servidor não tem nenhuma campanha para jogar.</dv-notice>
+        } @else {
+          <form class="dv-stack" (submit)="$event.preventDefault(); store.create()">
+            <dv-field label="Campanha">
+              <select
+                dvInput
+                [value]="store.campaignId()"
+                (change)="store.campaignId.set(text($event))"
+              >
+                @for (campaign of store.campaigns(); track campaign.id) {
+                  <option [value]="campaign.id">{{ campaign.title }}</option>
+                }
+              </select>
+            </dv-field>
+            <dv-field label="Seu nome" [error]="store.nameError()">
+              <input
+                dvInput
+                type="text"
+                autocomplete="nickname"
+                maxlength="40"
+                [value]="store.hostName()"
+                (input)="store.hostName.set(text($event))"
+              />
+            </dv-field>
+            @if (store.createError()) {
+              <dv-notice kind="error">{{ store.createError() }}</dv-notice>
+            }
+            <button dvButton="primary" type="submit" [disabled]="store.creating()">
+              {{ store.creating() ? 'Criando…' : 'Criar mesa' }}
+            </button>
+          </form>
+        }
+      }
+    }
+  </section>
+
+  <section class="dv-card dv-stack" aria-labelledby="titulo-entrar">
+    <h2 class="dv-title" id="titulo-entrar">Entrar com um convite</h2>
+    <form class="dv-stack" (submit)="$event.preventDefault(); store.openInvite()">
+      <dv-field
+        label="Link do convite"
+        hint="Cole o link que o anfitrião mandou."
+        [error]="store.inviteError()"
+      >
+        <input
+          dvInput
+          type="text"
+          autocomplete="off"
+          [value]="store.inviteText()"
+          (input)="store.inviteText.set(text($event))"
+        />
+      </dv-field>
+      <button dvButton type="submit">Entrar</button>
+    </form>
+  </section>
+</div>

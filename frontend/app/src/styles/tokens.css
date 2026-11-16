@@ -23,6 +23,7 @@
   --dv-text: var(--dv-sepia);
   --dv-text-muted: var(--dv-ink);
   --dv-accent: var(--dv-rose);
+  --dv-accent-hover: oklch(77% 0.063 38);
   --dv-on-accent: oklch(24% 0.01 81);
   --dv-ok: var(--dv-verdigris);
   --dv-danger: var(--dv-brick);

@@ -66,8 +66,11 @@ describe('contraste dos tokens', () => {
     expect(contrast(color('--dv-danger'), color(surface))).toBeGreaterThanOrEqual(MIN);
   });
 
-  it('o texto do botão de acento passa sobre o acento', () => {
+  it('o texto do botão de acento passa sobre o acento e sobre o acento com o mouse em cima', () => {
     expect(contrast(color('--dv-on-accent'), color('--dv-accent'))).toBeGreaterThanOrEqual(MIN);
+    expect(contrast(color('--dv-on-accent'), color('--dv-accent-hover'))).toBeGreaterThanOrEqual(
+      MIN,
+    );
   });
 
   it.each(['--dv-surface-0', '--dv-surface-1'])(

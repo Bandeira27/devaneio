@@ -1,0 +1,29 @@
+<div class="stepper__text">
+  <span class="stepper__label" [id]="'stepper-' + label()">{{ label() }}</span>
+  @if (hint()) {
+    <span class="stepper__hint">{{ hint() }}</span>
+  }
+</div>
+<div class="stepper__controls" role="group" [attr.aria-labelledby]="'stepper-' + label()">
+  <button
+    dvButton
+    type="button"
+    class="stepper__button"
+    [disabled]="!canDecrease()"
+    [attr.aria-label]="'Diminuir ' + label()"
+    (click)="step(-1)"
+  >
+    −
+  </button>
+  <output class="stepper__value" aria-live="polite">{{ value() }}</output>
+  <button
+    dvButton
+    type="button"
+    class="stepper__button"
+    [disabled]="!canIncrease()"
+    [attr.aria-label]="'Aumentar ' + label()"
+    (click)="step(1)"
+  >
+    +
+  </button>
+</div>

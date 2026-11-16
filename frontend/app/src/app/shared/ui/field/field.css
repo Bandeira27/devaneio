@@ -1,0 +1,24 @@
+:host {
+  display: grid;
+  gap: var(--dv-space-1);
+}
+
+.field__label {
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}
+
+.field__hint,
+.field__error {
+  margin: 0;
+  font-size: var(--dv-text-note);
+}
+
+.field__hint {
+  color: var(--dv-text-muted);
+}
+
+.field__error {
+  color: var(--dv-danger);
+}

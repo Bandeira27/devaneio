@@ -1,0 +1,94 @@
+/* Componentes de interface do Devaneio (shared/ui): botão, campo, cartão e a tipografia das páginas. */
+
+.dv-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dv-space-2);
+  min-height: var(--dv-touch);
+  padding: 0 var(--dv-space-4);
+  border: 1px dotted var(--dv-text-muted);
+  border-radius: var(--dv-radius);
+  background: transparent;
+  color: var(--dv-text);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dv-button:hover:not(:disabled) {
+  background: var(--dv-surface-2);
+}
+
+.dv-button--primary {
+  border: 1px solid var(--dv-accent);
+  background: var(--dv-accent);
+  color: var(--dv-on-accent);
+}
+
+.dv-button--primary:hover:not(:disabled) {
+  background: var(--dv-accent-hover);
+}
+
+.dv-button:disabled,
+.dv-button[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dv-input {
+  width: 100%;
+  min-height: var(--dv-touch);
+  padding: 0 var(--dv-space-3);
+  border: 1px dotted var(--dv-text-muted);
+  border-radius: var(--dv-radius);
+  background: var(--dv-surface-1);
+  color: var(--dv-text);
+  font: inherit;
+}
+
+.dv-input[aria-invalid='true'] {
+  border: 1px solid var(--dv-danger);
+}
+
+.dv-card {
+  padding: var(--dv-space-4);
+  border: 1px dotted var(--dv-line);
+  border-radius: var(--dv-radius);
+  background: var(--dv-surface-1);
+}
+
+.dv-stack {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+.dv-title {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-title);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.dv-lede {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  line-height: 1.5;
+}
+
+.dv-note {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}
+
+.dv-page {
+  display: grid;
+  gap: var(--dv-space-6);
+  max-width: 36rem;
+  margin-inline: auto;
+}

@@ -68,9 +68,9 @@ export function normalizeName(name: string): string {
 }
 
 /** Mensagem em português se o nome não serve, ou `null`. */
-export function validateName(name: string): string | null {
+export function validateName(name: string, empty = 'Dê um nome ao personagem.'): string | null {
   if (name.length === 0) {
-    return 'Dê um nome ao personagem.';
+    return empty;
   }
   if (name.length > MAX_ARG) {
     return `O nome pode ter até ${MAX_ARG} caracteres.`;

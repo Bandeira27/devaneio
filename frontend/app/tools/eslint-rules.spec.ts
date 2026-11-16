@@ -90,6 +90,18 @@ describe('camadas do app', () => {
     ).not.toContain('no-restricted-imports');
   });
 
+  it('os pacotes @angular/* nunca contam como camada (@angular/core/testing não é a pasta core)', async () => {
+    const code = "import { TestBed } from '@angular/core/testing';\nconsole.warn(TestBed);\n";
+    for (const where of [
+      'src/app/shared/ui/a.spec.ts',
+      'src/app/shared/game/a.ts',
+      'src/app/features/table/a.ts',
+      'src/app/layout/a.ts',
+    ]) {
+      expect(await ruleIds(code, where), where).not.toContain('no-restricted-imports');
+    }
+  });
+
   it('toda pasta de features está registrada na configuração', () => {
     const dir = join(root, 'src/app/features');
     const found = existsSync(dir)

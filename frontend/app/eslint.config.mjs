@@ -8,7 +8,7 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
 /** Features existentes: um teste (tools/eslint-rules.spec.ts) falha se uma pasta nova não estiver aqui. */
-export const FEATURES = ['home', 'join', 'character', 'table'];
+export const FEATURES = ['home', 'invite', 'join', 'character', 'table'];
 
 const MESSAGE = {
   cdk: 'O CDK só entra por shared/ui (componentes dv-*): as features usam dv-*.',
@@ -17,7 +17,7 @@ const MESSAGE = {
 
 const cdk = { group: ['@angular/cdk', '@angular/cdk/*'], message: MESSAGE.cdk };
 const only = (layer, from, reason) => ({
-  group: [`@${layer}/*`, `**/${layer}/**`],
+  group: [`@${layer}/*`, `**/${layer}/**`, '!@angular/**'], // @angular/core/* não é a camada core
   message: `${from} não pode importar de ${layer}: ${reason}`,
 });
 
@@ -105,7 +105,7 @@ export default defineConfig([
       toLayout(`features/${feature}`),
       cdk,
       ...FEATURES.filter((other) => other !== feature).map((other) => ({
-        group: [`@features/${other}`, `@features/${other}/*`, `**/${other}/**`],
+        group: [`@features/${other}`, `@features/${other}/*`, `**/${other}/**`, '!@angular/**'],
         message: `features/${feature} não importa features/${other}: o que as duas precisam sobe para shared.`,
       })),
     ),

@@ -36,3 +36,8 @@ export class ApiFailure extends Error {
     return new ApiFailure(response.status, 'unknown', 'O servidor respondeu algo inesperado.');
   }
 }
+
+/** Texto de erro para a tela: o do servidor (já em português) ou um genérico para o que não é falha da API. */
+export function messageOf(error: unknown): string {
+  return error instanceof ApiFailure ? error.message : 'Algo deu errado. Tente de novo.';
+}
