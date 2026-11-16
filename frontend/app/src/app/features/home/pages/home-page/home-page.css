@@ -50,3 +50,9 @@
     gap: var(--dv-space-6);
   }
 }
+
+@media (min-width: 64rem) {
+  .home-page {
+    max-width: var(--dv-measure-home);
+  }
+}
