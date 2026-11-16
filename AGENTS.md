@@ -51,6 +51,8 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
 | acionar ou consolidar revisão por subagentes | [08 orquestração](.agents/rules/08-orquestracao.md) |
 | criar, dividir ou crescer um arquivo ou módulo | [09 responsabilidades](.agents/rules/09-responsabilidades.md) |
 | escrever docstring, JSDoc, comentário, README ou texto em `docs/` | [10 documentação](.agents/rules/10-documentacao.md) |
+| escrever CSS, criar componente de UI ou mudar uma tela | [11 design system](.agents/rules/11-design-system.md) |
+| animar, fazer transição ou mexer em estado visual | [12 movimento](.agents/rules/12-movimento.md) |
 
 Procedimentos recorrentes em `.agents/skills/` (cada um é uma pasta com `SKILL.md`):
 `add-engine-action`, `change-contract`, `quality-gate`, `split-module`.

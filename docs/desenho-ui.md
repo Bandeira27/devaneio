@@ -23,11 +23,13 @@ o **app do jogador** (Angular), o painel do anfitrião com o copiloto e, depois,
 
 Uma memória desbotada, "meio velha, meio incerta de existir", como a palavra devaneio. Fumaça e sépia, IM Fell English na
 narração e nos títulos, Special Elite nas notas mecânicas, controles na fonte do sistema, bordas pontilhadas, manchas
-discretas, sem sombra nem gradiente.
+discretas. Nada de gradiente de cor; sombra só no que flutua (folha, diálogo) ou está pressionado: o que repousa se separa
+por superfície e contorno (ver [`design-system.md`](design-system.md)).
 
 - **Incerteza só na atmosfera, nunca na informação.** Resultado de teste, hp, botões e erros ficam nítidos.
-- **Memória por idade:** a cena atual é nítida e os turnos passados desbotam, com piso de opacidade 0,65. Texto novo se
-  "revela" com um fade curto (`prefers-reduced-motion` desliga).
+- **Memória por idade:** a cena atual é nítida e os turnos passados desbotam. O piso de opacidade é **por papel**: 0,65
+  para o texto de leitura e 0,85 para o que é cor de tom (nota, falante, dano, cura), porque a cor perde mais contraste
+  que a sépia. Texto novo se "revela" com um fade (o movimento reduzido o encurta: [`movimento.md`](movimento.md)).
 - **Cores em OKLCH**, sem hex, com variações por cor relativa. O contraste é medido por teste (WCAG >= 4,5:1 nos pares
   essenciais): os valores da primeira ideia falhavam (tinta velha 4,1:1, rosa de poeira 3,9:1 sobre a fumaça) e
   foram ajustados.
