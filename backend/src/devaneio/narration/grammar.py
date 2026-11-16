@@ -32,6 +32,8 @@ def referenced_symbols(template: str) -> list[str]:
 
 
 class Grammar:
+    """Regras de narração com alternativas e símbolos `#nome#`, validadas na criação."""
+
     def __init__(self, rules: Mapping[str, Sequence[str]]) -> None:
         for symbol, options in rules.items():
             if not options:
@@ -90,8 +92,11 @@ class Grammar:
         return found
 
     def worst_length(self, symbol: str, variables: Collection[str]) -> int:
-        """Maior texto possível ao expandir ``symbol`` (variável conta ``VARIABLE_CHARS``). Só vale
-        sem ciclos: confira ``cycles()`` antes."""
+        """Maior texto possível ao expandir um símbolo.
+
+        Maior texto possível ao expandir ``symbol`` (variável conta ``VARIABLE_CHARS``). Só
+        vale sem ciclos: confira ``cycles()`` antes.
+        """
         memo: dict[str, int] = {}
 
         def worst(name: str) -> int:
@@ -139,6 +144,7 @@ class Grammar:
         return refs, visited
 
     def expand(self, symbol: str, variables: Mapping[str, str], rng: Rng) -> str:
+        """Expande um símbolo, sorteando as alternativas e trocando as variáveis do evento."""
         return self._expand(symbol, variables, rng, 0, [MAX_EXPANSIONS])
 
     def _expand(

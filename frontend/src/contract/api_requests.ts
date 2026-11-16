@@ -5,6 +5,9 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * Todos os corpos de requisição, reunidos só para gerar o contrato.
+ */
 export interface ApiRequests {
   create_table: CreateTableRequest;
   join_table: JoinRequest;
@@ -12,19 +15,31 @@ export interface ApiRequests {
   say: SayRequest;
   copilot: CopilotRequest;
 }
+/**
+ * Criar uma mesa: a campanha, o nome do anfitrião e, opcionalmente, a semente.
+ */
 export interface CreateTableRequest {
   campaign_id: string;
   host_name: string;
   seed?: number | null;
 }
+/**
+ * Entrar numa mesa: o código de convite e o nome.
+ */
 export interface JoinRequest {
   invite_code: string;
   name: string;
 }
+/**
+ * Um comando: a linha e a revisão da mesa que o cliente viu.
+ */
 export interface CommandRequest {
   line: string;
   revision: number;
 }
+/**
+ * Um texto livre para o mestre de IA: o texto e a revisão que o cliente viu.
+ */
 export interface SayRequest {
   text: string;
   revision: number;

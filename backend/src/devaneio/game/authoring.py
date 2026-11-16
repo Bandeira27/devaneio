@@ -18,6 +18,8 @@ from devaneio.schema import AtLocation, Campaign, CheckPassed, Condition, NpcDow
 
 @dataclass(frozen=True)
 class Finding:
+    """Um achado da conferência de autoria: um erro ou um aviso, em português."""
+
     level: Literal["erro", "aviso"]
     text: str
 
@@ -26,6 +28,7 @@ class Finding:
 
 
 def check_content(campaign: Campaign, rules: RuleSystem, pack: NarrationPack) -> list[Finding]:
+    """Confere a campanha, o sistema de regras e a narração entre si; devolve os achados."""
     findings: list[Finding] = []
     skill_ids = {s.id for s in rules.skills}
     start = {n.id: n.location_id for n in campaign.npcs}

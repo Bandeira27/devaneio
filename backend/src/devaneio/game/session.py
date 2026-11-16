@@ -23,16 +23,22 @@ from .table import TableMeta
 
 
 class ContentHashes(StrictModel):
-    """Impressão digital do conteúdo com que a partida foi jogada (modelos já mesclados). Serve só
-    para avisar que o autor mudou o sistema ou a narração; nunca recusa a partida."""
+    """Impressão digital do conteúdo com que a partida foi jogada.
+
+    Impressão digital do conteúdo com que a partida foi jogada (modelos já mesclados). Serve só
+    para avisar que o autor mudou o sistema ou a narração; nunca recusa a partida.
+    """
 
     rules_sha256: str
     narration_sha256: str
 
 
 class SaveFile(StrictModel):
-    """Formato do arquivo de partida. A campanha não é copiada: fica o caminho, relativo
-    ao arquivo da partida, para a partida poder ser movida junto com a campanha."""
+    """Formato do arquivo de partida.
+
+    A campanha não é copiada: fica o caminho, relativo ao arquivo da partida, para a partida
+    poder ser movida junto com a campanha.
+    """
 
     save_version: Literal[1] = 1
     campaign_path: str
@@ -45,6 +51,8 @@ class SaveFile(StrictModel):
 
 @dataclass
 class Session:
+    """Uma partida em memória: campanha, regras, estado e onde está gravada."""
+
     campaign: Campaign
     rules: RuleSystem
     state: GameState
@@ -58,14 +66,18 @@ class Session:
 
 
 def connect_llm(config: LlmConfig) -> ChatClient:
-    """O cliente de LLM de uma configuração. É o único lugar que escolhe a implementação:
-    CLI e servidor só pedem o cliente."""
+    """O cliente de LLM de uma configuração.
+
+    É o único lugar que escolhe a implementação: CLI e servidor só pedem o cliente.
+    """
     return OpenAiCompatClient(config)
 
 
 def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> Session:
-    """Cria o estado inicial (com os marcos iniciais já ativos) e grava. Semente aleatória
-    (< 2**53, portável) se não for dada."""
+    """Cria uma partida nova e a grava.
+
+    Semente aleatória (< 2**53, portável) se não for dada.
+    """
     campaign_path = Path(campaign_path).resolve()
     campaign, rules, pack = load_campaign_content(campaign_path)
     if seed is None:
@@ -85,9 +97,12 @@ def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> S
 
 
 def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
-    """Com ``campaign_root``, a campanha referenciada pela partida precisa estar dentro
-    dessa pasta: o caminho vem de dado (rule 05, item 10) e um servidor não pode deixá-lo
-    apontar para fora. Sem raiz (CLI local), qualquer caminho relativo vale."""
+    """Carrega uma partida do arquivo.
+
+    Com ``campaign_root``, a campanha referenciada pela partida precisa estar dentro dessa
+    pasta: o caminho vem de dado (rule 05, item 10) e um servidor não pode deixá-lo apontar para
+    fora. Sem raiz (CLI local), qualquer caminho relativo vale.
+    """
     save_path = Path(save_path).resolve()
     data = SaveFile.model_validate_json(save_path.read_text(encoding="utf-8"))
     campaign_path = (save_path.parent / data.campaign_path).resolve()
@@ -114,8 +129,11 @@ def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
 
 
 def save_game(session: Session) -> None:
-    """Escrita atômica: arquivo temporário na mesma pasta e ``os.replace``, para uma queda
-    no meio nunca deixar a partida truncada."""
+    """Grava a partida de forma atômica.
+
+    Arquivo temporário na mesma pasta e ``os.replace``, para uma queda no meio nunca deixar a
+    partida truncada.
+    """
     relative = os.path.relpath(session.campaign_path, session.save_path.parent)
     payload = SaveFile(
         campaign_path=relative,
@@ -135,6 +153,7 @@ def save_game(session: Session) -> None:
 
 
 def content_hashes(rules: RuleSystem, pack: NarrationPack) -> ContentHashes:
+    """As impressões digitais do sistema de regras e da narração, já mesclados."""
     return ContentHashes(rules_sha256=_digest(rules), narration_sha256=_digest(pack))
 
 

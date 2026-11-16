@@ -33,8 +33,11 @@ MAX_JOIN_ARGS = 30  # id, nome, atributos e itens do `entrar`
 
 @dataclass(frozen=True)
 class Plan:
-    """O que ``_authorize`` decidiu: o tipo do comando, o personagem que age (só em ações)
-    e a linha final que o motor vai executar."""
+    """O que a autorização decidiu sobre um comando.
+
+    O tipo do comando, o personagem que age (só em ações) e a linha final que o motor vai
+    executar.
+    """
 
     kind: policy.Kind | None
     actor: str
@@ -42,6 +45,7 @@ class Plan:
 
 
 def prefixed(actor: str, rest: str) -> str:
+    """A linha com o prefixo do personagem que age."""
     return f"{actor}: {rest}"
 
 
@@ -60,7 +64,8 @@ def hidden_events(state: GameState, campaign: Campaign) -> frozenset[int]:
     campanha, e o do NPC, do que o próprio evento gravou (``data["npc_locations"]``; evento
     antigo sem o campo usa o local atual do NPC). Assim um evento escondido continua
     escondido depois que o grupo chega ao NPC, mesmo que o NPC se mova: a visão só cresce
-    por eventos novos, e quem lê com ``since`` não perde nada."""
+    por eventos novos, e quem lê com ``since`` não perde nada.
+    """
     here = campaign.start_location_id
     hidden: set[int] = set()
     for index, event in enumerate(state.events):
@@ -80,8 +85,11 @@ def hidden_events(state: GameState, campaign: Campaign) -> frozenset[int]:
 
 
 def hidden_for(role: Role, session: Session) -> frozenset[int]:
-    """O que o papel não vê: nada para o anfitrião (o mestre), os eventos sobre NPC escondido
-    para o jogador comum (o texto deles cita nome e hp)."""
+    """Quais eventos o papel não pode ver.
+
+    Nada para o anfitrião (o mestre), os eventos sobre NPC escondido para o jogador comum (o
+    texto deles cita nome e hp).
+    """
     if role == "host":
         return frozenset()
     return hidden_events(session.state, session.campaign)
@@ -94,9 +102,12 @@ def events_view(
     *,
     role: Role,
 ) -> list[EventView]:
-    """Eventos de ``since`` em diante que o papel pode ver, cada um com a prosa da gramática
-    e o índice original (a lista de um jogador pode ter buracos). ``narrations``
-    traz o parágrafo do LLM por índice de evento, onde houver."""
+    """Os eventos de uma posição em diante que o papel pode ver.
+
+    Eventos de ``since`` em diante que o papel pode ver, cada um com a prosa da gramática e o
+    índice original (a lista de um jogador pode ter buracos). ``narrations`` traz o parágrafo do
+    LLM por índice de evento, onde houver.
+    """
     state = session.state
     cached = narrations or {}
     hidden = hidden_for(role, session)
@@ -121,6 +132,7 @@ def apply(
     player: Player,
     request: CommandRequest,
 ) -> tuple[CommandResult, Session, TableMeta]:
+    """Executa um comando de um jogador sobre a partida e devolve o resultado, a nova sessão e a mesa."""
     state = session.state
     plan = resolve(player, request.line, state)
     check_turn(table, state, plan, request.revision)
@@ -144,8 +156,11 @@ def apply(
 
 
 def authenticate(session: Session, token: str) -> tuple[TableMeta, str, Player]:
-    """A mesa da partida e o jogador dono do token: 404 se a partida não é uma mesa, 401 se
-    o token não é de ninguém."""
+    """A mesa da partida e o jogador dono do token.
+
+    A mesa da partida e o jogador dono do token: 404 se a partida não é uma mesa, 401 se o token
+    não é de ninguém.
+    """
     table = session.table
     if table is None:
         raise ApiFailure(404, "table_not_found", "mesa não encontrada")
@@ -156,12 +171,15 @@ def authenticate(session: Session, token: str) -> tuple[TableMeta, str, Player]:
 
 
 def resolve(player: Player, line: str, state: GameState) -> Plan:
-    """Decide se o jogador pode dar este comando e com qual linha final: papel, personagem que
-    age, alvo visível, limites do ``entrar``. Não olha revisão nem turno (isso é ``check_turn``)
-    e não muda nada. Comando que o jogo não conhece (``kind`` ``None``) segue direto para o
-    ``execute``, que o recusa com a mensagem de sempre. A linha final é remontada com o
-    prefixo do personagem, e ``parse_line`` a lê de volta como (ator, comando) esperados:
-    classificação e motor usam o mesmo analisador."""
+    """Decide se o jogador pode dar o comando e com qual linha.
+
+    Decide se o jogador pode dar este comando e com qual linha final: papel, personagem que age,
+    alvo visível, limites do ``entrar``. Não olha revisão nem turno (isso é ``check_turn``) e
+    não muda nada. Comando que o jogo não conhece (``kind`` ``None``) segue direto para o
+    ``execute``, que o recusa com a mensagem de sempre. A linha final é remontada com o prefixo
+    do personagem, e ``parse_line`` a lê de volta como (ator, comando) esperados: classificação
+    e motor usam o mesmo analisador.
+    """
     actor, name, args = parse_line(line)
     kind = policy.classify(name)
     rest = split_actor(line)[1]
@@ -182,8 +200,11 @@ def resolve(player: Player, line: str, state: GameState) -> Plan:
 
 
 def check_turn(table: TableMeta, state: GameState, plan: Plan, seen: int) -> None:
-    """O que depende do momento da mesa: a revisão que o cliente viu (só para quem muda a
-    partida) e uma ação principal por personagem por turno."""
+    """Confere o momento da mesa: revisão e uma ação por turno.
+
+    A revisão que o cliente viu (só para quem muda a partida) e uma ação principal por
+    personagem por turno.
+    """
     if plan.kind in ("action", "join", "host") and seen != len(state.events):
         raise _stale(state, seen)
     if plan.kind == "action" and table.acted.get(plan.actor) == state.turn:
@@ -209,8 +230,11 @@ def _stale(state: GameState, seen: int) -> ApiFailure:
 
 
 def speaker(state: GameState, player: Player, text: str) -> tuple[str, str]:
-    """Quem fala e o texto sem o prefixo ``id:``. Jogador comum fala pelo seu personagem
-    (prefixo alheio é 403); o anfitrião cita o personagem ou usa o seu, se for um só."""
+    """Quem fala e o texto sem o prefixo de personagem.
+
+    Jogador comum fala pelo seu personagem (prefixo alheio é 403); o anfitrião cita o personagem
+    ou usa o seu, se for um só.
+    """
     named, rest = split_actor(text)
     if named in state.characters and rest:
         return acting_character(player, named), rest
@@ -220,6 +244,7 @@ def speaker(state: GameState, player: Player, text: str) -> tuple[str, str]:
 def close_turn_if_all_acted(
     session: Session, table: TableMeta, text: str
 ) -> tuple[Session, str, bool]:
+    """Encerra o turno automaticamente quando todos os personagens ligados a jogadores já agiram."""
     if not policy.everyone_acted(table, session.state):
         return session, text, False
     try:
@@ -237,9 +262,12 @@ def adopt(table: TableMeta, player_id: str, player: Player, created: set[str]) -
 
 
 def acting_character(player: Player, named: str | None) -> str:
-    """O personagem que age. Jogador comum: o seu (o único), nunca o de outro. Anfitrião:
-    o que citar, ou o seu se tiver exatamente um. Nunca deixa o motor escolher sozinho,
-    porque ``resolve_actor`` sem prefixo pega o único personagem da partida, de quem for."""
+    """O personagem que age.
+
+    Jogador comum: o seu (o único), nunca o de outro. Anfitrião: o que citar, ou o seu se tiver
+    exatamente um. Nunca deixa o motor escolher sozinho, porque ``resolve_actor`` sem prefixo
+    pega o único personagem da partida, de quem for.
+    """
     if player.role == "host":
         if named is not None:
             return named
@@ -256,8 +284,11 @@ def acting_character(player: Player, named: str | None) -> str:
 
 
 def check_target(state: GameState, player: Player, name: str, args: list[str]) -> None:
-    """Jogador comum só ataca quem vê: NPC de outro local responde como alvo inexistente,
-    para o ataque não revelar nem ferir quem o ``olhar`` não mostra."""
+    """Confere que o jogador comum só ataca quem ele vê.
+
+    NPC de outro local responde como alvo inexistente, para o ataque não revelar nem ferir quem
+    o ``olhar`` não mostra.
+    """
     if name != "atacar" or player.role == "host" or len(args) < 2:
         return
     npc_id = args[1]
@@ -266,6 +297,7 @@ def check_target(state: GameState, player: Player, name: str, args: list[str]) -
 
 
 def check_join(state: GameState, player: Player, args: list[str]) -> None:
+    """Confere os limites do `entrar`: um personagem por jogador e tamanhos dos argumentos."""
     if player.role != "host" and player.character_ids:
         raise ApiFailure(409, "character_limit", "você já tem um personagem")
     if len(args) > MAX_JOIN_ARGS or any(len(a) > MAX_NAME for a in args):
@@ -279,10 +311,13 @@ def check_join(state: GameState, player: Player, args: list[str]) -> None:
 
 
 def authorize_proposal(player: Player, working: Session, line: str) -> None:
-    """Uma ação que o LLM propôs passa pela mesma política do jogador que falou: papel,
-    dono do personagem, alvo visível. O que não é ação de jogo (leitura, ``entrar``) nem
-    existe como proposta. Recusa como ``CommandError``, que vira feedback ao modelo. Revisão
-    e turno já foram conferidos para o texto inteiro, não por ação."""
+    """Aplica a mesma política do jogador a uma ação proposta pelo LLM.
+
+    Uma ação que o LLM propôs passa pela mesma política do jogador que falou: papel, dono do
+    personagem, alvo visível. O que não é ação de jogo (leitura, ``entrar``) nem existe como
+    proposta. Recusa como ``CommandError``, que vira feedback ao modelo. Revisão e turno já
+    foram conferidos para o texto inteiro, não por ação.
+    """
     _, name, _ = parse_line(line)
     if policy.classify(name) not in ("action", "host"):
         raise CommandError(f"'{name}' não é uma ação que o mestre possa propor")

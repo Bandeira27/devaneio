@@ -24,6 +24,8 @@ TURN_POLICY: TurnPolicy = "one_action_per_character"
 
 
 class PlayerView(StrictModel):
+    """Um jogador da mesa, sem o hash do token."""
+
     id: Id
     name: str
     role: Role
@@ -31,8 +33,11 @@ class PlayerView(StrictModel):
 
 
 class LlmView(StrictModel):
-    """O LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se
-    está ligado e para onde o contexto da partida vai, antes de entrar."""
+    """O LLM da mesa como os jogadores o veem.
+
+    O LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se está ligado
+    e para onde o contexto da partida vai, antes de entrar.
+    """
 
     enabled: bool
     description: str | None = None
@@ -41,8 +46,11 @@ class LlmView(StrictModel):
 
 
 class NpcView(StrictModel):
-    """NPC como o ``olhar`` o mostra: vivo, hp e se está hostil. Atributos e disposição
-    numéricos (que revelam defesas e o limiar de hostilidade) ficam com o anfitrião."""
+    """Um NPC como o `olhar` o mostra.
+
+    Vivo, hp e se está hostil. Atributos e disposição numéricos (que revelam defesas e o limiar
+    de hostilidade) ficam com o anfitrião.
+    """
 
     alive: bool
     hp: int
@@ -51,12 +59,15 @@ class NpcView(StrictModel):
 
 
 class PlayerStateView(StrictModel):
-    """O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles
-    o próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``).
-    ``revealed_facts`` vai inteiro: só tem fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local
-    atual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o
-    ``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em
-    ``of`` (e ``tests/test_server_models.py`` obriga a decidir)."""
+    """O estado do jogo como um jogador comum o vê.
+
+    Fica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível),
+    ``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem
+    fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local atual e só como
+    ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o ``GameState``
+    inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em ``of`` (e
+    ``tests/test_server_models.py`` obriga a decidir).
+    """
 
     state_version: Literal[1]
     campaign_id: Id
@@ -69,6 +80,7 @@ class PlayerStateView(StrictModel):
 
     @classmethod
     def of(cls, state: GameState, rules: RuleSystem) -> PlayerStateView:
+        """O estado visto por um jogador comum, derivado do estado inteiro."""
         here = state.current_location_id
         hostile_below = rules.dispositions.hostile_below
         return cls(
@@ -93,6 +105,8 @@ class PlayerStateView(StrictModel):
 
 
 class TableView(StrictModel):
+    """A mesa: campanha, jogadores, turno, estado e o aviso do LLM, como o papel de quem pergunta vê."""
+
     table_id: Id
     role: Role  # o papel de quem pediu: escolhe o ramo de `state`
     campaign: CampaignSummary

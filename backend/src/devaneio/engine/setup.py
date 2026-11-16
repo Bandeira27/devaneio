@@ -18,12 +18,14 @@ def initial_state(
     rng_seed: int,
     characters: Iterable[Character] = (),
 ) -> GameState:
-    """Turno 0, NPCs nos locais de origem com atributos completos (campanha + defaults do
-    sistema) e hp = max_hp pela fórmula do sistema; todos os marcos pendentes (quem ativa
-    marcos é o diretor de narrativa).
+    """Cria o estado inicial de uma campanha.
 
-    Se a fórmula de max_hp tiver dados, os sorteios saem do mesmo Rng do estado e
-    ``rng_draws`` reflete isso. Atributo de NPC inválido para o sistema é ``EngineError``.
+    Turno 0, NPCs nos locais de origem com atributos completos (campanha + defaults do sistema)
+    e hp = max_hp pela fórmula do sistema; todos os marcos pendentes (quem ativa marcos é o
+    diretor de narrativa).
+
+    Se a fórmula de max_hp tiver dados, os sorteios saem do mesmo Rng do estado e ``rng_draws``
+    reflete isso. Atributo de NPC inválido para o sistema é ``EngineError``.
     """
     rng = Rng(rng_seed)
     max_hp_formula = parse(rules.max_hp)

@@ -10,6 +10,8 @@ from devaneio.schema import (
 
 
 class AttributeInfo(StrictModel):
+    """Um atributo, com os limites e o valor padrão."""
+
     id: str
     name: str
     description: str
@@ -19,6 +21,8 @@ class AttributeInfo(StrictModel):
 
 
 class SkillInfo(StrictModel):
+    """Uma habilidade, com a fórmula."""
+
     id: Id
     name: str
     description: str
@@ -26,12 +30,16 @@ class SkillInfo(StrictModel):
 
 
 class DifficultyInfo(StrictModel):
+    """Uma dificuldade e o valor que o teste precisa alcançar."""
+
     id: Id
     name: str
     value: int
 
 
 class WeaponInfo(StrictModel):
+    """Uma arma, com a habilidade e o dano."""
+
     id: Id
     name: str
     description: str
@@ -40,21 +48,28 @@ class WeaponInfo(StrictModel):
 
 
 class ModifierInfo(StrictModel):
+    """Um modificador de teste e o quanto ele soma."""
+
     id: Id
     name: str
     value: int
 
 
 class CombatInfo(StrictModel):
+    """As regras de combate que mudam o que a tela oferece."""
+
     default_weapon: Id | None  # arma que ninguém precisa ter no inventário (os punhos)
     fallen_can_act: bool  # personagem com hp 0 ainda pode agir
 
 
 class RulesView(StrictModel):
-    """O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de
+    """O sistema de regras como os jogadores precisam dele.
+
+    O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de
     ação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público
     (não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,
-    ``rest``, ``outcomes``, ``dispositions``)."""
+    ``rest``, ``outcomes``, ``dispositions``).
+    """
 
     id: Id
     name: str
@@ -68,6 +83,7 @@ class RulesView(StrictModel):
 
     @classmethod
     def of(cls, rules: RuleSystem) -> RulesView:
+        """A visão do sistema de regras, derivada do sistema da mesa."""
         return cls(
             id=rules.id,
             name=rules.name,

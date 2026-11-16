@@ -8,6 +8,8 @@ from .common import Id, StrictModel
 
 
 class Location(StrictModel):
+    """Um local da campanha, ligado a outros por `connections`."""
+
     id: Id
     name: str
     description: str = ""
@@ -18,6 +20,8 @@ class Location(StrictModel):
 
 
 class Faction(StrictModel):
+    """Uma facção da campanha."""
+
     id: Id
     name: str
     description: str = ""
@@ -26,6 +30,8 @@ class Faction(StrictModel):
 
 
 class Npc(StrictModel):
+    """Um NPC da campanha: onde começa, como se comporta e o que sabe."""
+
     id: Id
     name: str
     description: str = ""
@@ -45,28 +51,38 @@ class Npc(StrictModel):
 
 
 class AtLocation(StrictModel):
+    """Vale quando o grupo está num local."""
+
     kind: Literal["at_location"]
     location_id: Id
 
 
 class NpcDown(StrictModel):
+    """Vale quando um NPC caiu."""
+
     kind: Literal["npc_down"]
     npc_id: Id
 
 
 class BeatDone(StrictModel):
+    """Vale quando um marco foi concluído."""
+
     kind: Literal["beat_done"]
     beat_id: Id
 
 
 class TurnAtLeast(StrictModel):
+    """Vale a partir de um turno."""
+
     kind: Literal["turn_at_least"]
     turn: int = Field(ge=0)
 
 
 class CheckPassed(StrictModel):
     """Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
-    Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc."""
+
+    Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.
+    """
 
     kind: Literal["check_passed"]
     skill_id: Id
@@ -110,6 +126,8 @@ class FactDef(StrictModel):
 
 
 class Campaign(StrictModel):
+    """A campanha: locais, NPCs, marcos e fatos, tudo estático (o que muda fica no `GameState`)."""
+
     schema_version: Literal[1] = 1
     id: Id
     title: str

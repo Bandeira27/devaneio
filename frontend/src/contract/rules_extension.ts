@@ -6,9 +6,11 @@
  */
 
 /**
- * Arquivo de sistema que estende outro. Só ``id`` e ``extends`` são obrigatórios. Item de
- * lista com o id de um item do pai o substitui por inteiro; id novo é acrescentado. Blocos
- * mudam campo a campo; ``default_weapon: null`` explícito limpa a arma padrão do pai.
+ * Arquivo de sistema de regras que estende outro.
+ *
+ * Só ``id`` e ``extends`` são obrigatórios. Item de lista com o id de um item do pai o
+ * substitui por inteiro; id novo é acrescentado. Blocos mudam campo a campo; ``default_weapon:
+ * null`` explícito limpa a arma padrão do pai.
  */
 export interface RuleSystemExtension {
   schema_version?: 1;
@@ -27,6 +29,9 @@ export interface RuleSystemExtension {
   rest?: RestPatch | null;
   max_hp?: string | null;
 }
+/**
+ * Um atributo dos personagens, com limites e valor padrão.
+ */
 export interface Attribute {
   id: string;
   name: string;
@@ -35,14 +40,19 @@ export interface Attribute {
   max?: number;
   default?: number;
 }
+/**
+ * Um nível de dificuldade, com o valor que o teste precisa alcançar.
+ */
 export interface Difficulty {
   id: string;
   name: string;
   value: number;
 }
 /**
- * Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no
- * interpretador para 'o atributo da habilidade'.
+ * Uma habilidade testável.
+ *
+ * A fórmula é completa (``2d6 + FOR``): sem caso especial no interpretador para 'o atributo da
+ * habilidade'.
  */
 export interface Skill {
   id: string;
@@ -50,6 +60,9 @@ export interface Skill {
   formula: string;
   description?: string;
 }
+/**
+ * Uma arma: a habilidade que a usa e a fórmula de dano.
+ */
 export interface Weapon {
   id: string;
   name: string;
@@ -68,18 +81,30 @@ export interface Modifier {
   name: string;
   value: number;
 }
+/**
+ * O que um sistema filho muda nos graus de resultado.
+ */
 export interface OutcomesPatch {
   critical_failure_margin?: number | null;
   critical_success_margin?: number | null;
 }
+/**
+ * O que um sistema filho muda nas regras de combate.
+ */
 export interface CombatPatch {
   attack_difficulty?: string | null;
   default_weapon?: string | null;
   fallen_can_act?: boolean | null;
 }
+/**
+ * O que um sistema filho muda no limiar de hostilidade.
+ */
 export interface DispositionsPatch {
   hostile_below?: number | null;
 }
+/**
+ * O que um sistema filho muda no descanso.
+ */
 export interface RestPatch {
   heal?: string | null;
 }

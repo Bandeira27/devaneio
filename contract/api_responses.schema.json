@@ -3,6 +3,7 @@
   "$defs": {
     "ApiError": {
       "additionalProperties": false,
+      "description": "Um erro da API: um código estável e a mensagem em português.",
       "properties": {
         "code": {
           "type": "string"
@@ -20,6 +21,7 @@
     },
     "AtLocation": {
       "additionalProperties": false,
+      "description": "Vale quando o grupo está num local.",
       "properties": {
         "kind": {
           "const": "at_location",
@@ -39,6 +41,7 @@
     },
     "AttributeInfo": {
       "additionalProperties": false,
+      "description": "Um atributo, com os limites e o valor padrão.",
       "properties": {
         "id": {
           "type": "string"
@@ -181,6 +184,7 @@
     },
     "BeatDone": {
       "additionalProperties": false,
+      "description": "Vale quando um marco foi concluído.",
       "properties": {
         "kind": {
           "const": "beat_done",
@@ -200,6 +204,7 @@
     },
     "BeatInfo": {
       "additionalProperties": false,
+      "description": "Um marco que já começou.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -217,6 +222,7 @@
       "type": "object"
     },
     "BeatStatus": {
+      "description": "Em que ponto um marco da trama está.",
       "enum": [
         "pending",
         "active",
@@ -228,6 +234,7 @@
     },
     "Campaign": {
       "additionalProperties": false,
+      "description": "A campanha: locais, NPCs, marcos e fatos, tudo estático (o que muda fica no `GameState`).",
       "properties": {
         "schema_version": {
           "const": 1,
@@ -313,6 +320,7 @@
     },
     "CampaignSummary": {
       "additionalProperties": false,
+      "description": "Uma campanha do catálogo: id, título e premissa.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -335,7 +343,7 @@
     },
     "CampaignView": {
       "additionalProperties": false,
-      "description": "A campanha para um jogador comum: só o que o ``olhar`` do CLI mostra (título, premissa,\nlocal atual com saídas, NPCs ali, marcos que já começaram e fatos já revelados). Fatos\nocultos, ``private_notes``, facções, condições dos\nmarcos, atributos, disposição, armas e a localização dos outros NPCs ficam com o\nanfitrião, que recebe a ``Campaign`` inteira.",
+      "description": "A campanha como um jogador comum a vê.\n\nSó o que o ``olhar`` do CLI mostra (título, premissa, local atual com saídas, NPCs ali,\nmarcos que já começaram e fatos já revelados). Fatos ocultos, ``private_notes``, facções,\ncondições dos marcos, atributos, disposição, armas e a localização dos outros NPCs ficam com\no anfitrião, que recebe a ``Campaign`` inteira.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -383,6 +391,7 @@
     },
     "Character": {
       "additionalProperties": false,
+      "description": "Um personagem de jogador, com atributos, hp e inventário.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -426,7 +435,7 @@
     },
     "CheckPassed": {
       "additionalProperties": false,
-      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\nTestes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.",
+      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\n\nTestes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.",
       "properties": {
         "kind": {
           "const": "check_passed",
@@ -446,6 +455,7 @@
     },
     "CombatInfo": {
       "additionalProperties": false,
+      "description": "As regras de combate que mudam o que a tela oferece.",
       "properties": {
         "default_weapon": {
           "anyOf": [
@@ -471,6 +481,7 @@
     },
     "CommandResult": {
       "additionalProperties": false,
+      "description": "O resultado de um comando: o que ele produziu e como a mesa ficou.",
       "properties": {
         "revision": {
           "type": "integer"
@@ -503,6 +514,7 @@
     },
     "CopilotAnswer": {
       "additionalProperties": false,
+      "description": "A resposta do copiloto, só para o anfitrião.",
       "properties": {
         "text": {
           "type": "string"
@@ -516,6 +528,7 @@
     },
     "DifficultyInfo": {
       "additionalProperties": false,
+      "description": "Uma dificuldade e o valor que o teste precisa alcançar.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -538,6 +551,7 @@
     },
     "ErrorResponse": {
       "additionalProperties": false,
+      "description": "O corpo de toda resposta de erro.",
       "properties": {
         "error": {
           "$ref": "#/$defs/ApiError"
@@ -551,7 +565,7 @@
     },
     "Event": {
       "additionalProperties": false,
-      "description": "Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir\nos tipos de evento (aí vira união discriminada por ``kind``).",
+      "description": "Entrada do log.\n\nProvisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira\nunião discriminada por ``kind``).",
       "properties": {
         "turn": {
           "minimum": 0,
@@ -581,7 +595,7 @@
     },
     "EventView": {
       "additionalProperties": false,
-      "description": "Evento do log para o cliente: sem ``data``. ``prose`` é sempre a narração da gramática\ndo próprio evento. ``narration`` é o parágrafo do LLM para o lote de uma ação de texto\nlivre, só no primeiro evento visível do lote (nos outros é ``None``) e só enquanto o\nservidor não reinicia. Os dois são exibição, nunca voltam ao estado, e são iguais para\ntodos os jogadores.",
+      "description": "Um evento do log como o cliente o recebe.\n\nSem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é\no parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do\nlote (nos outros é ``None``) e só enquanto o servidor não reinicia. Os dois são exibição,\nnunca voltam ao estado, e são iguais para todos os jogadores.",
       "properties": {
         "index": {
           "type": "integer"
@@ -623,6 +637,7 @@
     },
     "EventsView": {
       "additionalProperties": false,
+      "description": "Eventos e falas novos desde a última leitura, com as posições para a próxima.",
       "properties": {
         "revision": {
           "type": "integer"
@@ -655,6 +670,7 @@
     },
     "ExitView": {
       "additionalProperties": false,
+      "description": "Uma saída do local atual.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -739,6 +755,7 @@
     },
     "FactInfo": {
       "additionalProperties": false,
+      "description": "Um fato já revelado.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -769,6 +786,7 @@
     },
     "Faction": {
       "additionalProperties": false,
+      "description": "Uma facção da campanha.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -808,6 +826,7 @@
     },
     "GameState": {
       "additionalProperties": false,
+      "description": "O estado inteiro de uma partida: tudo que muda, em JSON puro.",
       "properties": {
         "state_version": {
           "const": 1,
@@ -896,6 +915,7 @@
       "type": "object"
     },
     "GameStatus": {
+      "description": "Como a partida está: em andamento, vencida ou perdida.",
       "enum": [
         "active",
         "won",
@@ -906,7 +926,7 @@
     },
     "LlmView": {
       "additionalProperties": false,
-      "description": "O LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se\nestá ligado e para onde o contexto da partida vai, antes de entrar.",
+      "description": "O LLM da mesa como os jogadores o veem.\n\nO LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se está ligado\ne para onde o contexto da partida vai, antes de entrar.",
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -949,6 +969,7 @@
     },
     "Location": {
       "additionalProperties": false,
+      "description": "Um local da campanha, ligado a outros por `connections`.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -989,6 +1010,7 @@
     },
     "LocationView": {
       "additionalProperties": false,
+      "description": "O local atual, com a descrição e as saídas.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1018,6 +1040,7 @@
     },
     "ModifierInfo": {
       "additionalProperties": false,
+      "description": "Um modificador de teste e o quanto ele soma.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1040,6 +1063,7 @@
     },
     "Npc": {
       "additionalProperties": false,
+      "description": "Um NPC da campanha: onde começa, como se comporta e o que sabe.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1123,6 +1147,7 @@
     },
     "NpcDown": {
       "additionalProperties": false,
+      "description": "Vale quando um NPC caiu.",
       "properties": {
         "kind": {
           "const": "npc_down",
@@ -1142,6 +1167,7 @@
     },
     "NpcInfo": {
       "additionalProperties": false,
+      "description": "Um NPC que o grupo vê no local.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1160,6 +1186,7 @@
     },
     "NpcState": {
       "additionalProperties": false,
+      "description": "O que muda num NPC durante a partida: hp, onde está, se está de pé.",
       "properties": {
         "alive": {
           "default": true,
@@ -1209,7 +1236,7 @@
     },
     "NpcView": {
       "additionalProperties": false,
-      "description": "NPC como o ``olhar`` o mostra: vivo, hp e se está hostil. Atributos e disposição\nnuméricos (que revelam defesas e o limiar de hostilidade) ficam com o anfitrião.",
+      "description": "Um NPC como o `olhar` o mostra.\n\nVivo, hp e se está hostil. Atributos e disposição numéricos (que revelam defesas e o limiar\nde hostilidade) ficam com o anfitrião.",
       "properties": {
         "alive": {
           "type": "boolean"
@@ -1235,7 +1262,7 @@
     },
     "PlayerStateView": {
       "additionalProperties": false,
-      "description": "O que um jogador comum vê do estado. Fica de fora: ``rng_seed``/``rng_draws`` (com eles\no próximo sorteio seria previsível), ``events`` (vêm por ``EventView``, sem ``data``).\n``revealed_facts`` vai inteiro: só tem fatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local\natual e só como ``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o\n``GameState`` inteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em\n``of`` (e ``tests/test_server_models.py`` obriga a decidir).",
+      "description": "O estado do jogo como um jogador comum o vê.\n\nFica de fora: ``rng_seed``/``rng_draws`` (com eles o próximo sorteio seria previsível),\n``events`` (vêm por ``EventView``, sem ``data``). ``revealed_facts`` vai inteiro: só tem\nfatos que o motor ou o anfitrião já tornou públicos. NPCs só os do local atual e só como\n``NpcView``; marcos só os que já começaram. O anfitrião (mestre) recebe o ``GameState``\ninteiro. Campo novo de ``GameState`` não chega aqui sem ser listado em ``of`` (e\n``tests/test_server_models.py`` obriga a decidir).",
       "properties": {
         "state_version": {
           "const": 1,
@@ -1300,6 +1327,7 @@
     },
     "PlayerView": {
       "additionalProperties": false,
+      "description": "Um jogador da mesa, sem o hash do token.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1334,7 +1362,7 @@
     },
     "RulesView": {
       "additionalProperties": false,
-      "description": "O sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de\nação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público\n(não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,\n``rest``, ``outcomes``, ``dispositions``).",
+      "description": "O sistema de regras como os jogadores precisam dele.\n\nO sistema de regras como os jogadores precisam dele: o catálogo para montar os botões de\nação (``testar``, ``atacar``) e o formulário de ``entrar``. Regra do sistema é dado público\n(não há segredo nela); ficam de fora só os campos que ninguém usa na tela (``max_hp``,\n``rest``, ``outcomes``, ``dispositions``).",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1396,6 +1424,7 @@
     },
     "SayResult": {
       "additionalProperties": false,
+      "description": "O resultado de um texto livre: o de um comando, mais a fala do mestre.",
       "properties": {
         "revision": {
           "type": "integer"
@@ -1439,6 +1468,7 @@
     },
     "SkillInfo": {
       "additionalProperties": false,
+      "description": "Uma habilidade, com a fórmula.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1465,6 +1495,7 @@
     },
     "TableCreated": {
       "additionalProperties": false,
+      "description": "A mesa recém-criada: o id, o token do anfitrião (que só aparece aqui) e o convite.",
       "properties": {
         "table_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1491,6 +1522,7 @@
     },
     "TableJoined": {
       "additionalProperties": false,
+      "description": "A entrada numa mesa: o jogador, o token dele (que só aparece aqui) e a mesa.",
       "properties": {
         "player_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1513,6 +1545,7 @@
     },
     "TableView": {
       "additionalProperties": false,
+      "description": "A mesa: campanha, jogadores, turno, estado e o aviso do LLM, como o papel de quem pergunta vê.",
       "properties": {
         "table_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1588,7 +1621,7 @@
     },
     "TalkView": {
       "additionalProperties": false,
-      "description": "Fala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.\n``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o\npersonagem que a provocou. Não é evento: o LLM nunca escreve no estado.",
+      "description": "Uma fala do mestre ou de um NPC.\n\nFala do mestre ou do NPC numa ação de texto livre: exibição, em memória, igual para todos.\n``after`` é a revisão da mesa na hora (o cliente a encaixa entre os eventos) e ``to`` é o\npersonagem que a provocou. Não é evento: o LLM nunca escreve no estado.",
       "properties": {
         "seq": {
           "type": "integer"
@@ -1615,6 +1648,7 @@
     },
     "TurnAtLeast": {
       "additionalProperties": false,
+      "description": "Vale a partir de um turno.",
       "properties": {
         "kind": {
           "const": "turn_at_least",
@@ -1634,6 +1668,7 @@
     },
     "WeaponInfo": {
       "additionalProperties": false,
+      "description": "Uma arma, com a habilidade e o dano.",
       "properties": {
         "id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1665,6 +1700,7 @@
     }
   },
   "additionalProperties": false,
+  "description": "Todas as respostas, reunidas só para gerar o contrato.",
   "properties": {
     "campaigns": {
       "items": {

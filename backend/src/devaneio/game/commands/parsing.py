@@ -10,9 +10,10 @@ from .errors import CommandError
 def split_actor(line: str) -> tuple[str | None, str]:
     """Separa o prefixo ``id:`` (primeira palavra, sem aspas) do resto da linha.
 
-    É o único analisador do prefixo: comandos, texto livre e quem orquestra por cima
-    (CLI, servidor) usam esta regra. Sem shlex, para que aspas soltas em texto livre não
-    escondam um comando, e para que ``'id:'`` entre aspas não seja prefixo.
+    É o único analisador do prefixo: comandos, texto livre e quem orquestra por cima (CLI,
+    servidor) usam esta regra. Sem shlex,
+    para que aspas soltas em texto livre não escondam um comando, e para que ``'id:'`` entre
+    aspas não seja prefixo.
     """
     parts = line.split(maxsplit=1)
     head, rest = (parts[0], parts[1].strip()) if len(parts) == 2 else (line.strip(), "")
@@ -22,8 +23,11 @@ def split_actor(line: str) -> tuple[str | None, str]:
 
 
 def parse_line(line: str) -> tuple[str | None, str, list[str]]:
-    """``(ator, comando em minúsculas, argumentos)`` de uma linha não vazia; ``CommandError``
-    se as aspas não fecham ou se o prefixo vem sem comando."""
+    """Separa uma linha em ator, comando e argumentos.
+
+    ``(ator, comando em minúsculas, argumentos)`` de uma linha não vazia; ``CommandError`` se as
+    aspas não fecham ou se o prefixo vem sem comando.
+    """
     actor, rest = split_actor(line)
     try:
         tokens = shlex.split(rest)

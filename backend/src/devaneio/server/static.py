@@ -54,6 +54,8 @@ class StaticError(ValueError):
 
 @dataclass(frozen=True)
 class StaticFile:
+    """Um arquivo a servir: o caminho, o tipo e o cache."""
+
     path: Path
     content_type: str
     cache_control: str
@@ -61,6 +63,8 @@ class StaticFile:
 
 
 class StaticSite:
+    """A pasta do app (build do front) servida pela mesma origem da API."""
+
     def __init__(self, root: Path) -> None:
         self.root = Path(root).resolve()
         if not self.root.is_dir():
@@ -69,8 +73,11 @@ class StaticSite:
             raise StaticError(f"a pasta do front '{root}' não tem index.html (rode o build do app)")
 
     def lookup(self, raw_path: str) -> StaticFile | None:
-        """O arquivo de um caminho de URL (ainda codificado), ou ``None`` para qualquer recusa: o
-        chamador responde 404 igual para o que não existe e para o que é proibido."""
+        """O arquivo de um caminho de URL, ou nada para qualquer recusa.
+
+        O arquivo de um caminho de URL (ainda codificado), ou ``None`` para qualquer recusa:
+        o chamador responde 404 igual para o que não existe e para o que é proibido.
+        """
         try:
             decoded = unquote(raw_path, errors="strict")
         except UnicodeDecodeError:

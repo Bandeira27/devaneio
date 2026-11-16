@@ -15,6 +15,8 @@ MAX_TALK = 50  # falas guardadas por mesa; as mais antigas saem primeiro
 
 
 class Presentation:
+    """O que é só exibição e fica em memória: narrações do LLM e falas do mestre."""
+
     def __init__(self, talk_seq: int) -> None:
         # Os números das falas partem do relógio de parede (quem cria passa o valor): depois de
         # um reinício continuam acima dos que o cliente já viu.
@@ -29,12 +31,14 @@ class Presentation:
             return dict(self._narrations)
 
     def store_narrations(self, narrations: dict[int, str]) -> None:
+        """Guarda as narrações novas, descartando as mais antigas acima do limite."""
         with self._lock:
             self._narrations.update(narrations)
             while len(self._narrations) > MAX_NARRATIONS:
                 del self._narrations[next(iter(self._narrations))]  # ordem de inserção
 
     def add_talk(self, *, after: int, to: str, text: str) -> TalkView:
+        """Acrescenta uma fala do mestre ou de um NPC e devolve com o número dela."""
         with self._lock:
             self._talk_seq += 1
             entry = TalkView(seq=self._talk_seq, after=after, to=to, text=text)

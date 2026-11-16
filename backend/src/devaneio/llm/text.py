@@ -13,8 +13,11 @@ _UNSAFE = {"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"}
 
 
 def clean_text(text: str) -> str:
-    """Espaço em branco de qualquer tipo (inclusive quebra de linha e tab) vira um espaço só;
-    controle, formatação e substitutos somem. A ordem importa: "a\\nb" tem de continuar "a b"."""
+    r"""Limpa um texto do LLM em uma linha só.
+
+    Espaço em branco de qualquer tipo (inclusive quebra de linha e tab) vira um espaço só;
+    controle, formatação e substitutos somem. A ordem importa: "a\nb" tem de continuar "a b".
+    """
     kept = "".join(
         " " if ch.isspace() else ch
         for ch in text
@@ -24,9 +27,12 @@ def clean_text(text: str) -> str:
 
 
 def clean_multiline(text: str, limit: int) -> str:
-    """Como ``clean_text``, mas mantém as quebras de linha (resposta longa para o anfitrião).
-    Controle, formatação e substitutos somem; tab e espaços repetidos viram um espaço; mais de uma
-    linha em branco seguida vira uma; corta em ``limit`` caracteres."""
+    """Limpa um texto longo do LLM, mantendo as quebras de linha.
+
+    Como ``clean_text``, mas mantém as quebras de linha (resposta longa para o anfitrião).
+    Controle, formatação e substitutos somem; tab e espaços repetidos viram um espaço; mais de
+    uma linha em branco seguida vira uma; corta em ``limit`` caracteres.
+    """
     lines: list[str] = []
     for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
         kept = "".join(

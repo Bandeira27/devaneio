@@ -1,8 +1,10 @@
-"""Ações que o LLM pode PROPOR. Nada aqui altera estado: uma proposta válida vira comandos
-que passam pelas mesmas funções e validações do motor.
+"""Ações que o LLM pode propor.
 
-Fora da lista de propósito: dano ou cura de quantia arbitrária (o modelo inventaria
-números) e qualquer mudança direta de marcos, que é do diretor.
+Nada aqui altera estado: uma proposta válida vira comandos que passam pelas mesmas funções e
+validações do motor.
+
+Fora da lista de propósito: dano ou cura de quantia arbitrária (o modelo inventaria números) e
+qualquer mudança direta de marcos, que é do diretor.
 """
 
 from __future__ import annotations
@@ -20,13 +22,18 @@ MAX_ACTIONS = 3
 
 
 class _Loose(BaseModel):
-    """Saída de LLM: campo extra inofensivo (ex.: "motivo") é ignorado em vez de gastar uma
-    tentativa. Campos obrigatórios e ids continuam validados."""
+    """Base das propostas do LLM: ignora campos extras inofensivos.
+
+    Saída de LLM: campo extra inofensivo (ex.: "motivo") é ignorado em vez de gastar uma
+    tentativa. Campos obrigatórios e ids continuam validados.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
 
 class CheckAction(_Loose):
+    """Proposta de um teste de habilidade."""
+
     kind: Literal["check"]
     skill: Id
     difficulty: Id
@@ -34,6 +41,8 @@ class CheckAction(_Loose):
 
 
 class AttackAction(_Loose):
+    """Proposta de um ataque."""
+
     kind: Literal["attack"]
     weapon: Id
     target: Id
@@ -41,11 +50,15 @@ class AttackAction(_Loose):
 
 
 class MoveAction(_Loose):
+    """Proposta de ir a um local."""
+
     kind: Literal["move"]
     to: Id
 
 
 class RestAction(_Loose):
+    """Proposta de descansar."""
+
     kind: Literal["rest"]
 
 
@@ -55,6 +68,8 @@ Action = Annotated[
 
 
 class Proposal(_Loose):
+    """O que o LLM propõe: até poucas ações e, opcionalmente, uma fala só de exibição."""
+
     actions: list[Action] = Field(default_factory=list, max_length=MAX_ACTIONS)
     # Fala do mestre/NPC: só exibida, nunca altera estado.
     say: str = Field(default="", max_length=1000)
@@ -80,14 +95,19 @@ EXAMPLE_PROPOSAL = {
 
 
 class ProposalError(ValueError):
+    """A resposta do LLM não serve como proposta; `errors` lista os problemas."""
+
     def __init__(self, errors: list[str]) -> None:
         self.errors = list(errors)
         super().__init__("; ".join(self.errors))
 
 
 def parse_proposal(raw: str) -> Proposal:
-    """Extrai o primeiro objeto JSON da resposta (tolera texto ao redor e cercas de
-    markdown) e valida. ``ProposalError`` traz todos os problemas, para virar feedback."""
+    """Extrai e valida a proposta de uma resposta do LLM.
+
+    Extrai o primeiro objeto JSON da resposta (tolera texto ao redor e cercas de markdown) e
+    valida. ``ProposalError`` traz todos os problemas, para virar feedback.
+    """
     start = raw.find("{")
     if start < 0:
         raise ProposalError(["a resposta não contém um objeto JSON"])
@@ -104,8 +124,11 @@ def parse_proposal(raw: str) -> Proposal:
 
 
 def to_command(action: Action, actor_id: str) -> str:
-    """Linha de comando do CLI equivalente. Os ids são slugs (validados acima), então não
-    há como injetar outro comando ou argumento pela proposta."""
+    """A linha de comando equivalente a uma ação proposta.
+
+    Os ids são slugs (validados acima), então não há como injetar outro comando ou argumento
+    pela proposta.
+    """
     prefix = f"{actor_id}: "
     if isinstance(action, CheckAction):
         extra = f" {action.modifier}" if action.modifier else ""

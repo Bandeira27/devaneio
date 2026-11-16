@@ -50,6 +50,7 @@ def load_campaign_content(campaign_path: Path) -> tuple[Campaign, RuleSystem, Na
 
 
 def load_rules_for(campaign: Campaign, campaign_dir: Path) -> RuleSystem:
+    """O sistema de regras que a campanha cita, procurado ao lado dela e depois nos embutidos."""
     return _load(
         "sistema de regras",
         campaign.rules_id,
@@ -60,6 +61,7 @@ def load_rules_for(campaign: Campaign, campaign_dir: Path) -> RuleSystem:
 
 
 def load_pack_for(campaign: Campaign, campaign_dir: Path) -> NarrationPack:
+    """O pacote de narração que a campanha cita, procurado ao lado dela e depois nos embutidos."""
     return _load(
         "pacote de narração",
         campaign.narration_id,
@@ -70,6 +72,7 @@ def load_pack_for(campaign: Campaign, campaign_dir: Path) -> NarrationPack:
 
 
 def joined(head: str, errors: list[str]) -> str:
+    """Um título seguido da lista de erros, um por linha."""
     return head + ":\n" + "\n".join(f"- {e}" for e in errors)
 
 

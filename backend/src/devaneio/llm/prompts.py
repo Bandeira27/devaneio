@@ -56,10 +56,13 @@ def build_context(
     hide_events: frozenset[int] = frozenset(),
     include_private: bool = True,
 ) -> dict[str, Any]:
-    """``hide_events``: índices de eventos que não vão ao prompt (quem orquestra sabe quais os
-    jogadores não podem ver, e a fala do modelo pode chegar a todos). ``include_private``:
-    sem ele só vai o público (``fatos_revelados`` inclusive); com ele vão também os fatos ainda
-    ocultos e as notas privadas, e a fala do modelo pode vazá-los."""
+    """Os prompts do narrador, com a lista de eventos que ficam de fora.
+
+    ``hide_events``: índices de eventos que não vão ao prompt (quem orquestra sabe quais os
+    jogadores não podem ver, e a fala do modelo pode chegar a todos). ``include_private``: sem
+    ele só vai o público (``fatos_revelados`` inclusive); com ele vão também os fatos ainda
+    ocultos e as notas privadas, e a fala do modelo pode vazá-los.
+    """
     here = next(loc for loc in campaign.locations if loc.id == state.current_location_id)
     names = {loc.id: loc.name for loc in campaign.locations}
     names_of = {
@@ -170,6 +173,7 @@ def build_messages(
     hide_events: frozenset[int] = frozenset(),
     include_private: bool = True,
 ) -> list[dict[str, str]]:
+    """As mensagens que pedem ao LLM uma proposta de ações para o texto de um jogador."""
     context = json.dumps(
         build_context(
             campaign,
@@ -189,6 +193,7 @@ def build_messages(
 
 
 def feedback_message(problems: list[str]) -> dict[str, str]:
+    """A mensagem que devolve ao LLM os problemas da proposta dele, para uma segunda tentativa."""
     listed = "\n".join(f"- {p}" for p in problems)
     return {
         "role": "user",

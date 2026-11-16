@@ -44,8 +44,11 @@ def classify(name: str) -> Kind | None:
 
 
 def eligible(table: TableMeta, state: GameState) -> list[str]:
-    """Personagens que ainda contam para o fim automático do turno: ligados a um jogador e
-    de pé (hp 0 fica fora de combate e não segura o turno)."""
+    """Os personagens que ainda seguram o fim automático do turno.
+
+    Personagens que ainda contam para o fim automático do turno: ligados a um jogador e de pé
+    (hp 0 fica fora de combate e não segura o turno).
+    """
     return [
         character_id
         for player in table.players.values()

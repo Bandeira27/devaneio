@@ -30,6 +30,8 @@ Formula = Annotated[str, AfterValidator(_check_syntax)]
 
 
 class Attribute(StrictModel):
+    """Um atributo dos personagens, com limites e valor padrão."""
+
     id: AttrId
     name: str
     description: str = ""
@@ -45,14 +47,19 @@ class Attribute(StrictModel):
 
 
 class Difficulty(StrictModel):
+    """Um nível de dificuldade, com o valor que o teste precisa alcançar."""
+
     id: Id
     name: str
     value: int
 
 
 class Skill(StrictModel):
-    """Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no
-    interpretador para 'o atributo da habilidade'."""
+    """Uma habilidade testável.
+
+    A fórmula é completa (``2d6 + FOR``): sem caso especial no interpretador para 'o atributo da
+    habilidade'.
+    """
 
     id: Id
     name: str
@@ -61,6 +68,8 @@ class Skill(StrictModel):
 
 
 class Weapon(StrictModel):
+    """Uma arma: a habilidade que a usa e a fórmula de dano."""
+
     id: Id
     name: str
     damage: Formula
@@ -77,6 +86,8 @@ class Modifier(StrictModel):
 
 
 class CheckOutcome(str, Enum):
+    """O grau de resultado de um teste."""
+
     CRITICAL_FAILURE = "critical_failure"
     FAILURE = "failure"
     SUCCESS = "success"
@@ -84,8 +95,10 @@ class CheckOutcome(str, Enum):
 
 
 class Outcomes(StrictModel):
-    """Graus de resultado por margem (total - dificuldade). Margem < 0 é falha, >= 0 sucesso;
-    os críticos são as caudas."""
+    """Os graus de resultado de um teste, por margem.
+
+    A margem é total menos dificuldade: < 0 é falha, >= 0 sucesso; os críticos são as caudas.
+    """
 
     critical_failure_margin: int = Field(description="margem <= este valor é falha crítica")
     critical_success_margin: int = Field(description="margem >= este valor é sucesso crítico")
@@ -100,6 +113,8 @@ class Outcomes(StrictModel):
 
 
 class Combat(StrictModel):
+    """Regras de combate: dificuldade dos ataques, arma padrão e se caído age."""
+
     attack_difficulty: Id = Field(description="dificuldade dos ataques (jogadores e NPCs)")
     default_weapon: Id | None = Field(
         default=None, description="arma de quem não declara nenhuma (NPCs); None exige weapon_id"
@@ -111,14 +126,20 @@ class Combat(StrictModel):
 
 
 class Dispositions(StrictModel):
+    """Quando um NPC passa a atacar o grupo."""
+
     hostile_below: int = Field(description="NPC com disposition abaixo disto ataca o grupo")
 
 
 class Rest(StrictModel):
+    """Quanto o descanso cura."""
+
     heal: Formula = Field(description="hp recuperado por personagem ao descansar")
 
 
 class RuleSystem(StrictModel):
+    """Um sistema de regras completo, descrito só por dados."""
+
     schema_version: Literal[1] = 1
     id: Id
     name: str

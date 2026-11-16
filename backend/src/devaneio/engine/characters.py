@@ -17,6 +17,8 @@ from .errors import EngineError
 
 @dataclass(frozen=True)
 class AddCharacterResult:
+    """O novo estado com o personagem criado."""
+
     state: GameState
     character: Character
     text: str
@@ -31,8 +33,11 @@ def add_character(
     attributes: Mapping[str, int] | None = None,
     inventory: Iterable[str] = (),
 ) -> AddCharacterResult:
-    """Atributos parciais completados pelos defaults do sistema (só mín/máx limitam);
-    hp = max_hp pela fórmula do sistema, consumindo o Rng do estado se ela tiver dados."""
+    """Cria um personagem com atributos completos e hp pela fórmula do sistema.
+
+    Atributos parciais completados pelos defaults do sistema (só mín/máx limitam); hp = max_hp
+    pela fórmula do sistema, consumindo o Rng do estado se ela tiver dados.
+    """
     if character_id in state.characters:
         raise EngineError(f"personagem '{character_id}' já existe")
     full = resolve_attributes(rules, attributes or {}, f"personagem '{character_id}'")

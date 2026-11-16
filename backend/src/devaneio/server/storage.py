@@ -3,7 +3,8 @@
 O id da mesa é gerado aqui e validado de novo quando vem da URL: só o formato que o
 próprio servidor produz vira caminho, e sempre dentro da pasta de dados. O arquivo é a fonte
 única da verdade; em memória ficam só a coordenação (lock, versão, vagas, intervalo do texto
-livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao reiniciar."""
+livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao reiniciar.
+"""
 
 from __future__ import annotations
 
@@ -43,6 +44,8 @@ class _Table:
 
 
 class Storage:
+    """Onde as mesas moram: arquivos numa pasta, mais os locks, a espera por mudanças e os limites do LLM em memória."""
+
     def __init__(
         self,
         data_dir: Path,
@@ -60,8 +63,11 @@ class Storage:
         self._registry = threading.Lock()
 
     def path_for(self, table_id: str) -> Path | None:
-        """Caminho da mesa, ou ``None`` se o id não tem o formato gerado aqui, resolve para
-        fora da pasta de dados ou não existe."""
+        """O caminho do arquivo de uma mesa, ou nada se o id não serve.
+
+        Caminho da mesa, ou ``None`` se o id não tem o formato gerado aqui, resolve para
+        fora da pasta de dados ou não existe.
+        """
         if not TABLE_ID.match(table_id):
             return None
         path = (self.data_dir / f"{table_id}.json").resolve()
@@ -70,6 +76,7 @@ class Storage:
         return path
 
     def new_table_path(self) -> tuple[str, Path]:
+        """Um id novo para uma mesa e o caminho do arquivo dela."""
         while True:
             table_id = secrets.token_hex(8)
             path = self.data_dir / f"{table_id}.json"
@@ -77,11 +84,15 @@ class Storage:
                 return table_id, path
 
     def count(self) -> int:
+        """Quantas mesas existem."""
         return sum(1 for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
 
     def _table(self, table_id: str) -> _Table:
-        """Uma entrada por mesa existente; o dicionário não cresce com ids inventados porque
-        quem chama já validou o id com ``path_for``."""
+        """O cadeado da mesa, criado na primeira vez.
+
+        Uma entrada por mesa existente; o dicionário não cresce com ids inventados porque
+        quem chama já validou o id com ``path_for``.
+        """
         with self._registry:
             if table_id not in self._tables:
                 self._tables[table_id] = _Table(
@@ -90,6 +101,7 @@ class Storage:
             return self._tables[table_id]
 
     def lock(self, table_id: str) -> threading.Lock:
+        """O lock de uma mesa: toda leitura e gravação do arquivo acontece com ele."""
         return self._table(table_id).lock
 
     def condition(self, table_id: str) -> threading.Condition:
@@ -97,6 +109,7 @@ class Storage:
         return self._table(table_id).changed
 
     def version(self, table_id: str) -> int:
+        """O número de gravações da mesa desde a subida do servidor."""
         return self._table(table_id).version
 
     def announce_change(self, table_id: str) -> None:
@@ -106,8 +119,11 @@ class Storage:
         table.changed.notify_all()
 
     def enter_slot(self, table_id: str, kind: str) -> bool:
-        """Reserva a única chamada ao LLM de um tipo na mesa; ``False`` se já há uma em curso (cada
-        uma custa chamadas ao LLM de quem roda o servidor)."""
+        """Reserva a única chamada em curso de um tipo ao LLM na mesa.
+
+        Reserva a única chamada ao LLM de um tipo na mesa; ``False`` se já há uma em curso
+        (cada uma custa chamadas ao LLM de quem roda o servidor).
+        """
         table = self._table(table_id)
         with self._registry:
             slot = table.slots.setdefault(kind, _Slot())
@@ -117,13 +133,17 @@ class Storage:
             return True
 
     def leave_slot(self, table_id: str, kind: str) -> None:
+        """Libera a chamada ao LLM que estava em curso."""
         table = self._table(table_id)
         with self._registry:
             table.slots.setdefault(kind, _Slot()).busy = False
 
     def slot_cooldown_left(self, table_id: str, kind: str, key: str, cooldown: float) -> float:
-        """Segundos até ``key`` (o jogador, ou a mesa) poder pedir outra chamada deste tipo (0 se já
-        pode). Cada pedido custa chamadas ao LLM de quem roda o servidor."""
+        """Quanto falta até poder fazer outra chamada ao LLM.
+
+        Segundos até ``key`` (o jogador, ou a mesa) poder pedir outra chamada deste tipo (0
+        se já pode). Cada pedido custa chamadas ao LLM de quem roda o servidor.
+        """
         table = self._table(table_id)
         with self._registry:
             last = table.slots.setdefault(kind, _Slot()).last.get(key)
@@ -132,6 +152,7 @@ class Storage:
             return max(0.0, cooldown - (self._clock() - last))
 
     def mark_slot(self, table_id: str, kind: str, key: str) -> None:
+        """Anota que `key` acabou de fazer uma chamada ao LLM deste tipo."""
         table = self._table(table_id)
         with self._registry:
             table.slots.setdefault(kind, _Slot()).last[key] = self._clock()
@@ -160,6 +181,7 @@ class Storage:
             return True
 
     def leave_wait(self, table_id: str) -> None:
+        """Termina uma espera de long-poll."""
         table = self._table(table_id)
         with self._registry:
             table.waiters -= 1

@@ -12,14 +12,18 @@ from .errors import EngineError
 
 @dataclass(frozen=True)
 class RevealResult:
+    """O novo estado depois de revelar um fato."""
+
     state: GameState
     fact_id: str
     text: str
 
 
 def reveal_facts(state: GameState, campaign: Campaign) -> tuple[GameState, tuple[str, ...]]:
-    """Revela cada fato ainda oculto cujo ``reveal_when`` (não vazio) vale por inteiro. Fato
-    sem condições só o anfitrião revela (``reveal_fact``). Um evento ``reveal`` por fato."""
+    """Revela cada fato ainda oculto cujo ``reveal_when`` (não vazio) vale por inteiro.
+
+    Fato sem condições só o anfitrião revela (``reveal_fact``). Um evento ``reveal`` por fato.
+    """
     texts: list[str] = []
     for fact in campaign.facts:
         if (

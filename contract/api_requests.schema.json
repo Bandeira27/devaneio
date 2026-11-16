@@ -3,6 +3,7 @@
   "$defs": {
     "CommandRequest": {
       "additionalProperties": false,
+      "description": "Um comando: a linha e a revisão da mesa que o cliente viu.",
       "properties": {
         "line": {
           "maxLength": 500,
@@ -39,6 +40,7 @@
     },
     "CreateTableRequest": {
       "additionalProperties": false,
+      "description": "Criar uma mesa: a campanha, o nome do anfitrião e, opcionalmente, a semente.",
       "properties": {
         "campaign_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -72,6 +74,7 @@
     },
     "JoinRequest": {
       "additionalProperties": false,
+      "description": "Entrar numa mesa: o código de convite e o nome.",
       "properties": {
         "invite_code": {
           "maxLength": 64,
@@ -93,6 +96,7 @@
     },
     "SayRequest": {
       "additionalProperties": false,
+      "description": "Um texto livre para o mestre de IA: o texto e a revisão que o cliente viu.",
       "properties": {
         "text": {
           "maxLength": 500,
@@ -113,6 +117,7 @@
     }
   },
   "additionalProperties": false,
+  "description": "Todos os corpos de requisição, reunidos só para gerar o contrato.",
   "properties": {
     "create_table": {
       "$ref": "#/$defs/CreateTableRequest"

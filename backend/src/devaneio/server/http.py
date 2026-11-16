@@ -43,6 +43,8 @@ Route: TypeAlias = tuple[
 
 
 class ApiServer(ThreadingHTTPServer):
+    """Servidor HTTP com uma thread por conexão, ligado ao serviço da mesa."""
+
     daemon_threads = True
 
     def __init__(
@@ -57,6 +59,8 @@ class ApiServer(ThreadingHTTPServer):
 
 
 class Handler(BaseHTTPRequestHandler):
+    """Traduz requisições HTTP em chamadas ao serviço e as respostas em JSON ou arquivo."""
+
     server: ApiServer
     server_version = "devaneio"
     sys_version = ""
@@ -123,25 +127,32 @@ class Handler(BaseHTTPRequestHandler):
     # --- despacho ----------------------------------------------------------------
 
     def do_GET(self) -> None:
+        """Trata GET."""
         self._dispatch("GET")
 
     def do_POST(self) -> None:
+        """Trata POST."""
         self._dispatch("POST")
 
     # Métodos sem rota respondem em JSON (405/404) em vez do HTML da stdlib.
     def do_PUT(self) -> None:
+        """Responde 405 em JSON."""
         self._dispatch("PUT")
 
     def do_PATCH(self) -> None:
+        """Responde 405 em JSON."""
         self._dispatch("PATCH")
 
     def do_DELETE(self) -> None:
+        """Responde 405 em JSON."""
         self._dispatch("DELETE")
 
     def do_HEAD(self) -> None:
+        """Trata HEAD (só vale para arquivos)."""
         self._dispatch("HEAD")
 
     def do_OPTIONS(self) -> None:
+        """Responde 405 em JSON."""
         self._dispatch("OPTIONS")
 
     def _dispatch(self, method: str) -> None:
@@ -307,13 +318,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_request(self, code: int | str = "-", _size: int | str = "-") -> None:
         # Só método, rota e status: nunca cabeçalho, corpo nem query string.
+        """Registra só método, rota e status: nunca cabeçalho, corpo nem query string."""
         self.log_message('"%s %s" %s', self.command, urlsplit(self.path).path, code)
 
     def log_message(self, format: str, *args: object) -> None:
+        """Escreve o registro no erro padrão."""
         sys.stderr.write(f"{self.address_string()} {format % args}\n")
 
 
 def make_server(
     host: str, port: int, service: TableService, static: StaticSite | None = None
 ) -> ApiServer:
+    """Cria o servidor HTTP, sem iniciá-lo."""
     return ApiServer((host, port), service, static)

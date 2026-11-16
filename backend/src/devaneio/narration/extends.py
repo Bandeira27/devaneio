@@ -23,8 +23,11 @@ class PackExtendsError(ValueError):
 
 
 class NarrationPackExtension(StrictModel):
-    """Pacote que estende outro. Só ``id`` e ``extends`` são obrigatórios; ``language`` é herdada
-    se omitida e cada chave de ``rules`` substitui a de mesmo nome do pai."""
+    """Pacote de narração que estende outro.
+
+    Só ``id`` e ``extends`` são obrigatórios; ``language`` é herdada se omitida e cada chave de
+    ``rules`` substitui a de mesmo nome do pai.
+    """
 
     schema_version: Literal[1] = 1
     id: Id
@@ -53,8 +56,11 @@ def builtin_pack_dict(pack_id: str) -> dict[str, Any]:
 
 
 def load_pack_extending(data: Any, load_parent: Callable[[str], dict[str, Any]]) -> NarrationPack:
-    """Carrega um pacote, resolvendo ``extends`` por ``load_parent`` (id -> dict do pai, que
-    levanta ``ValueError`` se não existe). Sem ``extends``, é um ``load_pack`` comum."""
+    """Carrega um pacote de narração, resolvendo o que ele estende.
+
+    Carrega um pacote, resolvendo ``extends`` por ``load_parent`` (id -> dict do pai, que
+    levanta ``ValueError`` se não existe). Sem ``extends``, é um ``load_pack`` comum.
+    """
     raw = json.loads(data) if isinstance(data, (str, bytes, bytearray)) else data
     if not isinstance(raw, dict) or "extends" not in raw:
         return load_pack(raw)

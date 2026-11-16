@@ -11,12 +11,15 @@ MAX_DICE_SIDES = 1000
 
 
 class Parser:
+    """Parser de descida recursiva de uma expressão (veja a gramática no pacote)."""
+
     def __init__(self, text: str) -> None:
         self.text = text
         self.tokens = tokenize(text)
         self.i = 0
 
     def parse(self) -> Node:
+        """Lê a expressão inteira; sobra de texto é erro."""
         if not self.tokens:
             raise ExpressionError("expressão vazia")
         node = self._expr()

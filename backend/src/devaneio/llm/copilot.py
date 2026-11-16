@@ -58,8 +58,11 @@ Regras:
 def build_copilot_context(
     campaign: Campaign, rules: RuleSystem, state: GameState
 ) -> dict[str, Any]:
-    """A campanha e o estado inteiros, num formato compacto para o prompt. Sem ``rng_seed`` nem
-    ``rng_draws`` (de nada servem a um assistente) e sem filtro de visibilidade."""
+    """A campanha e o estado inteiros, num formato compacto para o prompt.
+
+    Sem ``rng_seed`` nem ``rng_draws`` (de nada servem a um assistente) e sem filtro de
+    visibilidade.
+    """
     names = {
         **{loc.id: loc.name for loc in campaign.locations},
         **{n.id: n.name for n in campaign.npcs},
@@ -126,8 +129,11 @@ def build_copilot_context(
 
 
 def _npc_entry(npc: Npc, st: NpcState | None, rules: RuleSystem) -> dict[str, Any]:
-    """Sem estado (NPC novo numa campanha editada depois da partida), os campos vivos são ``None``
-    em vez de parecerem um NPC caído: ausência de dado não vira afirmação."""
+    """Os campos vivos de um NPC, ou vazios se ele ainda não tem estado.
+
+    Sem estado (NPC novo numa campanha editada depois da partida), os campos vivos são ``None``
+    em vez de parecerem um NPC caído: ausência de dado não vira afirmação.
+    """
     return {
         "id": npc.id,
         "nome": npc.name,
@@ -157,9 +163,12 @@ def _cut(value: Any) -> Any:
 
 
 def fit_context(context: dict[str, Any]) -> tuple[dict[str, Any], str]:
-    """O contexto dentro do teto, e o JSON dele. Etapas, da que menos perde à que mais: menos
-    eventos recentes, nenhum evento, textos livres cortados. Quando algo é cortado o próprio contexto
-    traz um ``aviso`` para o modelo não tratar o que falta como inexistente."""
+    """O contexto do copiloto dentro do teto, e o JSON dele.
+
+    Etapas, da que menos perde à que mais: menos eventos recentes, nenhum evento, textos livres
+    cortados. Quando algo é cortado o próprio contexto traz um ``aviso`` para o modelo não
+    tratar o que falta como inexistente.
+    """
     text = _dump(context)
     if len(text) <= MAX_CONTEXT_CHARS:
         return context, text
@@ -185,6 +194,7 @@ def fit_context(context: dict[str, Any]) -> tuple[dict[str, Any], str]:
 def build_copilot_messages(
     campaign: Campaign, rules: RuleSystem, state: GameState, question: str
 ) -> list[dict[str, str]]:
+    """As mensagens de uma pergunta do anfitrião ao copiloto, com o contexto inteiro da campanha."""
     _, context = fit_context(build_copilot_context(campaign, rules, state))
     return [
         {"role": "system", "content": COPILOT_SYSTEM},
@@ -195,8 +205,11 @@ def build_copilot_messages(
 def ask_copilot(
     client: ChatClient, campaign: Campaign, rules: RuleSystem, state: GameState, question: str
 ) -> str:
-    """Uma chamada (sem as tentativas do proposer: custo) e a resposta limpa para a tela do
-    anfitrião. ``LlmError`` se o servidor falhar ou devolver só lixo."""
+    """Uma pergunta ao copiloto e a resposta limpa para o anfitrião.
+
+    Uma chamada (sem as tentativas do proposer: custo) e a resposta limpa para a tela do
+    anfitrião. ``LlmError`` se o servidor falhar ou devolver só lixo.
+    """
     messages = build_copilot_messages(campaign, rules, state, question)
     raw = client.complete(messages, json_mode=False, temperature=COPILOT_TEMPERATURE)
     answer = clean_multiline(raw, MAX_ANSWER_CHARS)

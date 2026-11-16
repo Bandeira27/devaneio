@@ -5,6 +5,9 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * Um sistema de regras completo, descrito só por dados.
+ */
 export interface RuleSystem {
   schema_version?: 1;
   id: string;
@@ -33,6 +36,9 @@ export interface RuleSystem {
    */
   max_hp: string;
 }
+/**
+ * Um atributo dos personagens, com limites e valor padrão.
+ */
 export interface Attribute {
   id: string;
   name: string;
@@ -41,14 +47,19 @@ export interface Attribute {
   max?: number;
   default?: number;
 }
+/**
+ * Um nível de dificuldade, com o valor que o teste precisa alcançar.
+ */
 export interface Difficulty {
   id: string;
   name: string;
   value: number;
 }
 /**
- * Habilidade testável. A fórmula é completa (``2d6 + FOR``): sem caso especial no
- * interpretador para 'o atributo da habilidade'.
+ * Uma habilidade testável.
+ *
+ * A fórmula é completa (``2d6 + FOR``): sem caso especial no interpretador para 'o atributo da
+ * habilidade'.
  */
 export interface Skill {
   id: string;
@@ -56,6 +67,9 @@ export interface Skill {
   formula: string;
   description?: string;
 }
+/**
+ * Uma arma: a habilidade que a usa e a fórmula de dano.
+ */
 export interface Weapon {
   id: string;
   name: string;
@@ -75,8 +89,9 @@ export interface Modifier {
   value: number;
 }
 /**
- * Graus de resultado por margem (total - dificuldade). Margem < 0 é falha, >= 0 sucesso;
- * os críticos são as caudas.
+ * Os graus de resultado de um teste, por margem.
+ *
+ * A margem é total menos dificuldade: < 0 é falha, >= 0 sucesso; os críticos são as caudas.
  */
 export interface Outcomes {
   /**
@@ -88,6 +103,9 @@ export interface Outcomes {
    */
   critical_success_margin: number;
 }
+/**
+ * Regras de combate: dificuldade dos ataques, arma padrão e se caído age.
+ */
 export interface Combat {
   /**
    * dificuldade dos ataques (jogadores e NPCs)
@@ -102,12 +120,18 @@ export interface Combat {
    */
   fallen_can_act?: boolean;
 }
+/**
+ * Quando um NPC passa a atacar o grupo.
+ */
 export interface Dispositions {
   /**
    * NPC com disposition abaixo disto ataca o grupo
    */
   hostile_below: number;
 }
+/**
+ * Quanto o descanso cura.
+ */
 export interface Rest {
   /**
    * hp recuperado por personagem ao descansar

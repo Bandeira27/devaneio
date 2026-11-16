@@ -11,6 +11,8 @@ from .errors import EngineError
 
 @dataclass(frozen=True)
 class BeatResult:
+    """O novo estado depois de mudar um marco, com o marco e seu novo estado."""
+
     state: GameState
     beat_id: str
     status: BeatStatus
@@ -18,8 +20,11 @@ class BeatResult:
 
 
 def activate_beat(state: GameState, campaign: Campaign, *, beat_id: str) -> BeatResult:
-    """Pendente → ativo. Exige todos os ``requires`` concluídos. Não avalia
-    ``activate_when``: isso é o diretor; aqui é a ação explícita."""
+    """Pendente → ativo.
+
+    Exige todos os ``requires`` concluídos. Não avalia ``activate_when``: isso é o diretor; aqui
+    é a ação explícita.
+    """
     beat = _beat(state, campaign, beat_id)
     _expect(state, beat_id, BeatStatus.PENDING)
     missing = [r for r in beat.requires if state.beats.get(r) is not BeatStatus.DONE]
@@ -29,14 +34,17 @@ def activate_beat(state: GameState, campaign: Campaign, *, beat_id: str) -> Beat
 
 
 def complete_beat(state: GameState, campaign: Campaign, *, beat_id: str) -> BeatResult:
+    """Ativo → concluído. Marcos que o exigem passam a poder ser ativados."""
     beat = _beat(state, campaign, beat_id)
     _expect(state, beat_id, BeatStatus.ACTIVE)
     return _set(state, beat, BeatStatus.DONE, "beat_done", f"Marco concluído: {beat.title}.")
 
 
 def fail_beat(state: GameState, campaign: Campaign, *, beat_id: str) -> BeatResult:
-    """Ativo → falho. Marcos que o exigem ficam inalcançáveis; é a campanha quem decide
-    se isso faz sentido."""
+    """Ativo → falho.
+
+    Marcos que o exigem ficam inalcançáveis; é a campanha quem decide se isso faz sentido.
+    """
     beat = _beat(state, campaign, beat_id)
     _expect(state, beat_id, BeatStatus.ACTIVE)
     return _set(state, beat, BeatStatus.FAILED, "beat_failed", f"Marco falhou: {beat.title}.")

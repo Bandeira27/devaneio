@@ -19,8 +19,12 @@ from .errors import LlmError
 
 
 class ChatClient(Protocol):
+    """O que o jogo pede a um servidor de LLM: uma descrição e uma conclusão de conversa."""
+
     @property
-    def description(self) -> str: ...
+    def description(self) -> str:
+        """Modelo e servidor, para mostrar ao jogador."""
+        ...
 
     def complete(
         self,
@@ -28,7 +32,9 @@ class ChatClient(Protocol):
         *,
         json_mode: bool = False,
         temperature: float | None = None,
-    ) -> str: ...
+    ) -> str:
+        """Envia as mensagens e devolve o texto da resposta; `LlmError` se falhar."""
+        ...
 
 
 class _HttpStatus(Exception):
@@ -39,12 +45,15 @@ class _HttpStatus(Exception):
 
 
 class OpenAiCompatClient:
+    """Cliente para qualquer servidor no formato OpenAI chat/completions."""
+
     def __init__(self, config: LlmConfig, *, temperature: float = 0.7) -> None:
         self.config = config
         self.temperature = temperature
 
     @property
     def description(self) -> str:
+        """Modelo e servidor, para mostrar ao jogador."""
         return self.config.description
 
     def complete(
@@ -54,6 +63,7 @@ class OpenAiCompatClient:
         json_mode: bool = False,
         temperature: float | None = None,
     ) -> str:
+        """Envia as mensagens e devolve o texto da resposta; `LlmError` se falhar."""
         payload: dict[str, Any] = {
             "model": self.config.model,
             "messages": [dict(m) for m in messages],

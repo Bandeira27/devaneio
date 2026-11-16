@@ -20,6 +20,8 @@ from .lookup import combatant, npc_locations
 
 @dataclass(frozen=True)
 class HealResult:
+    """O novo estado depois de uma cura."""
+
     state: GameState
     target_kind: TargetKind
     target_id: str
@@ -31,6 +33,8 @@ class HealResult:
 
 @dataclass(frozen=True)
 class RestResult:
+    """O novo estado depois do descanso, com quanto cada um recuperou."""
+
     state: GameState
     healed: dict[str, tuple[int, int]]  # id -> (hp antes, hp depois)
     text: str
@@ -73,9 +77,12 @@ def heal(
 
 
 def rest(state: GameState, campaign: Campaign, rules: RuleSystem) -> RestResult:
-    """Todo personagem machucado rola ``rules.rest.heal`` com os próprios atributos e
-    recupera hp (teto max_hp). Recusado sem personagens, com hostil vivo no local ou se
-    ninguém precisa de descanso. Não avança o turno: quem orquestra compõe com o diretor."""
+    """Descanso do grupo: cada personagem machucado rola a cura do sistema.
+
+    Todo personagem machucado rola ``rules.rest.heal`` com os próprios atributos e recupera hp
+    (teto max_hp). Recusado sem personagens, com hostil vivo no local ou se ninguém precisa de
+    descanso. Não avança o turno: quem orquestra compõe com o diretor.
+    """
     if not state.characters:
         raise EngineError("não há personagens para descansar")
     hostile = _hostiles_present(state, campaign, rules)

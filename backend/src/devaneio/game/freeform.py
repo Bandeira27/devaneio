@@ -33,6 +33,8 @@ class LlmUnavailableError(CommandError):
 
 @dataclass(frozen=True)
 class FreeformResult:
+    """O que um texto livre produziu: a nova sessão, a fala do mestre e os comandos executados."""
+
     session: Session
     say: str  # fala do mestre/NPC; só exibida
     commands: tuple[str, ...]  # o que foi executado, sem o prefixo do ator
@@ -47,13 +49,16 @@ def run_freeform(
     hide_events: frozenset[int] = frozenset(),
     include_private: bool = True,
 ) -> FreeformResult:
-    """``CommandError`` se não der para aplicar (``GameOverError`` se a partida acabou,
+    """Aplica um texto livre pelo LLM como comandos do jogo.
+
+    ``CommandError`` se não der para aplicar (``GameOverError`` se a partida acabou,
     ``LlmUnavailableError`` se o servidor de LLM falhou); nesse caso ``session`` segue intacta.
 
     ``actor`` fixa o personagem (quem orquestra por cima já decidiu quem fala; o prefixo do
     texto deixa de valer). ``allow(sessão, linha)`` roda antes de cada ação proposta, com a
     sessão já avançada pelas ações anteriores, e recusa levantando ``CommandError``: a recusa
-    volta ao modelo como feedback, como qualquer outra."""
+    volta ao modelo como feedback, como qualquer outra.
+    """
     if session.llm is None:
         raise CommandError("o LLM não está configurado")
     status = game_status(session.state)

@@ -12,6 +12,7 @@ from .pack import EVENT_VARIABLES, EVENT_VARIANTS, NarrationPack
 
 
 def lint_pack(pack: NarrationPack) -> list[str]:
+    """Avisos sobre um pacote de narração: chaves desconhecidas, regras sem uso e tipos sem regra."""
     warnings: list[str] = []
     event_roots: list[str] = []
     for key in pack.rules:

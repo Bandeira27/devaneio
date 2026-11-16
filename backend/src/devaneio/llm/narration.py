@@ -33,6 +33,7 @@ Regras:
 def build_narration_messages(
     campaign: Campaign, state: GameState, event_texts: Sequence[str]
 ) -> list[dict[str, str]]:
+    """As mensagens que pedem um parágrafo de prosa para os eventos novos."""
     here = next((loc for loc in campaign.locations if loc.id == state.current_location_id), None)
     place = f"{here.name}. {here.description}" if here else state.current_location_id
     party = ", ".join(c.name for c in state.characters.values()) or "ninguém"
@@ -47,6 +48,7 @@ def build_narration_messages(
 
 
 def clean_narration(raw: str) -> str:
+    """Limpa a prosa devolvida pelo LLM; `LlmError` se veio vazia."""
     text = clean_text(raw)
     if not text:
         raise LlmError("narração vazia")

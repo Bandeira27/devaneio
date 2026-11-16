@@ -32,6 +32,8 @@ TENSION_WEIGHTS = {"hp_lost": 0.4, "hostiles": 0.3, "down": 0.2, "failed": 0.1}
 
 @dataclass(frozen=True)
 class DirectorResult:
+    """O novo estado depois de uma passada do diretor, com a tensão e o que ele fez."""
+
     state: GameState
     tension: float
     actions: tuple[str, ...]
@@ -39,9 +41,12 @@ class DirectorResult:
 
 
 def advance_beats(state: GameState, campaign: Campaign) -> tuple[GameState, tuple[str, ...]]:
-    """Conclui marcos ativos cujo ``complete_when`` (não vazio) vale e ativa pendentes com
-    requisitos concluídos e ``activate_when`` valendo. Repete até estabilizar; termina
-    porque cada mudança só avança um status."""
+    """Conclui e ativa marcos até a história estabilizar.
+
+    Conclui marcos ativos cujo ``complete_when`` (não vazio) vale e ativa pendentes com
+    requisitos concluídos e ``activate_when`` valendo. Repete até estabilizar; termina porque
+    cada mudança só avança um status.
+    """
     texts: list[str] = []
     changed = True
     while changed:
@@ -70,9 +75,12 @@ def advance_beats(state: GameState, campaign: Campaign) -> tuple[GameState, tupl
 def hostile_reactions(
     state: GameState, campaign: Campaign, rules: RuleSystem
 ) -> tuple[GameState, tuple[str, ...]]:
-    """Cada NPC vivo no local do grupo com disposição abaixo de ``hostile_below`` ataca um
+    """Faz os NPCs hostis do local do grupo atacarem.
+
+    Cada NPC vivo no local do grupo com disposição abaixo de ``hostile_below`` ataca um
     personagem de pé: um sorteio escolhe o alvo (sempre um, mesmo com um só alvo, para a
-    sequência ser previsível), depois teste da habilidade da arma e dano em acerto."""
+    sequência ser previsível), depois teste da habilidade da arma e dano em acerto.
+    """
     texts: list[str] = []
     for npc in campaign.npcs:
         npc_state = state.npcs.get(npc.id)
@@ -155,8 +163,11 @@ def tension(state: GameState, rules: RuleSystem) -> float:
 
 
 def direct(state: GameState, campaign: Campaign, rules: RuleSystem) -> DirectorResult:
-    """Uma passada do diretor: marcos, reações hostis, marcos de novo (quedas de NPC
-    podem concluir algo), revelação de fatos, tensão, evento ``director``. Não muda o turno."""
+    """Uma passada do diretor de narrativa.
+
+    Marcos, reações hostis, marcos de novo (quedas de NPC podem concluir algo), revelação de
+    fatos, tensão, evento ``director``. Não muda o turno.
+    """
     actions: list[str] = []
     state, texts = advance_beats(state, campaign)
     actions += texts

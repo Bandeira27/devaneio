@@ -9,6 +9,8 @@ from .common import Id, StrictModel
 
 
 class BeatStatus(str, Enum):
+    """Em que ponto um marco da trama está."""
+
     PENDING = "pending"
     ACTIVE = "active"
     DONE = "done"
@@ -16,6 +18,8 @@ class BeatStatus(str, Enum):
 
 
 class Character(StrictModel):
+    """Um personagem de jogador, com atributos, hp e inventário."""
+
     id: Id
     name: str
     # Genérico de propósito: quais atributos existem é definido pelo sistema de regras.
@@ -34,6 +38,8 @@ class Character(StrictModel):
 class NpcState(StrictModel):
     # hp 0 derruba o NPC (alive=False). Para personagens, hp 0 é "fora de combate";
     # morte é decisão narrativa, não do motor.
+    """O que muda num NPC durante a partida: hp, onde está, se está de pé."""
+
     alive: bool = True
     hp: int
     max_hp: int = Field(ge=0)
@@ -52,8 +58,11 @@ class NpcState(StrictModel):
 
 
 class Event(StrictModel):
-    """Entrada do log. Provisório: ``data`` é genérico até o motor de regras definir
-    os tipos de evento (aí vira união discriminada por ``kind``)."""
+    """Entrada do log.
+
+    Provisório: ``data`` é genérico até o motor de regras definir os tipos de evento (aí vira
+    união discriminada por ``kind``).
+    """
 
     turn: int = Field(ge=0)
     kind: str
@@ -62,6 +71,8 @@ class Event(StrictModel):
 
 
 class GameState(StrictModel):
+    """O estado inteiro de uma partida: tudo que muda, em JSON puro."""
+
     state_version: Literal[1] = 1
     campaign_id: Id
     turn: int = Field(default=0, ge=0)

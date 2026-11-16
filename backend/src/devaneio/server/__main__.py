@@ -1,6 +1,6 @@
-"""``python -m devaneio.server --campanhas DIR --dados DIR [--host H] [--porta P]``
+"""Sobe a mesa em grupo.
 
-Sobe a mesa em grupo. Por padrão escuta só em 127.0.0.1: com ``--host 0.0.0.0`` o tráfego
+Uso: ``python -m devaneio.server --campanhas DIR --dados DIR [--host H] [--porta P]``. Por padrão escuta só em 127.0.0.1: com ``--host 0.0.0.0`` o tráfego
 é HTTP em claro (tokens inclusive); use rede local, VPN ou um proxy TLS na frente.
 """
 
@@ -22,8 +22,11 @@ from .storage import Storage
 
 
 def seconds(raw: str) -> float:
-    """Segundos finitos e não negativos: ``nan`` e valores negativos desligariam o limite, e
-    ``inf`` faria o servidor falhar na primeira conta."""
+    """Converte um argumento em segundos finitos e não negativos.
+
+    ``nan`` e valores negativos desligariam o limite, e ``inf`` faria o servidor falhar na
+    primeira conta.
+    """
     value = float(raw)
     if not math.isfinite(value) or value < 0:
         raise argparse.ArgumentTypeError(f"{raw!r} não é um número de segundos finito e >= 0")
@@ -31,6 +34,7 @@ def seconds(raw: str) -> float:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Sobe o servidor da mesa em grupo; devolve o código de saída do processo."""
     parser = argparse.ArgumentParser(prog="devaneio.server", description="Devaneio: mesa em grupo.")
     parser.add_argument(
         "--campanhas", type=Path, required=True, help="pasta com campanhas (*.json)"

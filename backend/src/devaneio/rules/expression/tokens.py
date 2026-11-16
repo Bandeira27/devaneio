@@ -14,12 +14,15 @@ _TOKEN_RE = re.compile(
 
 @dataclass(frozen=True)
 class Token:
+    """Um pedaço do texto: o tipo, o texto e a posição onde começa."""
+
     kind: str
     text: str
     pos: int
 
 
 def tokenize(text: str) -> list[Token]:
+    """Quebra o texto em tokens; caractere desconhecido é `ExpressionError`."""
     tokens: list[Token] = []
     pos = 0
     while pos < len(text):

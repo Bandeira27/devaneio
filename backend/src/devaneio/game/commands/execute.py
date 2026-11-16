@@ -55,8 +55,11 @@ def is_command(line: str) -> bool:
 
 
 def execute(session: Session, line: str) -> tuple[Session, str]:
-    """``GameOverError`` (uma ``CommandError``) se a partida acabou e o comando não é de
-    consulta; ``CommandError`` para qualquer outra recusa. Linha vazia não faz nada."""
+    """Executa uma linha de comando e devolve a nova sessão e o texto.
+
+    ``GameOverError`` (uma ``CommandError``) se a partida acabou e o comando não é de consulta;
+    ``CommandError`` para qualquer outra recusa. Linha vazia não faz nada.
+    """
     if not line.strip():
         return session, ""
     actor, name, args = parse_line(line)
