@@ -5,6 +5,8 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
+import { fieldValue } from '@shared/ui/field/field-value';
+import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export interface CheckSheetData {
   rules: RulesView;
@@ -12,22 +14,19 @@ export interface CheckSheetData {
 
 @Component({
   selector: 'dv-check-sheet',
-  imports: [DvButton, DvField, DvInput],
+  imports: [DvSheetHead, DvButton, DvField, DvInput],
   template: `
-    <div class="dv-sheet__head">
-      <h2 class="dv-title">Testar uma habilidade</h2>
-      <button dvButton type="button" (click)="ref.close()">Fechar</button>
-    </div>
+    <dv-sheet-head title="Testar uma habilidade" />
     <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
       <dv-field label="Habilidade" [hint]="formula()">
-        <select dvInput [value]="skill()" (change)="skill.set(value($event))">
+        <select dvInput [value]="skill()" (change)="skill.set(fieldValue($event))">
           @for (item of data.rules.skills; track item.id) {
             <option [value]="item.id">{{ item.name }}</option>
           }
         </select>
       </dv-field>
       <dv-field label="Dificuldade">
-        <select dvInput [value]="difficulty()" (change)="difficulty.set(value($event))">
+        <select dvInput [value]="difficulty()" (change)="difficulty.set(fieldValue($event))">
           @for (item of data.rules.difficulties; track item.id) {
             <option [value]="item.id">{{ item.name }} ({{ item.value }})</option>
           }
@@ -35,7 +34,7 @@ export interface CheckSheetData {
       </dv-field>
       @if (data.rules.modifiers.length > 0) {
         <dv-field label="Modificador">
-          <select dvInput [value]="modifier()" (change)="modifier.set(value($event))">
+          <select dvInput [value]="modifier()" (change)="modifier.set(fieldValue($event))">
             <option value="">nenhum</option>
             @for (item of data.rules.modifiers; track item.id) {
               <option [value]="item.id">{{ item.name }} ({{ item.value }})</option>
@@ -49,6 +48,7 @@ export interface CheckSheetData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckSheet {
+  protected readonly fieldValue = fieldValue;
   protected readonly data = inject(SHEET_DATA) as CheckSheetData;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
 
@@ -65,8 +65,4 @@ export class CheckSheet {
   protected readonly command = computed(() =>
     check(this.skill(), this.difficulty(), this.modifier()),
   );
-
-  protected value(event: Event): string {
-    return (event.target as HTMLSelectElement).value;
-  }
 }

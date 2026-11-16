@@ -5,6 +5,7 @@ import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { JoinStore } from '../../join.store';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-join-page',
@@ -14,6 +15,7 @@ import { JoinStore } from '../../join.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JoinPage implements OnInit {
+  protected readonly fieldValue = fieldValue;
   /** Da rota: o id da mesa e o código do convite (o código é opcional: quem entra sem o link o cola). */
   readonly tableId = input.required<string>();
   readonly invite = input<string>();
@@ -34,9 +36,5 @@ export class JoinPage implements OnInit {
     if (this.store.alreadyIn()) {
       void this.router.navigate(['/mesa', this.tableId()]);
     }
-  }
-
-  protected text(event: Event): string {
-    return (event.target as HTMLInputElement).value;
   }
 }

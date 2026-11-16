@@ -3,15 +3,14 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SheetRef } from '@shared/ui/sheet/sheet';
+import { fieldValue } from '@shared/ui/field/field-value';
+import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 @Component({
   selector: 'dv-command-sheet',
-  imports: [DvButton, DvField, DvInput],
+  imports: [DvSheetHead, DvButton, DvField, DvInput],
   template: `
-    <div class="dv-sheet__head">
-      <h2 class="dv-title">Digitar um comando</h2>
-      <button dvButton type="button" (click)="ref.close()">Fechar</button>
-    </div>
+    <dv-sheet-head title="Digitar um comando" />
     <form class="dv-stack" (submit)="$event.preventDefault(); send()">
       <dv-field
         label="Comando"
@@ -25,7 +24,7 @@ import { SheetRef } from '@shared/ui/sheet/sheet';
           autocapitalize="none"
           spellcheck="false"
           [value]="line()"
-          (input)="line.set(value($event))"
+          (input)="line.set(fieldValue($event))"
         />
       </dv-field>
       <button dvButton="primary" type="submit">Enviar</button>
@@ -34,6 +33,7 @@ import { SheetRef } from '@shared/ui/sheet/sheet';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommandSheet {
+  protected readonly fieldValue = fieldValue;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
   protected readonly line = signal('');
   protected readonly error = signal('');
@@ -45,9 +45,5 @@ export class CommandSheet {
       return;
     }
     this.ref.close(line);
-  }
-
-  protected value(event: Event): string {
-    return (event.target as HTMLInputElement).value;
   }
 }

@@ -6,6 +6,7 @@ import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvStepper } from '@shared/ui/stepper/stepper';
 import { CharacterStore } from '../../character.store';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-character-page',
@@ -15,6 +16,7 @@ import { CharacterStore } from '../../character.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CharacterPage implements OnInit {
+  protected readonly fieldValue = fieldValue;
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(CharacterStore);
@@ -26,9 +28,5 @@ export class CharacterPage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
     void this.store.load();
-  }
-
-  protected text(event: Event): string {
-    return (event.target as HTMLInputElement).value;
   }
 }

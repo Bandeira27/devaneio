@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '@core/api/api-client';
 import { messageOf } from '@core/api/api-failure';
 import { SessionStore } from '@core/session/session-store';
-import { normalizeName, validateName } from '@shared/game/commands';
+import { normalizeName, validateName } from '@shared/game/names';
 import { isInviteCode } from '@shared/game/invite';
 
 @Injectable()

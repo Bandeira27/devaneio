@@ -1,55 +1,12 @@
-import { Injectable, InjectionToken, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { ApiFailure } from '../api/api-failure';
+import { StoredTable, TABLE_ID } from './session-entry';
+import { SESSION_STORAGE, readTables, writeTables } from './session-storage';
 
-export type StoredRole = 'host' | 'player';
+export type { StoredRole, StoredTable } from './session-entry';
+export { SESSION_STORAGE, STORAGE_KEY } from './session-storage';
 
-export interface StoredTable {
-  token: string;
-  playerId: string;
-  role: StoredRole;
-  /** Título da campanha, para a lista de mesas guardadas. */
-  title: string;
-  /** Só do anfitrião: o código de convite, para mostrar o link de novo. */
-  invite?: string;
-  savedAt: number;
-}
-
-export const STORAGE_KEY = 'devaneio.sessions.v1';
 export const MAX_TABLES = 20;
-
-/** O `localStorage` do navegador, ou `null` se ele não existe ou não pode ser lido (janela privada...). */
-export const SESSION_STORAGE = new InjectionToken<Storage | null>('SESSION_STORAGE', {
-  providedIn: 'root',
-  factory: () => {
-    try {
-      return globalThis.localStorage;
-    } catch {
-      return null;
-    }
-  },
-});
-
-const TABLE_ID = /^[a-f0-9]{16}$/;
-const PLAYER_ID = /^p\d{1,3}$/;
-
-function isEntry(value: unknown): value is StoredTable {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v['token'] === 'string' &&
-    v['token'].length > 0 &&
-    v['token'].length <= 200 &&
-    typeof v['playerId'] === 'string' &&
-    PLAYER_ID.test(v['playerId']) &&
-    (v['role'] === 'host' || v['role'] === 'player') &&
-    typeof v['title'] === 'string' &&
-    v['title'].length <= 200 &&
-    (v['invite'] === undefined || (typeof v['invite'] === 'string' && v['invite'].length <= 100)) &&
-    typeof v['savedAt'] === 'number' &&
-    Number.isFinite(v['savedAt'])
-  );
-}
 
 /**
  * As mesas em que este navegador entrou (token, `player_id`, papel). O token só viaja no cabeçalho
@@ -59,7 +16,7 @@ function isEntry(value: unknown): value is StoredTable {
 @Injectable({ providedIn: 'root' })
 export class SessionStore {
   private readonly storage = inject(SESSION_STORAGE);
-  private readonly tables = signal<Record<string, StoredTable>>(this.load());
+  private readonly tables = signal<Record<string, StoredTable>>(readTables(this.storage));
 
   /** Mesas guardadas, da mais recente para a mais antiga. */
   readonly list = computed(() =>
@@ -91,32 +48,15 @@ export class SessionStore {
     this.commit(Object.fromEntries(Object.entries(this.tables()).filter(([id]) => id !== tableId)));
   }
 
-  private commit(tables: Record<string, StoredTable>): void {
-    this.tables.set(tables);
-    try {
-      this.storage?.setItem(STORAGE_KEY, JSON.stringify(tables));
-    } catch {
-      // Sem espaço ou sem permissão: a sessão segue na memória e some ao fechar a aba.
+  /** Esquece a mesa se o servidor disse que o token não vale mais (401) ou que a mesa sumiu (404). */
+  forgetIfLost(tableId: string, error: unknown): void {
+    if (error instanceof ApiFailure && (error.status === 401 || error.status === 404)) {
+      this.forget(tableId);
     }
   }
 
-  private load(): Record<string, StoredTable> {
-    let parsed: unknown;
-    try {
-      const raw = this.storage?.getItem(STORAGE_KEY);
-      parsed = raw ? JSON.parse(raw) : null;
-    } catch {
-      return {};
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return {};
-    }
-    const valid: Record<string, StoredTable> = {};
-    for (const [tableId, entry] of Object.entries(parsed)) {
-      if (TABLE_ID.test(tableId) && isEntry(entry)) {
-        valid[tableId] = entry;
-      }
-    }
-    return valid;
+  private commit(tables: Record<string, StoredTable>): void {
+    this.tables.set(tables);
+    writeTables(this.storage, tables);
   }
 }

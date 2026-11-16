@@ -12,7 +12,7 @@ schema | rng                   modelos Pydantic e gerador reprodutível
 
 Dependências só apontam para baixo. `game` reexporta o que `cli` e `server` precisam de `llm` (`LlmConfig`,
 `LlmError`, `ChatClient`): os dois só falam com `game`. `llm/` não conhece o motor: a proposta do modelo vira **linhas de comando**
-e passa por `execute()` (`game/commands.py`), reaproveitando as validações. `export_schema.py` é ferramenta de
+e passa por `execute()` (`game/commands/`), reaproveitando as validações. `export_schema.py` é ferramenta de
 build, no topo: importa `server.models` para exportar o contrato da API, e `server/__init__.py` não reexporta o
 adaptador HTTP (`server/http.py`), para a ferramenta de build não carregar `http.server`.
 Se uma mudança parece exigir quebrar o contrato de camadas, o desenho está errado ou a decisão é do dono:
@@ -25,7 +25,7 @@ O que cabe dentro de um arquivo (uma responsabilidade por módulo) está na [rul
 | É... | Vai em |
 |---|---|
 | ação que altera o estado do jogo | `engine/` (função pura; skill `add-engine-action`) |
-| composição de ações para um comando (`atacar` = check + dano) | `game/commands.py` |
+| composição de ações para um comando (`atacar` = check + dano) | `game/commands/actions.py` |
 | modelo persistido fora do contrato (`SaveFile`, `TableMeta`) | `game/` |
 | leitura e impressão no terminal | `cli/` |
 | rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; texto livre pelo LLM: `server/say.py`; narração e mural do LLM, só em memória e fora do estado e do arquivo: `server/presentation.py`; tokens, limites), modelo de requisição/resposta | `server/` |

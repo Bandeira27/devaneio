@@ -1,7 +1,11 @@
 import { signal } from '@angular/core';
 import type { EventView, EventsView, TalkView } from '@contract/api_responses';
-import type { EventsQuery } from '../api/api-client';
+import type { EventsQuery } from '../api/api-types';
 import { ApiFailure } from '../api/api-failure';
+import { backoffDelay } from './live-backoff';
+import { MAX_EVENTS, MAX_TALK, mergeEvents, mergeTalk } from './live-merge';
+
+export { MAX_EVENTS, MAX_TALK };
 
 export type LiveStatus = 'connecting' | 'live' | 'offline' | 'expired' | 'gone' | 'failed';
 
@@ -21,10 +25,6 @@ export const INITIAL_WINDOW = 50;
 export const LONG_POLL_SECONDS = 20;
 /** Resposta vazia mais rápida que isto, com `wait` ligado, é o servidor sem vaga de espera: não dá para girar. */
 export const FAST_EMPTY_MS = 1000;
-export const MAX_EVENTS = 200;
-export const MAX_TALK = 50;
-const BACKOFF_BASE_MS = 1000;
-const BACKOFF_MAX_MS = 15_000;
 
 /**
  * O fluxo ao vivo de uma mesa: um laço de long-poll por aba. Primeira chamada sem espera (carrega a janela
@@ -107,29 +107,22 @@ export class LiveFeed {
   }
 
   private apply(view: EventsView): boolean {
-    const knownEvents = new Set(this.events().map((e) => e.index));
-    const fresh = view.events.filter((e) => !knownEvents.has(e.index));
-    const knownTalk = new Set(this.talk().map((t) => t.seq));
-    const freshTalk = view.talk.filter((t) => !knownTalk.has(t.seq));
-    if (fresh.length > 0) {
-      this.events.update((all) =>
-        [...all, ...fresh].sort((a, b) => a.index - b.index).slice(-MAX_EVENTS),
-      );
+    const events = mergeEvents(this.events(), view.events);
+    const talk = mergeTalk(this.talk(), view.talk);
+    if (events !== null) {
+      this.events.set(events);
     }
-    if (freshTalk.length > 0) {
-      this.talk.update((all) =>
-        [...all, ...freshTalk].sort((a, b) => a.seq - b.seq).slice(-MAX_TALK),
-      );
+    if (talk !== null) {
+      this.talk.set(talk);
     }
     const moved = view.revision !== this.revision();
     this.revision.set(view.revision);
     this.since = view.revision;
     this.sinceTalk = Math.max(this.sinceTalk, view.talk_seq);
-    return fresh.length > 0 || freshTalk.length > 0 || moved;
+    return events !== null || talk !== null || moved;
   }
 
   private delay(attempt: number): number {
-    const base = Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** attempt);
-    return Math.round(base * (0.8 + 0.4 * this.env.random()));
+    return backoffDelay(attempt, this.env.random());
   }
 }

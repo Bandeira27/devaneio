@@ -3,19 +3,14 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { RulesView, TableView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
-import { ApiFailure, messageOf } from '@core/api/api-failure';
+import { messageOf } from '@core/api/api-failure';
+import { withStaleRetry } from '@core/api/stale-retry';
 import { SessionStore } from '@core/session/session-store';
-import {
-  CommandError,
-  join,
-  normalizeName,
-  slugify,
-  uniqueId,
-  validateName,
-} from '@shared/game/commands';
+import { CommandError, join } from '@shared/game/commands';
+import { normalizeName, slugify, uniqueId, validateName } from '@shared/game/names';
 import { attributeDefaults, clampAttribute } from '@shared/game/rules';
-
-export type CharacterState = 'loading' | 'ready' | 'failed';
+import { llmNoticeOf } from '@shared/game/llm-notice';
+import type { LoadState } from '@shared/game/load-state';
 
 /** Criar o personagem: nome e atributos do sistema viram uma linha `entrar` que o motor valida. */
 @Injectable()
@@ -25,7 +20,7 @@ export class CharacterStore {
   private readonly router = inject(Router);
 
   readonly tableId = signal('');
-  readonly state = signal<CharacterState>('loading');
+  readonly state = signal<LoadState>('loading');
   readonly loadError = signal('');
   readonly table = signal<TableView | null>(null);
   readonly rules = signal<RulesView | null>(null);
@@ -38,10 +33,7 @@ export class CharacterStore {
   readonly error = signal('');
 
   readonly isHost = computed(() => this.table()?.role === 'host');
-  readonly llmNotice = computed(() => {
-    const llm = this.table()?.llm;
-    return llm?.enabled === true && llm.notice ? llm.notice : '';
-  });
+  readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   /** O id do personagem: o nome em slug, com sufixo se já houver outro (ou um NPC) com ele. */
   readonly characterId = computed(() =>
     uniqueId(slugify(normalizeName(this.name())), this.taken()),
@@ -71,9 +63,7 @@ export class CharacterStore {
       this.values.set(attributeDefaults(rules));
       this.state.set('ready');
     } catch (error) {
-      if (error instanceof ApiFailure && (error.status === 401 || error.status === 404)) {
-        this.session.forget(tableId); // o token ou a mesa não valem mais neste servidor
-      }
+      this.session.forgetIfLost(tableId, error);
       this.loadError.set(messageOf(error));
       this.state.set('failed');
     }
@@ -104,17 +94,13 @@ export class CharacterStore {
     }
     this.saving.set(true);
     try {
-      try {
-        await this.send(name, table.revision);
-      } catch (error) {
-        if (!(error instanceof ApiFailure) || error.code !== 'stale_revision') {
-          throw error;
-        }
-        // A mesa andou enquanto o formulário estava aberto: relê a revisão e tenta de novo, uma vez.
-        const fresh = await firstValueFrom(this.api.table(this.tableId()));
-        this.table.set(fresh);
-        await this.send(name, fresh.revision);
-      }
+      await withStaleRetry(
+        (revision) => this.send(name, revision),
+        () => this.table()?.revision ?? 0,
+        async () => {
+          this.table.set(await firstValueFrom(this.api.table(this.tableId())));
+        },
+      );
     } catch (error) {
       this.error.set(error instanceof CommandError ? error.message : messageOf(error));
     } finally {

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ApiFailure } from '../api/api-failure';
 import {
   MAX_TABLES,
   SESSION_STORAGE,
@@ -67,6 +68,25 @@ describe('SessionStore', () => {
     expect(sessions.get(A)).toBeNull();
     expect(sessions.tokenOf(A)).toBeNull();
     expect(JSON.parse(storage.data.get(STORAGE_KEY) ?? '{}')).toEqual({});
+  });
+
+  it.each([
+    [401, true],
+    [404, true],
+    [500, false],
+    [0, false],
+  ])('com o status %i a mesa é esquecida: %s', (status, forgotten) => {
+    const sessions = store(new FakeStorage());
+    sessions.save(A, entry());
+    sessions.forgetIfLost(A, new ApiFailure(status, 'x', 'm'));
+    expect(sessions.get(A) === null).toBe(forgotten);
+  });
+
+  it('um erro que não é da API não faz esquecer a mesa', () => {
+    const sessions = store(new FakeStorage());
+    sessions.save(A, entry());
+    sessions.forgetIfLost(A, new Error('qualquer'));
+    expect(sessions.get(A)).not.toBeNull();
   });
 
   it('recarrega o que foi guardado', () => {

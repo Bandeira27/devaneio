@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import type { Character, RulesView } from '@contract/api_responses';
-import { DvButton } from '@shared/ui/button/button';
 import { DvPips } from '@shared/ui/pips/pips';
-import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
+import { SHEET_DATA } from '@shared/ui/sheet/sheet';
+import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export interface CharacterSheetData {
   character: Character;
@@ -11,12 +11,9 @@ export interface CharacterSheetData {
 
 @Component({
   selector: 'dv-character-sheet',
-  imports: [DvButton, DvPips],
+  imports: [DvSheetHead, DvPips],
   template: `
-    <div class="dv-sheet__head">
-      <h2 class="dv-title">{{ data.character.name }}</h2>
-      <button dvButton type="button" (click)="ref.close()">Fechar</button>
-    </div>
+    <dv-sheet-head title="{{ data.character.name }}" />
     <div class="dv-stack">
       <dv-pips [value]="data.character.hp" [max]="data.character.max_hp" />
       <dl>
@@ -38,5 +35,4 @@ export interface CharacterSheetData {
 })
 export class CharacterSheet {
   protected readonly data = inject(SHEET_DATA) as CharacterSheetData;
-  protected readonly ref = inject<SheetRef<void>>(SheetRef);
 }

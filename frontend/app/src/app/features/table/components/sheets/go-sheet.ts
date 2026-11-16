@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { go } from '@shared/game/commands';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvButton } from '@shared/ui/button/button';
+import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export interface GoSheetData {
   exits: { id: string; name: string }[];
@@ -9,12 +10,9 @@ export interface GoSheetData {
 
 @Component({
   selector: 'dv-go-sheet',
-  imports: [DvButton],
+  imports: [DvSheetHead, DvButton],
   template: `
-    <div class="dv-sheet__head">
-      <h2 class="dv-title">Ir para</h2>
-      <button dvButton type="button" (click)="ref.close()">Fechar</button>
-    </div>
+    <dv-sheet-head title="Ir para" />
     @if (data.exits.length === 0) {
       <p class="dv-note">Não há saídas daqui.</p>
     }

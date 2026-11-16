@@ -6,6 +6,7 @@ import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { InviteStore } from '../../invite.store';
+import { fieldValue } from '@shared/ui/field/field-value';
 
 @Component({
   selector: 'dv-invite-page',
@@ -15,6 +16,7 @@ import { InviteStore } from '../../invite.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvitePage implements OnInit {
+  protected readonly fieldValue = fieldValue;
   /** O id da mesa, vindo da rota. */
   readonly tableId = input.required<string>();
 
@@ -31,9 +33,5 @@ export class InvitePage implements OnInit {
     if (!this.store.isHost()) {
       void this.router.navigate(['/mesa', this.tableId(), 'personagem']);
     }
-  }
-
-  protected text(event: Event): string {
-    return (event.target as HTMLInputElement).value;
   }
 }

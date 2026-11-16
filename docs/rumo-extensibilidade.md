@@ -86,7 +86,7 @@ Antes de qualquer implementação, um documento de desenho detalhando o vocabul�
 
 Referência para quem for mexer: o que o usuário **não** estende ainda.
 
-- Os verbos do motor e o conjunto de comandos (`game/commands.py`, `COMMANDS`).
+- Os verbos do motor e o conjunto de comandos (`game/commands/`, `COMMANDS`).
 - Os tipos de condição dos marcos: uma união fechada de quatro (`schema/campaign.py`).
 - O diretor: quem reage e os pesos da tensão (`engine/director.py`).
 - Marcos sem efeitos, hp como único recurso (sem mana, estresse nem condições temporárias).

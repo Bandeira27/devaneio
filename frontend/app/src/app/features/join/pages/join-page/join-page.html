@@ -10,7 +10,7 @@
         autocomplete="nickname"
         maxlength="40"
         [value]="store.name()"
-        (input)="store.name.set(text($event))"
+        (input)="store.name.set(fieldValue($event))"
       />
     </dv-field>
     @if (!invite()) {
@@ -20,7 +20,7 @@
           type="text"
           autocomplete="off"
           [value]="store.code()"
-          (input)="store.code.set(text($event))"
+          (input)="store.code.set(fieldValue($event))"
         />
       </dv-field>
     } @else {

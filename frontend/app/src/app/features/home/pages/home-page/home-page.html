@@ -47,7 +47,7 @@
               <select
                 dvInput
                 [value]="store.campaignId()"
-                (change)="store.campaignId.set(text($event))"
+                (change)="store.campaignId.set(fieldValue($event))"
               >
                 @for (campaign of store.campaigns(); track campaign.id) {
                   <option [value]="campaign.id">{{ campaign.title }}</option>
@@ -61,7 +61,7 @@
                 autocomplete="nickname"
                 maxlength="40"
                 [value]="store.hostName()"
-                (input)="store.hostName.set(text($event))"
+                (input)="store.hostName.set(fieldValue($event))"
               />
             </dv-field>
             @if (store.createError()) {
@@ -89,7 +89,7 @@
           type="text"
           autocomplete="off"
           [value]="store.inviteText()"
-          (input)="store.inviteText.set(text($event))"
+          (input)="store.inviteText.set(fieldValue($event))"
         />
       </dv-field>
       <button dvButton type="submit">Entrar</button>
