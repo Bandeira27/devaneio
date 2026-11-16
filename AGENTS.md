@@ -49,9 +49,11 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
 | commitar, abrir PR ou concluir tarefa | [06 fluxo](.agents/rules/06-fluxo-de-trabalho.md) |
 | silenciar ou configurar uma ferramenta | [07 qualidade e supressões](.agents/rules/07-qualidade-e-supressoes.md) |
 | acionar ou consolidar revisão por subagentes | [08 orquestração](.agents/rules/08-orquestracao.md) |
+| criar, dividir ou crescer um arquivo ou módulo | [09 responsabilidades](.agents/rules/09-responsabilidades.md) |
+| escrever docstring, JSDoc, comentário, README ou texto em `docs/` | [10 documentação](.agents/rules/10-documentacao.md) |
 
 Procedimentos recorrentes em `.agents/skills/` (cada um é uma pasta com `SKILL.md`):
-`add-engine-action`, `change-contract`, `quality-gate`.
+`add-engine-action`, `change-contract`, `quality-gate`, `split-module`.
 
 ## Papéis de revisão (subagentes) e orquestração
 

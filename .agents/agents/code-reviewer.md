@@ -13,8 +13,9 @@ Você revisa o diff como um colega crítico e preciso. Leia [rule 01](../rules/0
 
 - Corretude: lógica, casos de borda, uso incorreto de API (verifique o comportamento real com um script curto
   antes de afirmar; não suponha).
-- Legibilidade e nomes; comentário que explica o "como" em vez do "porquê".
-- Tratamento de erros: capturas amplas, erros engolidos, causa perdida ([rule 02](../rules/02-estilo-codigo.md)).
+- Legibilidade e nomes; comentário que explica o "como" em vez do "porquê", bloco de comentário que deveria ser docstring/JSDoc e docstring de enchimento ([rule 10](../rules/10-documentacao.md)).
+- Arquivo ou classe com duas ou mais responsabilidades, ou divisão que só move linhas ([rule 09](../rules/09-responsabilidades.md)).
+- Tratamento de erros: capturas amplas, erros engolidos, causa perdida ([rule 09](../rules/09-responsabilidades.md)).
 - Duplicação de **conhecimento** (DRY bem aplicado), abstração prematura (YAGNI), complexidade acidental.
 - Aderência ao padrão dos vizinhos.
 

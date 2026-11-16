@@ -20,6 +20,8 @@ pare e pergunte, não ajuste o contrato.
 
 ## Onde colocar código novo
 
+O que cabe dentro de um arquivo (uma responsabilidade por módulo) está na [rule 09](09-responsabilidades.md).
+
 | É... | Vai em |
 |---|---|
 | ação que altera o estado do jogo | `engine/` (função pura; skill `add-engine-action`) |
