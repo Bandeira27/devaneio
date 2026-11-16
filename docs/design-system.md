@@ -81,7 +81,11 @@ está no JSDoc de cada um.
 | `dv-icon`                                | conjunto fechado de ícones decorativos                                                               |
 | `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                        |
 
-`dvLoading` e `dv-choice` ainda não têm uso em tela: entram com as folhas e os formulários do PR de entrada.
+**Folhas:** todas têm a mesma forma: cabeçalho (título igual ao rótulo do botão que a abriu e fechar por ícone), corpo e
+rodapé `.dv-sheet__foot` com a ação primária à direita. No celular sobem do pé; na tela larga (≥ 64rem) viram um
+diálogo centralizado de até `--dv-measure-dialog`. Ações que gastam a vez (`Ir`, `Atacar`) pedem a confirmação dentro
+da própria folha. Escolhas curtas (habilidade, dificuldade, alvo, arma, modificador) usam `dv-choice`; botões em envio
+usam `dvLoading` e mantêm o rótulo.
 
 O **cartão** e a **lista** não são componentes: são as classes `.dv-card` e `.dv-stack` (não havia comportamento a
 encapsular). Não há _tabs_ nem _toast_ (o feedback é contextual).

@@ -19,7 +19,7 @@ export interface SheetOptions {
 }
 
 /**
- * Folha que sobe do pé da tela (diálogo modal do CDK com foco preso e foco devolvido a quem abriu). O visual e o
+ * Folha que sobe do pé da tela no celular e vira diálogo centralizado na tela larga (diálogo modal do CDK com foco preso e foco devolvido a quem abriu). O visual e o
  * movimento estão em `styles/sheet.css`. Resolve com o resultado, ou `undefined` se foi fechada sem escolher.
  *
  * O CDK remove o painel assim que fecha, então o fechamento é feito aqui: `Esc`, clique no fundo e `SheetRef.close`
@@ -32,17 +32,19 @@ export class Sheet {
   private readonly injector = inject(Injector);
 
   open<R = void>(component: Type<unknown>, options: SheetOptions): Promise<R | undefined> {
+    // Tela larga: diálogo no meio. Lido ao abrir (uma folha dura segundos; girar o aparelho não a refaz).
+    const dialog = typeof matchMedia === 'function' && matchMedia('(min-width: 64rem)').matches;
     const ref = this.dialog.open<R>(component, {
       ariaLabel: options.label,
       data: options.data,
-      panelClass: 'dv-sheet',
+      panelClass: dialog ? ['dv-sheet', 'dv-sheet--dialog'] : 'dv-sheet',
       backdropClass: 'dv-sheet-backdrop',
       disableClose: true, // Esc e fundo passam por `leave`, abaixo, para animar a saída
       autoFocus: 'first-tabbable', // o primeiro campo da folha leva `cdkFocusInitial`
       restoreFocus: true,
-      positionStrategy: createGlobalPositionStrategy(this.injector)
-        .bottom('0')
-        .centerHorizontally(),
+      positionStrategy: dialog
+        ? createGlobalPositionStrategy(this.injector).centerHorizontally().centerVertically()
+        : createGlobalPositionStrategy(this.injector).bottom('0').centerHorizontally(),
       providers: (dialogRef) => [
         { provide: SheetRef, useValue: { close: (result?: R) => this.leave(dialogRef, result) } },
       ],

@@ -94,3 +94,12 @@ export function attackTargets(
       : [];
   });
 }
+
+/** Troca os códigos de atributo de uma fórmula pelos nomes ("2d6 + FOR" vira "2d6 + Força"); o resto fica como está. */
+export function humanizeFormula(
+  formula: string,
+  attributes: readonly { id: string; name: string }[],
+): string {
+  const names = new Map(attributes.map((a) => [a.id, a.name]));
+  return formula.replace(/[A-Za-z_]\w*/g, (word) => names.get(word) ?? word);
+}

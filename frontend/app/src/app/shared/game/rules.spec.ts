@@ -13,6 +13,7 @@ import {
   attributeDefaults,
   canStep,
   clampAttribute,
+  humanizeFormula,
   usableWeapons,
 } from './rules';
 
@@ -186,5 +187,21 @@ describe('alvos de ataque', () => {
         bram: { alive: true, hp: 0, max_hp: 10, hostile: false },
       }).map((t) => t.id),
     ).toEqual(['vael']);
+  });
+});
+
+describe('humanizeFormula', () => {
+  const attributes = [
+    { id: 'FOR', name: 'Força' },
+    { id: 'AGI', name: 'Agilidade' },
+  ];
+
+  it('troca o código do atributo pelo nome e deixa dados e números', () => {
+    expect(humanizeFormula('2d6 + FOR', attributes)).toBe('2d6 + Força');
+    expect(humanizeFormula('1d20 + AGI + 2', attributes)).toBe('1d20 + Agilidade + 2');
+  });
+
+  it('palavra que não é atributo fica como está', () => {
+    expect(humanizeFormula('2d6 + XYZ', attributes)).toBe('2d6 + XYZ');
   });
 });
