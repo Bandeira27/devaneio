@@ -182,3 +182,39 @@ describe('acessibilidade dos templates', () => {
     expect(found).toContain('@angular-eslint/template/interactive-supports-focus');
   });
 });
+
+describe('documentação (JSDoc)', () => {
+  const file = 'src/app/shared/game/a.ts';
+
+  it('exige JSDoc no que o módulo exporta', async () => {
+    expect(
+      await ruleIds('export function soma(a: number): number {\n  return a;\n}\n', file),
+    ).toContain('jsdoc/require-jsdoc');
+    expect(await ruleIds('export interface Forma {\n  lado: number;\n}\n', file)).toContain(
+      'jsdoc/require-jsdoc',
+    );
+  });
+
+  it('aceita o exportado com JSDoc e o que não é exportado sem ele', async () => {
+    const code =
+      '/** Devolve o valor. */\nexport function soma(a: number): number {\n  return a;\n}\n';
+    expect(await ruleIds(code, file)).not.toContain('jsdoc/require-jsdoc');
+    expect(
+      await ruleIds(
+        'function interna(): number {\n  return 1;\n}\nconsole.warn(interna());\n',
+        file,
+      ),
+    ).not.toContain('jsdoc/require-jsdoc');
+  });
+
+  it('proíbe tipo dentro do JSDoc (o TypeScript já os tem)', async () => {
+    const code =
+      '/**\n * Soma.\n * @param {number} a O valor.\n */\nexport function soma(a: number): number {\n  return a;\n}\n';
+    expect(await ruleIds(code, file)).toContain('jsdoc/no-types');
+  });
+
+  it('não exige JSDoc em teste nem em montagem de teste', async () => {
+    const code = 'export function ajuda(): number {\n  return 1;\n}\n';
+    expect(await ruleIds(code, 'src/app/testing/a.ts')).not.toContain('jsdoc/require-jsdoc');
+  });
+});

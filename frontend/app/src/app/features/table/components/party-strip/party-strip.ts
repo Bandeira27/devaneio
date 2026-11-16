@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { Character } from '@contract/api_responses';
 import { DvPips } from '@shared/ui/pips/pips';
 
+/** A faixa do grupo: cada personagem com o hp em pontos. */
 @Component({
   selector: 'dv-party-strip',
   imports: [DvPips],

@@ -29,7 +29,12 @@ Só o que muda; o resto vem do pai (`default`):
   "extends": "default",
   "name": "Meu Sistema",
   "skills": [
-    { "id": "magia", "name": "Magia", "formula": "2d6 + MEN", "description": "Conjurar." },
+    {
+      "id": "magia",
+      "name": "Magia",
+      "formula": "2d6 + MEN",
+      "description": "Conjurar."
+    },
     { "id": "lutar", "name": "Lutar", "formula": "2d6 + FOR + 1" }
   ],
   "weapons": [{ "id": "varinha", "damage": "1d6 + MEN", "skill": "magia" }],

@@ -8,10 +8,12 @@ import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
+/** O que a folha de testar recebe: o sistema de regras. */
 export interface CheckSheetData {
   rules: RulesView;
 }
 
+/** Folha de testar uma habilidade: mostra a fórmula e devolve a linha de comando. */
 @Component({
   selector: 'dv-check-sheet',
   imports: [DvSheetHead, DvButton, DvField, DvInput],

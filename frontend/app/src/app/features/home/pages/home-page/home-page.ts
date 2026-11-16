@@ -7,6 +7,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { HomeStore } from '../../home.store';
 import { fieldValue } from '@shared/ui/field/field-value';
 
+/** Tela inicial: criar uma mesa, entrar por link e retomar mesas guardadas. */
 @Component({
   selector: 'dv-home-page',
   imports: [RouterLink, DvButton, DvField, DvInput, DvNotice],

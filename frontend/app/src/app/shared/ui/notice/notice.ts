@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+/** O tipo de um aviso: informação, erro ou confirmação. */
 export type NoticeKind = 'info' | 'error' | 'ok';
 
 const PREFIX: Record<NoticeKind, string> = { info: 'Aviso: ', error: 'Erro: ', ok: 'Pronto: ' };

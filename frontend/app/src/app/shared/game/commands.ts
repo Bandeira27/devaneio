@@ -6,6 +6,7 @@ import { MAX_ARG, normalizeName, validateName } from './names';
  * passa por uma checagem de formato antes (um id com espaço ou aspas viraria outro comando).
  */
 
+/** Um argumento que não pode virar linha de comando (formato inválido ou grande demais). */
 export class CommandError extends Error {
   constructor(message: string) {
     super(message);
@@ -28,20 +29,24 @@ export function quote(text: string): string {
   return `"${text.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 }
 
+/** A linha `ir <local>`. */
 export function go(locationId: string): string {
   return `ir ${token('local', locationId)}`;
 }
 
+/** A linha `testar <habilidade> <dificuldade> [modificador]`. */
 export function check(skillId: string, difficultyId: string, modifierId?: string | null): string {
   const base = `testar ${token('habilidade', skillId)} ${token('dificuldade', difficultyId)}`;
   return modifierId ? `${base} ${token('modificador', modifierId)}` : base;
 }
 
+/** A linha `atacar <arma> <alvo> [modificador]`. */
 export function attack(weaponId: string, targetId: string, modifierId?: string | null): string {
   const base = `atacar ${token('arma', weaponId)} ${token('alvo', targetId)}`;
   return modifierId ? `${base} ${token('modificador', modifierId)}` : base;
 }
 
+/** A linha `entrar <id> "<nome>" ATRIBUTO=valor ...`; nome e atributos são conferidos antes. */
 export function join(
   characterId: string,
   name: string,

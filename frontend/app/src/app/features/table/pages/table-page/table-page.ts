@@ -9,6 +9,7 @@ import { PartyStrip } from '../../components/party-strip/party-strip';
 import { SceneCard } from '../../components/scene-card/scene-card';
 import { TableStore } from '../../table.store';
 
+/** Tela da mesa: cena, grupo, feed ao vivo e as ações. */
 @Component({
   selector: 'dv-table-page',
   imports: [

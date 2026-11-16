@@ -58,15 +58,16 @@ uma feature não importa outra; só `shared/ui` importa o CDK. Isso é imposto p
 
 Só do front, em `frontend/app/`; o backend continua só com a stdlib.
 
-| Dependência | Por quê |
-|---|---|
-| `@angular/*` (core, common, router, platform-browser, compiler, build, cli, compiler-cli) | o framework escolhido |
-| `@angular/cdk` | comportamento acessível (overlay, diálogo, foco) por baixo dos componentes `dv-*` |
-| `rxjs` | exigido pelo Angular (HttpClient e router) |
-| `vitest` 5 e `jsdom` 30 | executor de testes padrão do Angular e o DOM dele |
-| `tslib` | exigido pelo Angular |
-| `eslint`, `@eslint/js`, `typescript-eslint`, `angular-eslint` | camadas, proibições de segurança e acessibilidade de template |
-| `@fontsource/im-fell-english`, `@fontsource/special-elite` | as duas fontes (licença OFL) copiadas pelo build: nenhuma carga de CDN externa |
+| Dependência                                                                               | Por quê                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@angular/*` (core, common, router, platform-browser, compiler, build, cli, compiler-cli) | o framework escolhido                                                                                                                                                         |
+| `@angular/cdk`                                                                            | comportamento acessível (overlay, diálogo, foco) por baixo dos componentes `dv-*`                                                                                             |
+| `rxjs`                                                                                    | exigido pelo Angular (HttpClient e router)                                                                                                                                    |
+| `vitest` 5 e `jsdom` 30                                                                   | executor de testes padrão do Angular e o DOM dele                                                                                                                             |
+| `tslib`                                                                                   | exigido pelo Angular                                                                                                                                                          |
+| `eslint`, `@eslint/js`, `typescript-eslint`, `angular-eslint`                             | camadas, proibições de segurança e acessibilidade de template                                                                                                                 |
+| `eslint-plugin-jsdoc` (só dev)                                                            | impõe JSDoc nos exports do app e proíbe tipo dentro do JSDoc ([rule 10](../.agents/rules/10-documentacao.md)); compatível com ESLint 10 e TypeScript 6, nada vai ao navegador |
+| `@fontsource/im-fell-english`, `@fontsource/special-elite`                                | as duas fontes (licença OFL) copiadas pelo build: nenhuma carga de CDN externa                                                                                                |
 
 As versões ficam fixadas em `frontend/app/package-lock.json`: Angular 22 e TypeScript ~6.0 (a faixa que o Angular
 aceita). **Duas versões de TypeScript convivem:** `frontend/` usa o 7 só para os tipos do contrato e o `tsc` dele não

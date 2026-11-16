@@ -5,6 +5,7 @@
 import eslint from '@eslint/js';
 import angular from 'angular-eslint';
 import { defineConfig } from 'eslint/config';
+import jsdoc from 'eslint-plugin-jsdoc';
 import tseslint from 'typescript-eslint';
 
 /** Features existentes: um teste (tools/eslint-rules.spec.ts) falha se uma pasta nova não estiver aqui. */
@@ -110,6 +111,26 @@ export default defineConfig([
       })),
     ),
   })),
+  // Documentação (rule 10): JSDoc sem tipos em tudo que o app exporta; `@param` só quando acrescenta algo.
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['**/*.spec.ts', 'src/app/testing/**'],
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          publicOnly: true,
+          require: { ClassDeclaration: true, FunctionDeclaration: true },
+          contexts: ['TSInterfaceDeclaration', 'TSTypeAliasDeclaration'],
+        },
+      ],
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/check-param-names': 'error',
+      'jsdoc/no-types': 'error',
+      'jsdoc/check-alignment': 'error',
+    },
+  },
   {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],

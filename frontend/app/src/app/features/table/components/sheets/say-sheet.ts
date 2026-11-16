@@ -8,6 +8,7 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
 export const MAX_SAY = 500;
 
+/** Folha de falar com o mestre de IA; devolve o texto escrito. */
 @Component({
   selector: 'dv-say-sheet',
   imports: [DvSheetHead, DvButton, DvField, DvInput],

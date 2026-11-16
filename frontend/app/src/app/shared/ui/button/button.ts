@@ -1,5 +1,6 @@
 import { Directive, input } from '@angular/core';
 
+/** O visual de um botão: destaque ou discreto. */
 export type ButtonVariant = 'primary' | 'ghost';
 
 /**

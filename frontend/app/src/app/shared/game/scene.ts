@@ -1,5 +1,6 @@
 import type { Campaign, CampaignView, NpcState } from '@contract/api_responses';
 
+/** A cena atual: local, descrição, saídas e NPCs presentes. */
 export interface Scene {
   name: string;
   description: string;

@@ -11,6 +11,7 @@ export abstract class SheetRef<R = unknown> {
   abstract close(result?: R): void;
 }
 
+/** Como abrir uma folha: o nome para o leitor de tela e os dados para o componente. */
 export interface SheetOptions {
   /** Nome da folha para o leitor de tela. */
   label: string;

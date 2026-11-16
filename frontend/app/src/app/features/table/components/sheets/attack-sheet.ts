@@ -9,12 +9,14 @@ import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
+/** O que a folha de atacar recebe: armas, alvos e modificadores. */
 export interface AttackSheetData {
   weapons: WeaponInfo[];
   targets: AttackTarget[];
   modifiers: ModifierInfo[];
 }
 
+/** Folha de atacar: escolhe alvo e arma e devolve a linha de comando. */
 @Component({
   selector: 'dv-attack-sheet',
   imports: [DvSheetHead, DvButton, DvField, DvInput],

@@ -4,10 +4,12 @@ import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvButton } from '@shared/ui/button/button';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 
+/** O que a folha de ir recebe: as saídas do local. */
 export interface GoSheetData {
   exits: { id: string; name: string }[];
 }
 
+/** Folha de ir para outro local; devolve a linha de comando. */
 @Component({
   selector: 'dv-go-sheet',
   imports: [DvSheetHead, DvButton],

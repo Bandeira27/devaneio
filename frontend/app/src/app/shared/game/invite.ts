@@ -1,5 +1,6 @@
 /** O convite de uma mesa: o link `/#/entrar/<mesa>/<código>`. Tudo isso fica no fragmento: nunca vai ao servidor nem ao log. */
 
+/** A mesa e o código que vêm no link de convite. */
 export interface Invite {
   tableId: string;
   code: string;
@@ -10,10 +11,12 @@ const CODE = /^[A-Za-z0-9_-]{1,64}$/;
 const IN_LINK = /entrar\/([a-f0-9]{16})\/([A-Za-z0-9_-]{1,64})(?![A-Za-z0-9_-])/;
 const PAIR = /^([a-f0-9]{16})[\s/:]+([A-Za-z0-9_-]{1,64})$/;
 
+/** Se o texto tem o formato de id de mesa que o servidor gera. */
 export function isTableId(text: string): boolean {
   return TABLE_ID.test(text);
 }
 
+/** Se o texto tem o formato de código de convite. */
 export function isInviteCode(text: string): boolean {
   return CODE.test(text);
 }
@@ -27,6 +30,7 @@ export function parseInvite(text: string): Invite | null {
   return tableId !== undefined && code !== undefined ? { tableId, code } : null;
 }
 
+/** O link de convite; o código vai no fragmento, que não chega ao servidor. */
 export function inviteLink(origin: string, tableId: string, code: string): string {
   return `${origin}/#/entrar/${tableId}/${code}`;
 }
