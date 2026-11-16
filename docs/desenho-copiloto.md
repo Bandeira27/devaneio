@@ -60,4 +60,4 @@ invisíveis, e corta em 2000 caracteres, porque chega à tela do anfitrião.
 1. Este documento.
 2. Contexto, prompt e `ask_copilot` (`llm/copilot.py`) e `clean_multiline`.
 3. Mesa de consulta no servidor, vaga e intervalo, rota, modelos de API, contrato e aviso.
-4. README, regra 05 e rumo.
+4. Documentação (`docs/api-http.md`), regra 05 e rumo.

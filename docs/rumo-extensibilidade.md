@@ -98,5 +98,5 @@ Referência para quem for mexer: o que o usuário **não** estende ainda.
 - **Autor leigo:** mensagens de erro claras, duplicar e editar em vez de criar do zero, importar e exportar
   pacotes.
 - **Texto livre de campanha** (`description`) vai ao LLM e pode chegar a todos pela fala: quanto mais livre o
-  conteúdo, mais pesa. A orientação de autoria está no README.
+  conteúdo, mais pesa. A orientação de autoria está em [`sistema-de-regras.md`](sistema-de-regras.md).
 - **Partidas salvas** referenciam a campanha por caminho: mudar o conteúdo exige uma política de versão.
