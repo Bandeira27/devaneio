@@ -1,4 +1,18 @@
-import { CommandError, attack, check, go, join, quote } from './commands';
+import {
+  CommandError,
+  END_TURN,
+  MAX_SOURCE,
+  REST,
+  attack,
+  beat,
+  check,
+  go,
+  heal,
+  hurt,
+  join,
+  quote,
+  reveal,
+} from './commands';
 import { MAX_ARG, normalizeName } from './names';
 
 describe('comandos', () => {
@@ -65,5 +79,28 @@ describe('comandos', () => {
       expect(() => join('ana', 'a‮b', {})).toThrow('controle');
       expect(() => join('ana', 'a\u0007b', {})).toThrow('controle');
     });
+  });
+});
+
+describe('comandos do anfitrião', () => {
+  it('monta marco, revelar, ferir, curar, fim e descansar', () => {
+    expect(beat('ativar', 'chegada')).toBe('marco ativar chegada');
+    expect(beat('concluir', 'x')).toBe('marco concluir x');
+    expect(reveal('altar')).toBe('revelar altar');
+    expect(hurt('bram', 3)).toBe('ferir bram 3');
+    expect(hurt('bram', 3, '  a queda ')).toBe('ferir bram 3 "a queda"');
+    expect(heal('bia', 2, 'poção "forte"')).toBe('curar bia 2 "poção \\"forte\\""');
+    expect(END_TURN).toBe('fim');
+    expect(REST).toBe('descansar');
+  });
+
+  it('recusa id, quantia e fonte que virariam outro comando', () => {
+    expect(() => beat('ativar', 'a b')).toThrow(CommandError);
+    expect(() => reveal('x; fim')).toThrow(CommandError);
+    expect(() => hurt('bram; fim', 1)).toThrow(CommandError);
+    for (const amount of [0, -1, 1.5, 1000, Number.NaN]) {
+      expect(() => hurt('bram', amount)).toThrow(CommandError);
+    }
+    expect(() => heal('bia', 1, 'a'.repeat(MAX_SOURCE + 1))).toThrow(CommandError);
   });
 });

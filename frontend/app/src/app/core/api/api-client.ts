@@ -6,6 +6,7 @@ import type {
   CampaignSummary,
   CampaignView,
   CommandResult,
+  CopilotAnswer,
   EventsView,
   InvitePreview,
   RulesView,
@@ -16,6 +17,7 @@ import type {
 } from '@contract/api_responses';
 import type {
   CommandRequest,
+  CopilotRequest,
   CreateTableRequest,
   InvitePreviewRequest,
   JoinRequest,
@@ -83,6 +85,15 @@ export class ApiClient {
 
   say(tableId: string, request: SayRequest): Observable<SayResult> {
     return this.http.post<SayResult>(`${this.base(tableId)}/say`, request, this.as(tableId));
+  }
+
+  /** Pergunta ao copiloto (só o anfitrião): a resposta volta só para quem perguntou. */
+  copilot(tableId: string, request: CopilotRequest): Observable<CopilotAnswer> {
+    return this.http.post<CopilotAnswer>(
+      `${this.base(tableId)}/copilot`,
+      request,
+      this.as(tableId),
+    );
   }
 
   private base(tableId: string): string {
