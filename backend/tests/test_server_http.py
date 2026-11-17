@@ -11,6 +11,7 @@ from itertools import count
 import pytest
 
 from conftest import CAMPAIGN_PATH
+from devaneio.game import new_game, save_game
 from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.__main__ import main
@@ -330,6 +331,69 @@ def test_a_refused_command_leaves_the_table_as_it_was(client):
     client.call("POST", path, body={"line": "testar lutar impossivel", "revision": 2}, auth=bia)
     _, after, _ = client.call("GET", f"/tables/{table_id}", auth=host)
     assert after == before
+
+
+def test_invite_preview_answers_with_the_title_and_nothing_else(client):
+    _, created, _ = create(client)
+    path = f"/tables/{created['table_id']}/preview"
+    status, body, _ = client.call("POST", path, body={"invite_code": "convite"})  # sem token
+    assert (status, body) == (200, {"title": "A Sombra do Vale"})
+
+
+def test_invite_preview_errors_do_not_say_whether_the_table_exists(client):
+    _, created, _ = create(client)
+    wrong = client.call(
+        "POST", f"/tables/{created['table_id']}/preview", body={"invite_code": "errado"}
+    )
+    unknown = client.call(
+        "POST", "/tables/0123456789abcdef/preview", body={"invite_code": "convite"}
+    )
+    assert wrong[0] == unknown[0] == 401
+    assert wrong[1] == unknown[1]  # mesmo código e mesma mensagem
+    assert wrong[1]["error"]["code"] == "invalid_invite"
+
+
+def test_invite_preview_needs_a_json_content_type(client):
+    _, created, _ = create(client)
+    status, body, _ = client.call(
+        "POST",
+        f"/tables/{created['table_id']}/preview",
+        raw=b'{"invite_code": "convite"}',
+        headers={"Content-Type": "text/plain"},
+    )
+    assert (status, body["error"]["code"]) == (415, "unsupported_media_type")
+
+
+@pytest.mark.parametrize("body", [{}, {"invite_code": "x" * 65}])
+def test_invite_preview_rejects_an_invalid_body(client, body):
+    _, created, _ = create(client)
+    status, got, _ = client.call("POST", f"/tables/{created['table_id']}/preview", body=body)
+    assert (status, got["error"]["code"]) == (400, "bad_request")
+
+
+def test_invite_preview_rejects_empty_extra_and_long_codes_but_takes_sixty_four(client):
+    _, created, _ = create(client)
+    path = f"/tables/{created['table_id']}/preview"
+    for bad in ({"invite_code": ""}, {"invite_code": "convite", "name": "Bia"}):
+        status, body, _ = client.call("POST", path, body=bad)
+        assert (status, body["error"]["code"]) == (400, "bad_request")
+    status, body, _ = client.call("POST", path, body={"invite_code": "x" * 64})
+    assert (status, body["error"]["code"]) == (401, "invalid_invite")  # passou da validação
+
+
+def test_invite_preview_refuses_get_with_405(client):
+    _, created, _ = create(client)
+    status, body, _ = client.call("GET", f"/tables/{created['table_id']}/preview")
+    assert (status, body["error"]["code"]) == (405, "method_not_allowed")
+
+
+def test_invite_preview_of_a_save_without_table_is_401(client, service):
+    table_id = "0123456789abcdef"
+    save_game(new_game(CAMPAIGN_PATH, service.storage.data_dir / f"{table_id}.json", seed=7))
+    status, body, _ = client.call(
+        "POST", f"/tables/{table_id}/preview", body={"invite_code": "convite"}
+    )
+    assert (status, body["error"]["code"]) == (401, "invalid_invite")
 
 
 def test_join_errors(client):

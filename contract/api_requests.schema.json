@@ -72,6 +72,22 @@
       "title": "CreateTableRequest",
       "type": "object"
     },
+    "InvitePreviewRequest": {
+      "additionalProperties": false,
+      "description": "Espiar para onde um convite leva: só o código de convite.",
+      "properties": {
+        "invite_code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "invite_code"
+      ],
+      "title": "InvitePreviewRequest",
+      "type": "object"
+    },
     "JoinRequest": {
       "additionalProperties": false,
       "description": "Entrar numa mesa: o código de convite e o nome.",
@@ -125,6 +141,9 @@
     "join_table": {
       "$ref": "#/$defs/JoinRequest"
     },
+    "invite_preview": {
+      "$ref": "#/$defs/InvitePreviewRequest"
+    },
     "command": {
       "$ref": "#/$defs/CommandRequest"
     },
@@ -138,6 +157,7 @@
   "required": [
     "create_table",
     "join_table",
+    "invite_preview",
     "command",
     "say",
     "copilot"

@@ -2,10 +2,18 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '@core/api/api-client';
-import { messageOf } from '@core/api/api-failure';
+import { ApiFailure, messageOf } from '@core/api/api-failure';
 import { SessionStore } from '@core/session/session-store';
 import { normalizeName, validateName } from '@shared/game/names';
 import { isInviteCode } from '@shared/game/invite';
+
+/** O que a tela sabe da mesa a que o convite leva. */
+export type InvitePreviewState =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'ready'; title: string }
+  | { kind: 'invalid'; message: string }
+  | { kind: 'unavailable' };
 
 /** Estado da tela de entrar numa mesa pelo convite. */
 @Injectable()
@@ -21,6 +29,33 @@ export class JoinStore {
   readonly codeError = signal('');
   readonly joining = signal(false);
   readonly error = signal('');
+  /** Para onde o convite leva (o nome da mesa), perguntado uma vez ao abrir o link; falha de rede não bloqueia a entrada. */
+  readonly preview = signal<InvitePreviewState>({ kind: 'idle' });
+
+  /**
+   * Pergunta ao servidor o nome da mesa do convite. Só quando o código tem o formato certo e uma vez por abertura da tela
+   * (nunca a cada tecla: cada tentativa errada custa uma leitura da mesa no servidor). Convite recusado (401) vira
+   * `invalid`; qualquer outra falha vira `unavailable` e a tela segue com o texto genérico.
+   */
+  async loadPreview(): Promise<void> {
+    const code = this.code().trim();
+    if (this.preview().kind !== 'idle' || !isInviteCode(code)) {
+      return; // uma vez por abertura da tela, e só com um código de formato válido
+    }
+    this.preview.set({ kind: 'loading' });
+    try {
+      const { title } = await firstValueFrom(
+        this.api.invitePreview(this.tableId(), { invite_code: code }),
+      );
+      this.preview.set({ kind: 'ready', title });
+    } catch (error) {
+      this.preview.set(
+        error instanceof ApiFailure && error.status === 401
+          ? { kind: 'invalid', message: messageOf(error) }
+          : { kind: 'unavailable' },
+      );
+    }
+  }
 
   setName(value: string): void {
     this.name.set(value);

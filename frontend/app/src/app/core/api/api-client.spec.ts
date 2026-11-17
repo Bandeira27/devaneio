@@ -55,6 +55,15 @@ describe('ApiClient', () => {
     expect(join.request.method).toBe('POST');
   });
 
+  it('a prévia do convite é um POST sem Authorization, com o convite no corpo (nunca na URL)', () => {
+    void firstValueFrom(api.invitePreview(TABLE, { invite_code: 'segredo-do-convite' }));
+    const preview = http.expectOne(`/tables/${TABLE}/preview`);
+    expect(preview.request.method).toBe('POST');
+    expect(preview.request.headers.has('Authorization')).toBe(false);
+    expect(preview.request.body).toEqual({ invite_code: 'segredo-do-convite' });
+    expect(preview.request.urlWithParams).not.toContain('segredo');
+  });
+
   it('não manda token de uma mesa que o navegador não conhece', () => {
     void firstValueFrom(api.table('b'.repeat(16))).catch(() => undefined);
     expect(http.expectOne(`/tables/${'b'.repeat(16)}`).request.headers.has('Authorization')).toBe(

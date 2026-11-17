@@ -11,6 +11,7 @@
 
 .dv-lede {
   margin: 0;
+  overflow-wrap: anywhere; /* o nome de uma mesa é texto livre */
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
   line-height: var(--dv-leading-narration);

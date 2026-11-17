@@ -48,9 +48,10 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `OSError`) vira `500 {"code": "internal"}` com traceback só no stderr: a mensagem original cita caminhos e
     trechos do arquivo. Segredos de NPC em `GET .../campaign` só para o anfitrião. `LlmConfig.host` e
     `description` nunca trazem usuário e senha da URL.
-16. **Convite e visão por papel**: no `POST .../players`, mesa inexistente e convite errado respondem igual (401) e o
-    limite de 8 jogadores só vale depois do convite (o `GET .../{id}` sem token ainda revela se a mesa existe: aceito,
-    o id tem 64 bits). Quem não é anfitrião só vê o que o `olhar` do CLI mostra: `TableView.state` é
+16. **Convite e visão por papel**: no `POST .../players` e no `POST .../preview` (que só devolve o título da campanha a
+    quem tem o convite), mesa inexistente e convite errado respondem igual (401). O limite de 8 jogadores só vale
+    depois do convite, e a prévia nem o consulta. O `GET .../{id}` sem token ainda revela se a mesa existe: aceito,
+    o id tem 64 bits. Quem não é anfitrião só vê o que o `olhar` do CLI mostra: `TableView.state` é
     `PlayerStateView` (sem `rng_seed`/`rng_draws`, que tornam o próximo sorteio previsível, sem `events` com `data`,
     sem `facts`, NPCs só do local e só como `NpcView`) e `GET .../campaign` é `CampaignView`. Campo novo em
     `GameState` ou `Campaign` não chega ao jogador até entrar de propósito nas visões;
@@ -108,7 +109,8 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     hashes vivem no arquivo); `ThreadingHTTPServer` não limita conexões simultâneas; `max_tables` é conferido
     sem lock global (duas criações simultâneas podem passar o teto em uma). Não há limite de tentativas no
     convite: por isso ele tem 96 bits (`token_urlsafe(12)`). Uma tentativa errada de convite custa uma carga da
-    partida sob o lock da mesa.
+    partida sob o lock da mesa, e vale para `POST .../players` e para `POST .../preview` (a prévia é um segundo canal
+    de tentativas, com o mesmo custo e a mesma proteção; o app só a chama uma vez, ao abrir o link).
 
 ## Copiloto do anfitrião (`server/copilot.py`, `llm/copilot.py`)
 

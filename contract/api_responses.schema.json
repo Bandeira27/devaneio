@@ -924,6 +924,20 @@
       "title": "GameStatus",
       "type": "string"
     },
+    "InvitePreview": {
+      "additionalProperties": false,
+      "description": "O que um convite válido revela antes de entrar: o nome da mesa (o título da campanha), e nada mais.",
+      "properties": {
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "InvitePreview",
+      "type": "object"
+    },
     "LlmView": {
       "additionalProperties": false,
       "description": "O LLM da mesa como os jogadores o veem.\n\nO LLM é do processo do servidor (ambiente de quem o roda); os jogadores veem se está ligado\ne para onde o contexto da partida vai, antes de entrar.",
@@ -1717,6 +1731,9 @@
     "table_joined": {
       "$ref": "#/$defs/TableJoined"
     },
+    "invite_preview": {
+      "$ref": "#/$defs/InvitePreview"
+    },
     "command_result": {
       "$ref": "#/$defs/CommandResult"
     },
@@ -1747,6 +1764,7 @@
     "table",
     "table_created",
     "table_joined",
+    "invite_preview",
     "command_result",
     "say_result",
     "copilot_answer",

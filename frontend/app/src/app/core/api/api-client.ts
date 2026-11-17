@@ -7,6 +7,7 @@ import type {
   CampaignView,
   CommandResult,
   EventsView,
+  InvitePreview,
   RulesView,
   SayResult,
   TableCreated,
@@ -16,6 +17,7 @@ import type {
 import type {
   CommandRequest,
   CreateTableRequest,
+  InvitePreviewRequest,
   JoinRequest,
   SayRequest,
 } from '@contract/api_requests';
@@ -33,6 +35,11 @@ export class ApiClient {
 
   createTable(request: CreateTableRequest): Observable<TableCreated> {
     return this.http.post<TableCreated>('/tables', request);
+  }
+
+  /** O nome da mesa para quem tem o convite, antes de entrar (sem `Authorization`: quem entra ainda não tem token). */
+  invitePreview(tableId: string, request: InvitePreviewRequest): Observable<InvitePreview> {
+    return this.http.post<InvitePreview>(`${this.base(tableId)}/preview`, request);
   }
 
   joinTable(tableId: string, request: JoinRequest): Observable<TableJoined> {
