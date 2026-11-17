@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 /**
  * Os passos de um caminho curto (Mesa, Personagem, Jogar): mostra onde a pessoa está e quanto falta. Lista ordenada
  * com `aria-label="Passos"`; o passo atual leva `aria-current="step"` e os anteriores aparecem como feitos. Informação
- * nunca só por cor: o atual tem texto "(agora)" para o leitor de tela e traço cheio; os feitos, um risco.
+ * nunca só por cor: o atual diz "(agora)" e os anteriores "(feito)" para o leitor de tela; na tela, traço cheio e risco.
  *
  * Contrato: entradas `steps` (rótulos, na ordem) e `current` (índice, de 0); sem teclado nem movimento; em tela estreita
  * quebra em linhas, sem rolagem horizontal.
@@ -11,8 +11,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'dv-steps',
   template: `
-    <ol aria-label="Passos">
-      @for (step of steps(); track step; let i = $index) {
+    <ol role="list" aria-label="Passos">
+      @for (step of steps(); track $index; let i = $index) {
         <li
           [class.done]="i < current()"
           [class.current]="i === current()"
@@ -23,6 +23,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
             >{{ step }}
             @if (i === current()) {
               <span class="dv-visually-hidden"> (agora)</span>
+            } @else if (i < current()) {
+              <span class="dv-visually-hidden"> (feito)</span>
             }
           </span>
         </li>

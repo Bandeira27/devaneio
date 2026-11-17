@@ -26,6 +26,8 @@ describe('DvSteps', () => {
     expect(items[1]?.textContent).toContain('Personagem');
     expect(items[1]?.textContent).toContain('(agora)');
     expect(items[0]?.textContent).not.toContain('(agora)');
+    expect(items[0]?.textContent).toContain('(feito)'); // o feito também se diz, não só se risca
+    expect(items[2]?.textContent).not.toContain('(feito)');
   });
 
   it('os passos antes do atual aparecem como feitos, e mudam com a entrada', async () => {

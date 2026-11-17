@@ -6,12 +6,6 @@
   list-style: none;
 }
 
-.saved__link {
-  display: grid;
-  color: var(--dv-text);
-  text-decoration: none;
-}
-
 .saved__title {
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
@@ -52,27 +46,12 @@
   gap: var(--dv-space-2);
 }
 
-.home-page {
-  display: grid;
-  gap: var(--dv-space-6);
-  max-width: var(--dv-measure-page);
-  margin-inline: auto;
-}
-
-.home__cover,
-.home__start {
-  display: grid;
-  align-content: start;
-  gap: var(--dv-space-4);
-}
-
-/* Na tela larga: a capa (a campanha, as mesas guardadas) à esquerda e as ações à direita, sempre lado a lado. */
-@media (min-width: 64rem) {
-  .home-page {
-    max-width: var(--dv-measure-home);
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    gap: var(--dv-space-8);
-    align-items: start;
-    padding-top: var(--dv-space-6);
-  }
+/* Rótulo curto em caixa-alta, na fonte de notas. */
+.home__eyebrow {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-text-muted);
 }

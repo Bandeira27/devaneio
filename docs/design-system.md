@@ -60,9 +60,9 @@ vai em nota fraca: vira selo com texto.
 
 Móvel primeiro. Os pontos de quebra são **fixos e documentados** (CSS não aceita variável em `@media`): **64rem** (duas
 colunas: a lateral da mesa, a home com mesas) é o que existe hoje; **90rem** (três painéis) entra com a mesa larga. O
-contêiner do app em tela larga é `--dv-measure-shell` (hoje o cabeçalho e as manchas; as telas passam a ocupá-lo com
-painéis lado a lado), em vez de esticar a coluna do celular. Medidas de leitura: `measure-page`, `-table`, `-home`,
-`-feed`, `-sheet`, `-dialog`, `-ornament`. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
+contêiner do app em tela larga é `--dv-measure-wide` (hoje o cabeçalho e as manchas; as telas passam a ocupá-lo com
+painéis lado a lado), em vez de esticar a coluna do celular. Medidas de leitura: `measure-page`, `-table`,
+`-feed`, `-wide`, `-sheet`, `-dialog`, `-ornament`. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
 Áreas seguras (`env(safe-area-inset-*)`) e `dvh` onde há barra fixa.
 
 ## Componentes
@@ -97,7 +97,7 @@ usam `dvLoading` e mantêm o rótulo.
 64rem, o contexto à esquerda (passos, título em `.dv-display`, texto, ornamento, resumo da ficha) e a tarefa à direita.
 A **home** é capa + painel: à esquerda a apresentação, a premissa da campanha e as mesas guardadas ("Continuar" na mais
 recente), à direita criar mesa e "Tenho um convite" (recolhido). O cabeçalho e todas essas telas se alinham ao mesmo
-contêiner (`--dv-measure-shell`).
+contêiner (`--dv-measure-wide`).
 
 **Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-title`, `.dv-section`, marca em `text-display`),
 rótulos em caixa-alta com espaçamento (`tracking-label`), superfície, ornamento e cor com papel único (rosa = ação e

@@ -23,10 +23,12 @@ describe('Home', () => {
     expect((root().querySelector('select') as HTMLSelectElement).value).toBe('sombra-do-vale');
   });
 
-  it('a capa (apresentação e campanha) e o painel de ações ficam lado a lado, com ou sem mesas guardadas', async () => {
+  it('a capa (apresentação e campanha) vem antes do painel de ações, com ou sem mesas guardadas', async () => {
     const { root } = await open();
-    const columns = Array.from(root().querySelectorAll('.home-page > *')).map((el) => el.className);
-    expect(columns).toEqual(['home__cover', 'home__start']);
+    const cover = root().querySelector('.dv-stage__context') as HTMLElement;
+    const actions = root().querySelector('.dv-stage__task') as HTMLElement;
+    expect(cover.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(actions.querySelector('form')).not.toBeNull();
     expect(root().querySelector('.home__saved')).toBeNull(); // sem mesas, a capa não tem a lista
     expect(root().querySelector('h1')?.textContent).toContain('mestre que tece a história');
   });

@@ -12,15 +12,16 @@
   margin-inline: auto;
 }
 
-/*
- * O palco das telas de entrada (entrar, convite, personagem): no celular uma coluna (primeiro a tarefa, o contexto some
- * ou vem depois); a partir de 64rem, o contexto à esquerda e a tarefa à direita, lado a lado.
- */
+/* O palco da home e das telas de entrada: uma coluna; a partir de 64rem, contexto e tarefa lado a lado. */
 .dv-stage {
   display: grid;
   gap: var(--dv-space-6);
   max-width: var(--dv-measure-page);
   margin-inline: auto;
+}
+
+.dv-stage__extra {
+  display: none;
 }
 
 .dv-stage__context,
@@ -31,8 +32,12 @@
 }
 
 @media (min-width: 64rem) {
+  .dv-stage__extra {
+    display: block;
+  }
+
   .dv-stage {
-    max-width: var(--dv-measure-stage);
+    max-width: var(--dv-measure-wide);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
     gap: var(--dv-space-8);
     align-items: start;

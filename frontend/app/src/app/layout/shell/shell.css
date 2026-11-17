@@ -12,7 +12,7 @@
 
 /*
  * Manchas de oxidação: só decoração, atrás de tudo e fora do caminho do toque e do leitor de tela. Em tela larga
- * acompanham a borda do contêiner do app (`--dv-measure-shell`), não a da janela; em tela estreita, a da janela.
+ * acompanham a borda do contêiner do app (`--dv-measure-wide`), não a da janela; em tela estreita, a da janela.
  */
 .shell::before,
 .shell::after {
@@ -27,14 +27,14 @@
 
 .shell::before {
   top: 6rem;
-  right: max(-2rem, calc((100% - var(--dv-measure-shell)) / 2 - 3rem));
+  right: max(-2rem, calc((100% - var(--dv-measure-wide)) / 2 - 3rem));
   width: 7rem;
   height: 7rem;
 }
 
 .shell::after {
   bottom: 8rem;
-  left: max(-3rem, calc((100% - var(--dv-measure-shell)) / 2 - 4rem));
+  left: max(-3rem, calc((100% - var(--dv-measure-wide)) / 2 - 4rem));
   width: 9rem;
   height: 9rem;
 }
@@ -55,7 +55,7 @@
 }
 
 .shell__inner {
-  max-width: var(--dv-measure-shell);
+  max-width: var(--dv-measure-wide);
   margin-inline: auto;
 }
 

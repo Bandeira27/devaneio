@@ -85,7 +85,7 @@ describe('Entrar na mesa', () => {
       'Convite',
     );
     expect(root().querySelector('.dv-stage__context h1')?.textContent).toContain('Entrar na mesa');
-    expect(root().querySelector('form.dv-stage__task')).not.toBeNull();
+    expect(root().querySelector('.dv-stage form')).not.toBeNull();
   });
 
   it('quem já entrou por este navegador vai direto para a mesa', async () => {

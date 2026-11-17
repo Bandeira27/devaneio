@@ -7,7 +7,6 @@ import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvOrnament } from '@shared/ui/ornament/ornament';
-import { DvSteps } from '@shared/ui/steps/steps';
 import { InviteStore } from '../../invite.store';
 import { fieldValue } from '@shared/ui/field/field-value';
 
@@ -23,7 +22,6 @@ import { fieldValue } from '@shared/ui/field/field-value';
     DvInput,
     DvNotice,
     DvOrnament,
-    DvSteps,
   ],
   providers: [InviteStore],
   templateUrl: './invite-page.html',

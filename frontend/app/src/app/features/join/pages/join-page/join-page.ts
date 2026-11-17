@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
+import { GUEST_STEPS } from '@shared/game/entry-steps';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
@@ -18,6 +19,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 })
 export class JoinPage implements OnInit {
   protected readonly fieldValue = fieldValue;
+  protected readonly steps = GUEST_STEPS;
   /** Da rota: o id da mesa e o código do convite (o código é opcional: quem entra sem o link o cola). */
   readonly tableId = input.required<string>();
   readonly invite = input<string>();

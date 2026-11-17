@@ -107,18 +107,11 @@
   --dv-measure-page: 36rem;
   --dv-measure-table: 40rem;
   --dv-measure-sheet: 40rem;
-  --dv-measure-shell: var(
-    --dv-measure-wide
-  ); /* o contêiner do app: o cabeçalho e todas as telas largas se alinham a ele */
-  --dv-measure-home: var(--dv-measure-wide); /* a home: capa à esquerda, painéis à direita */
-  --dv-measure-stage: var(
-    --dv-measure-wide
-  ); /* entrar, convite e personagem: contexto à esquerda, tarefa à direita */
   --dv-measure-feed: 42rem;
   --dv-measure-ornament: 7.5rem; /* o filete com losango */
   --dv-measure-dialog: 32rem;
   --dv-rail-width: 22rem;
-  /* A mesa larga: lateral + respiro + feed. É a medida exata das colunas, para o cabeçalho e o conteúdo alinharem. */
+  /* O contêiner do app em tela larga: lateral + respiro + feed da mesa. É a medida exata das colunas; o cabeçalho, a home e a entrada se alinham a ela. */
   --dv-measure-wide: calc(var(--dv-rail-width) + var(--dv-space-6) + var(--dv-measure-feed));
   --dv-dock-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da barra de ações fixa */
   --dv-sheet-max-height: 85dvh;

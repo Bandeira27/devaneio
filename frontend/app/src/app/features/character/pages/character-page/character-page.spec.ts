@@ -113,7 +113,7 @@ describe('Personagem', () => {
     );
   });
 
-  it('os passos mostram que este é o segundo, e o aviso do mestre de IA vem depois do formulário', async () => {
+  it('os passos mostram que este é o segundo, e o aviso do mestre de IA é o último item do formulário', async () => {
     const { root } = await open(
       tableView({
         llm: { enabled: true, description: 'x', notice: 'Vai ao servidor.', secrets: false },

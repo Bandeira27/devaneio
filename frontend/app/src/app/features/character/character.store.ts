@@ -89,20 +89,21 @@ export class CharacterStore {
     }
   }
 
-  /** O resumo da ficha ao vivo: cada atributo com o valor escolhido (aparece ao lado do formulário na tela larga). */
+  /** O valor de cada atributo agora: o escolhido ou, se ainda não mexeram, o padrão. */
+  readonly effective = computed<Record<string, number>>(() =>
+    Object.fromEntries(
+      (this.rules()?.attributes ?? []).map((a) => [a.id, this.values()[a.id] ?? a.default]),
+    ),
+  );
+  /** Cada atributo com o valor escolhido, para o resumo da ficha. */
   readonly preview = computed<{ label: string; value: string }[]>(() =>
     (this.rules()?.attributes ?? []).map((a) => ({
       label: a.name,
-      value: String(this.values()[a.id] ?? a.default),
+      value: String(this.effective()[a.id]),
     })),
   );
   /** A soma dos atributos escolhidos. */
-  readonly total = computed(() =>
-    (this.rules()?.attributes ?? []).reduce(
-      (sum, a) => sum + (this.values()[a.id] ?? a.default),
-      0,
-    ),
-  );
+  readonly total = computed(() => Object.values(this.effective()).reduce((sum, v) => sum + v, 0));
 
   /** Os atributos diferem dos valores padrão: só então "Restaurar padrão" faz algo. */
   readonly changed = computed(() => {
@@ -111,9 +112,7 @@ export class CharacterStore {
       return false;
     }
     const defaults = attributeDefaults(rules);
-    return rules.attributes.some(
-      (a) => (this.values()[a.id] ?? a.default) !== (defaults[a.id] ?? a.default),
-    );
+    return rules.attributes.some((a) => this.effective()[a.id] !== (defaults[a.id] ?? a.default));
   });
 
   useDefaults(): void {

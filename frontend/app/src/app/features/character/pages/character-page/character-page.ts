@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { GUEST_STEPS, HOST_STEPS } from '@shared/game/entry-steps';
 import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvField } from '@shared/ui/field/field';
@@ -36,6 +37,8 @@ import { fieldValue } from '@shared/ui/field/field-value';
 })
 export class CharacterPage implements OnInit {
   protected readonly fieldValue = fieldValue;
+  protected readonly hostSteps = HOST_STEPS;
+  protected readonly guestSteps = GUEST_STEPS;
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(CharacterStore);

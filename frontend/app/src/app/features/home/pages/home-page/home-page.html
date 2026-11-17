@@ -1,5 +1,5 @@
-<div class="home-page">
-  <div class="home__cover">
+<div class="dv-stage">
+  <div class="dv-stage__context">
     <h1 class="dv-display">Uma mesa de RPG com um mestre que tece a história</h1>
     <p class="dv-lede">
       Crie uma mesa para o seu grupo ou entre numa que já começou. O mestre de IA narra, e as regras
@@ -7,7 +7,7 @@
     </p>
     @if (store.premise()) {
       <section class="home__premise-block" aria-label="Sobre a campanha">
-        <p class="dv-eyebrow">A campanha</p>
+        <p class="home__eyebrow">A campanha</p>
         <p class="home__premise">{{ store.premise() }}</p>
       </section>
     }
@@ -56,7 +56,7 @@
     }
   </div>
 
-  <div class="home__start">
+  <div class="dv-stage__task">
     <section class="dv-card dv-stack" aria-labelledby="titulo-criar">
       <h2 class="dv-section" id="titulo-criar">Criar uma mesa</h2>
       @switch (store.state()) {
@@ -100,7 +100,11 @@
               @if (store.createError()) {
                 <dv-notice kind="error">{{ store.createError() }}</dv-notice>
               }
-              <button dvButton="primary" type="submit" [dvLoading]="store.creating()">
+              <button
+                [dvButton]="store.saved().length > 0 ? '' : 'primary'"
+                type="submit"
+                [dvLoading]="store.creating()"
+              >
                 Criar mesa
               </button>
             </form>
@@ -109,9 +113,8 @@
       }
     </section>
 
-    <section class="dv-card" aria-labelledby="titulo-entrar">
-      <dv-disclosure label="Tenho um convite">
-        <h2 class="dv-visually-hidden" id="titulo-entrar">Entrar com um convite</h2>
+    <section class="dv-card" aria-label="Entrar com um convite">
+      <dv-disclosure label="Tenho um convite" [open]="store.inviteError() !== ''">
         <form class="dv-stack" (submit)="$event.preventDefault(); store.openInvite()">
           <dv-field
             label="Link do convite"

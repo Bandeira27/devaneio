@@ -43,13 +43,3 @@
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
-
-/* Rótulo curto em caixa-alta, na fonte de notas: nomeia sem competir com o conteúdo. */
-.dv-eyebrow {
-  margin: 0;
-  font-family: var(--dv-font-note);
-  font-size: var(--dv-text-note);
-  letter-spacing: var(--dv-tracking-label);
-  text-transform: uppercase;
-  color: var(--dv-text-muted);
-}
