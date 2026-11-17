@@ -9,10 +9,13 @@
     @switch (item.type) {
       @case ('turn') {
         <h3 class="feed__turn" [class.feed__turn--current]="item.current">
-          Turno {{ item.turn }}
-          @if (item.current) {
-            · agora
-          }
+          <dv-ornament />
+          <span class="feed__turn-label">
+            Turno {{ item.turn }}
+            @if (item.current) {
+              · agora
+            }
+          </span>
         </h3>
       }
       @case ('event') {

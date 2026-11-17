@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
@@ -21,6 +22,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { connectionBlockOf } from '../../table.derived';
 import { ActionDock } from '../../components/action-dock/action-dock';
+import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
 import { FeedList } from '../../components/feed-list/feed-list';
 import { PartyStrip } from '../../components/party-strip/party-strip';
@@ -31,6 +33,7 @@ import { TableStore } from '../../table.store';
 @Component({
   selector: 'dv-table-page',
   imports: [
+    CharacterCard,
     RouterLink,
     DvButton,
     DvDisclosure,
@@ -55,6 +58,7 @@ export class TablePage implements OnInit {
 
   private readonly documentTitle = inject(Title);
   private readonly feed = viewChild(FeedList);
+  private gone = false;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
@@ -70,6 +74,7 @@ export class TablePage implements OnInit {
 
   constructor() {
     effect(() => this.store.tableId.set(this.tableId()));
+    inject(DestroyRef).onDestroy(() => (this.gone = true));
     this.keepDockHeight();
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
@@ -87,6 +92,26 @@ export class TablePage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
     void this.store.load();
+  }
+
+  /**
+   * Vai por uma saída tocada na cena. A cena muda e o botão tocado (que recebe o foco de volta ao fechar a folha) deixa
+   * de existir: se o foco se perdeu, ele passa à história, onde a pessoa lê o que aconteceu.
+   */
+  protected async goThroughExit(exitId: string): Promise<void> {
+    await this.actions()?.go(exitId);
+    if (this.gone) {
+      return; // saiu da página com a folha aberta
+    }
+    afterNextRender(
+      () => {
+        const active = document.activeElement;
+        if (active === null || active === document.body || !active.isConnected) {
+          this.story()?.nativeElement.focus({ preventScroll: true });
+        }
+      },
+      { injector: this.injector },
+    );
   }
 
   private refocusHeading(): void {

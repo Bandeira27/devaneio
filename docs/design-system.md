@@ -59,7 +59,7 @@ vai em nota fraca: vira selo com texto.
 ## Layout e responsividade
 
 Móvel primeiro. Os pontos de quebra são **fixos e documentados** (CSS não aceita variável em `@media`): **64rem** (duas
-colunas: a lateral da mesa, a home com mesas) é o que existe hoje; **90rem** (três painéis) entra com a mesa larga. O
+colunas: a lateral da mesa, a home e a entrada); **90rem** (três painéis da mesa: o contêiner e as laterais mudam). O
 contêiner do app em tela larga é `--dv-measure-wide` (hoje o cabeçalho e as manchas; as telas passam a ocupá-lo com
 painéis lado a lado), em vez de esticar a coluna do celular. Medidas de leitura: `measure-page`, `-table`,
 `-feed`, `-wide`, `-sheet`, `-dialog`, `-ornament`. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
@@ -81,6 +81,7 @@ está no JSDoc de cada um.
 | `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                          |
 | `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                           |
 | `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                    |
+| `dv-character-card`                      | a ficha (pontos de vida, atributos, inventário): na folha "Ficha" e no painel da mesa larga          |
 | `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Jogar), com o atual marcado                         |
 | `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                 |
 | `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                         |
@@ -127,13 +128,18 @@ entram no build do app (`tsconfig.app.json`) nem exigem JSDoc.
 Pensada pela tarefa: quem joga lê a história o tempo todo e age uma vez por turno.
 
 - **Celular:** uma coluna. Situação do turno ("Sua vez de agir", "Você já agiu · falta Zed"), cena compacta (descrição
-  recolhida em "Ver a cena") e grupo, depois a história; a **barra de ações fica fixa no pé** (ícone sobre o rótulo, uma
-  linha só). A mesa mede a barra e publica `--dv-dock-height` na raiz; o `scroll-padding-bottom` do documento faz o fim
-  da história e o que ganha foco pararem acima dela. Quem leu mais acima vê "N novas" quando chega algo; tocar leva ao
-  fim e o foco vai para a história.
-- **Tela larga (≥ 64rem):** situação, cena e grupo ficam à esquerda e rolam com a página; só a barra de ações fica presa
-  no topo dessa coluna, com a história (42rem) ao lado. A página rola; **não há rolagem aninhada**.
-- **Ordem do HTML = ordem de leitura e de foco** (situação e cena, história, ações), sem `order` para reordenar. O
+  recolhida em "Ver a cena") e grupo, depois a história; a **barra de ações fica fixa no pé**: as ações do turno (Ir,
+  Testar, Atacar e, com LLM, Falar) em cima e, numa linha de apoio menor, Ficha e Comando. A mesa mede a barra e publica
+  `--dv-dock-height` na raiz; o `scroll-padding-bottom` do documento faz o fim da história e o que ganha foco pararem
+  acima dela. Quem leu mais acima vê "N novas" quando chega algo; tocar leva ao fim e o foco vai para a história.
+- **Tela larga (≥ 64rem):** situação, cena e grupo à esquerda e rolam com a página; só a barra de ações fica presa no
+  topo dessa coluna, com a história (42rem) ao lado. A página rola: **não há rolagem aninhada**.
+- **Tela muito larga (≥ 90rem): três painéis.** Cena e grupo à esquerda, a história no meio, e à direita a **ficha de quem
+  joga sempre visível** (`dv-character-card`, o mesmo conteúdo da folha "Ficha") com as ações presas logo abaixo; o botão
+  "Ficha" some. O contêiner do app cresce com o terceiro painel (`--dv-measure-wide` muda em 90rem).
+- **A história:** o turno é um cabeçalho de capítulo (ornamento e o número em itálico); a narração é o protagonista.
+  As **saídas da cena** são botões: tocar abre a folha de `Ir` já na confirmação do destino.
+- **Ordem do HTML = ordem de leitura e de foco** (situação e cena, história, minha ficha, ações), sem `order` para reordenar. O
   "Pular para as ações" (`.dv-skip`, visível só com foco) leva ao primeiro botão que ainda age. O `.shell` usa
   `overflow: clip` (não `hidden`) para não quebrar o `sticky`.
 - Sem conexão, sessão vencida ou mesa sumida, as ações ficam **bloqueadas com o motivo** (em vez de falhar com erro cru).

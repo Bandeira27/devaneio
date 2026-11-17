@@ -1,6 +1,29 @@
 <section class="dv-card dv-card--page scene" aria-label="Cena">
   <h2 class="dv-section">{{ scene().name }}</h2>
   <dv-key-value [items]="facts()" />
+  <div class="scene__exits">
+    <p class="scene__label">Saídas</p>
+    @if (scene().exits.length === 0) {
+      <p class="scene__none">nenhuma</p>
+    } @else {
+      <ul class="scene__list">
+        @for (exit of scene().exits; track exit.id) {
+          <li>
+            <button
+              dvButton
+              type="button"
+              [dvBlocked]="!canGo()"
+              [attr.aria-describedby]="blockedReasonId()"
+              (click)="exitChosen.emit(exit.id)"
+            >
+              <dv-icon name="go" size="sm" /><span class="dv-visually-hidden">Ir para </span
+              >{{ exit.name }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
   @if (scene().description) {
     <dv-disclosure label="Ver a cena" [open]="wide">
       <p class="dv-lede">{{ scene().description }}</p>

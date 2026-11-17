@@ -44,3 +44,15 @@
     font-size: var(--dv-text-ui);
   }
 }
+
+/* As ações do turno são o centro; Ficha e Comando são de apoio: mais discretas (texto em tinta). */
+.dock__minor .dv-button {
+  color: var(--dv-text-muted);
+}
+
+/* Na tela muito larga a ficha já está no painel ao lado: o botão sobra. */
+@media (min-width: 90rem) {
+  .dock__sheet {
+    display: none;
+  }
+}

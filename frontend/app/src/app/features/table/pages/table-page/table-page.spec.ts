@@ -85,14 +85,20 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(player.root().querySelector('.table__bar .table__invite')).toBeNull();
   });
 
-  it('a ordem do HTML é a de leitura: situação e cena, a história, as ações', async () => {
+  it('a ordem do HTML é a de leitura: situação e cena, a história, a minha ficha, as ações', async () => {
     const { root, events, settle } = await open();
     events('0').flush(eventsView(3));
     await settle();
     const order = Array.from(root().querySelectorAll('.table__layout > *')).map(
       (el) => el.className,
     );
-    expect(order).toEqual(['table__side', 'table__feed', 'table__dock']);
+    expect(order.map((c) => c.split(' ')[0])).toEqual([
+      'table__side',
+      'table__feed',
+      'table__mine',
+      'table__dock',
+    ]);
+    expect(root().querySelector('.table__mine')?.textContent).toContain('Bia'); // a ficha de quem joga
   });
 
   it('o log só anuncia depois da carga inicial', async () => {
@@ -128,6 +134,66 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
       Reflect.deleteProperty(document.documentElement, 'scrollHeight');
       Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
     }
+  });
+
+  it('tocar numa saída da cena abre a confirmação de Ir já no destino tocado; nada é enviado antes de confirmar', async () => {
+    const campaign = {
+      locations: [
+        {
+          id: 'vila',
+          name: 'Vila de Pedra',
+          description: 'Casas.',
+          connections: ['floresta', 'pantano'],
+          private_notes: [],
+        },
+        { id: 'floresta', name: 'Floresta', description: '', connections: [], private_notes: [] },
+        { id: 'pantano', name: 'Pântano', description: '', connections: [], private_notes: [] },
+      ],
+      npcs: [],
+    } as unknown as Campaign;
+    const { root, events, http, settle } = await open(withCharacter(), campaign);
+    events('0').flush(eventsView(3));
+    await settle();
+    const exits = Array.from(root().querySelectorAll('.scene__list button')) as HTMLButtonElement[];
+    expect(exits.length).toBe(2);
+    exits[1]?.click(); // a segunda saída
+    await settle();
+    const sheet = document.querySelector('.dv-sheet') as HTMLElement;
+    expect(sheet.querySelector('strong')?.textContent).toBe('Pântano'); // abriu no destino tocado, não na lista
+    http.expectNone(`/tables/${TABLE_ID}/commands`);
+    const back = Array.from(sheet.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Voltar',
+    ) as HTMLButtonElement;
+    back.click();
+    await settle();
+    expect(sheet.textContent).toContain('Floresta'); // "Voltar" leva à lista de destinos
+    (sheet.querySelector('[aria-label="Fechar"]') as HTMLButtonElement).click(); // sem escolher
+    await settle();
+    expect(document.querySelector('.dv-sheet')).toBeNull();
+  });
+
+  it('sem conexão, as saídas da cena também ficam bloqueadas', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(
+      { error: { code: 'x', message: 'falhou' } } as never,
+      { status: 500, statusText: 'x' } as never,
+    );
+    await settle();
+    const exit = root().querySelector('.scene__list button') as HTMLButtonElement;
+    expect(exit.getAttribute('aria-disabled')).toBe('true');
+    expect(exit.getAttribute('aria-describedby')).toBe('dock-reason'); // o motivo está ligado
+    exit.click();
+    await settle();
+    expect(document.querySelector('.dv-sheet')).toBeNull(); // o clique é engolido
+  });
+
+  it('o turno do feed é um cabeçalho de capítulo com ornamento', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3, [event(1, 1)]));
+    await settle();
+    const turn = root().querySelector('h3.feed__turn') as HTMLElement;
+    expect(turn.querySelector('dv-ornament')).not.toBeNull();
+    expect(turn.textContent).toContain('Turno 1');
   });
 
   it('sem conexão, as ações ficam bloqueadas com o motivo', async () => {

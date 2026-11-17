@@ -30,7 +30,7 @@
       </dv-badge>
     </p>
   }
-  <div class="dock__buttons">
+  <div class="dock__buttons dock__main">
     <button
       dvButton
       type="button"
@@ -58,9 +58,6 @@
     >
       <dv-icon name="attack" size="sm" />Atacar
     </button>
-    <button dvButton type="button" [disabled]="!store.character()" (click)="sheetOfCharacter()">
-      <dv-icon name="sheet" size="sm" />Ficha
-    </button>
     @if (store.canSay()) {
       <button
         dvButton="primary"
@@ -72,6 +69,17 @@
         <dv-icon name="say" size="sm" />Falar
       </button>
     }
+  </div>
+  <div class="dock__buttons dock__minor">
+    <button
+      dvButton
+      type="button"
+      class="dock__sheet"
+      [disabled]="!store.character()"
+      (click)="sheetOfCharacter()"
+    >
+      <dv-icon name="sheet" size="sm" />Ficha
+    </button>
     <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="command()">
       <dv-icon name="command" size="sm" />Comando
     </button>

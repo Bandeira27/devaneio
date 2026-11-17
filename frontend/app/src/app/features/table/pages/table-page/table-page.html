@@ -42,7 +42,7 @@
         <dv-notice kind="error">A partida terminou: derrota.</dv-notice>
       }
 
-      <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo, a história, e por último as ações. -->
+      <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
       <div class="table__layout">
         <div class="table__side">
           @if (store.turnStatus()) {
@@ -52,7 +52,12 @@
             </p>
           }
           @if (store.scene(); as scene) {
-            <dv-scene-card [scene]="scene" />
+            <dv-scene-card
+              [scene]="scene"
+              [canGo]="!store.blockedReason() && !store.actionBusy()"
+              [blockedReasonId]="store.blockedReason() ? 'dock-reason' : null"
+              (exitChosen)="goThroughExit($event)"
+            />
           }
           <dv-party-strip
             [characters]="store.party()"
@@ -80,6 +85,15 @@
             </dv-disclosure>
           }
         </section>
+
+        @if (store.character(); as mine) {
+          @if (store.rules(); as rules) {
+            <section class="table__mine dv-card dv-card--page" aria-label="Minha ficha">
+              <h2 class="dv-section">{{ mine.name }}</h2>
+              <dv-character-card [character]="mine" [rules]="rules" />
+            </section>
+          }
+        }
 
         <div #dock class="table__dock">
           @if (store.turnStatus()) {
