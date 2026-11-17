@@ -99,6 +99,35 @@ describe('Personagem', () => {
     expect(root().textContent).not.toContain('Dê um nome ao personagem.');
   });
 
+  it('o resumo da ficha acompanha o nome e os atributos, e o botão diz "Começar a jogar"', async () => {
+    const { root, click, type } = await open();
+    const preview = () => root().querySelector('.character__preview') as HTMLElement;
+    expect(preview().textContent).toContain('Bia');
+    expect(preview().textContent).toContain('Total de pontos: 4');
+    await click('[aria-label="Aumentar Força"]');
+    expect(preview().textContent).toContain('Total de pontos: 5');
+    await type('input[type="text"]', 'Dara');
+    expect(preview().querySelector('h2')?.textContent).toBe('Dara');
+    expect(root().querySelector('button[type="submit"]')?.textContent?.trim()).toBe(
+      'Começar a jogar',
+    );
+  });
+
+  it('os passos mostram que este é o segundo, e o aviso do mestre de IA é o último item do formulário', async () => {
+    const { root } = await open(
+      tableView({
+        llm: { enabled: true, description: 'x', notice: 'Vai ao servidor.', secrets: false },
+      }),
+    );
+    expect(root().querySelector('dv-steps li[aria-current="step"]')?.textContent).toContain(
+      'Personagem',
+    );
+    const form = root().querySelector('form') as HTMLElement;
+    expect(form.querySelector('dv-disclosure')?.textContent).toContain(
+      'O que o mestre de IA recebe',
+    );
+  });
+
   it('"Restaurar padrão" só vale depois de mexer nos atributos', async () => {
     const { root, click } = await open();
     const restore = () => root().querySelector('button[type="button"]:not([aria-label])');

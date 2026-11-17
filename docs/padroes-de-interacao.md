@@ -4,6 +4,12 @@ Como o app do jogador se comporta, para que telas diferentes se sintam iguais. O
 [`design-system.md`](design-system.md) e o movimento em [`movimento.md`](movimento.md). Quem revisa usa a skill
 [`review-ui`](../.agents/skills/review-ui/SKILL.md).
 
+## Caminho de entrada
+
+Criar uma mesa ou entrar por convite é um caminho curto de três passos (Mesa ou Convite, Personagem, Jogar), com os
+passos visíveis. A tela larga mostra o contexto ao lado da tarefa; o celular mostra a tarefa primeiro. O que é técnico
+(endereço do servidor, código do convite) fica em "Opções avançadas", recolhido: o centro do convite é o link e o "Copiar".
+
 ## Estados de uma tela ou região
 
 | Estado                        | O que mostrar                                                                       | Componente                         |

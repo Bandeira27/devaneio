@@ -79,6 +79,15 @@ describe('Entrar na mesa', () => {
     expect(root().querySelector('[role="alert"]')?.textContent).toContain(shown);
   });
 
+  it('mostra os passos (convite é o primeiro) e o contexto ao lado do formulário', async () => {
+    const { root } = await setup(url);
+    expect(root().querySelector('dv-steps li[aria-current="step"]')?.textContent).toContain(
+      'Convite',
+    );
+    expect(root().querySelector('.dv-stage__context h1')?.textContent).toContain('Entrar na mesa');
+    expect(root().querySelector('.dv-stage form')).not.toBeNull();
+  });
+
   it('quem já entrou por este navegador vai direto para a mesa', async () => {
     const app = await setup('/');
     app.http.expectOne('/campaigns').flush([]);

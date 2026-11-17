@@ -26,6 +26,24 @@ describe('Convite do anfitrião', () => {
     expect(root().textContent).toContain(`Código do convite: ${INVITE}`);
   });
 
+  it('o aviso de endereço só deste aparelho fica à vista, fora de "Opções avançadas"', async () => {
+    const { root } = await host();
+    const notice = Array.from(root().querySelectorAll('dv-notice')).find((n) =>
+      n.textContent?.includes('só deste aparelho'),
+    ) as HTMLElement;
+    expect(notice).toBeDefined();
+    expect(notice.closest('dv-disclosure')).toBeNull();
+  });
+
+  it('o link com "Copiar" é o centro; endereço e código ficam em "Opções avançadas"', async () => {
+    const { root } = await host();
+    expect(root().querySelector('dv-copy-field')).not.toBeNull();
+    const advanced = root().querySelector('dv-disclosure') as HTMLElement;
+    expect(advanced.textContent).toContain('Opções avançadas');
+    expect(advanced.querySelector('input:not([readonly])')).not.toBeNull();
+    expect(advanced.querySelector('details')?.hasAttribute('open')).toBe(false);
+  });
+
   it('troca o endereço e o aviso some', async () => {
     const { root, type } = await host();
     await type('input:not([readonly])', '192.168.0.5:8765');
