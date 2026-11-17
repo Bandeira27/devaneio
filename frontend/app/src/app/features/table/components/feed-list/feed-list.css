@@ -64,6 +64,8 @@
 
 .feed__note {
   margin: var(--dv-space-1) 0 var(--dv-space-2);
+  padding-left: var(--dv-space-3);
+  border-left: var(--dv-border-width) dotted var(--dv-line);
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
   color: var(--dv-text-muted);

@@ -14,6 +14,7 @@ import {
   canStep,
   clampAttribute,
   humanizeFormula,
+  plainNote,
   usableWeapons,
 } from './rules';
 
@@ -203,5 +204,33 @@ describe('humanizeFormula', () => {
 
   it('palavra que não é atributo fica como está', () => {
     expect(humanizeFormula('2d6 + XYZ', attributes)).toBe('2d6 + XYZ');
+  });
+});
+
+describe('plainNote', () => {
+  const attributes = [
+    { id: 'FOR', name: 'Força' },
+    { id: 'AGI', name: 'Agilidade' },
+  ];
+
+  it('atributos pelo nome, dados em palavras e "hp" como vida', () => {
+    expect(
+      plainNote('Ana testa Lutar (2d6 + FOR): 2d6 [3, 4] → total 11, sucesso', attributes),
+    ).toBe('Ana testa Lutar (2d6 + Força): 2d6: 3 e 4, total 11, sucesso');
+    expect(plainNote('Ana entra na aventura (FOR 3, AGI 2; hp 8).', attributes)).toBe(
+      'Ana entra na aventura (Força 3, Agilidade 2; vida 8).',
+    );
+  });
+
+  it('a seta de uma mudança vira "para"; um dado só e três dados também leem bem', () => {
+    expect(plainNote('Ana cura: hp 3 → 7', attributes)).toBe('Ana cura: vida 3 para 7');
+    expect(plainNote('1d6 [4] → 4 de dano', attributes)).toBe('1d6: 4 para 4 de dano');
+    expect(plainNote('3d6 [1, 2, 3] → total 6', attributes)).toBe('3d6: 1, 2 e 3, total 6');
+  });
+
+  it('texto sem nada técnico fica como está', () => {
+    expect(plainNote('Marco ativado: Chegada à vila.', attributes)).toBe(
+      'Marco ativado: Chegada à vila.',
+    );
   });
 });

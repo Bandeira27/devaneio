@@ -59,7 +59,9 @@ export class TablePage implements OnInit {
 
   private readonly documentTitle = inject(Title);
   private readonly feed = viewChild(FeedList);
-  private firstScene = true; // a primeira cena (ao abrir a mesa) não rouba o foco
+  private lastSceneName: string | undefined;
+  /** O nome da cena: o `computed` só avisa quando o texto muda, não a cada leitura nova da mesa. */
+  private readonly sceneName = computed(() => this.store.scene()?.name);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
@@ -83,16 +85,20 @@ export class TablePage implements OnInit {
       afterNextRender(() => this.refocusHeading(), { injector: this.injector });
     });
     effect(() => {
-      // A cena mudou (foi-se por uma saída): o botão tocado, que ganhou o foco de volta ao fechar a folha, deixou de
-      // existir. Se o foco se perdeu, ele passa à história, onde a pessoa lê o que aconteceu.
-      const scene = this.store.scene()?.name; // o que muda ao ir por uma saída
+      // Só quando o NOME da cena muda (foi-se por uma saída): o botão tocado, que ganhou o foco de volta ao fechar a
+      // folha, deixou de existir; se o foco se perdeu, ele passa à história. Evento novo na mesma cena não mexe no foco.
+      const name = this.sceneName();
+      const previous = this.lastSceneName;
+      this.lastSceneName = name;
+      if (previous === undefined || name === undefined || name === previous) {
+        return; // a primeira cena (ao abrir a mesa) e a mesma cena não roubam o foco
+      }
       afterNextRender(
         () => {
           const story = this.story()?.nativeElement;
-          if (story && scene !== undefined && !this.firstScene && isFocusFree()) {
+          if (story && isFocusFree()) {
             focusElement(story);
           }
-          this.firstScene = false;
         },
         { injector: this.injector },
       );

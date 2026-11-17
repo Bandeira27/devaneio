@@ -147,7 +147,7 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     await settle();
     const details = root().querySelector('.table__mine details') as HTMLDetailsElement;
     expect(details.open).toBe(true);
-    expect(details.querySelector('summary')?.textContent).toContain('Bia'); // o rótulo é o nome do personagem
+    expect(details.querySelector('summary')?.textContent).toContain('Ficha de Bia'); // o rótulo diz o que abre
     details.open = false;
     details.dispatchEvent(new Event('toggle'));
     await settle();
@@ -253,6 +253,20 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     await settle();
     expect(root().querySelector('.scene__list button')).toBeNull(); // a saída tocada deixou de existir
     expect(document.activeElement).toBe(root().querySelector('[aria-label="A história"]'));
+  });
+
+  it('um evento novo na mesma cena não move o foco', async () => {
+    const { root, events, http, settle } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    (document.activeElement as HTMLElement | null)?.blur(); // o foco está no body
+    events('20').flush(eventsView(4, [event(2, 1)]));
+    await settle();
+    http.expectOne(`/tables/${TABLE_ID}`).flush(withCharacter({ revision: 4 })); // a mesa é relida: cena nova (objeto novo), mesmo nome
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
+    await settle();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(document.activeElement).not.toBe(root().querySelector('[aria-label="A história"]'));
   });
 
   it('sem conexão, as saídas da cena também ficam bloqueadas', async () => {
@@ -369,16 +383,20 @@ describe('Mesa', () => {
     expect(root().querySelector('.feed__event[data-tone="danger"]')).not.toBeNull();
   });
 
-  it('a nota de como foi resolvido mostra os atributos pelo nome, não pelo código do sistema', async () => {
+  it('a nota de como foi resolvido sai em palavras de quem joga, sem códigos nem símbolos', async () => {
     const { root, events, settle } = await open();
     events('0').flush(
-      eventsView(3, [event(1, 1, { text: 'Bia testa Lutar: 2d6 [3, 4] + FOR 2 = 9 (AGI 1).' })]),
+      eventsView(3, [
+        event(1, 1, { text: 'Bia testa Lutar: 2d6 [3, 4] → total 9, hp 8 (FOR 2, AGI 1).' }),
+      ]),
     );
     await settle();
     const note = root().querySelector('.feed__note')?.textContent ?? '';
     expect(note).toContain('Força 2');
     expect(note).toContain('Agilidade 1');
-    expect(note).not.toMatch(/\bFOR\b|\bAGI\b/);
+    expect(note).toContain('2d6: 3 e 4');
+    expect(note).toContain('vida 8');
+    expect(note).not.toMatch(/\bFOR\b|\bAGI\b|\bhp\b|\[|→/); // nada técnico na nota
   });
 
   it('os turnos passados desbotam e o atual fica nítido', async () => {
