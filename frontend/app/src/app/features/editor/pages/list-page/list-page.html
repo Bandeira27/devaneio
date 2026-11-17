@@ -20,17 +20,22 @@
       </dv-state>
     }
     @case ('ready') {
-      <p class="dv-lede">Crie uma campanha do zero ou ajuste uma que já existe.</p>
+      <p class="dv-lede">
+        {{
+          campaigns().length === 0
+            ? 'Comece uma campanha do zero.'
+            : 'Crie uma campanha do zero ou ajuste uma que já existe.'
+        }}
+      </p>
       <a dvButton="primary" routerLink="/editor/nova">Nova campanha</a>
       @if (campaigns().length === 0) {
-        <p class="dv-note">Ainda não há campanhas nesta pasta.</p>
+        <p class="dv-note">Você ainda não tem campanhas aqui.</p>
       }
       <ul class="list">
         @for (campaign of campaigns(); track campaign.id) {
           <li class="list__item dv-card dv-card--page">
             <div class="list__info">
               <span class="list__title">{{ campaign.title }}</span>
-              <span class="dv-note">{{ campaign.id }}</span>
               @if (!campaign.writable) {
                 <dv-badge tone="info" icon="info">Tem mesa: só se copia</dv-badge>
               }

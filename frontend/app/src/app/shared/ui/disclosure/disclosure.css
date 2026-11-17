@@ -4,6 +4,8 @@
 
 summary {
   display: flex;
+  justify-content: space-between;
+  gap: var(--dv-space-2);
   align-items: center;
   min-height: var(--dv-touch);
   font-family: var(--dv-font-note);
@@ -29,4 +31,14 @@ details::details-content {
 
 details[open]::details-content {
   opacity: 1;
+}
+
+/* A pista de que abre: um "+" que vira "−" aberto (decoração: o texto alternativo vazio o esconde do leitor de tela). */
+summary::after {
+  content: '+' / '';
+  font-family: var(--dv-font-note);
+}
+
+details[open] summary::after {
+  content: '−' / '';
 }

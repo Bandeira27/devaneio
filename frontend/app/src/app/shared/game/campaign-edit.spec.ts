@@ -107,4 +107,56 @@ describe('edição da campanha', () => {
     expect(fromLines(['a', 'b'])).toBe('a\nb');
     expect(toLines(fromLines([]))).toEqual([]);
   });
+
+  it('renomear uma facção atualiza o `about` dos fatos que falam dela', () => {
+    const base = {
+      ...hostCampaign,
+      factions: [{ id: 'culto', name: 'Culto', description: '', goals: [], private_notes: [] }],
+      facts: [{ id: 'f', text: 't', about: 'culto', reveal_when: [] }],
+    };
+    expect(renameId(base, 'faction', 'culto', 'seita').facts[0]?.about).toBe('seita');
+  });
+
+  it('remover uma facção ou um marco solta quem os citava', () => {
+    const base = {
+      ...hostCampaign,
+      factions: [{ id: 'culto', name: 'Culto', description: '', goals: [], private_notes: [] }],
+      npcs: hostCampaign.npcs.map((n) => ({ ...n, faction_id: 'culto' })),
+      facts: [{ id: 'f', text: 't', about: 'culto', reveal_when: [] }],
+    };
+    const noFaction = removeItem(base, 'faction', 'culto');
+    expect(noFaction.factions).toEqual([]);
+    expect(noFaction.npcs.every((n) => n.faction_id === null)).toBe(true);
+    expect(noFaction.facts[0]?.about).toBeNull();
+    const noBeat = removeItem(hostCampaign, 'beat', 'chegada');
+    expect(noBeat.beats.some((b) => b.id === 'chegada')).toBe(false);
+    expect(noBeat.beats.find((b) => b.id === 'altar')?.requires).toEqual([]);
+  });
+
+  it('renomear atualiza as condições de revelar dos fatos e as de local dos marcos', () => {
+    const base = {
+      ...hostCampaign,
+      beats: hostCampaign.beats.map((b) => ({
+        ...b,
+        activate_when: [{ kind: 'at_location' as const, location_id: 'vila' }],
+      })),
+      facts: [
+        {
+          id: 'f',
+          text: 't',
+          about: null,
+          reveal_when: [
+            { kind: 'at_location' as const, location_id: 'vila' },
+            { kind: 'beat_done' as const, beat_id: 'chegada' },
+          ],
+        },
+      ],
+    };
+    const c = renameId(renameId(base, 'location', 'vila', 'aldeia'), 'beat', 'chegada', 'chegou');
+    expect(c.facts[0]?.reveal_when).toEqual([
+      { kind: 'at_location', location_id: 'aldeia' },
+      { kind: 'beat_done', beat_id: 'chegou' },
+    ]);
+    expect(c.beats[0]?.activate_when).toEqual([{ kind: 'at_location', location_id: 'aldeia' }]);
+  });
 });

@@ -12,30 +12,13 @@
       (move)="store.moveIn('locations', $event.index, $event.delta)"
     >
       <ng-template let-loc let-i="index">
-        <dv-field label="Nome" [error]="store.errorAt('locations.' + i + '.name')">
-          <input
-            dvInput
-            type="text"
-            [value]="loc.name"
-            (input)="setName(i, loc, fieldValue($event))"
-          />
-        </dv-field>
-        <dv-field
-          label="Identificador"
-          [hint]="
-            store.isAuto('location', loc.id)
-              ? 'Acompanha o nome. Escreva aqui para fixar outro.'
-              : 'Letras minúsculas sem acento, números, - e _.'
-          "
-          [error]="store.errorAt('locations.' + i + '.id')"
-        >
-          <input
-            dvInput
-            type="text"
-            [value]="loc.id"
-            (input)="store.setId('location', loc.id, fieldValue($event))"
-          />
-        </dv-field>
+        <dv-name-id-fields
+          kind="location"
+          [id]="loc.id"
+          [name]="loc.name"
+          [path]="'locations.' + i"
+          (nameChange)="setName(i, loc, $event)"
+        />
         <dv-field label="Descrição" hint="O que os jogadores veem ao chegar.">
           <textarea
             dvInput

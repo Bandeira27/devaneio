@@ -34,7 +34,7 @@ describe('DvListEditor', () => {
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     const button = (label: string) =>
-      el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`) as HTMLButtonElement;
+      el.querySelector<HTMLButtonElement>(`button[aria-label^="${label}"]`) as HTMLButtonElement;
     const settle = async () => {
       fixture.detectChanges();
       await fixture.whenStable();
@@ -100,5 +100,38 @@ describe('DvListEditor', () => {
     await new Promise((resolve) => setTimeout(resolve));
     expect(document.activeElement).toBe(add);
     el.remove();
+  });
+
+  it('os botões dizem a posição ("Remover Floresta (2 de 3)") para nomes repetidos não se confundirem', async () => {
+    const { el } = await render();
+    const labels = Array.from(el.querySelectorAll('button[aria-label]')).map((b) =>
+      b.getAttribute('aria-label'),
+    );
+    expect(labels).toContain('Remover Floresta (2 de 3)');
+    expect(labels).toContain('Descer Vila (1 de 3)');
+  });
+
+  it('mover leva o bloco aberto junto com o item', async () => {
+    const { el, settle, host, button } = await render();
+    (el.querySelectorAll('summary')[0] as HTMLElement).click(); // abre a Vila
+    await new Promise((resolve) => setTimeout(resolve)); // o evento `toggle` do details chega depois do clique
+    await settle();
+    button('Descer Vila').click();
+    host.items.set(['Floresta', 'Vila', 'Ruínas']);
+    await settle();
+    const open = Array.from(el.querySelectorAll('details')).map((d) => d.open);
+    expect(open).toEqual([false, true, false]);
+  });
+
+  it('remover um item sobe os blocos abertos depois dele', async () => {
+    const { el, settle, host, button } = await render();
+    (el.querySelectorAll('summary')[2] as HTMLElement).click(); // abre as Ruínas
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    button('Remover Vila').click();
+    host.items.set(['Floresta', 'Ruínas']);
+    await settle();
+    const open = Array.from(el.querySelectorAll('details')).map((d) => d.open);
+    expect(open).toEqual([false, true]);
   });
 });

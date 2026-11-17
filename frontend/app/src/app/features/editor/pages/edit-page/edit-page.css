@@ -31,14 +31,11 @@
   color: var(--dv-text);
 }
 
-.editor__status {
+.editor__status,
+.editor__result {
   display: flex;
   flex-wrap: wrap;
   gap: var(--dv-space-2) var(--dv-space-4);
-}
-
-.editor__status:empty {
-  display: none;
 }
 
 .editor__problems {

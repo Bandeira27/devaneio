@@ -19,8 +19,9 @@
                 dvButton
                 type="button"
                 [dvBlocked]="first"
-                [attr.aria-label]="'Subir ' + nameOf()(item, i)"
-                (click)="move.emit({ index: i, delta: -1 })"
+                data-act="up"
+                [attr.aria-label]="'Subir ' + nameOf()(item, i) + ' (' + position(i) + ')'"
+                (click)="moved(i, -1)"
               >
                 Subir
               </button>
@@ -28,16 +29,17 @@
                 dvButton
                 type="button"
                 [dvBlocked]="last"
-                [attr.aria-label]="'Descer ' + nameOf()(item, i)"
-                (click)="move.emit({ index: i, delta: 1 })"
+                data-act="down"
+                [attr.aria-label]="'Descer ' + nameOf()(item, i) + ' (' + position(i) + ')'"
+                (click)="moved(i, 1)"
               >
                 Descer
               </button>
               <button
                 dvButton
                 type="button"
-                [attr.aria-label]="'Remover ' + nameOf()(item, i)"
-                (click)="remove.emit(i)"
+                [attr.aria-label]="'Remover ' + nameOf()(item, i) + ' (' + position(i) + ')'"
+                (click)="removed(i)"
               >
                 Remover
               </button>

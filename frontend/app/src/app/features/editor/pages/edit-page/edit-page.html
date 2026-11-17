@@ -6,12 +6,19 @@
   @case ('failed') {
     <div class="dv-page">
       <h1 class="dv-visually-hidden">Editor de campanhas</h1>
-      <dv-state kind="error">
-        {{ store.loadError() }}
-        <button dvStateAction dvButton type="button" (click)="store.load(campaignId(), copia())">
-          Tentar de novo
-        </button>
-      </dv-state>
+      @if (store.unavailable()) {
+        <dv-state kind="unavailable">
+          O editor está desligado neste servidor. Quem roda o servidor liga com a opção --editor, em
+          localhost.
+        </dv-state>
+      } @else {
+        <dv-state kind="error">
+          {{ store.loadError() }}
+          <button dvStateAction dvButton type="button" (click)="store.load(campaignId(), copia())">
+            Tentar de novo
+          </button>
+        </dv-state>
+      }
       <a dvButton routerLink="/editor">Voltar às campanhas</a>
     </div>
   }
@@ -19,10 +26,9 @@
     @if (store.campaign(); as c) {
       <div class="editor">
         <header class="editor__bar">
-          <h1 class="dv-title">{{ store.isNew() ? 'Nova campanha' : 'Editar campanha' }}</h1>
+          <h1 class="dv-title">{{ store.isNew() ? 'Nova campanha' : 'Editar: ' + c.title }}</h1>
           <a dvButton routerLink="/editor">Voltar às campanhas</a>
         </header>
-        <p class="dv-note">{{ c.title }} · {{ c.id }}</p>
 
         <nav class="editor__nav" aria-label="Seções da campanha">
           @for (section of sections; track section.path) {
@@ -41,33 +47,53 @@
           <dv-notice kind="warn">
             Esta campanha já tem mesa, e as mesas a relêem do arquivo: ela não pode ser regravada.
             Salve uma cópia para mudar.
-            <button dvButton type="button" (click)="store.startCopy()">Salvar como cópia</button>
+            <button dvButton type="button" (click)="copy()">Salvar como cópia</button>
           </dv-notice>
         }
 
-        <div class="editor__status" role="status">
+        @if (store.info()) {
+          <dv-notice kind="ok" dismissible (dismissed)="store.info.set('')">
+            {{ store.info() }}
+          </dv-notice>
+        }
+        @if (store.checkError()) {
+          <dv-notice kind="warn">
+            Não consegui conferir a campanha agora: {{ store.checkError() }}
+            <button dvButton type="button" (click)="store.recheck()">Conferir de novo</button>
+          </dv-notice>
+        }
+
+        <div class="editor__status">
           @if (store.validating()) {
             <dv-badge tone="info" [pending]="true">Conferindo…</dv-badge>
-          } @else if (store.report()?.ok) {
-            <dv-badge tone="ok" icon="ok">Sem erros</dv-badge>
-          } @else if (store.errors().length > 0) {
-            <dv-badge tone="danger" icon="danger">
-              {{ store.errors().length === 1 ? '1 erro' : store.errors().length + ' erros' }}
-            </dv-badge>
           }
-          @if (store.dirty()) {
-            <dv-badge tone="warn" icon="warn">Alterações não gravadas</dv-badge>
-          } @else if (store.justSaved()) {
-            <dv-badge tone="ok" icon="ok">Gravada</dv-badge>
-          }
+          <span class="editor__result" aria-live="polite">
+            @if (!store.validating() && store.report()?.ok) {
+              <dv-badge tone="ok" icon="ok">Sem erros</dv-badge>
+            } @else if (!store.validating() && store.errors().length > 0) {
+              <dv-badge tone="danger" icon="danger">
+                {{ store.errors().length === 1 ? '1 erro' : store.errors().length + ' erros' }}
+              </dv-badge>
+            }
+            @if (store.dirty()) {
+              <dv-badge tone="warn" icon="warn">Alterações não gravadas</dv-badge>
+            } @else if (store.justSaved()) {
+              <dv-badge tone="ok" icon="ok">Gravada</dv-badge>
+            }
+          </span>
         </div>
 
         @if (store.errors().length > 0) {
           <dv-notice kind="error">
             A campanha tem problemas que impedem de gravar:
             <ul class="editor__problems">
-              @for (error of store.errors(); track $index) {
-                <li>{{ error.message }}</li>
+              @for (line of store.errorLines(); track $index) {
+                <li>
+                  @if (line.where) {
+                    <strong>{{ line.where }}:</strong>
+                  }
+                  {{ line.message }}
+                </li>
               }
             </ul>
           </dv-notice>

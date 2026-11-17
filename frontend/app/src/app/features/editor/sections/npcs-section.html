@@ -12,30 +12,13 @@
       (move)="store.moveIn('npcs', $event.index, $event.delta)"
     >
       <ng-template let-npc let-i="index">
-        <dv-field label="Nome" [error]="store.errorAt('npcs.' + i + '.name')">
-          <input
-            dvInput
-            type="text"
-            [value]="npc.name"
-            (input)="setName(i, npc, fieldValue($event))"
-          />
-        </dv-field>
-        <dv-field
-          label="Identificador"
-          [hint]="
-            store.isAuto('npc', npc.id)
-              ? 'Acompanha o nome. Escreva aqui para fixar outro.'
-              : 'Letras minúsculas sem acento, números, - e _.'
-          "
-          [error]="store.errorAt('npcs.' + i + '.id')"
-        >
-          <input
-            dvInput
-            type="text"
-            [value]="npc.id"
-            (input)="store.setId('npc', npc.id, fieldValue($event))"
-          />
-        </dv-field>
+        <dv-name-id-fields
+          kind="npc"
+          [id]="npc.id"
+          [name]="npc.name"
+          [path]="'npcs.' + i"
+          (nameChange)="setName(i, npc, $event)"
+        />
         <dv-field label="Descrição" hint="O que os jogadores veem ao encontrá-lo.">
           <textarea
             dvInput
@@ -45,6 +28,7 @@
           ></textarea>
         </dv-field>
         <dv-select
+          [announce]="false"
           label="Onde começa"
           [options]="locations()"
           [value]="npc.location_id ?? ''"
@@ -52,6 +36,7 @@
           (valueChange)="patch(i, npc, { location_id: $event === '' ? null : $event })"
         />
         <dv-select
+          [announce]="false"
           label="Facção"
           [options]="factions()"
           [value]="npc.faction_id ?? ''"
@@ -67,6 +52,7 @@
           (valueChange)="patch(i, npc, { disposition: $event })"
         />
         <dv-select
+          [announce]="false"
           label="Arma"
           [options]="weapons()"
           [value]="npc.weapon_id ?? ''"

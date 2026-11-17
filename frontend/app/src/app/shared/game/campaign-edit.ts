@@ -54,7 +54,7 @@ export function npc(id: string, name: string): Npc {
 }
 
 /** Todos os ids da campanha (de qualquer tipo): um id novo não pode repetir nenhum deles dentro do seu tipo. */
-function idsOf(campaign: Campaign, kind: ItemKind): string[] {
+export function idsOf(campaign: Campaign, kind: ItemKind): string[] {
   const lists = {
     location: campaign.locations,
     npc: campaign.npcs,
@@ -152,7 +152,7 @@ export function renameId(campaign: Campaign, kind: ItemKind, from: string, to: s
     })),
     facts: campaign.facts.map((f) => ({
       ...f,
-      about: f.about !== null && kind !== 'faction' ? swap(f.about) : f.about,
+      about: f.about === null ? null : swap(f.about), // `about` pode apontar para qualquer tipo; ids iguais em tipos diferentes são ambíguos
       reveal_when: conditions(f.reveal_when),
     })),
   };

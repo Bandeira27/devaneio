@@ -12,30 +12,13 @@
       (move)="store.moveIn('factions', $event.index, $event.delta)"
     >
       <ng-template let-faction let-i="index">
-        <dv-field label="Nome" [error]="store.errorAt('factions.' + i + '.name')">
-          <input
-            dvInput
-            type="text"
-            [value]="faction.name"
-            (input)="setName(i, faction, fieldValue($event))"
-          />
-        </dv-field>
-        <dv-field
-          label="Identificador"
-          [hint]="
-            store.isAuto('faction', faction.id)
-              ? 'Acompanha o nome. Escreva aqui para fixar outro.'
-              : 'Letras minúsculas sem acento, números, - e _.'
-          "
-          [error]="store.errorAt('factions.' + i + '.id')"
-        >
-          <input
-            dvInput
-            type="text"
-            [value]="faction.id"
-            (input)="store.setId('faction', faction.id, fieldValue($event))"
-          />
-        </dv-field>
+        <dv-name-id-fields
+          kind="faction"
+          [id]="faction.id"
+          [name]="faction.name"
+          [path]="'factions.' + i"
+          (nameChange)="setName(i, faction, $event)"
+        />
         <dv-field label="Descrição">
           <textarea
             dvInput

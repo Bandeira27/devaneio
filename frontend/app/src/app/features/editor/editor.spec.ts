@@ -15,7 +15,7 @@ const sleep = () => new Promise((resolve) => setTimeout(resolve, 5));
 /** Abre o editor e responde às cargas, uma de cada vez, como o servidor faria. */
 async function open(
   url: string,
-  options: { campaign?: Campaign; list?: typeof LIST; report?: ValidationReport } = {},
+  options: { campaign?: Campaign; list?: typeof LIST; report?: ValidationReport | 'fail' } = {},
 ) {
   TestBed.overrideProvider(VALIDATE_DELAY, { useValue: 0 });
   const app = await setup(url);
@@ -30,11 +30,18 @@ async function open(
   http.expectOne((r) => r.url.startsWith('/editor/systems/')).flush(rulesView());
   await settle();
   const validations: Campaign[] = [];
-  const answer = async (report: ValidationReport = options.report ?? OK) => {
+  const answer = async (report: ValidationReport | 'fail' = options.report ?? OK) => {
     await sleep();
     for (const request of http.match('/editor/validate')) {
       validations.push((request.request.body as { campaign: Campaign }).campaign);
-      request.flush(report);
+      if (report === 'fail') {
+        request.flush(
+          { error: { code: 'internal', message: 'erro interno' } },
+          { status: 500, statusText: 'x' },
+        );
+      } else {
+        request.flush(report);
+      }
     }
     await settle();
   };
@@ -91,12 +98,11 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('uma cópia traz a campanha com id e título novos', async () => {
-    const { text, validations } = await open('/editor/nova?copia=c', {
+    const { validations } = await open('/editor/nova?copia=c', {
       campaign: { ...hostCampaign, id: 'c', title: 'Original' },
     });
     expect(validations[0]?.id).toBe('c-copia');
     expect(validations[0]?.title).toBe('Original (cópia)');
-    expect(text()).toContain('c-copia');
   });
 
   it('os erros do servidor aparecem na lista, no campo e bloqueiam gravar com o motivo', async () => {
@@ -181,5 +187,134 @@ describe('Editor de campanhas: edição', () => {
     back?.click();
     expect(await leaving).toBe(false);
     expect(router.url).toBe('/editor/nova');
+  });
+
+  it('falha ao conferir não é erro da campanha: diz que não conseguiu e dá "Conferir de novo"', async () => {
+    const { text, button, answer, root } = await open('/editor/nova', { report: 'fail' });
+    expect(text()).toContain('Não consegui conferir a campanha agora');
+    expect(text()).not.toContain('erros');
+    expect(root().querySelector('.editor__problems')).toBeNull();
+    expect(text()).toContain('tente conferir de novo');
+    (button('Conferir de novo') as HTMLButtonElement).click();
+    await answer(OK);
+    expect(text()).toContain('Sem erros');
+    expect(text()).not.toContain('Não consegui conferir');
+  });
+
+  it('uma resposta velha da conferência não libera gravar enquanto a nova não chega', async () => {
+    const { http, type, button, settle, text } = await open('/editor/nova');
+    await type('dv-overview-section input[type="text"]', 'A');
+    await sleep();
+    const first = http.expectOne('/editor/validate'); // em voo
+    await type('dv-overview-section input[type="text"]', 'AB');
+    first.flush(OK); // a resposta da primeira chega com a segunda ainda no ar
+    await settle();
+    expect(text()).toContain('Conferindo a campanha…');
+    expect((button('Criar campanha') as HTMLButtonElement).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+    await sleep();
+    http.expectOne('/editor/validate').flush(OK);
+    await settle();
+    expect(
+      (button('Criar campanha') as HTMLButtonElement).getAttribute('aria-disabled'),
+    ).toBeNull();
+  });
+
+  it('os erros dizem em que seção e item estão', async () => {
+    const report: ValidationReport = {
+      ok: false,
+      errors: [{ path: 'locations.0.name', message: "falta preencher 'name'" }],
+      findings: [],
+    };
+    const { root } = await open('/editor/nova', { report });
+    expect(root().querySelector('.editor__problems')?.textContent).toContain('Locais › Início:');
+  });
+
+  it('gravar a partir de uma seção volta para a mesma seção', async () => {
+    const { http, click, button, settle, answer, router } = await open('/editor/nova');
+    await click('a[href="/editor/nova/locais"]');
+    (button('Criar campanha') as HTMLButtonElement).click();
+    await settle();
+    http.expectOne('/editor/campaigns').flush({ id: 'nova-campanha', title: 'N', writable: true });
+    await settle();
+    await answer();
+    expect(router.url).toBe('/editor/nova-campanha/locais');
+  });
+
+  it('editar enquanto grava deixa "Alterações não gravadas" (o que veio depois ainda não foi gravado)', async () => {
+    const { http, button, settle, root, answer, harness } = await open('/editor/nova');
+    (button('Criar campanha') as HTMLButtonElement).click();
+    await settle();
+    const post = http.expectOne('/editor/campaigns');
+    // Com o POST no ar, `settle` (whenStable) esperaria por ele: edita direto e só roda a detecção.
+    const title = root().querySelector(
+      'dv-overview-section input[type="text"]',
+    ) as HTMLInputElement;
+    title.value = 'Mudei durante';
+    title.dispatchEvent(new Event('input'));
+    harness.detectChanges();
+    post.flush({ id: 'nova-campanha', title: 'N', writable: true });
+    await settle();
+    await answer();
+    expect(root().textContent).toContain('Alterações não gravadas');
+    expect(root().textContent).not.toContain('Gravada');
+  });
+
+  it('"Salvar como cópia" com falha de rede mostra o erro e não vira cópia', async () => {
+    const { http, button, settle, root } = await open('/editor/com-mesa', {
+      campaign: { ...hostCampaign, id: 'com-mesa', title: 'Com mesa' },
+    });
+    (button('Salvar como cópia') as HTMLButtonElement).click();
+    await settle();
+    http
+      .expectOne('/editor/campaigns')
+      .flush(
+        { error: { code: 'internal', message: 'erro interno' } },
+        { status: 500, statusText: 'x' },
+      );
+    await settle();
+    expect(root().textContent).toContain('O servidor falhou');
+    expect(root().querySelector('h1')?.textContent).toContain('Editar:');
+  });
+
+  it('um identificador que já é de outro item é recusado e o campo volta ao valor de antes', async () => {
+    const { root, click, settle } = await open('/editor/c', {
+      campaign: { ...hostCampaign, id: 'c' },
+    });
+    await click('a[href="/editor/c/locais"]');
+    (root().querySelectorAll('dv-locations-section summary')[1] as HTMLElement).click();
+    await settle();
+    const id = root().querySelectorAll<HTMLInputElement>(
+      'dv-locations-section details[open] input[type="text"]',
+    )[1] as HTMLInputElement;
+    const before = id.value;
+    id.value = hostCampaign.locations[0]?.id ?? '';
+    id.dispatchEvent(new Event('change'));
+    await settle();
+    expect(root().textContent).toContain('Já existe outro item com esse identificador.');
+    expect(id.value).toBe(before);
+  });
+
+  it('remover um local pede confirmação e o tira da campanha conferida', async () => {
+    const { root, click, settle, answer, validations } = await open('/editor/c', {
+      campaign: { ...hostCampaign, id: 'c' },
+    });
+    await click('a[href="/editor/c/locais"]');
+    const before = validations.at(-1)?.locations.length ?? 0;
+    (
+      root().querySelector(
+        'dv-locations-section button[aria-label^="Remover"]',
+      ) as HTMLButtonElement
+    ).click();
+    await settle();
+    expect(document.body.textContent).toContain('Remover o local');
+    const confirm = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.dv-sheet__foot button'),
+    ).find((b) => b.textContent?.includes('Remover'));
+    confirm?.click();
+    await settle();
+    await answer();
+    expect(validations.at(-1)?.locations.length).toBe(before - 1);
   });
 });

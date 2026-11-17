@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, contentChild, effect, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  contentChild,
+  effect,
+  input,
+} from '@angular/core';
 import { DvInput } from './input';
 
 /** Rótulo, campo, dica e erro juntos: o rótulo aponta para o campo e a dica e o erro viram `aria-describedby`. */
@@ -12,6 +19,9 @@ export class DvField {
   readonly label = input.required<string>();
   readonly hint = input('');
   readonly error = input('');
+  /** O erro é anunciado na hora (`role="alert"`)? Falso onde ele muda sozinho a cada edição (o editor): fica ligado ao campo. */
+  readonly announce = input(true);
+  protected readonly role = computed(() => (this.announce() ? 'alert' : null));
   readonly control = contentChild.required(DvInput);
 
   constructor() {

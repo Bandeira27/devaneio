@@ -61,6 +61,7 @@ export class DvListEditor<T> {
   protected readonly template = contentChild.required<TemplateRef<ListItemContext<T>>>(TemplateRef);
   private readonly addButton = viewChild<ElementRef<HTMLElement>>('addButton');
   private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly opened = signal<ReadonlySet<number>>(new Set());
   private count = -1;
 
@@ -74,19 +75,68 @@ export class DvListEditor<T> {
       }
       if (length > previous) {
         this.opened.set(new Set([length - 1])); // o item novo abre sozinho, os outros ficam como estavam
-      } else if (length < previous) {
-        this.opened.set(new Set());
-        afterNextRender(
-          () => {
-            const button = this.addButton()?.nativeElement;
-            if (button && isFocusFree()) {
-              focusElement(button);
-            }
-          },
-          { injector: this.injector },
+        this.focusAfterRender(() =>
+          this.itemEl(length - 1)?.querySelector<HTMLElement>('input, textarea, select'),
         );
+      } else if (length < previous) {
+        this.focusAfterRender(() => this.addButton()?.nativeElement);
       }
     });
+  }
+
+  /** Um item foi para outro lugar: o bloco aberto o acompanha, e o foco vai ao mesmo botão do item, na posição nova. */
+  protected moved(index: number, delta: -1 | 1): void {
+    const target = index + delta;
+    const next = new Set(this.opened());
+    const [a, b] = [next.has(index), next.has(target)];
+    next.delete(index);
+    next.delete(target);
+    if (a) {
+      next.add(target);
+    }
+    if (b) {
+      next.add(index);
+    }
+    this.opened.set(next);
+    this.move.emit({ index, delta });
+    const act = delta === -1 ? 'up' : 'down';
+    this.focusAfterRender(() =>
+      this.itemEl(target)?.querySelector<HTMLElement>(`[data-act="${act}"]`),
+    );
+  }
+
+  /** Um item saiu da lista: os blocos abertos depois dele sobem uma posição. */
+  protected removed(index: number): void {
+    const next = new Set<number>();
+    for (const i of this.opened()) {
+      if (i < index) {
+        next.add(i);
+      } else if (i > index) {
+        next.add(i - 1);
+      }
+    }
+    this.opened.set(next);
+    this.remove.emit(index);
+  }
+
+  protected position(index: number): string {
+    return `${index + 1} de ${this.items().length}`;
+  }
+
+  private itemEl(index: number): HTMLElement | null {
+    return this.host.nativeElement.querySelectorAll<HTMLElement>('li.item')[index] ?? null;
+  }
+
+  private focusAfterRender(target: () => HTMLElement | null | undefined): void {
+    afterNextRender(
+      () => {
+        const el = target();
+        if (el && isFocusFree()) {
+          focusElement(el);
+        }
+      },
+      { injector: this.injector },
+    );
   }
 
   protected isOpen(index: number): boolean {

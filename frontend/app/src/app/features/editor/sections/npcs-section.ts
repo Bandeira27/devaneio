@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import type { Npc } from '@contract/api_responses';
 import { replaceAt } from '@shared/game/campaign-edit';
-import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
@@ -9,7 +8,9 @@ import { DvListEditor } from '@shared/ui/list-editor/list-editor';
 import { DvSelect, type SelectOption } from '@shared/ui/select/select';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { DvStepper } from '@shared/ui/stepper/stepper';
+import { confirmRemove } from '../components/confirm-remove';
 import { LinesField } from '../components/lines-field';
+import { NameIdFields } from '../components/name-id-fields';
 import { EditorStore } from '../editor.store';
 
 const NONE: SelectOption = { value: '', label: '(nenhum)' };
@@ -17,7 +18,7 @@ const NONE: SelectOption = { value: '', label: '(nenhum)' };
 /** Os NPCs: quem são, onde começam, de que facção, como tratam o grupo (disposição), a arma e as notas privadas. */
 @Component({
   selector: 'dv-npcs-section',
-  imports: [DvField, DvInput, DvListEditor, DvSelect, DvStepper, LinesField],
+  imports: [DvField, DvInput, DvListEditor, DvSelect, DvStepper, LinesField, NameIdFields],
   templateUrl: './npcs-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -58,14 +59,11 @@ export class NpcsSection {
     if (npc === undefined) {
       return;
     }
-    const ok = await this.sheet.open<boolean>(ConfirmSheet, {
-      label: 'Remover o NPC',
-      data: {
-        title: 'Remover o NPC',
-        text: `Remover "${npc.name || npc.id}"? Os fatos que falavam dele ficam sem assunto.`,
-        action: 'Remover',
-      },
-    });
+    const ok = await confirmRemove(
+      this.sheet,
+      'Remover o NPC',
+      `Remover "${npc.name || npc.id}"? Os fatos que falavam dele ficam sem assunto.`,
+    );
     if (ok) {
       this.store.remove('npc', npc.id);
     }

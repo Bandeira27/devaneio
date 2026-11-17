@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnInit,
+  inject,
+  input,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
+import { focusElement } from '@shared/ui/focus';
 import { EditorStore } from '../../editor.store';
 
 /** As seções do editor, na ordem do menu. */
@@ -26,6 +34,7 @@ export const SECTIONS = [
   templateUrl: './edit-page.html',
   styleUrl: './edit-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:beforeunload)': 'warnBeforeUnload($event)' },
 })
 export class EditorPage implements OnInit {
   /** O id da rota: o de uma campanha da pasta, ou `nova`. */
@@ -35,9 +44,27 @@ export class EditorPage implements OnInit {
 
   protected readonly store = inject(EditorStore);
   protected readonly sections = SECTIONS;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   ngOnInit(): void {
     void this.store.load(this.campaignId(), this.copia());
+  }
+
+  /** Salvar como cópia: o botão some junto com o aviso, então o foco vai ao título da tela (que agora diz que é uma cópia). */
+  protected async copy(): Promise<void> {
+    if (await this.store.startCopy()) {
+      const heading = this.host.nativeElement.querySelector('h1');
+      if (heading) {
+        focusElement(heading);
+      }
+    }
+  }
+
+  /** Fechar ou recarregar a aba com alterações não gravadas pede confirmação ao navegador. */
+  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.store.dirty()) {
+      event.preventDefault();
+    }
   }
 
   /** Para o guarda de saída da rota: pergunta antes de descartar alterações. */

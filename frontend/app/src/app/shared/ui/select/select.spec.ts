@@ -62,4 +62,12 @@ describe('DvSelect', () => {
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Esse local não existe.');
     expect(select.getAttribute('aria-invalid')).toBe('true');
   });
+
+  it('um valor que não está nas opções aparece como "(não encontrado)", e não como outra opção', async () => {
+    const { fixture, select, host } = await render();
+    host.value.set('fantasma');
+    await fixture.whenStable();
+    expect(select.value).toBe('fantasma');
+    expect(select.options[0]?.textContent?.trim()).toBe('fantasma (não encontrado)');
+  });
 });
