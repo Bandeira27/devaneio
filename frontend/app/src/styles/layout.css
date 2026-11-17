@@ -11,3 +11,21 @@
   max-width: var(--dv-measure-page);
   margin-inline: auto;
 }
+
+/*
+ * A composição da tela larga: painéis lado a lado dentro do contêiner do app. No celular é uma coluna; a partir de
+ * 64rem as telas definem as suas colunas com `grid-template-columns` (a mesa, a entrada). Os pontos de quebra (40rem,
+ * 64rem e 90rem) são fixos porque CSS não aceita token em `@media`.
+ */
+.dv-panels {
+  display: grid;
+  gap: var(--dv-space-4);
+  max-width: var(--dv-measure-shell);
+  margin-inline: auto;
+}
+
+@media (min-width: 64rem) {
+  .dv-panels {
+    gap: var(--dv-space-6);
+  }
+}

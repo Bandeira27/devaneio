@@ -52,7 +52,7 @@ describe('conversão de cor', () => {
 /** O texto de leitura e as cores de papel que o feed desbota; cada uma com o seu piso (`--dv-fade-floor-*`). */
 const FADED = {
   text: ['--dv-text'],
-  quiet: ['--dv-text-muted', '--dv-accent', '--dv-ok', '--dv-danger'],
+  quiet: ['--dv-text-muted', '--dv-speaker', '--dv-accent', '--dv-ok', '--dv-danger'],
 } as const;
 
 describe('contraste dos tokens', () => {
@@ -64,7 +64,19 @@ describe('contraste dos tokens', () => {
     expect(contrast(color('--dv-text-muted'), color(surface))).toBeGreaterThanOrEqual(MIN);
   });
 
-  it.each(SURFACES)('o rosa de poeira (acento, nome do falante) passa em %s', (surface) => {
+  it.each(SURFACES)('a tinta do falante passa em %s', (surface) => {
+    expect(contrast(color('--dv-speaker'), color(surface))).toBeGreaterThanOrEqual(MIN);
+  });
+
+  it('as superfícies sobem em degraus visíveis (>= 1,06:1 entre vizinhas)', () => {
+    for (let i = 1; i < SURFACES.length; i++) {
+      const lower = color(SURFACES[i - 1] as string);
+      const upper = color(SURFACES[i] as string);
+      expect(contrast(upper, lower), SURFACES[i]).toBeGreaterThanOrEqual(1.06);
+    }
+  });
+
+  it.each(SURFACES)('o rosa de poeira (acento) passa em %s', (surface) => {
     expect(contrast(color('--dv-accent'), color(surface))).toBeGreaterThanOrEqual(MIN);
   });
 

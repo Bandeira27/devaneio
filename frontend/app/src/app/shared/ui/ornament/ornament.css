@@ -1,0 +1,12 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: var(--dv-measure-ornament);
+  color: var(--dv-ink);
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}

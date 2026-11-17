@@ -93,3 +93,9 @@
   border-radius: var(--dv-radius);
   background: var(--dv-surface-1);
 }
+
+/* A "página": o que se lê (cena, ficha). Superfície mais clara e um filete de tinta no topo. */
+.dv-card--page {
+  border-top: var(--dv-border-width-strong) solid var(--dv-ink);
+  background: var(--dv-surface-2);
+}

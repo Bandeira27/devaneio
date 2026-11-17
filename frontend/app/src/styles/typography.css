@@ -21,3 +21,32 @@
   font-size: var(--dv-text-note);
   color: var(--dv-text-muted);
 }
+
+/* A abertura de uma tela larga: maior que o título. */
+.dv-display {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-display);
+  font-style: italic;
+  font-weight: var(--dv-weight-regular);
+  line-height: 1.15;
+}
+
+/* O título de uma seção ou cartão. */
+.dv-section {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-section);
+  font-style: italic;
+  font-weight: var(--dv-weight-regular);
+}
+
+/* Rótulo curto em caixa-alta, na fonte de notas: separa e nomeia sem competir com o conteúdo. */
+.dv-eyebrow {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-text-muted);
+}

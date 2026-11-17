@@ -4,6 +4,8 @@ import type { StoryObj } from '@storybook/angular-vite';
 import * as connectionBadge from '../features/table/components/connection-badge/connection-badge.stories';
 import * as tokens from '../design/tokens.stories';
 import * as motion from '../design/movimento.stories';
+import * as brandS from '../shared/ui/brand/brand.stories';
+import * as ornamentS from '../shared/ui/ornament/ornament.stories';
 import * as badgeS from '../shared/ui/badge/badge.stories';
 import * as keyValueS from '../shared/ui/key-value/key-value.stories';
 import * as disclosureS from '../shared/ui/disclosure/disclosure.stories';
@@ -25,6 +27,8 @@ const FILES: Record<string, Record<string, unknown>> = {
   'design/tokens.stories.ts': tokens,
   'features/table/components/connection-badge/connection-badge.stories.ts': connectionBadge,
   'shared/ui/badge/badge.stories.ts': badgeS,
+  'shared/ui/brand/brand.stories.ts': brandS,
+  'shared/ui/ornament/ornament.stories.ts': ornamentS,
   'shared/ui/key-value/key-value.stories.ts': keyValueS,
   'shared/ui/disclosure/disclosure.stories.ts': disclosureS,
   'shared/ui/state/state.stories.ts': stateS,

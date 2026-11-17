@@ -1,0 +1,33 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dv-space-2);
+  font-family: var(--dv-font-narration);
+  font-style: italic;
+  color: var(--dv-text);
+  white-space: nowrap;
+}
+
+.seal {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75em;
+  height: 1.75em;
+  border: var(--dv-border-width) dotted var(--dv-ink);
+  border-radius: var(--dv-radius-round);
+  color: var(--dv-ink);
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+:host(.brand--md) {
+  font-size: var(--dv-text-title);
+}
+
+:host(.brand--lg) {
+  font-size: var(--dv-text-display);
+}
+
+:host(.brand--lg) .seal {
+  border-style: solid;
+}

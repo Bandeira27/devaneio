@@ -8,7 +8,7 @@
   <div class="home" [class.home--split]="hasSaved()">
     @if (store.saved().length > 0 || store.forgotten()) {
       <section class="dv-card dv-stack home__saved" aria-labelledby="titulo-guardadas">
-        <h2 class="dv-title" id="titulo-guardadas">Suas mesas</h2>
+        <h2 class="dv-section" id="titulo-guardadas">Suas mesas</h2>
         <ul class="saved">
           @for (table of store.saved(); track table.tableId) {
             <li class="saved__item">
@@ -41,7 +41,7 @@
 
     <div class="home__start">
       <section class="dv-card dv-stack" aria-labelledby="titulo-criar">
-        <h2 class="dv-title" id="titulo-criar">Criar uma mesa</h2>
+        <h2 class="dv-section" id="titulo-criar">Criar uma mesa</h2>
         @switch (store.state()) {
           @case ('loading') {
             <dv-state kind="loading">Procurando as campanhas…</dv-state>
@@ -96,7 +96,7 @@
       </section>
 
       <section class="dv-card dv-stack" aria-labelledby="titulo-entrar">
-        <h2 class="dv-title" id="titulo-entrar">Entrar com um convite</h2>
+        <h2 class="dv-section" id="titulo-entrar">Entrar com um convite</h2>
         <form class="dv-stack" (submit)="$event.preventDefault(); store.openInvite()">
           <dv-field
             label="Link do convite"

@@ -51,7 +51,8 @@ describe('DvState', () => {
     await fixture.whenStable();
     const el = (fixture.nativeElement as HTMLElement).querySelector('dv-state') as HTMLElement;
     expect(el.classList.contains('state--cover')).toBe(true);
-    expect(el.querySelector('.mark')?.textContent).toBe('Devaneio');
+    expect(el.querySelector('.mark .word')?.textContent).toBe('Devaneio');
+    expect(el.querySelector('.mark dv-ornament')).not.toBeNull();
     expect(el.getAttribute('role')).toBe('status');
   });
 

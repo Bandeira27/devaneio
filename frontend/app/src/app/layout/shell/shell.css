@@ -24,14 +24,14 @@
 
 .shell::before {
   top: 6rem;
-  right: -2rem;
+  right: max(-2rem, calc((100% - var(--dv-measure-shell)) / 2 - 3rem));
   width: 7rem;
   height: 7rem;
 }
 
 .shell::after {
   bottom: 8rem;
-  left: -3rem;
+  left: max(-3rem, calc((100% - var(--dv-measure-shell)) / 2 - 4rem));
   width: 9rem;
   height: 9rem;
 }
@@ -54,11 +54,13 @@
   view-transition-name: shell-bar; /* continuidade da troca de tela: o cabeçalho fica parado (styles/motion.css) */
 }
 
+.shell__inner {
+  max-width: var(--dv-measure-shell);
+  margin-inline: auto;
+}
+
 .shell__brand {
   color: var(--dv-text);
-  font-family: var(--dv-font-narration);
-  font-size: var(--dv-text-title);
-  font-style: italic;
   text-decoration: none;
 }
 
