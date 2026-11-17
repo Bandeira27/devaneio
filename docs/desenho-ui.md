@@ -12,8 +12,8 @@ transição entre telas (a página vira, cabeçalho parado, folha de espera), fu
 marca, ornamento), entrada em dois painéis (contexto e tarefa) e mesa em até três painéis (cena e grupo, história, ficha
 e ações). Os textos de referência: [`design-system.md`](design-system.md),
 [`movimento.md`](movimento.md) e [`padroes-de-interacao.md`](padroes-de-interacao.md). A revisão de UI tem papel
-(`ui-reviewer`) e skill (`review-ui`). Fica para depois: o painel do anfitrião, o editor de campanhas e um selo de
-desfecho do teste (exige dado estruturado no evento, mudança de backend).
+(`ui-reviewer`) e skill (`review-ui`). O selo de desfecho do teste (ícone, texto e tom na nota mecânica) já está no feed. Fica para depois: o editor de campanhas; o painel do
+anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md).
 
 ## Decisões
 
@@ -44,7 +44,7 @@ por superfície e contorno (ver [`design-system.md`](design-system.md)).
 - **Cores em OKLCH**, sem hex, com variações por cor relativa. O contraste é medido por teste (WCAG >= 4,5:1 nos pares
   essenciais): os valores da primeira ideia falhavam (tinta velha 4,1:1, rosa de poeira 3,9:1 sobre a fumaça) e
   foram ajustados.
-- No painel do anfitrião (depois), fato oculto aparece como tinta borrada e "se revela" quando o motor o revela. O jogador
+- No painel do anfitrião, fato oculto aparece como tinta borrada e "se revela" quando o motor o revela. O jogador
   nunca vê lacuna de fato oculto: isso revelaria que ele existe.
 
 ## Arquitetura do app
@@ -59,7 +59,7 @@ frontend/app/src/
     core/        singletons sem UI: api (HttpClient + interceptor de Bearer + ApiError), session, live (long-poll)
     shared/      ui/ (componentes dv-* sobre o CDK), game/ (lógica pura: commands, feed, rules, cena, nomes, convite...)
     layout/      shell
-    features/    home/  join/  invite/  character/  table/   (host/ e editor/ depois)
+    features/    home/  join/  invite/  character/  table/   (table/host/ é o painel do anfitrião; editor/ depois)
 ```
 
 `features` e `layout` usam `shared` e `core`; `shared` e `core` não dependem de `features`, de `layout` nem um do outro;
