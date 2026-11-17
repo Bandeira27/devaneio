@@ -1,0 +1,26 @@
+.copilot__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-3);
+}
+
+.copilot__reply {
+  display: grid;
+  gap: var(--dv-space-2);
+  justify-items: start;
+}
+
+.copilot__reply:empty {
+  display: none;
+}
+
+/* A resposta do LLM é texto: as quebras de linha dele viram quebras na tela, e uma palavra longa não estoura a largura. */
+.copilot__answer {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  line-height: var(--dv-leading-narration);
+}

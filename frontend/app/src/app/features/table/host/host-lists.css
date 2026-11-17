@@ -1,0 +1,58 @@
+/* As listas do painel do anfitrião (marcos, fatos, NPCs, locais): itens separados por um filete, tudo texto. */
+.list {
+  display: grid;
+  gap: var(--dv-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--dv-space-2);
+  justify-items: start;
+  padding-top: var(--dv-space-3);
+  border-top: var(--dv-border-width) dotted var(--dv-line);
+}
+
+.item:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.item__head,
+.item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dv-space-2) var(--dv-space-3);
+}
+
+.item__name {
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+}
+
+.item__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Fato que o grupo ainda não conhece: "tinta borrada". Clareia em hover, foco e toque; o selo "Oculto" diz o estado. */
+.item__text--secret {
+  filter: blur(var(--dv-blur-secret));
+}
+
+.item__text--secret:hover,
+.item__text--secret:focus,
+.item:focus-within .item__text--secret {
+  filter: none;
+}
+
+.notes {
+  display: grid;
+  gap: var(--dv-space-1);
+  margin: 0;
+  padding-left: var(--dv-space-4);
+  overflow-wrap: anywhere;
+}

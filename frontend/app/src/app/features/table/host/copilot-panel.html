@@ -1,0 +1,46 @@
+<section class="dv-card dv-stack" aria-labelledby="copiloto-titulo">
+  <h2 id="copiloto-titulo" class="dv-section">Copiloto</h2>
+  @if (!store.canSay()) {
+    <dv-state kind="unavailable">
+      O copiloto precisa de um mestre de IA, e esta mesa não tem um ligado.
+    </dv-state>
+  } @else {
+    <p class="dv-note">
+      Ele vê a campanha inteira, segredos inclusive. A resposta só você lê e não volta ao grupo. Ele
+      não lembra da pergunta anterior: cole aqui o que importa.
+    </p>
+    <form class="dv-stack" (submit)="$event.preventDefault(); send()">
+      <dv-field
+        label="Pergunte ao copiloto"
+        hint="Por exemplo: qual o próximo marco? Que fala o ferreiro diria agora?"
+        [error]="hint()"
+      >
+        <textarea
+          dvInput
+          rows="3"
+          [attr.maxlength]="max"
+          [value]="text()"
+          (input)="text.set(fieldValue($event))"
+        ></textarea>
+      </dv-field>
+      <div class="copilot__foot">
+        <span class="dv-note" aria-hidden="true">{{ text().length }}/{{ max }}</span>
+        <button dvButton="primary" type="submit" [dvLoading]="copilot.busy()">Perguntar</button>
+      </div>
+    </form>
+    @if (copilot.error()) {
+      <dv-notice kind="error" dismissible (dismissed)="copilot.clear()">
+        {{ copilot.error() }}
+      </dv-notice>
+    }
+    <div role="status" class="copilot__reply">
+      @if (copilot.busy()) {
+        <dv-badge tone="info" [pending]="true">O copiloto está pensando…</dv-badge>
+      } @else if (copilot.answer()) {
+        <p class="dv-note">Sobre: {{ copilot.asked() }}</p>
+        <p class="copilot__answer">{{ copilot.answer() }}</p>
+        <button dvButton type="button" (click)="copilot.clear()">Limpar</button>
+      }
+    </div>
+  }
+</section>

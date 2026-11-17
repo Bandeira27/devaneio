@@ -1,4 +1,10 @@
-import type { BeatStatus, Campaign, CampaignView, GameState } from '@contract/api_responses';
+import type {
+  BeatStatus,
+  Campaign,
+  CampaignView,
+  GameState,
+  PlayerStateView,
+} from '@contract/api_responses';
 
 /**
  * O que só o anfitrião vê da campanha: marcos, fatos, NPCs e locais com o estado da partida junto. Tudo é derivado
@@ -86,12 +92,12 @@ export function beatStatusText(status: BeatStatus): string {
 /** Monta a visão do anfitrião; `null` enquanto a campanha ou o estado inteiros não chegaram. */
 export function hostViewOf(
   campaign: Campaign | CampaignView | null,
-  state: GameState | { rng_seed?: undefined } | null,
+  state: GameState | PlayerStateView | null,
 ): HostView | null {
   if (!isFullCampaign(campaign) || state === null || !('rng_seed' in state)) {
     return null;
   }
-  const full = state as GameState;
+  const full: GameState = state as GameState;
   const beatTitle = new Map(campaign.beats.map((b) => [b.id, b.title]));
   const npcName = new Map(campaign.npcs.map((n) => [n.id, n.name]));
   const locationName = new Map(campaign.locations.map((l) => [l.id, l.name]));

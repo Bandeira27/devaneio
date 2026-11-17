@@ -1,0 +1,62 @@
+@if (store.host(); as host) {
+  <section class="dv-card dv-stack" aria-labelledby="npcs-titulo">
+    <h2 id="npcs-titulo" class="dv-section">NPCs</h2>
+    @if (host.npcs.length === 0) {
+      <p class="dv-note">Esta campanha não tem NPCs.</p>
+    }
+    <ul class="list">
+      @for (n of host.npcs; track n.id) {
+        <li class="item">
+          <div class="item__head">
+            <span class="item__name">{{ n.name }}</span>
+            @if (!n.alive) {
+              <dv-badge tone="danger" icon="danger">Caído</dv-badge>
+            }
+          </div>
+          <p class="dv-note">{{ n.location }} · disposição {{ n.disposition }}</p>
+          <dv-pips [value]="n.hp" [max]="n.maxHp" />
+          @if (n.description) {
+            <p class="item__text">{{ n.description }}</p>
+          }
+          @if (n.notes.length > 0) {
+            <dv-disclosure [label]="'Notas privadas de ' + n.name">
+              <ul class="notes">
+                @for (note of n.notes; track $index) {
+                  <li>{{ note }}</li>
+                }
+              </ul>
+            </dv-disclosure>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="dv-card dv-stack" aria-labelledby="locais-titulo">
+    <h2 id="locais-titulo" class="dv-section">Locais</h2>
+    <ul class="list">
+      @for (l of host.locations; track l.id) {
+        <li class="item">
+          <div class="item__head">
+            <span class="item__name">{{ l.name }}</span>
+            @if (l.current) {
+              <dv-badge tone="info" icon="info">O grupo está aqui</dv-badge>
+            }
+          </div>
+          @if (l.description) {
+            <p class="item__text">{{ l.description }}</p>
+          }
+          @if (l.notes.length > 0) {
+            <dv-disclosure [label]="'Notas privadas de ' + l.name">
+              <ul class="notes">
+                @for (note of l.notes; track $index) {
+                  <li>{{ note }}</li>
+                }
+              </ul>
+            </dv-disclosure>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

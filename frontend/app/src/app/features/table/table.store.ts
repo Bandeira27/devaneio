@@ -15,6 +15,7 @@ import { SessionStore } from '@core/session/session-store';
 import { buildFeed } from '@shared/game/feed';
 import { llmNoticeOf } from '@shared/game/llm-notice';
 import type { LoadState } from '@shared/game/load-state';
+import { hostViewOf } from '@shared/game/host';
 import { plainNote, usableWeapons } from '@shared/game/rules';
 import { TableActions } from './table.actions';
 import {
@@ -89,6 +90,10 @@ export class TableStore implements OnDestroy {
     return rules === null ? [] : usableWeapons(rules, this.character()?.inventory ?? []);
   });
   readonly targets = computed(() => targetsOf(this.table(), this.scene()));
+  /** O que só o anfitrião vê (marcos, fatos, NPCs, locais), ou `null` para o jogador e enquanto carrega. */
+  readonly host = computed(() =>
+    this.isHost() ? hostViewOf(this.campaign(), this.table()?.state ?? null) : null,
+  );
 
   constructor() {
     // A cada revisão nova do fluxo, relê a foto da mesa: hp, turno, quem já agiu, onde o grupo está.
