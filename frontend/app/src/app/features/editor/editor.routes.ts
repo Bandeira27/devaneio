@@ -8,6 +8,7 @@ import { FactsSection } from './sections/facts-section';
 import { LocationsSection } from './sections/locations-section';
 import { NpcsSection } from './sections/npcs-section';
 import { OverviewSection } from './sections/overview-section';
+import { PreviewSection } from './sections/preview-section';
 
 /** Sair da edição com alterações não gravadas pede confirmação. */
 const leave: CanDeactivateFn<EditorPage> = (page) => page.canLeave();
@@ -25,6 +26,7 @@ export const EDITOR_ROUTES: Routes = [
       { path: 'faccoes', component: FactionsSection },
       { path: 'marcos', component: BeatsSection },
       { path: 'fatos', component: FactsSection },
+      { path: 'previa', component: PreviewSection },
     ],
   },
 ];

@@ -1,0 +1,38 @@
+.block {
+  display: grid;
+  gap: var(--dv-space-2);
+  padding-top: var(--dv-space-3);
+  border-top: var(--dv-border-width) dotted var(--dv-line);
+}
+
+.block__title {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  font-weight: var(--dv-weight-regular);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-text-muted);
+}
+
+.block__title-text {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-section);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.block__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* O contexto do LLM é JSON: texto corrido que quebra a linha, nunca uma barra de rolagem na página. */
+.code {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+}

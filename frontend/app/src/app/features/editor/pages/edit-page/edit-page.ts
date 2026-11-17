@@ -22,6 +22,7 @@ export const SECTIONS = [
   { path: 'faccoes', label: 'Facções' },
   { path: 'marcos', label: 'Marcos' },
   { path: 'fatos', label: 'Fatos' },
+  { path: 'previa', label: 'Prévia' },
 ] as const;
 
 /**

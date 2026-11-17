@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type {
   Campaign,
   EditorCampaign,
+  PreviewView,
   RulesView,
   SystemInfo,
   ValidationReport,
@@ -76,6 +77,15 @@ export class EditorStore {
   readonly unavailable = signal(false);
   /** Um aviso curto para o autor (por exemplo, "agora é uma cópia"). */
   readonly info = signal('');
+  /** A prévia do que cada um enxerga (jogador, LLM, copiloto), ou `null` até ser pedida. */
+  readonly preview = signal<PreviewView | null>(null);
+  readonly previewing = signal(false);
+  readonly previewError = signal('');
+  private readonly previewOf = signal('');
+  /** A prévia é de antes das últimas alterações? */
+  readonly previewStale = computed(
+    () => this.preview() !== null && this.previewOf() !== JSON.stringify(this.campaign()),
+  );
 
   /** Os itens cujo id ainda acompanha o nome (chave `tipo:id`); um sinal, porque a tela mostra a dica dele. */
   private readonly auto = signal<ReadonlySet<string>>(new Set());
@@ -170,6 +180,8 @@ export class EditorStore {
     this.report.set(null);
     this.checkError.set('');
     this.info.set('');
+    this.preview.set(null);
+    this.previewError.set('');
     this.autoCampaignId.set(false);
     this.auto.set(new Set());
     this.savedText.set(JSON.stringify(campaign));
@@ -359,6 +371,24 @@ export class EditorStore {
         .map((e) => e.message),
       findings: this.findings().filter((f) => f.text.startsWith(start)),
     };
+  }
+
+  /** Pede a prévia da campanha como está agora (o servidor recusa se ela tem erros). */
+  async loadPreview(): Promise<void> {
+    const campaign = this.campaign();
+    if (campaign === null || this.previewing()) {
+      return;
+    }
+    this.previewing.set(true);
+    this.previewError.set('');
+    try {
+      this.preview.set(await firstValueFrom(this.api.editorPreview(campaign)));
+      this.previewOf.set(JSON.stringify(campaign));
+    } catch (error) {
+      this.previewError.set(messageOf(error));
+    } finally {
+      this.previewing.set(false);
+    }
   }
 
   /** Confere de novo, sem esperar (depois de uma falha de conexão). */
