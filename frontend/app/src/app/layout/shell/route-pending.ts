@@ -8,6 +8,9 @@ import {
   Router,
 } from '@angular/router';
 
+/** O que a tela diz (e o leitor de tela ouve) enquanto a troca de tela demora. */
+export const OPENING_TEXT = 'Abrindo…';
+
 /** Depois de quanto tempo de espera a folha de transição aparece (antes disso a troca de tela é só a troca). */
 export const SHOW_AFTER_MS = 150;
 

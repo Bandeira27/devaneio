@@ -1,5 +1,5 @@
 import type { ModifierInfo } from '@contract/api_responses';
-import type { ChoiceOption } from '@shared/ui/choice/choice';
+import type { ChoiceOption } from './choice-option';
 
 /** As opções de modificador de um teste ou ataque: "Nenhum" primeiro, depois cada um com o valor com sinal. */
 export function modifierOptions(modifiers: readonly ModifierInfo[]): ChoiceOption[] {

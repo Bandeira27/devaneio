@@ -95,6 +95,26 @@ export function attackTargets(
   });
 }
 
+/**
+ * A nota de "como foi resolvido" em palavras de quem joga: atributos pelo nome ("FOR" vira "Força"), "hp" vira "vida",
+ * os dados entre colchetes viram "2d6: 3 e 4" e a seta vira "para" (ou só uma vírgula antes do "total").
+ */
+export function plainNote(
+  note: string,
+  attributes: readonly { id: string; name: string }[],
+): string {
+  return humanizeFormula(note, attributes)
+    .replace(/\bhp\b/g, 'vida')
+    .replace(/(\dd\d+)\s*\[([^\]]*)\]/g, (_all, dice: string, rolls: string) => {
+      const values = rolls.split(',').map((v) => v.trim());
+      const spoken =
+        values.length > 1 ? `${values.slice(0, -1).join(', ')} e ${values.at(-1)}` : rolls.trim();
+      return `${dice}: ${spoken}`;
+    })
+    .replace(/\s*→\s*(?=total)/g, ', ')
+    .replace(/\s*→\s*/g, ' para ');
+}
+
 /** Troca os códigos de atributo de uma fórmula pelos nomes ("2d6 + FOR" vira "2d6 + Força"); o resto fica como está. */
 export function humanizeFormula(
   formula: string,

@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DvButton } from '@shared/ui/button/button';
 import { DvIcon } from '@shared/ui/icon/icon';
-import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvKeyValue, type KeyValueItem } from '@shared/ui/key-value/key-value';
-import { isWide } from '@shared/ui/wide';
 import type { Scene } from '@shared/game/scene';
 
 const names = (list: readonly { name: string }[], none: string): string =>
@@ -15,7 +13,7 @@ const names = (list: readonly { name: string }[], none: string): string =>
  */
 @Component({
   selector: 'dv-scene-card',
-  imports: [DvButton, DvDisclosure, DvIcon, DvKeyValue],
+  imports: [DvButton, DvIcon, DvKeyValue],
   templateUrl: './scene-card.html',
   styleUrl: './scene-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,8 +26,6 @@ export class SceneCard {
   readonly blockedReasonId = input<string | null>(null);
   /** O id da saída que a pessoa tocou. */
   readonly exitChosen = output<string>();
-  /** Na tela larga (a coluna lateral) a descrição já nasce aberta; no celular, recolhida para a cena ocupar pouco. */
-  protected readonly wide = isWide();
   protected readonly facts = computed<KeyValueItem[]>(() => [
     { label: 'Aqui', value: names(this.scene().npcs, 'ninguém') },
   ]);

@@ -62,7 +62,7 @@
               [scene]="scene"
               [canGo]="!store.blockedReason() && !store.actionBusy()"
               [blockedReasonId]="store.blockedReason() ? 'dock-reason' : null"
-              (exitChosen)="goThroughExit($event)"
+              (exitChosen)="actions()?.go($event)"
             />
           }
           <dv-party-strip
@@ -95,8 +95,9 @@
         @if (store.character(); as mine) {
           @if (store.rules(); as rules) {
             <section class="table__mine dv-card dv-card--page" aria-label="Minha ficha">
-              <h2 class="dv-section">{{ mine.name }}</h2>
-              <dv-character-card [character]="mine" [rules]="rules" />
+              <dv-disclosure [label]="'Ficha de ' + mine.name" [(open)]="mineOpen">
+                <dv-character-card [character]="mine" [rules]="rules" />
+              </dv-disclosure>
             </section>
           }
         }

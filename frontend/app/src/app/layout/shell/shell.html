@@ -20,9 +20,9 @@
         animate.enter="dv-enter"
         animate.leave="dv-leave"
       >
-        <dv-state kind="loading" cover>Abrindo…</dv-state>
+        <dv-state kind="loading" cover>{{ openingText }}</dv-state>
       </div>
     }
   </main>
-  <p class="dv-visually-hidden" role="status">{{ pending.visible() ? 'Abrindo…' : '' }}</p>
+  <p class="dv-visually-hidden" role="status">{{ pending.visible() ? openingText : '' }}</p>
 </div>

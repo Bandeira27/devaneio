@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
 import { GUEST_STEPS } from '@shared/game/entry-steps';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
@@ -26,15 +26,8 @@ export class JoinPage implements OnInit {
 
   protected readonly store = inject(JoinStore);
 
-  constructor() {
-    effect(() => {
-      this.store.tableId.set(this.tableId());
-      this.store.code.set(this.invite() ?? '');
-    });
-  }
-
   ngOnInit(): void {
-    this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
+    this.store.tableId.set(this.tableId());
     this.store.code.set(this.invite() ?? '');
   }
 }

@@ -9,8 +9,9 @@ import {
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { DvBrand } from '@shared/ui/brand/brand';
+import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { DvState } from '@shared/ui/state/state';
-import { RoutePending } from './route-pending';
+import { OPENING_TEXT, RoutePending } from './route-pending';
 
 /**
  * O shell do app: link de pular, cabeçalho com a marca e o contêiner por onde as páginas entram. Depois de cada
@@ -27,6 +28,7 @@ import { RoutePending } from './route-pending';
 })
 export class Shell {
   protected readonly pending = inject(RoutePending);
+  protected readonly openingText = OPENING_TEXT;
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private waiting: ReturnType<typeof setTimeout> | undefined;
 
@@ -55,13 +57,9 @@ export class Shell {
     const start = performance.now();
     const attempt = (): void => {
       const heading = main.querySelector('h1');
-      const active = document.activeElement;
-      // Livre: nada focado, o próprio contêiner ou algo de fora do conteúdo (a marca do cabeçalho). Quem já está num campo do conteúdo não perde o foco.
-      const idle =
-        active === null || active === document.body || active === main || !main.contains(active);
+      const idle = isFocusFree(main); // quem já está num campo do conteúdo não perde o foco
       if (heading && idle) {
-        heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
+        focusElement(heading);
         return;
       }
       if (!heading && idle && performance.now() - start < 3000) {

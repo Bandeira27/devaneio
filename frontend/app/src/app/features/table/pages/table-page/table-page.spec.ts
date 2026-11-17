@@ -141,6 +141,46 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     }
   });
 
+  it('a ficha do painel nasce aberta, o rótulo diz o que abre e o recolher sobrevive a um novo render', async () => {
+    const { root, events, http, settle } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    const details = () => root().querySelector('.table__mine details') as HTMLDetailsElement;
+    expect(details().open).toBe(true);
+    expect(details().querySelector('summary')?.textContent).toContain('Ficha de Bia');
+    details().open = false; // a pessoa recolhe
+    details().dispatchEvent(new Event('toggle'));
+    await settle();
+    events('20').flush(eventsView(4, [event(2, 1)])); // chega algo e a página renderiza de novo
+    await settle();
+    http.expectOne(`/tables/${TABLE_ID}`).flush(withCharacter({ revision: 4 }));
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
+    await settle();
+    expect(details().open).toBe(false); // continua recolhida
+  });
+
+  it('a descrição da cena fica sempre à vista, sem "Ver a cena" nem accordion', async () => {
+    const campaign = {
+      locations: [
+        {
+          id: 'vila',
+          name: 'Vila de Pedra',
+          description: 'Casas de pedra agarradas à encosta.',
+          connections: [],
+          private_notes: [],
+        },
+      ],
+      npcs: [],
+    } as unknown as Campaign;
+    const { root, events, settle } = await open(withCharacter(), campaign);
+    events('0').flush(eventsView(3));
+    await settle();
+    const scene = root().querySelector('[aria-label="Cena"]') as HTMLElement;
+    expect(scene.textContent).toContain('Casas de pedra agarradas à encosta.');
+    expect(scene.querySelector('details')).toBeNull();
+    expect(scene.textContent).not.toContain('Ver a cena');
+  });
+
   it('tocar numa saída da cena abre a confirmação de Ir já no destino tocado; nada é enviado antes de confirmar', async () => {
     const campaign = {
       locations: [
@@ -175,6 +215,66 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     (sheet.querySelector('[aria-label="Fechar"]') as HTMLButtonElement).click(); // sem escolher
     await settle();
     expect(document.querySelector('.dv-sheet')).toBeNull();
+  });
+
+  it('depois de ir por uma saída (a cena muda e o botão some), o foco passa à história, não ao body', async () => {
+    const campaign = {
+      locations: [
+        { id: 'vila', name: 'Vila', description: '', connections: ['floresta'], private_notes: [] },
+        { id: 'floresta', name: 'Floresta', description: '', connections: [], private_notes: [] },
+      ],
+      npcs: [],
+    } as unknown as Campaign;
+    const { root, events, http, settle } = await open(withCharacter(), campaign);
+    events('0').flush(eventsView(3));
+    await settle();
+    const exit = root().querySelector('.scene__list button') as HTMLButtonElement;
+    exit.focus();
+    exit.click();
+    await settle();
+    const confirm = document.querySelector(
+      '.dv-sheet__foot .dv-button--primary',
+    ) as HTMLButtonElement;
+    confirm.click();
+    await settle();
+    http.expectOne(`/tables/${TABLE_ID}/commands`).flush({
+      revision: 4,
+      events: [],
+      text: '',
+      status: 'active',
+      turn_ended: false,
+    });
+    await settle();
+    const moved = withCharacter({ revision: 4 });
+    moved.state = { ...moved.state, current_location_id: 'floresta' };
+    http.expectOne(`/tables/${TABLE_ID}`).flush(moved);
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaign);
+    await settle();
+    await settle();
+    expect(root().querySelector('.scene__list button')).toBeNull(); // a saída tocada deixou de existir
+    expect(document.activeElement).toBe(root().querySelector('[aria-label="A história"]'));
+  });
+
+  it('abrir a mesa não rouba o foco para a história', async () => {
+    const { root, events, settle } = await open();
+    (document.activeElement as HTMLElement | null)?.blur();
+    events('0').flush(eventsView(3));
+    await settle();
+    expect(document.activeElement).not.toBe(root().querySelector('[aria-label="A história"]'));
+  });
+
+  it('um evento novo na mesma cena não move o foco', async () => {
+    const { root, events, http, settle } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    (document.activeElement as HTMLElement | null)?.blur(); // o foco está no body
+    events('20').flush(eventsView(4, [event(2, 1)]));
+    await settle();
+    http.expectOne(`/tables/${TABLE_ID}`).flush(withCharacter({ revision: 4 })); // a mesa é relida: cena nova (objeto novo), mesmo nome
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
+    await settle();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(document.activeElement).not.toBe(root().querySelector('[aria-label="A história"]'));
   });
 
   it('sem conexão, as saídas da cena também ficam bloqueadas', async () => {
@@ -266,7 +366,7 @@ describe('Mesa', () => {
     expect(events('20').request.params.get('since')).toBe('120');
   });
 
-  it('o feed mostra a narração, a nota mecânica em detalhes e a fala do mestre', async () => {
+  it('o feed mostra a narração, a nota mecânica sempre à vista (sem accordion) e a fala do mestre', async () => {
     const { root, events, settle } = await open();
     events('0').flush(
       eventsView(
@@ -282,10 +382,29 @@ describe('Mesa', () => {
     expect(text).toContain('O vento muda de direção.');
     expect(text).not.toContain('prosa 2'); // a narração do LLM substitui a prosa do evento
     expect(text).toContain('mecânica 2');
+    expect(root().querySelectorAll('.feed__note').length).toBe(2); // uma nota por evento, direto no texto
+    expect(root().querySelector('dv-feed-list details')).toBeNull();
+    expect(text).not.toContain('Como foi resolvido');
     expect(text).toContain('Mestre');
     expect(text).toContain('Cuidado com o altar.');
     expect(root().querySelectorAll('.feed__turn').length).toBe(2);
     expect(root().querySelector('.feed__event[data-tone="danger"]')).not.toBeNull();
+  });
+
+  it('a nota de como foi resolvido sai em palavras de quem joga, sem códigos nem símbolos', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(
+      eventsView(3, [
+        event(1, 1, { text: 'Bia testa Lutar: 2d6 [3, 4] → total 9, hp 8 (FOR 2, AGI 1).' }),
+      ]),
+    );
+    await settle();
+    const note = root().querySelector('.feed__note')?.textContent ?? '';
+    expect(note).toContain('Força 2');
+    expect(note).toContain('Agilidade 1');
+    expect(note).toContain('2d6: 3 e 4');
+    expect(note).toContain('vida 8');
+    expect(note).not.toMatch(/\bFOR\b|\bAGI\b|\bhp\b|\[|→/); // nada técnico na nota
   });
 
   it('os turnos passados desbotam e o atual fica nítido', async () => {

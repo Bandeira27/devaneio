@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
@@ -20,8 +19,9 @@ import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
-import { isWide } from '@shared/ui/wide';
+import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { connectionBlockOf } from '../../table.derived';
+import { publishDockHeight } from './dock-height';
 import { ActionDock } from '../../components/action-dock/action-dock';
 import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
@@ -59,7 +59,9 @@ export class TablePage implements OnInit {
 
   private readonly documentTitle = inject(Title);
   private readonly feed = viewChild(FeedList);
-  private gone = false;
+  private lastSceneName: string | undefined;
+  /** O nome da cena: o `computed` só avisa quando o texto muda, não a cada leitura nova da mesa. */
+  private readonly sceneName = computed(() => this.store.scene()?.name);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
@@ -70,17 +72,36 @@ export class TablePage implements OnInit {
     const status = this.store.liveStatus();
     return status === 'expired' || status === 'gone' ? connectionBlockOf(status) : '';
   });
+  /** A ficha do painel da mesa larga está aberta? Só vale na sessão: ao reabrir a mesa ela volta aberta. */
+  protected readonly mineOpen = signal(true);
   /** Quantos itens do feed chegaram enquanto se lia mais acima. */
   protected readonly unseen = signal(0);
 
   constructor() {
-    effect(() => this.store.tableId.set(this.tableId()));
-    inject(DestroyRef).onDestroy(() => (this.gone = true));
-    this.keepDockHeight();
+    publishDockHeight(this.dock);
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
       this.store.state();
       afterNextRender(() => this.refocusHeading(), { injector: this.injector });
+    });
+    effect(() => {
+      // Só quando o NOME da cena muda (foi-se por uma saída): o botão tocado, que ganhou o foco de volta ao fechar a
+      // folha, deixou de existir; se o foco se perdeu, ele passa à história. Evento novo na mesma cena não mexe no foco.
+      const name = this.sceneName();
+      const previous = this.lastSceneName;
+      this.lastSceneName = name;
+      if (previous === undefined || name === undefined || name === previous) {
+        return; // a primeira cena (ao abrir a mesa) e a mesma cena não roubam o foco
+      }
+      afterNextRender(
+        () => {
+          const story = this.story()?.nativeElement;
+          if (story && isFocusFree()) {
+            focusElement(story);
+          }
+        },
+        { injector: this.injector },
+      );
     });
     effect(() => {
       const campaign = this.store.title();
@@ -91,76 +112,29 @@ export class TablePage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
+    this.store.tableId.set(this.tableId());
     void this.store.load();
   }
 
-  /**
-   * Vai por uma saída tocada na cena. A cena muda e o botão tocado (que recebe o foco de volta ao fechar a folha) deixa
-   * de existir: se o foco se perdeu, ele passa à história, onde a pessoa lê o que aconteceu.
-   */
-  protected async goThroughExit(exitId: string): Promise<void> {
-    await this.actions()?.go(exitId);
-    if (this.gone) {
-      return; // saiu da página com a folha aberta
-    }
-    afterNextRender(
-      () => {
-        const active = document.activeElement;
-        if (active === null || active === document.body || !active.isConnected) {
-          this.story()?.nativeElement.focus({ preventScroll: true });
-        }
-      },
-      { injector: this.injector },
-    );
-  }
-
   private refocusHeading(): void {
-    const active = document.activeElement;
-    if (active === null || active === document.body) {
-      const heading = this.host.nativeElement.querySelector('h1');
-      if (heading) {
-        heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
-      }
+    const heading = this.host.nativeElement.querySelector('h1');
+    if (heading && isFocusFree()) {
+      focusElement(heading);
     }
   }
 
   /** Leva a tela ao fim da história e tira o aviso de novidades. */
   protected toEnd(): void {
     this.feed()?.scrollToEnd();
-    this.story()?.nativeElement.focus({ preventScroll: true }); // o botão some: o foco fica na história
+    const story = this.story()?.nativeElement;
+    if (story) {
+      focusElement(story); // o botão some: o foco fica na história
+    }
   }
 
   /** O link "Pular para as ações": com rota por hash, `href="#..."` navegaria, então o foco é movido à mão. */
   protected skipToActions(event: Event): void {
     event.preventDefault();
     this.actions()?.focusActions();
-  }
-
-  /**
-   * Mede a barra de ações quando ela é fixa no pé (celular) e publica a altura em `--dv-dock-height` na raiz, para a
-   * rolagem e o foco pararem acima dela. Na tela larga a barra não cobre nada e a altura é zero.
-   */
-  private keepDockHeight(): void {
-    effect((onCleanup) => {
-      const dock = this.dock()?.nativeElement;
-      if (!dock || typeof ResizeObserver === 'undefined') {
-        return;
-      }
-      // Na raiz, para o `scroll-padding-bottom` do documento (base.css) valer para tudo que ganha foco ou rola.
-      const root = document.documentElement;
-      const publish = (): void => {
-        // Só no celular a barra cobre o pé da tela; na tela larga ela fica na coluna e a altura é zero.
-        root.style.setProperty('--dv-dock-height', isWide() ? '0px' : `${dock.offsetHeight}px`);
-      };
-      const observer = new ResizeObserver(publish);
-      observer.observe(dock);
-      publish();
-      onCleanup(() => {
-        observer.disconnect();
-        root.style.removeProperty('--dv-dock-height');
-      });
-    });
   }
 }
