@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
 import { GUEST_STEPS } from '@shared/game/entry-steps';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
@@ -25,9 +25,14 @@ export class JoinPage implements OnInit {
   readonly invite = input<string>();
 
   protected readonly store = inject(JoinStore);
+  protected readonly invalidMessage = computed(() => {
+    const preview = this.store.preview();
+    return preview.kind === 'invalid' ? preview.message : '';
+  });
 
   ngOnInit(): void {
     this.store.tableId.set(this.tableId());
     this.store.code.set(this.invite() ?? '');
+    void this.store.loadPreview(); // só com o convite no link: quem cola o código à mão fica com o texto genérico
   }
 }

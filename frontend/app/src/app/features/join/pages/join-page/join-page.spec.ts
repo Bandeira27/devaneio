@@ -4,6 +4,58 @@ import { setup } from '../../../../testing/setup';
 describe('Entrar na mesa', () => {
   const url = `/entrar/${TABLE_ID}/${INVITE}`;
 
+  describe('prévia do convite (para onde o link leva)', () => {
+    const preview = `/tables/${TABLE_ID}/preview`;
+
+    it('com o convite no link mostra o nome da mesa', async () => {
+      const { root, http, settle } = await setup(url);
+      const request = http.expectOne(preview);
+      expect(request.request.body).toEqual({ invite_code: INVITE });
+      request.flush({ title: 'A Sombra do Vale' });
+      await settle();
+      expect(root().querySelector('.dv-stage__context strong')?.textContent).toBe(
+        'A Sombra do Vale',
+      );
+    });
+
+    it('um título com HTML aparece como texto, sem virar elemento', async () => {
+      const { root, http, settle } = await setup(url);
+      http.expectOne(preview).flush({ title: '<img src=x onerror=alert(1)>' });
+      await settle();
+      expect(root().querySelector('.dv-stage__context img')).toBeNull();
+      expect(root().querySelector('.dv-stage__context strong')?.textContent).toBe(
+        '<img src=x onerror=alert(1)>',
+      );
+    });
+
+    it('convite recusado (401) avisa na tela e mantém o texto genérico', async () => {
+      const { root, http, settle } = await setup(url);
+      http
+        .expectOne(preview)
+        .flush(
+          { error: { code: 'invalid_invite', message: 'convite inválido' } },
+          { status: 401, statusText: 'Unauthorized' },
+        );
+      await settle();
+      expect(root().querySelector('dv-notice')?.textContent).toContain('Esse convite não vale');
+      expect(root().querySelector('.dv-stage__context strong')).toBeNull();
+    });
+
+    it('sem rede a tela segue com o texto genérico e o formulário continua valendo', async () => {
+      const { root, http, settle } = await setup(url);
+      http.expectOne(preview).error(new ProgressEvent('error'));
+      await settle();
+      expect(root().querySelector('dv-notice')).toBeNull(); // falha de rede não acusa o convite
+      expect(root().querySelector('.dv-stage__context strong')).toBeNull();
+      expect(root().querySelector('form button[type="submit"]')).not.toBeNull();
+    });
+
+    it('sem o convite no link não pergunta nada ao servidor', async () => {
+      const { http } = await setup(`/entrar/${TABLE_ID}`);
+      http.expectNone(preview);
+    });
+  });
+
   it('com o convite do link só pede o nome', async () => {
     const { root } = await setup(url);
     expect(root().querySelectorAll('input')).toHaveLength(1);

@@ -3,8 +3,15 @@
     <dv-steps [steps]="steps" [current]="0" />
     <h1 class="dv-display">Entrar na mesa</h1>
     <p class="dv-lede dv-stage__extra">
-      Você foi convidado para uma mesa de RPG com um mestre de IA. Diga como quer ser chamado e, no
-      próximo passo, crie o seu personagem.
+      @if (store.preview(); as preview) {
+        @if (preview.kind === 'ready') {
+          Você foi convidado para <strong>{{ preview.title }}</strong>, uma mesa de RPG com um
+          mestre de IA.
+        } @else {
+          Você foi convidado para uma mesa de RPG com um mestre de IA.
+        }
+      }
+      Diga como quer ser chamado e, no próximo passo, crie o seu personagem.
     </p>
     <dv-ornament class="dv-stage__extra" />
   </div>
@@ -32,6 +39,9 @@
       </dv-field>
     } @else {
       <p class="dv-note">Convite recebido pelo link.</p>
+    }
+    @if (store.preview().kind === 'invalid') {
+      <dv-notice kind="error">{{ invalidMessage() }}</dv-notice>
     }
     @if (store.error()) {
       <dv-notice kind="error">{{ store.error() }}</dv-notice>
