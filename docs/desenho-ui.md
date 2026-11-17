@@ -7,7 +7,10 @@ o **app do jogador** (Angular), o painel do anfitrião com o copiloto e, depois,
 ## Estado do design
 
 O app do jogador tem design system próprio (tokens, componentes com contrato, catálogo em Storybook, movimento com
-regra), mesa pensada pela tarefa e entrada curta. Os textos de referência: [`design-system.md`](design-system.md),
+regra), mesa pensada pela tarefa e entrada curta. O redesenho seguinte reorganizou a informação e usou a tela larga:
+transição entre telas (a página vira, cabeçalho parado, folha de espera), fundação visual (degraus de superfície, escala,
+marca, ornamento), entrada em dois painéis (contexto e tarefa) e mesa em até três painéis (cena e grupo, história, ficha
+e ações). Os textos de referência: [`design-system.md`](design-system.md),
 [`movimento.md`](movimento.md) e [`padroes-de-interacao.md`](padroes-de-interacao.md). A revisão de UI tem papel
 (`ui-reviewer`) e skill (`review-ui`). Fica para depois: o painel do anfitrião, o editor de campanhas e um selo de
 desfecho do teste (exige dado estruturado no evento, mudança de backend).

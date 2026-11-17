@@ -22,6 +22,20 @@ passos visíveis. A tela larga mostra o contexto ao lado da tarefa; o celular mo
 
 Nenhuma tela fica sem saída: erro e vazio sempre oferecem uma ação.
 
+## Composição para a tela larga
+
+Desktop não é o celular esticado. A informação se divide em painéis lado a lado dentro do contêiner do app, e o celular
+continua uma coluna. A **home** é capa e painel (a apresentação, a campanha e as mesas guardadas de um lado; criar e
+convite do outro). **Entrar**, **convite** e **personagem** têm o contexto à esquerda e a tarefa à direita. A **mesa**
+tem duas colunas (cena e grupo com as ações; a história) a partir de 64rem e três a partir de 90rem (cena e grupo; a
+história; a ficha de quem joga com as ações). A ordem do HTML segue a de leitura em todas as larguras.
+
+## Hierarquia de ações
+
+O que é do turno (Ir, Testar, Atacar, Falar) tem destaque; o que é de apoio (Ficha, Comando) é discreto. "Continuar" a
+última mesa é o botão principal da home; criar mesa só é primário quando não há mesa guardada. As saídas da cena são
+atalhos para `Ir` e passam pela mesma confirmação.
+
 ## Transição entre telas
 
 - O cabeçalho é a âncora: fica parado e só a página "vira" (sai para a esquerda, entra da direita, um deslocamento curto).
