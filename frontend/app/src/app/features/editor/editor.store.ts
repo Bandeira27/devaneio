@@ -11,6 +11,8 @@ import type {
 import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
 import {
+  addBeat,
+  addFact,
   addFaction,
   addLocation,
   addNpc,
@@ -35,6 +37,9 @@ export const VALIDATE_DELAY = new InjectionToken<number>('VALIDATE_DELAY', {
 });
 /** O id da rota de uma campanha que ainda não foi gravada. */
 export const NEW_CAMPAIGN = 'nova';
+
+/** As listas de itens da campanha que o editor mexe. */
+type ListName = 'locations' | 'npcs' | 'factions' | 'beats' | 'facts';
 
 /** Um item de uma lista da campanha, pelo tipo e pelo id (os ids são únicos dentro do tipo). */
 const key = (kind: ItemKind, id: string): string => `${kind}:${id}`;
@@ -212,13 +217,25 @@ export class EditorStore {
   }
 
   /** Acrescenta um item novo ao fim da lista do tipo; o id dele acompanha o nome até o autor escrevê-lo à mão. */
-  add(kind: Exclude<ItemKind, 'beat'>): void {
+  add(kind: ItemKind): void {
     const current = this.campaign();
     if (current === null) {
       return;
     }
-    const next = { location: addLocation, npc: addNpc, faction: addFaction }[kind](current);
-    const list = { location: next.locations, npc: next.npcs, faction: next.factions }[kind];
+    const next = {
+      location: addLocation,
+      npc: addNpc,
+      faction: addFaction,
+      beat: addBeat,
+      fact: addFact,
+    }[kind](current);
+    const list = {
+      location: next.locations,
+      npc: next.npcs,
+      faction: next.factions,
+      beat: next.beats,
+      fact: next.facts,
+    }[kind];
     const created = list.at(-1);
     if (created !== undefined) {
       this.setAuto(key(kind, created.id), true);
@@ -286,15 +303,11 @@ export class EditorStore {
     });
   }
 
-  replaceIn<L extends 'locations' | 'npcs' | 'factions'>(
-    list: L,
-    index: number,
-    item: Campaign[L][number],
-  ): void {
+  replaceIn<L extends ListName>(list: L, index: number, item: Campaign[L][number]): void {
     this.update((c) => ({ ...c, [list]: replaceAt(c[list] as unknown[], index, item) }));
   }
 
-  moveIn(list: 'locations' | 'npcs' | 'factions', index: number, delta: -1 | 1): void {
+  moveIn(list: ListName, index: number, delta: -1 | 1): void {
     this.update((c) => ({ ...c, [list]: moveAt(c[list] as unknown[], index, delta) }));
   }
 
@@ -329,6 +342,23 @@ export class EditorStore {
         this.validating.set(false);
       }
     }
+  }
+
+  /**
+   * O que o servidor disse de um marco ou fato: erros de integridade e avisos de autoria (que vêm em frases que começam
+   * por `marco 'id'` ou `fato 'id'`), para aparecerem junto do item.
+   */
+  problemsOf(
+    word: 'marco' | 'fato',
+    id: string,
+  ): { errors: string[]; findings: { level: 'erro' | 'aviso'; text: string }[] } {
+    const start = `${word} '${id}'`;
+    return {
+      errors: this.errors()
+        .filter((e) => e.path === '' && e.message.startsWith(start))
+        .map((e) => e.message),
+      findings: this.findings().filter((f) => f.text.startsWith(start)),
+    };
   }
 
   /** Confere de novo, sem esperar (depois de uma falha de conexão). */
@@ -455,5 +485,11 @@ function whereIs(campaign: Campaign, path: string): string {
   }[];
   const item = list[Number(index)];
   const label = SECTION_LABEL[head as keyof typeof SECTION_LABEL];
-  return item === undefined ? label : `${label} › ${item.name ?? item.title ?? item.id}`;
+  return item === undefined
+    ? label
+    : `${label} › ${item.name || item.title || shorten(item.text) || item.id}`;
+}
+
+function shorten(text: string | undefined): string | undefined {
+  return text === undefined ? undefined : text.length > 30 ? `${text.slice(0, 30)}…` : text;
 }

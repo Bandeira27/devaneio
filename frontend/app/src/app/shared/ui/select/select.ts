@@ -43,8 +43,13 @@ export class DvSelect {
   protected readonly shown = computed<readonly SelectOption[]>(() => {
     const value = this.value();
     const options = this.options();
-    return value === '' || options.some((o) => o.value === value)
-      ? options
-      : [{ value, label: `${value} (não encontrado)` }, ...options];
+    if (options.some((o) => o.value === value)) {
+      return options;
+    }
+    // Valor que não está nas opções: a tela mostra isso, e não outra opção (vazio é "escolha", o resto "não encontrado").
+    return [
+      { value, label: value === '' ? '(escolha…)' : `${value} (não encontrado)` },
+      ...options,
+    ];
   });
 }

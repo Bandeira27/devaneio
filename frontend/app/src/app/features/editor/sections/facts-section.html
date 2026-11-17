@@ -1,0 +1,50 @@
+<section class="dv-card dv-stack" aria-labelledby="fatos-titulo">
+  <h2 id="fatos-titulo" class="dv-section">Fatos</h2>
+  <p class="dv-note">
+    Verdades que os jogadores ainda não conhecem. Ficam escondidos até serem revelados: pelas
+    condições, ou pelo anfitrião.
+  </p>
+  @if (store.campaign(); as c) {
+    <dv-list-editor
+      noun="fato"
+      empty="Ainda não há fatos."
+      [items]="c.facts"
+      [nameOf]="nameOf"
+      (add)="store.add('fact')"
+      (remove)="remove($event)"
+      (move)="store.moveIn('facts', $event.index, $event.delta)"
+    >
+      <ng-template let-fact let-i="index">
+        <dv-item-problems word="fato" [id]="fact.id" />
+        <dv-name-id-fields
+          kind="fact"
+          label="O fato"
+          field="text"
+          follows="o texto"
+          [multiline]="true"
+          [id]="fact.id"
+          [name]="fact.text"
+          [path]="'facts.' + i"
+          (nameChange)="setText(i, fact, $event)"
+        />
+        <dv-select
+          label="Sobre quem ou o quê"
+          hint="Só para organizar: o fato continua escondido."
+          [announce]="false"
+          [options]="subjects()"
+          [value]="fact.about ?? ''"
+          [error]="store.errorAt('facts.' + i + '.about')"
+          (valueChange)="patch(i, fact, { about: $event === '' ? null : $event })"
+        />
+        <dv-conditions-editor
+          label="Condições para revelar"
+          hint="Só o anfitrião revela o fato."
+          [owner]="'fato ' + nameOf(fact)"
+          [path]="'facts.' + i + '.reveal_when'"
+          [conditions]="fact.reveal_when"
+          (conditionsChange)="patch(i, fact, { reveal_when: [...$event] })"
+        />
+      </ng-template>
+    </dv-list-editor>
+  }
+</section>

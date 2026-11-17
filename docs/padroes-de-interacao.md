@@ -83,6 +83,10 @@ Vitória ou derrota aparece como aviso com a saída "Voltar ao início"; a hist�
 
 O servidor confere a campanha a cada edição, depois de uma pausa (500 ms); a tela só mostra: o selo "Conferindo…", "Sem erros" ou "N erros" (com texto e ícone), a lista de erros em português, o erro ao lado do campo e os avisos de autoria. **Gravar fica bloqueado com o motivo escrito** (erro, conferindo, nada mudou, ou "já tem mesa: salve uma cópia"). Alterações não gravadas pedem confirmação ao sair. Item de lista que se remove pede confirmação e diz o que some junto; o item novo abre sozinho e, depois de remover, o foco vai ao botão de acrescentar.
 
+## Condições (editor)
+
+Uma condição se escolhe, não se escreve: o tipo vem de uma lista fechada em frases ("O grupo está em", "Um NPC caiu"...) e o que ela cita, de uma lista dos itens que existem (ou um número, no turno). Trocar o tipo recomeça a condição no primeiro item. Cada lista diz o que significa vazia ("só o anfitrião move", "só o anfitrião revela") e que todas as condições precisam valer.
+
 ## Ação irreversível ou que gasta a vez
 
 Pede confirmação **dentro do mesmo fluxo**, em uma frase que diz o efeito ("Mover o grupo para X. Gasta a sua ação."),

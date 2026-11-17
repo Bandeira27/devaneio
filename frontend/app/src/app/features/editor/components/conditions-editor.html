@@ -1,0 +1,57 @@
+<fieldset class="conditions">
+  <legend>{{ label() }}</legend>
+  @if (conditions().length === 0) {
+    <p class="dv-note">Nenhuma condição. {{ hint() }}</p>
+  } @else if (conditions().length > 1) {
+    <p class="dv-note">Todas precisam valer.</p>
+  }
+  @for (condition of conditions(); track $index; let i = $index) {
+    <div class="row">
+      <dv-select
+        label="Quando"
+        [announce]="false"
+        [options]="kinds"
+        [value]="condition.kind"
+        (valueChange)="setKind(i, $event)"
+      />
+      @if (condition.kind === 'turn_at_least') {
+        <dv-stepper
+          label="Número do turno"
+          [min]="0"
+          [max]="999"
+          [value]="turnOf(condition)"
+          (valueChange)="setTarget(i, '' + $event)"
+        />
+      } @else if (emptyText(condition.kind)) {
+        <p class="dv-note">{{ emptyText(condition.kind) }}</p>
+      } @else {
+        <dv-select
+          [label]="targetLabel(condition.kind)"
+          [announce]="false"
+          [options]="optionsFor(condition.kind)"
+          [value]="target(condition) ?? ''"
+          [error]="store.errorAt(path() + '.' + i)"
+          (valueChange)="setTarget(i, $event)"
+        />
+      }
+      <button
+        dvButton
+        type="button"
+        class="row__remove"
+        [attr.aria-label]="'Remover ' + name(condition, i) + ' de ' + where()"
+        (click)="remove(i)"
+      >
+        Remover
+      </button>
+    </div>
+  }
+  <button
+    dvButton
+    type="button"
+    class="add-condition"
+    [attr.aria-label]="'Acrescentar condição: ' + where()"
+    (click)="add()"
+  >
+    Acrescentar condição
+  </button>
+</fieldset>

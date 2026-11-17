@@ -1,6 +1,11 @@
 import { hostCampaign } from '../../testing/fixtures';
 import {
+  addBeat,
+  addFact,
   addFaction,
+  conditionTarget,
+  defaultCondition,
+  withTarget,
   addLocation,
   addNpc,
   emptyCampaign,
@@ -158,5 +163,87 @@ describe('edição da campanha', () => {
       { kind: 'beat_done', beat_id: 'chegou' },
     ]);
     expect(c.beats[0]?.activate_when).toEqual([{ kind: 'at_location', location_id: 'aldeia' }]);
+  });
+
+  it('marcos e fatos novos nascem vazios, com id do nome', () => {
+    const c = addFact(addBeat(emptyCampaign('n', 'N'), 'A chegada'), 'Bram é do culto');
+    expect(c.beats[0]).toMatchObject({ id: 'a-chegada', requires: [], activate_when: [] });
+    expect(c.facts[0]).toMatchObject({ id: 'bram-e-do-culto', about: null, reveal_when: [] });
+  });
+
+  it('renomear ou remover um fato não mexe no `about` de outros fatos', () => {
+    const base = {
+      ...hostCampaign,
+      facts: [
+        { id: 'a', text: 'um', about: null, reveal_when: [] },
+        { id: 'b', text: 'dois', about: 'ferreiro', reveal_when: [] },
+      ],
+    };
+    const renamed = renameId(base, 'fact', 'a', 'z');
+    expect(renamed.facts.map((f) => f.id)).toEqual(['z', 'b']);
+    expect(renamed.facts[1]?.about).toBe('ferreiro');
+    expect(removeItem(base, 'fact', 'a').facts.map((f) => f.id)).toEqual(['b']);
+  });
+
+  it('a condição padrão de cada tipo aponta para o primeiro item que existe', () => {
+    expect(defaultCondition('at_location', hostCampaign, [])).toEqual({
+      kind: 'at_location',
+      location_id: hostCampaign.locations[0]?.id,
+    });
+    expect(defaultCondition('npc_down', hostCampaign, [])).toMatchObject({ npc_id: 'ferreiro' });
+    expect(defaultCondition('turn_at_least', hostCampaign, [])).toEqual({
+      kind: 'turn_at_least',
+      turn: 1,
+    });
+    expect(defaultCondition('check_passed', hostCampaign, ['lutar'])).toEqual({
+      kind: 'check_passed',
+      skill_id: 'lutar',
+    });
+    expect(defaultCondition('check_passed', hostCampaign, [])).toEqual({
+      kind: 'check_passed',
+      skill_id: '',
+    });
+  });
+
+  it('o alvo de uma condição vai e volta', () => {
+    const cond = defaultCondition('beat_done', hostCampaign, []);
+    expect(conditionTarget(withTarget(cond, 'altar'))).toBe('altar');
+    expect(withTarget({ kind: 'turn_at_least', turn: 1 }, '4')).toEqual({
+      kind: 'turn_at_least',
+      turn: 4,
+    });
+    expect(conditionTarget({ kind: 'turn_at_least', turn: 4 })).toBeNull();
+  });
+
+  it('a condição "marco concluído" nunca aponta para o próprio marco', () => {
+    expect(defaultCondition('beat_done', hostCampaign, [], 'chegada')).toEqual({
+      kind: 'beat_done',
+      beat_id: 'altar',
+    });
+    const alone = { ...hostCampaign, beats: hostCampaign.beats.slice(0, 1) };
+    expect(defaultCondition('beat_done', alone, [], 'chegada')).toEqual({
+      kind: 'beat_done',
+      beat_id: '',
+    });
+  });
+
+  it('o alvo de uma condição troca em todos os tipos', () => {
+    expect(withTarget({ kind: 'at_location', location_id: 'a' }, 'b')).toEqual({
+      kind: 'at_location',
+      location_id: 'b',
+    });
+    expect(withTarget({ kind: 'npc_down', npc_id: 'a' }, 'b')).toEqual({
+      kind: 'npc_down',
+      npc_id: 'b',
+    });
+    expect(withTarget({ kind: 'check_passed', skill_id: 'a' }, 'b')).toEqual({
+      kind: 'check_passed',
+      skill_id: 'b',
+    });
+  });
+
+  it('remover um marco limpa os requisitos dos outros', () => {
+    const c = removeItem(hostCampaign, 'beat', 'chegada');
+    expect(c.beats.find((b) => b.id === 'altar')?.requires).toEqual([]);
   });
 });

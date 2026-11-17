@@ -1,4 +1,3 @@
-/* As seções do editor: um cartão por seção, campos em pilha e as ligações como caixas de marcar. */
 .checks {
   display: grid;
   gap: var(--dv-space-1);

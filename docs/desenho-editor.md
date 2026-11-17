@@ -44,7 +44,11 @@ Sem `--editor`, tudo isso é `404`. O corpo vai até 512 KiB. O catálogo passa 
    acompanham o nome e atualizam as referências quando renomeados; remover pede confirmação e solta o que apontava para o
    item. O app vive em `features/editor/`; os componentes novos são `dv-select` e `dv-list-editor`, e a folha de confirmar
    subiu para `shared/ui` (`dv-confirm-sheet`). O servidor é quem valida; o app só mostra.
-3. **App, marcos e fatos** com o editor de condições.
+3. **App, marcos e fatos** (feito): marcos com requisitos e condições de começar e de terminar; fatos com o assunto
+   (local, NPC, facção ou marco) e as condições de revelar. O editor de condições é uma lista de linhas (tipo fechado e o
+   item que ele cita, ou o número do turno; `check_passed` usa as habilidades do sistema escolhido); todas as condições
+   de uma lista precisam valer, e lista vazia quer dizer "só o anfitrião move". Os erros de integridade e os avisos de
+   autoria que o servidor devolve em frases (`marco 'x', ...`) aparecem dentro do item.
 4. **Prévia** e fechamento da documentação.
 
 ## Fora do editor

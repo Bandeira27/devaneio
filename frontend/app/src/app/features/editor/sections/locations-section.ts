@@ -5,7 +5,9 @@ import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvListEditor } from '@shared/ui/list-editor/list-editor';
+import type { SelectOption } from '@shared/ui/select/select';
 import { Sheet } from '@shared/ui/sheet/sheet';
+import { CheckList } from '../components/check-list';
 import { confirmRemove } from '../components/confirm-remove';
 import { LinesField } from '../components/lines-field';
 import { NameIdFields } from '../components/name-id-fields';
@@ -14,9 +16,8 @@ import { EditorStore } from '../editor.store';
 /** Os locais da campanha: nome, descrição, para onde se vai a partir de cada um e as notas privadas. */
 @Component({
   selector: 'dv-locations-section',
-  imports: [DvField, DvInput, DvListEditor, LinesField, NameIdFields],
+  imports: [CheckList, DvField, DvInput, DvListEditor, LinesField, NameIdFields],
   templateUrl: './locations-section.html',
-  styleUrl: './editor-sections.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocationsSection {
@@ -36,12 +37,11 @@ export class LocationsSection {
     this.store.replaceIn('locations', index, { ...location, ...patch });
   }
 
-  protected toggle(index: number, location: Location, target: string, event: Event): void {
-    const on = (event.target as HTMLInputElement).checked;
-    const connections = on
-      ? [...location.connections, target]
-      : location.connections.filter((c) => c !== target);
-    this.patch(index, location, { connections });
+  /** Os outros locais, como opções de ligação. */
+  protected others(locations: readonly Location[], own: string): SelectOption[] {
+    return locations
+      .filter((l) => l.id !== own)
+      .map((l) => ({ value: l.id, label: l.name || l.id }));
   }
 
   protected async remove(index: number): Promise<void> {

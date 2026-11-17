@@ -1,4 +1,4 @@
-import type { Campaign, Faction, Location, Npc } from '@contract/api_responses';
+import type { Beat, Campaign, FactDef, Faction, Location, Npc } from '@contract/api_responses';
 import { slugify, uniqueId } from './names';
 
 /**
@@ -8,7 +8,7 @@ import { slugify, uniqueId } from './names';
  */
 
 /** Os tipos de item que têm id e são citados por outros. */
-export type ItemKind = 'location' | 'npc' | 'faction' | 'beat';
+export type ItemKind = 'location' | 'npc' | 'faction' | 'beat' | 'fact';
 
 /** Uma campanha em branco: um local de partida e nada mais. */
 export function emptyCampaign(id: string, title: string): Campaign {
@@ -53,6 +53,24 @@ export function npc(id: string, name: string): Npc {
   };
 }
 
+/** Um marco novo, sem requisitos nem condições (só se ativa e se conclui pelo anfitrião). */
+export function beat(id: string, title: string): Beat {
+  return {
+    id,
+    title,
+    description: '',
+    requires: [],
+    activate_when: [],
+    complete_when: [],
+    private_notes: [],
+  };
+}
+
+/** Um fato novo, sem assunto nem condição de revelar (só o anfitrião o revela). */
+export function fact(id: string, text: string): FactDef {
+  return { id, text, about: null, reveal_when: [] };
+}
+
 /** Todos os ids da campanha (de qualquer tipo): um id novo não pode repetir nenhum deles dentro do seu tipo. */
 export function idsOf(campaign: Campaign, kind: ItemKind): string[] {
   const lists = {
@@ -60,6 +78,7 @@ export function idsOf(campaign: Campaign, kind: ItemKind): string[] {
     npc: campaign.npcs,
     faction: campaign.factions,
     beat: campaign.beats,
+    fact: campaign.facts,
   };
   return lists[kind].map((item) => item.id);
 }
@@ -80,6 +99,18 @@ export function addLocation(campaign: Campaign, name = 'Novo local'): Campaign {
 export function addNpc(campaign: Campaign, name = 'Novo NPC'): Campaign {
   const id = freeId(campaign, 'npc', name);
   return { ...campaign, npcs: [...campaign.npcs, npc(id, name)] };
+}
+
+/** Acrescenta um marco. */
+export function addBeat(campaign: Campaign, title = 'Novo marco'): Campaign {
+  const id = freeId(campaign, 'beat', title);
+  return { ...campaign, beats: [...campaign.beats, beat(id, title)] };
+}
+
+/** Acrescenta um fato. */
+export function addFact(campaign: Campaign, text = 'Novo fato'): Campaign {
+  const id = freeId(campaign, 'fact', text);
+  return { ...campaign, facts: [...campaign.facts, fact(id, text)] };
 }
 
 /** Acrescenta uma facção. */
@@ -150,9 +181,9 @@ export function renameId(campaign: Campaign, kind: ItemKind, from: string, to: s
       activate_when: conditions(b.activate_when),
       complete_when: conditions(b.complete_when),
     })),
-    facts: campaign.facts.map((f) => ({
+    facts: own(campaign.facts, 'fact').map((f) => ({
       ...f,
-      about: f.about === null ? null : swap(f.about), // `about` pode apontar para qualquer tipo; ids iguais em tipos diferentes são ambíguos
+      about: f.about === null || kind === 'fact' ? f.about : swap(f.about), // `about` pode apontar para qualquer tipo; ids iguais em tipos diferentes são ambíguos
       reveal_when: conditions(f.reveal_when),
     })),
   };
@@ -186,7 +217,10 @@ export function removeItem(campaign: Campaign, kind: ItemKind, id: string): Camp
       ...b,
       requires: kind === 'beat' ? b.requires.filter((r) => r !== id) : b.requires,
     })),
-    facts: campaign.facts.map((f) => ({ ...f, about: f.about === id ? null : f.about })),
+    facts: keep(campaign.facts, 'fact').map((f) => ({
+      ...f,
+      about: kind !== 'fact' && f.about === id ? null : f.about,
+    })),
   };
 }
 
@@ -201,4 +235,72 @@ export function toLines(text: string): string[] {
 /** O contrário de `toLines`: a lista vira um texto, uma linha por item. */
 export function fromLines(lines: readonly string[]): string {
   return lines.join('\n');
+}
+
+/** Uma condição de um marco ou de um fato (todas as de uma lista precisam valer). */
+export type Condition = Beat['activate_when'][number];
+
+/** O tipo de uma condição. */
+export type ConditionKind = Condition['kind'];
+
+/** Os tipos de condição, na ordem do menu, com a frase que o autor lê. */
+export const CONDITION_KINDS: readonly { kind: ConditionKind; label: string }[] = [
+  { kind: 'at_location', label: 'O grupo está em' },
+  { kind: 'npc_down', label: 'Um NPC foi derrotado' },
+  { kind: 'beat_done', label: 'Um marco foi concluído' },
+  { kind: 'turn_at_least', label: 'A partir do turno' },
+  { kind: 'check_passed', label: 'Alguém passou num teste de' },
+];
+
+/** A condição padrão de um tipo: aponta para o primeiro item que existe (para o marco, o primeiro que não é o dono da lista) ou fica vazia, e o validador avisa. */
+export function defaultCondition(
+  kind: ConditionKind,
+  campaign: Campaign,
+  skillIds: readonly string[],
+  ownBeatId = '',
+): Condition {
+  switch (kind) {
+    case 'at_location':
+      return { kind, location_id: campaign.locations[0]?.id ?? '' };
+    case 'npc_down':
+      return { kind, npc_id: campaign.npcs[0]?.id ?? '' };
+    case 'beat_done':
+      return { kind, beat_id: campaign.beats.find((b) => b.id !== ownBeatId)?.id ?? '' }; // nunca o próprio marco
+    case 'turn_at_least':
+      return { kind, turn: 1 };
+    case 'check_passed':
+      return { kind, skill_id: skillIds[0] ?? '' };
+  }
+}
+
+/** A que item uma condição aponta (o id), ou `null` para a de turno. */
+export function conditionTarget(condition: Condition): string | null {
+  switch (condition.kind) {
+    case 'at_location':
+      return condition.location_id;
+    case 'npc_down':
+      return condition.npc_id;
+    case 'beat_done':
+      return condition.beat_id;
+    case 'check_passed':
+      return condition.skill_id;
+    case 'turn_at_least':
+      return null;
+  }
+}
+
+/** A mesma condição apontando para outro item (ou, na de turno, outro turno: `target` é o número escrito). */
+export function withTarget(condition: Condition, target: string): Condition {
+  switch (condition.kind) {
+    case 'at_location':
+      return { ...condition, location_id: target };
+    case 'npc_down':
+      return { ...condition, npc_id: target };
+    case 'beat_done':
+      return { ...condition, beat_id: target };
+    case 'check_passed':
+      return { ...condition, skill_id: target };
+    case 'turn_at_least':
+      return { ...condition, turn: Number(target) };
+  }
 }

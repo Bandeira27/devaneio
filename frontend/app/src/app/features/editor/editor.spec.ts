@@ -317,4 +317,199 @@ describe('Editor de campanhas: edição', () => {
     await answer();
     expect(validations.at(-1)?.locations.length).toBe(before - 1);
   });
+
+  it('o menu tem Marcos e Fatos, e a seção de marcos lista os da campanha com requisitos', async () => {
+    const { root, click, text } = await open('/editor/c', {
+      campaign: { ...hostCampaign, id: 'c' },
+    });
+    expect(root().querySelector('a[href="/editor/c/marcos"]')?.textContent).toContain('Marcos');
+    expect(root().querySelector('a[href="/editor/c/fatos"]')?.textContent).toContain('Fatos');
+    await click('a[href="/editor/c/marcos"]');
+    expect(text()).toContain('Chegada');
+    expect(text()).toContain('O altar');
+    expect(text()).toContain('Só começa depois de concluir');
+  });
+
+  it('acrescentar uma condição a um marco entra na campanha conferida, apontando para um item que existe', async () => {
+    const { root, click, settle, answer, validations } = await open('/editor/c', {
+      campaign: { ...hostCampaign, id: 'c' },
+    });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    const add = Array.from(
+      root().querySelectorAll<HTMLButtonElement>('dv-conditions-editor .add-condition'),
+    )[0];
+    add?.click();
+    await settle();
+    await answer();
+    const beat = validations.at(-1)?.beats[0];
+    expect(beat?.activate_when).toEqual([
+      { kind: 'at_location', location_id: hostCampaign.locations[0]?.id },
+    ]);
+  });
+
+  it('trocar o tipo da condição recomeça no primeiro item, e o de turno usa um número', async () => {
+    const { root, click, settle, answer, validations } = await open('/editor/c', {
+      campaign: {
+        ...hostCampaign,
+        id: 'c',
+        beats: hostCampaign.beats.map((b, i) =>
+          i === 0
+            ? { ...b, activate_when: [{ kind: 'at_location' as const, location_id: 'vila' }] }
+            : b,
+        ),
+      },
+    });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    const kind = root().querySelector<HTMLSelectElement>(
+      'dv-conditions-editor select',
+    ) as HTMLSelectElement;
+    kind.value = 'turn_at_least';
+    kind.dispatchEvent(new Event('change'));
+    await settle();
+    await answer();
+    expect(validations.at(-1)?.beats[0]?.activate_when).toEqual([
+      { kind: 'turn_at_least', turn: 1 },
+    ]);
+    expect(root().querySelector('dv-conditions-editor dv-stepper')).not.toBeNull();
+  });
+
+  it('o aviso de autoria de um marco aparece dentro dele', async () => {
+    const report: ValidationReport = {
+      ok: true,
+      errors: [],
+      findings: [
+        { level: 'aviso', text: "marco 'chegada', complete_when: depende da queda de 'ferreiro'" },
+      ],
+    };
+    const { root, click, settle } = await open('/editor/c', {
+      campaign: { ...hostCampaign, id: 'c' },
+      report,
+    });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-beats-section dv-item-problems')?.textContent).toContain(
+      "depende da queda de 'ferreiro'",
+    );
+  });
+
+  it('um fato novo ganha id do texto e o assunto lista os itens com o tipo', async () => {
+    const { root, click, type, answer, validations, settle } = await open('/editor/c', {
+      campaign: { ...hostCampaign, id: 'c' },
+    });
+    await click('a[href="/editor/c/fatos"]');
+    await click('dv-facts-section .add');
+    await new Promise((resolve) => setTimeout(resolve)); // o item novo abre por um efeito
+    await settle();
+    await type('dv-facts-section details[open] textarea', 'A chave está no poço');
+    await answer();
+    const fact = validations.at(-1)?.facts.at(-1);
+    expect([fact?.text, fact?.id]).toEqual(['A chave está no poço', 'a-chave-esta-no-poco']);
+    const options = Array.from(
+      root().querySelectorAll('dv-facts-section details[open] dv-select option'),
+    ).map((o) => o.textContent?.trim());
+    expect(options).toContain('Local: Vila');
+    expect(options).toContain('NPC: Bram');
+    expect(options).toContain('Marco: Chegada');
+  });
+
+  it('os erros de integridade de um marco e de um fato aparecem dentro do item (frases reais do servidor)', async () => {
+    const report: ValidationReport = {
+      ok: false,
+      errors: [
+        { path: '', message: "marco 'chegada', activate_when: local 'x' não existe" },
+        { path: '', message: "fato 'culto' fala de 'x', que não existe" },
+      ],
+      findings: [],
+    };
+    const { root, click, settle } = await open('/editor/c', {
+      campaign: {
+        ...hostCampaign,
+        id: 'c',
+        facts: [{ id: 'culto', text: 'Bram é do culto', about: null, reveal_when: [] }],
+      },
+      report,
+    });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-beats-section dv-item-problems')?.textContent).toContain(
+      "local 'x' não existe",
+    );
+    await click('a[href="/editor/c/fatos"]');
+    (root().querySelectorAll('dv-facts-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-facts-section dv-item-problems')?.textContent).toContain(
+      "fala de 'x'",
+    );
+  });
+
+  it('remover uma condição tira só ela e leva o foco ao botão da que ocupou o lugar', async () => {
+    const campaign = {
+      ...hostCampaign,
+      id: 'c',
+      beats: hostCampaign.beats.map((b, i) =>
+        i === 0
+          ? {
+              ...b,
+              activate_when: [
+                { kind: 'turn_at_least' as const, turn: 1 },
+                { kind: 'turn_at_least' as const, turn: 2 },
+                { kind: 'turn_at_least' as const, turn: 3 },
+              ],
+            }
+          : b,
+      ),
+    };
+    const { root, click, settle, answer, validations } = await open('/editor/c', { campaign });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    document.body.append(root());
+    const remove = root().querySelectorAll<HTMLButtonElement>(
+      'dv-conditions-editor .row__remove',
+    )[1] as HTMLButtonElement;
+    expect(remove.getAttribute('aria-label')).toContain('Remover condição 2');
+    expect(remove.getAttribute('aria-label')).toContain('condições para começar (marco Chegada)');
+    remove.click();
+    await settle();
+    await answer();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(validations.at(-1)?.beats[0]?.activate_when).toEqual([
+      { kind: 'turn_at_least', turn: 1 },
+      { kind: 'turn_at_least', turn: 3 },
+    ]);
+    const next = root().querySelectorAll('dv-conditions-editor .row__remove')[1];
+    expect(document.activeElement).toBe(next);
+    root().remove();
+  });
+
+  it('sem NPC para citar, a condição "um NPC foi derrotado" diz o que falta em vez de um campo vazio', async () => {
+    const campaign = {
+      ...hostCampaign,
+      id: 'c',
+      npcs: [],
+      beats: hostCampaign.beats.map((b, i) =>
+        i === 0 ? { ...b, activate_when: [{ kind: 'npc_down' as const, npc_id: '' }] } : b,
+      ),
+    };
+    const { root, click, settle } = await open('/editor/c', { campaign });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-beats-section details[open]')?.textContent).toContain(
+      'Ainda não há NPCs. Crie um em NPCs.',
+    );
+  });
 });
