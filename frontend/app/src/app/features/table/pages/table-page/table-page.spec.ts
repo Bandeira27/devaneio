@@ -141,21 +141,22 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     }
   });
 
-  it('a ficha do painel nasce aberta e pode ser recolhida e reaberta', async () => {
-    const { root, events, settle } = await open();
+  it('a ficha do painel nasce aberta, o rótulo diz o que abre e o recolher sobrevive a um novo render', async () => {
+    const { root, events, http, settle } = await open();
     events('0').flush(eventsView(3));
     await settle();
-    const details = root().querySelector('.table__mine details') as HTMLDetailsElement;
-    expect(details.open).toBe(true);
-    expect(details.querySelector('summary')?.textContent).toContain('Ficha de Bia'); // o rótulo diz o que abre
-    details.open = false;
-    details.dispatchEvent(new Event('toggle'));
+    const details = () => root().querySelector('.table__mine details') as HTMLDetailsElement;
+    expect(details().open).toBe(true);
+    expect(details().querySelector('summary')?.textContent).toContain('Ficha de Bia');
+    details().open = false; // a pessoa recolhe
+    details().dispatchEvent(new Event('toggle'));
     await settle();
-    expect(details.open).toBe(false);
-    details.open = true;
-    details.dispatchEvent(new Event('toggle'));
+    events('20').flush(eventsView(4, [event(2, 1)])); // chega algo e a página renderiza de novo
     await settle();
-    expect(details.open).toBe(true);
+    http.expectOne(`/tables/${TABLE_ID}`).flush(withCharacter({ revision: 4 }));
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
+    await settle();
+    expect(details().open).toBe(false); // continua recolhida
   });
 
   it('a descrição da cena fica sempre à vista, sem "Ver a cena" nem accordion', async () => {
@@ -249,10 +250,17 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     http.expectOne(`/tables/${TABLE_ID}`).flush(moved);
     http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaign);
     await settle();
-    await new Promise((resolve) => setTimeout(resolve, 5));
     await settle();
     expect(root().querySelector('.scene__list button')).toBeNull(); // a saída tocada deixou de existir
     expect(document.activeElement).toBe(root().querySelector('[aria-label="A história"]'));
+  });
+
+  it('abrir a mesa não rouba o foco para a história', async () => {
+    const { root, events, settle } = await open();
+    (document.activeElement as HTMLElement | null)?.blur();
+    events('0').flush(eventsView(3));
+    await settle();
+    expect(document.activeElement).not.toBe(root().querySelector('[aria-label="A história"]'));
   });
 
   it('um evento novo na mesma cena não move o foco', async () => {

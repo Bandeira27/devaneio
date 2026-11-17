@@ -47,6 +47,7 @@ describe('publishDockHeight', () => {
   }
 
   it('no celular publica a altura da barra e a atualiza quando ela muda', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false })); // celular
     const fixture = await mount(120);
     expect(read()).toBe('120px');
     expect(FakeObserver.last?.observed.length).toBe(1); // observa a barra

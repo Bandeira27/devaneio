@@ -9,7 +9,7 @@ const names = (list: readonly { name: string }[], none: string): string =>
 
 /**
  * O cartão da cena atual: local, quem está aqui, as saídas (cada uma um botão que pede para ir até lá; a confirmação é da
- * folha de `Ir`) e a descrição (sempre à vista, sem accordion). `canGo` bloqueia as saídas quando agir não é possível (o motivo está na barra de ações).
+ * folha de `Ir`) e a descrição. `canGo` bloqueia as saídas quando agir não é possível (o motivo está na barra de ações).
  */
 @Component({
   selector: 'dv-scene-card',

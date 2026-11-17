@@ -18,7 +18,7 @@ import { DvState } from '@shared/ui/state/state';
 const NEAR_BOTTOM_PX = 160;
 
 /**
- * O fluxo da mesa: narração em destaque, a linha mecânica (como foi resolvido) logo abaixo, em tinta e fonte de nota, falas do mestre como citação e, entre os turnos,
+ * O fluxo da mesa: narração em destaque, a linha mecânica logo abaixo, falas do mestre como citação e, entre os turnos,
  * um cabeçalho de capítulo com ornamento. O que já passou desbota; texto novo se "revela". Rola para o fim só se quem
  * lê já estava perto dele (não puxa a tela de quem está relendo) e, nesse caso, conta o que chegou e não foi visto
  * (`unseen`) para a tela oferecer "novas mensagens". O leitor de tela só anuncia o que chega depois do carregamento

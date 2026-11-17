@@ -137,7 +137,7 @@ Pensada pela tarefa: quem joga lê a história o tempo todo e age uma vez por tu
 - **Tela larga (≥ 64rem):** situação, cena e grupo à esquerda e rolam com a página; só a barra de ações fica presa no
   topo dessa coluna, com a história (42rem) ao lado. A página rola: **não há rolagem aninhada**.
 - **Tela muito larga (≥ 90rem): três painéis.** Cena e grupo à esquerda, a história no meio, e à direita a **ficha de quem
-  joga sempre visível** (`dv-character-card`, o mesmo conteúdo da folha "Ficha") com as ações presas logo abaixo; o botão
+  joga** (visível e recolhível) (`dv-character-card`, o mesmo conteúdo da folha "Ficha") com as ações presas logo abaixo; o botão
   "Ficha" some. O contêiner do app cresce com o terceiro painel (`--dv-measure-wide` muda em 90rem).
 - **A história:** o turno é um cabeçalho de capítulo (ornamento e o número em itálico); a narração é o protagonista, e a
   linha de como foi resolvido fica logo abaixo dela, sempre à vista, em tinta e fonte de nota (sem accordion).
