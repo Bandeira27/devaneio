@@ -104,10 +104,12 @@
   --dv-measure-page: 36rem;
   --dv-measure-table: 40rem;
   --dv-measure-sheet: 40rem;
-  --dv-measure-wide: 70rem;
+  --dv-measure-home: 56rem; /* a home em duas colunas */
   --dv-measure-feed: 42rem;
   --dv-measure-dialog: 32rem;
   --dv-rail-width: 22rem;
+  /* A mesa larga: lateral + respiro + feed. É a medida exata das colunas, para o cabeçalho e o conteúdo alinharem. */
+  --dv-measure-wide: calc(var(--dv-rail-width) + var(--dv-space-6) + var(--dv-measure-feed));
   --dv-dock-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da barra de ações fixa */
   --dv-sheet-max-height: 85dvh;
 

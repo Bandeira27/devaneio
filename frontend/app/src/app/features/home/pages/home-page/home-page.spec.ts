@@ -23,6 +23,25 @@ describe('Home', () => {
     expect((root().querySelector('select') as HTMLSelectElement).value).toBe('sombra-do-vale');
   });
 
+  it('sem mesas guardadas fica numa coluna só, centralizada', async () => {
+    const { root } = await open();
+    expect(root().querySelector('.home--split')).toBeNull();
+  });
+
+  it('com mesas guardadas divide em duas colunas', async () => {
+    const app = await setup('/');
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p1',
+      role: 'host',
+      title: 'A Sombra do Vale',
+      savedAt: Date.now(),
+    });
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    await app.settle();
+    expect(app.root().querySelector('.home--split')).not.toBeNull();
+  });
+
   it('mostra a premissa da campanha escolhida', async () => {
     const { root, type } = await open();
     expect(root().querySelector('.home__premise')?.textContent).toContain('Um culto desperta.');
