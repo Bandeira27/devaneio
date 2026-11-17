@@ -30,12 +30,7 @@
   }
 }
 
-/*
- * Troca de rota (withViewTransitions): o cabeçalho (`shell-bar`) tem nome próprio e fica parado; só a página "vira" (a antiga sai para a
- * esquerda, a nova entra da direita, um deslocamento curto com opacidade). Responde às perguntas 1 e 3 da rule 12: mostra
- * que a tela mudou e mantém o cabeçalho como ponto de continuidade. A região `page` é nomeada em
- * `layout/shell/shell.css`. Com movimento reduzido a troca nem começa.
- */
+/* Troca de rota: o cabeçalho (`shell-bar`) fica parado e só a página (`page`) sai para a esquerda e entra da direita. */
 ::view-transition-old(page) {
   animation: dv-page-out var(--dv-duration-fast) var(--dv-ease-accelerate) both;
 }

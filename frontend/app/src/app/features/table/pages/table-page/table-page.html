@@ -37,9 +37,15 @@
         </dv-notice>
       }
       @if (store.status() === 'won') {
-        <dv-notice kind="ok">A partida terminou: vitória.</dv-notice>
+        <dv-notice kind="ok">
+          Vitória! A partida terminou.
+          <a routerLink="/">Voltar ao início</a>
+        </dv-notice>
       } @else if (store.status() === 'lost') {
-        <dv-notice kind="error">A partida terminou: derrota.</dv-notice>
+        <dv-notice kind="error">
+          Derrota. A partida terminou.
+          <a routerLink="/">Voltar ao início</a>
+        </dv-notice>
       }
 
       <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
@@ -66,7 +72,7 @@
             [turn]="store.turn()"
           />
           @if (!store.character()) {
-            <dv-notice>
+            <dv-notice id="no-character">
               Você ainda não tem personagem nesta mesa.
               <a [routerLink]="['/mesa', tableId(), 'personagem']">Criar personagem</a>
             </dv-notice>
@@ -96,11 +102,6 @@
         }
 
         <div #dock class="table__dock">
-          @if (store.turnStatus()) {
-            <p class="table__turn table__turn--dock" aria-hidden="true">
-              <span class="table__turn-status">{{ store.turnStatus() }}</span>
-            </p>
-          }
           @if (unseen() > 0) {
             <button
               dvButton

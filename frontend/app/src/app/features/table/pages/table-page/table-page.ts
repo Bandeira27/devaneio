@@ -20,6 +20,7 @@ import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
+import { isWide } from '@shared/ui/wide';
 import { connectionBlockOf } from '../../table.derived';
 import { ActionDock } from '../../components/action-dock/action-dock';
 import { CharacterCard } from '../../components/character-card/character-card';
@@ -116,9 +117,9 @@ export class TablePage implements OnInit {
 
   private refocusHeading(): void {
     const active = document.activeElement;
-    if (active === null || active === document.body || !this.host.nativeElement.contains(active)) {
+    if (active === null || active === document.body) {
       const heading = this.host.nativeElement.querySelector('h1');
-      if (heading && (active === null || active === document.body)) {
+      if (heading) {
         heading.tabIndex = -1;
         heading.focus({ preventScroll: true });
       }
@@ -150,10 +151,8 @@ export class TablePage implements OnInit {
       // Na raiz, para o `scroll-padding-bottom` do documento (base.css) valer para tudo que ganha foco ou rola.
       const root = document.documentElement;
       const publish = (): void => {
-        const fixed =
-          getComputedStyle(dock).position === 'sticky' &&
-          matchMedia('(max-width: 63.99rem)').matches;
-        root.style.setProperty('--dv-dock-height', fixed ? `${dock.offsetHeight}px` : '0px');
+        // Só no celular a barra cobre o pé da tela; na tela larga ela fica na coluna e a altura é zero.
+        root.style.setProperty('--dv-dock-height', isWide() ? '0px' : `${dock.offsetHeight}px`);
       };
       const observer = new ResizeObserver(publish);
       observer.observe(dock);

@@ -23,6 +23,7 @@ function table(over: Partial<TableView> = {}): TableView {
       { id: 'p1', name: 'Ana', role: 'host', character_ids: [] },
       { id: 'p2', name: 'Bia', role: 'player', character_ids: ['bia'] },
     ],
+    role: 'host', // Comando é só do anfitrião; os testes de jogador comum passam `role: 'player'`
     ...over,
   });
   view.state = {
@@ -150,6 +151,35 @@ describe('Ações da mesa', () => {
     await answerReread(app);
   });
 
+  it('Comando é só do anfitrião: o jogador comum não o vê', async () => {
+    const app = await open(table({ role: 'player' }));
+    const labels = Array.from(app.root().querySelectorAll('dv-action-dock button')).map((b) =>
+      b.textContent?.trim(),
+    );
+    expect(labels).not.toContain('Comando');
+    expect(labels).toContain('Ficha');
+  });
+
+  it('sem mestre de IA, Testar é o botão em destaque', async () => {
+    const semIa = await open();
+    const primary = (app: typeof semIa) =>
+      Array.from(app.root().querySelectorAll('dv-action-dock .dv-button--primary')).map((b) =>
+        b.textContent?.trim(),
+      );
+    expect(primary(semIa)).toEqual(['Testar']);
+  });
+
+  it('sem personagem, Ficha fica bloqueada com o motivo ligado', async () => {
+    const app = await open(
+      table({ players: [{ id: 'p1', name: 'Ana', role: 'host', character_ids: [] }] }),
+    );
+    const ficha = Array.from(app.root().querySelectorAll('dv-action-dock button')).find(
+      (b) => b.textContent?.trim() === 'Ficha',
+    );
+    expect(ficha?.getAttribute('aria-disabled')).toBe('true');
+    expect(ficha?.getAttribute('aria-describedby')).toBe('no-character');
+  });
+
   it('Ficha mostra atributos e inventário sem chamar o servidor', async () => {
     const app = await open();
     await app.press('Ficha');
@@ -255,7 +285,7 @@ describe('Ações da mesa', () => {
       expect(button(label)?.disabled, label).toBe(false); // continua no foco: o motivo se lê
       expect(button(label)?.getAttribute('aria-describedby'), label).toBe('dock-reason');
     }
-    expect(button('Ficha')?.disabled).toBe(false);
+    expect(button('Ficha')?.getAttribute('aria-disabled')).toBeNull();
     expect(button('Comando')?.getAttribute('aria-disabled')).toBeNull();
     expect(dock.querySelector('#dock-reason')?.textContent?.trim()).not.toBe('');
   });

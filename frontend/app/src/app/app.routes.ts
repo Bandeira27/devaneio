@@ -25,7 +25,7 @@ export const routes: Routes = [
       },
       {
         path: 'mesa/:tableId/convite',
-        title: 'Convite',
+        title: 'Convidar',
         loadChildren: () => import('@features/invite/invite.routes').then((m) => m.INVITE_ROUTES),
       },
       {

@@ -48,8 +48,9 @@ export class HomePage implements OnInit {
   }
 
   protected restore(): void {
+    const id = this.store.forgotten()?.tableId;
     this.store.restore();
-    this.focusLater('.saved__link');
+    this.focusLater(id ? `[data-table-id="${id}"] .saved__link` : '.saved__link');
   }
 
   ngOnInit(): void {

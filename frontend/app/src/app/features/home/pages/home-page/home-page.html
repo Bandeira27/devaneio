@@ -18,7 +18,7 @@
         <h2 class="dv-section" id="titulo-guardadas">Suas mesas</h2>
         <ul class="saved">
           @for (table of store.saved(); track table.tableId; let first = $first) {
-            <li class="saved__item dv-card dv-card--page">
+            <li class="saved__item dv-card dv-card--page" [attr.data-table-id]="table.tableId">
               <div class="saved__info">
                 <span class="saved__title">{{ table.title }}</span>
                 <span class="dv-note">
@@ -73,7 +73,12 @@
         }
         @case ('ready') {
           @if (store.campaigns().length === 0) {
-            <dv-state>O servidor não tem nenhuma campanha para jogar.</dv-state>
+            <dv-state>
+              Ainda não há campanhas para jogar aqui.
+              <button dvStateAction dvButton type="button" (click)="store.load()">
+                Tentar de novo
+              </button>
+            </dv-state>
           } @else {
             <form class="dv-stack" (submit)="$event.preventDefault(); store.create()">
               <dv-field label="Campanha">
