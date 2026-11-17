@@ -85,6 +85,12 @@ class CopilotAnswer(StrictModel):
     text: str  # só para o anfitrião que perguntou: nunca vai ao mural nem ao arquivo da mesa
 
 
+class InvitePreview(StrictModel):
+    """O que um convite válido revela antes de entrar: o nome da mesa (o título da campanha), e nada mais."""
+
+    title: str
+
+
 class TableJoined(StrictModel):
     """A entrada numa mesa: o jogador, o token dele (que só aparece aqui) e a mesa."""
 

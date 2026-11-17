@@ -11,6 +11,7 @@
 export interface ApiRequests {
   create_table: CreateTableRequest;
   join_table: JoinRequest;
+  invite_preview: InvitePreviewRequest;
   command: CommandRequest;
   say: SayRequest;
   copilot: CopilotRequest;
@@ -29,6 +30,12 @@ export interface CreateTableRequest {
 export interface JoinRequest {
   invite_code: string;
   name: string;
+}
+/**
+ * Espiar para onde um convite leva: só o código de convite.
+ */
+export interface InvitePreviewRequest {
+  invite_code: string;
 }
 /**
  * Um comando: a linha e a revisão da mesa que o cliente viu.

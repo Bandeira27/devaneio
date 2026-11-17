@@ -28,6 +28,7 @@ export interface ApiResponses {
   table: TableView;
   table_created: TableCreated;
   table_joined: TableJoined;
+  invite_preview: InvitePreview;
   command_result: CommandResult;
   say_result: SayResult;
   copilot_answer: CopilotAnswer;
@@ -228,6 +229,12 @@ export interface TableJoined {
   player_id: string;
   token: string;
   table: TableView;
+}
+/**
+ * O que um convite válido revela antes de entrar: o nome da mesa (o título da campanha), e nada mais.
+ */
+export interface InvitePreview {
+  title: string;
 }
 /**
  * O resultado de um comando: o que ele produziu e como a mesa ficou.

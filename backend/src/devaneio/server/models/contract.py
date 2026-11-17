@@ -8,11 +8,19 @@ from devaneio.schema import (
 )
 
 from .campaign import CampaignSummary, CampaignView
-from .requests import CommandRequest, CopilotRequest, CreateTableRequest, JoinRequest, SayRequest
+from .requests import (
+    CommandRequest,
+    CopilotRequest,
+    CreateTableRequest,
+    InvitePreviewRequest,
+    JoinRequest,
+    SayRequest,
+)
 from .responses import (
     CommandResult,
     CopilotAnswer,
     EventsView,
+    InvitePreview,
     SayResult,
     TableCreated,
     TableJoined,
@@ -39,6 +47,7 @@ class ApiRequests(StrictModel):
 
     create_table: CreateTableRequest
     join_table: JoinRequest
+    invite_preview: InvitePreviewRequest
     command: CommandRequest
     say: SayRequest
     copilot: CopilotRequest
@@ -51,6 +60,7 @@ class ApiResponses(StrictModel):
     table: TableView
     table_created: TableCreated
     table_joined: TableJoined
+    invite_preview: InvitePreview
     command_result: CommandResult
     say_result: SayResult
     copilot_answer: CopilotAnswer

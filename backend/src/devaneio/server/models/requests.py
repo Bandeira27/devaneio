@@ -75,6 +75,12 @@ class JoinRequest(StrictModel):
     name: PlayerName
 
 
+class InvitePreviewRequest(StrictModel):
+    """Espiar para onde um convite leva: só o código de convite."""
+
+    invite_code: str = Field(min_length=1, max_length=64)
+
+
 class CommandRequest(StrictModel):
     """Um comando: a linha e a revisão da mesa que o cliente viu."""
 
