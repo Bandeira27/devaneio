@@ -11,7 +11,7 @@ import {
 } from './live-feed';
 
 function event(index: number, text = `evento ${index}`): EventView {
-  return { index, turn: 0, kind: 'move', text, prose: text, narration: null };
+  return { index, turn: 0, kind: 'move', text, prose: text, narration: null, outcome: null };
 }
 
 function talk(seq: number): TalkView {

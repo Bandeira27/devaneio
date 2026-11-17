@@ -2,9 +2,9 @@
 
 from .beats import BeatResult, activate_beat, complete_beat, fail_beat
 from .characters import AddCharacterResult, add_character
-from .checks import CheckResult, classify_outcome, npc_check, resolve_check
+from .checks import OUTCOME_LABELS, CheckResult, classify_outcome, npc_check, resolve_check
 from .conditions import HIT, holds
-from .damage import DamageResult, TargetKind, apply_damage, deal_damage
+from .damage import INCAPACITATED_SUFFIX, DamageResult, TargetKind, apply_damage, deal_damage
 from .director import (
     DirectorResult,
     advance_beats,
@@ -24,6 +24,8 @@ from .turns import end_turn
 
 __all__ = [
     "HIT",
+    "INCAPACITATED_SUFFIX",
+    "OUTCOME_LABELS",
     "AddCharacterResult",
     "BeatResult",
     "CheckResult",

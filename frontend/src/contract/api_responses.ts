@@ -253,6 +253,11 @@ export interface CommandResult {
  * o parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do
  * lote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para
  * todos os jogadores.
+ *
+ * ``outcome`` é só o desfecho para o selo do feed: o grau de um teste (``success``...), de um
+ * ataque (``hit``...), ``damage``/``incapacitated`` num dano e ``heal`` numa cura. ``None`` nos
+ * demais eventos. O campo nunca leva dado, margem nem total (``data`` não sai); o ``text`` do evento é
+ * outra coisa e já mostra a rolagem a quem o vê.
  */
 export interface EventView {
   index: number;
@@ -261,6 +266,21 @@ export interface EventView {
   text: string;
   prose: string;
   narration: string | null;
+  outcome:
+    | (
+        | "critical_failure"
+        | "failure"
+        | "success"
+        | "critical_success"
+        | "critical_miss"
+        | "miss"
+        | "hit"
+        | "critical_hit"
+        | "damage"
+        | "incapacitated"
+        | "heal"
+      )
+    | null;
 }
 /**
  * O resultado de um texto livre: o de um comando, mais a fala do mestre.

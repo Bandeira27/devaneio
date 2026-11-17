@@ -66,11 +66,13 @@ def resolve_check(
     skill_id: str,
     difficulty_id: str,
     modifier_id: str | None = None,
+    attack: bool = False,
 ) -> CheckResult:
     """Teste de um personagem.
 
     Não altera ``state``: devolve um novo estado com ``rng_draws`` avançado e um ``Event`` de
-    tipo ``check`` no log. O turno não muda aqui.
+    tipo ``check`` no log. O turno não muda aqui. ``attack`` marca o teste como o ataque de uma
+    arma (``data["attack"]``), para a apresentação dizer acerto e erro em vez de sucesso e falha.
     """
     character = state.characters.get(character_id)
     if character is None:
@@ -85,6 +87,7 @@ def resolve_check(
         skill_id=skill_id,
         difficulty_id=difficulty_id,
         modifier_id=modifier_id,
+        attack=attack,
     )
 
 
@@ -110,6 +113,7 @@ def npc_check(
         skill_id=skill_id,
         difficulty_id=difficulty_id,
         modifier_id=modifier_id,
+        attack=False,
     )
 
 
@@ -124,6 +128,7 @@ def _resolve(
     skill_id: str,
     difficulty_id: str,
     modifier_id: str | None,
+    attack: bool,
 ) -> CheckResult:
     skill = _find(rules.skills, skill_id, "habilidade")
     difficulty = _find(rules.difficulties, difficulty_id, "dificuldade")
@@ -166,6 +171,7 @@ def _resolve(
                 "difficulty": difficulty.value,
                 "margin": margin,
                 "outcome": outcome.value,
+                "attack": attack,
             },
         )
     )

@@ -6,6 +6,7 @@ import {
   FeedEvent,
   FeedItem,
   FeedTalk,
+  SEALS,
   ageOpacity,
   buildFeed,
 } from './feed';
@@ -18,6 +19,7 @@ function event(index: number, turn: number, over: Partial<EventView> = {}): Even
     text: `mecânica ${index}`,
     prose: `prosa ${index}`,
     narration: null,
+    outcome: null,
     ...over,
   };
 }
@@ -95,25 +97,6 @@ describe('buildFeed', () => {
     expect((feed[1] as FeedEvent).fade).toBe(1);
   });
 
-  it('marca o tom: dano, cura e descanso se destacam', () => {
-    const feed = buildFeed(
-      [
-        event(0, 1, { kind: 'damage' }),
-        event(1, 1, { kind: 'heal' }),
-        event(2, 1, { kind: 'rest' }),
-        event(3, 1),
-      ],
-      [],
-      1,
-    );
-    expect(feed.filter((i): i is FeedEvent => i.type === 'event').map((i) => i.tone)).toEqual([
-      'danger',
-      'good',
-      'good',
-      'neutral',
-    ]);
-  });
-
   describe('falas do mestre', () => {
     it('entram depois do evento que as precedeu (after é a revisão na hora)', () => {
       // after = 2: a fala veio quando já existiam os eventos de índice 0 e 1
@@ -158,5 +141,47 @@ describe('buildFeed', () => {
     const feed = buildFeed([event(0, 1), event(1, 2), event(2, 2)], [talk(1, 1), talk(2, 2)], 2);
     const keys = feed.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe('selo de desfecho', () => {
+  const eventItem = (e: EventView): FeedEvent =>
+    buildFeed([e], [], 1).find((i): i is FeedEvent => i.type === 'event') as FeedEvent;
+
+  it('cada desfecho ganha o selo do seu grau, com tom e ícone', () => {
+    const grades = {
+      critical_success: ['Sucesso crítico', 'ok'],
+      failure: ['Falha', 'danger'],
+      hit: ['Acertou', 'ok'],
+      critical_hit: ['Acertou em cheio', 'ok'],
+      miss: ['Errou', 'danger'],
+      critical_miss: ['Errou feio', 'danger'],
+      damage: ['Ferido', 'danger'],
+      incapacitated: ['Fora de combate', 'danger'],
+      heal: ['Curado', 'ok'],
+    } as const;
+    for (const [outcome, [label, tone]] of Object.entries(grades)) {
+      const seal = eventItem(event(0, 1, { kind: 'check', outcome: outcome as never })).seal;
+      expect(seal).toEqual({ label, tone, icon: tone === 'ok' ? 'ok' : 'danger' });
+    }
+  });
+
+  it('a nota é a linha do servidor, como veio', () => {
+    const text = 'Ana testa Furtividade: total 3';
+    expect(eventItem(event(0, 1, { kind: 'check', outcome: 'failure', text })).note).toBe(text);
+  });
+
+  it('sem desfecho (ou campo ausente) não há selo', () => {
+    expect(eventItem(event(0, 1, { kind: 'move', outcome: null })).seal).toBeNull();
+    const old = { ...event(0, 1), outcome: undefined } as unknown as EventView;
+    expect(eventItem(old).seal).toBeNull();
+  });
+
+  it('nenhum rótulo se repete e todos têm tom e ícone que combinam', () => {
+    const labels = Object.values(SEALS).map((seal) => seal.label);
+    expect(new Set(labels).size).toBe(labels.length);
+    for (const seal of Object.values(SEALS)) {
+      expect(seal.icon).toBe(seal.tone === 'ok' ? 'ok' : 'danger');
+    }
   });
 });

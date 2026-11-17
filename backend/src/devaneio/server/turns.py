@@ -9,7 +9,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from devaneio.engine import GameStatus, game_status, npc_ids_at
+from devaneio.engine import (
+    INCAPACITATED_SUFFIX,
+    OUTCOME_LABELS,
+    GameStatus,
+    game_status,
+    npc_ids_at,
+)
 from devaneio.game import (
     CommandError,
     GameOverError,
@@ -21,12 +27,13 @@ from devaneio.game import (
     parse_line,
     split_actor,
 )
-from devaneio.schema import Campaign, GameState
+from devaneio.rules import CheckOutcome
+from devaneio.schema import Campaign, Event, GameState
 
 from . import policy
 from .auth import find_player
 from .errors import ApiFailure
-from .models import MAX_NAME, CommandRequest, CommandResult, EventView
+from .models import MAX_NAME, CommandRequest, CommandResult, EventView, Outcome
 
 MAX_JOIN_ARGS = 30  # id, nome, atributos e itens do `entrar`
 
@@ -95,6 +102,55 @@ def hidden_for(role: Role, session: Session) -> frozenset[int]:
     return hidden_events(session.state, session.campaign)
 
 
+_CHECK_OUTCOMES: dict[str, Outcome] = {
+    "critical_failure": "critical_failure",
+    "failure": "failure",
+    "success": "success",
+    "critical_success": "critical_success",
+}
+_ATTACK_OUTCOMES: dict[str, Outcome] = {
+    "critical_failure": "critical_miss",
+    "failure": "miss",
+    "success": "hit",
+    "critical_success": "critical_hit",
+}
+
+
+def outcome_of(event: Event) -> Outcome | None:
+    """O desfecho do evento para o selo do feed, ou ``None`` se não tem selo.
+
+    É a única coisa de ``data`` que sai daqui: só o grau, nunca rolagem, total ou margem. Um grau
+    ausente ou desconhecido vira ``None`` em vez de erro.
+    """
+    if event.kind == "check":
+        table = _ATTACK_OUTCOMES if event.data.get("attack") is True else _CHECK_OUTCOMES
+        grade = event.data.get("outcome")
+        return table.get(grade) if isinstance(grade, str) else None
+    if event.kind == "damage":
+        return "incapacitated" if event.data.get("incapacitated") is True else "damage"
+    if event.kind == "heal":
+        return "heal"
+    return None
+
+
+def text_of(event: Event) -> str:
+    """A linha mecânica do evento sem o desfecho que o selo já diz.
+
+    Um teste termina em ``, <grau>`` e um dano que derruba em ``, fora de combate``. Quando o evento
+    tem selo (``outcome_of``), o servidor tira esse fim: o cliente mostra o selo e a nota sem
+    repetir o desfecho (o leitor de tela o ouve uma vez). O log do motor e o comando ``log`` ficam
+    com a linha inteira.
+    """
+    if outcome_of(event) is None:
+        return event.text
+    suffix = ""
+    if event.kind == "check":
+        suffix = f", {OUTCOME_LABELS[CheckOutcome(event.data['outcome'])]}"
+    elif event.kind == "damage" and event.data.get("incapacitated") is True:
+        suffix = INCAPACITATED_SUFFIX
+    return event.text.removesuffix(suffix)
+
+
 def events_view(
     session: Session,
     since: int,
@@ -116,9 +172,10 @@ def events_view(
             index=index,
             turn=event.turn,
             kind=event.kind,
-            text=event.text,
+            text=text_of(event),
             prose=session.narrator.narrate(event, index, state),
             narration=cached.get(index),
+            outcome=outcome_of(event),
         )
         for index, event in enumerate(state.events)
         if index >= since and index not in hidden

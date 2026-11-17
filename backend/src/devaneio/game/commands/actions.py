@@ -104,6 +104,7 @@ def cmd_attack(session: Session, actor: str | None, args: list[str]) -> tuple[Ga
         skill_id=weapon.skill,
         difficulty_id=session.rules.combat.attack_difficulty,
         modifier_id=args[2] if len(args) == 3 else None,
+        attack=True,
     )
     if check.outcome not in HIT:
         return check.state, f"{check.text}\nO ataque não acerta."
