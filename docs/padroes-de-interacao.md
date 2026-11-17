@@ -7,7 +7,7 @@ Como o app do jogador se comporta, para que telas diferentes se sintam iguais. O
 ## Caminho de entrada
 
 Criar uma mesa ou entrar por convite é um caminho curto de três passos (Mesa ou Convite, Personagem, Jogar), com os
-passos visíveis. A tela larga mostra o contexto ao lado da tarefa; o celular mostra a tarefa primeiro. O que é técnico
+passos visíveis. A tela larga mostra o contexto ao lado da tarefa; o celular mostra o mais provável primeiro (a tarefa; na home, "Continuar"). O que é técnico
 (endereço do servidor, código do convite) fica em "Opções avançadas", recolhido: o centro do convite é o link e o "Copiar".
 
 ## Estados de uma tela ou região
@@ -28,13 +28,18 @@ Desktop não é o celular esticado. A informação se divide em painéis lado a 
 continua uma coluna. A **home** é capa e painel (a apresentação, a campanha e as mesas guardadas de um lado; criar e
 convite do outro). **Entrar**, **convite** e **personagem** têm o contexto à esquerda e a tarefa à direita. A **mesa**
 tem duas colunas (cena e grupo com as ações; a história) a partir de 64rem e três a partir de 90rem (cena e grupo; a
-história; a ficha de quem joga com as ações). A ordem do HTML segue a de leitura em todas as larguras.
+história; a ficha de quem joga com as ações). A ordem do HTML é a de leitura no celular e na tela muito larga; entre 64 e 90rem, em que a barra de ações fica visualmente
+abaixo da cena, o Tab passa pela história antes das ações, e o link "Pular para as ações" cobre esse caminho.
 
 ## Hierarquia de ações
 
-O que é do turno (Ir, Testar, Atacar, Falar) tem destaque; o que é de apoio (Ficha, Comando) é discreto. "Continuar" a
+O que é do turno (Ir, Testar, Atacar, Falar) tem destaque (com mestre de IA o primário é Falar; sem ele, Testar); o que é de apoio (Ficha e, só para o anfitrião, Comando) é discreto. "Continuar" a
 última mesa é o botão principal da home; criar mesa só é primário quando não há mesa guardada. As saídas da cena são
 atalhos para `Ir` e passam pela mesma confirmação.
+
+## Fim de partida
+
+Vitória ou derrota aparece como aviso com a saída "Voltar ao início"; a história continua legível e as ações ficam bloqueadas com o motivo.
 
 ## Transição entre telas
 

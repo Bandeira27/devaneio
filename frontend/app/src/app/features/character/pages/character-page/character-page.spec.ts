@@ -99,7 +99,7 @@ describe('Personagem', () => {
     expect(root().textContent).not.toContain('Dê um nome ao personagem.');
   });
 
-  it('o resumo da ficha acompanha o nome e os atributos, e o botão diz "Começar a jogar"', async () => {
+  it('o resumo da ficha acompanha o nome e os atributos, e o botão diz "Jogar"', async () => {
     const { root, click, type } = await open();
     const preview = () => root().querySelector('.character__preview') as HTMLElement;
     expect(preview().textContent).toContain('Bia');
@@ -108,9 +108,7 @@ describe('Personagem', () => {
     expect(preview().textContent).toContain('Total de pontos: 5');
     await type('input[type="text"]', 'Dara');
     expect(preview().querySelector('h2')?.textContent).toBe('Dara');
-    expect(root().querySelector('button[type="submit"]')?.textContent?.trim()).toBe(
-      'Começar a jogar',
-    );
+    expect(root().querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Jogar');
   });
 
   it('os passos mostram que este é o segundo, e o aviso do mestre de IA é o último item do formulário', async () => {

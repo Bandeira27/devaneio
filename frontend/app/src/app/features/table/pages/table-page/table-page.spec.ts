@@ -89,16 +89,21 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     const { root, events, settle } = await open();
     events('0').flush(eventsView(3));
     await settle();
-    const order = Array.from(root().querySelectorAll('.table__layout > *')).map(
-      (el) => el.className,
-    );
-    expect(order.map((c) => c.split(' ')[0])).toEqual([
-      'table__side',
-      'table__feed',
-      'table__mine',
-      'table__dock',
-    ]);
-    expect(root().querySelector('.table__mine')?.textContent).toContain('Bia'); // a ficha de quem joga
+    const at = (selector: string): Element => root().querySelector(selector) as Element;
+    const regions = [
+      at('[role="status"]'), // a situação do turno
+      at('[aria-label="Cena"]'),
+      at('[aria-label="A história"]'),
+      at('[aria-label="Minha ficha"]'),
+      at('[aria-label="Ações"]'),
+    ];
+    regions.slice(1).forEach((region, i) => {
+      const before = regions[i] as Element;
+      expect(
+        before.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+    expect(at('[aria-label="Minha ficha"]').textContent).toContain('Bia'); // a ficha existe no HTML (a CSS a mostra só em 90rem)
   });
 
   it('o log só anuncia depois da carga inicial', async () => {
@@ -405,13 +410,16 @@ describe('Mesa', () => {
   });
 
   it.each([
-    ['won', 'vitória'],
-    ['lost', 'derrota'],
+    ['won', 'Vitória'],
+    ['lost', 'Derrota'],
   ] as const)('partida terminada (%s) mostra o resultado', async (status, word) => {
     const { root, events, settle } = await open(withCharacter({ status }));
     events('0').flush(eventsView(3));
     await settle();
-    expect(root().textContent).toContain(`A partida terminou: ${word}.`);
+    const notice = root().querySelector('dv-notice') as HTMLElement;
+    expect(notice.textContent).toContain(word);
+    expect(notice.textContent).toContain('A partida terminou.');
+    expect(notice.querySelector('a[href="/"]')?.textContent).toContain('Voltar ao início');
   });
 
   it('sem conexão mostra o estado em texto e volta ao vivo', async () => {

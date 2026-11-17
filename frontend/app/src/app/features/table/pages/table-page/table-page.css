@@ -78,11 +78,6 @@
   font-size: var(--dv-text-narration);
 }
 
-/* A linha do turno que mora junto das ações só aparece na tela larga (no celular ela fica no topo, na lateral). */
-.table__turn--dock {
-  display: none;
-}
-
 .table__new {
   justify-self: center;
   min-height: var(--dv-touch);
@@ -129,14 +124,6 @@
     padding: var(--dv-space-4) 0 0;
     border-top: var(--dv-border-width) dotted var(--dv-line);
     background: var(--dv-surface-0);
-  }
-
-  .table__side .table__turn {
-    display: none;
-  }
-
-  .table__turn--dock {
-    display: flex;
   }
 }
 

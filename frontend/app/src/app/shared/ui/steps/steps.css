@@ -36,7 +36,7 @@ li {
   border-color: var(--dv-ink);
 }
 
-.done .label {
-  text-decoration: line-through;
-  text-decoration-style: dotted;
+.done .number {
+  color: var(--dv-ok);
+  border-color: var(--dv-ok);
 }

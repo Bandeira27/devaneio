@@ -41,7 +41,7 @@
       <dv-icon name="go" size="sm" />Ir
     </button>
     <button
-      dvButton
+      [dvButton]="store.canSay() ? '' : 'primary'"
       type="button"
       [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
       [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
@@ -75,13 +75,16 @@
       dvButton
       type="button"
       class="dock__sheet"
-      [disabled]="!store.character()"
+      [dvBlocked]="!store.character()"
+      [attr.aria-describedby]="store.character() ? null : 'no-character'"
       (click)="sheetOfCharacter()"
     >
       <dv-icon name="sheet" size="sm" />Ficha
     </button>
-    <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="command()">
-      <dv-icon name="command" size="sm" />Comando
-    </button>
+    @if (store.isHost()) {
+      <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="command()">
+        <dv-icon name="command" size="sm" />Comando
+      </button>
+    }
   </div>
 </section>

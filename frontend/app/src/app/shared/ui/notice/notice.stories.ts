@@ -19,7 +19,7 @@ export const Erro: StoryObj = story(
 
 export const Confirmacao: StoryObj = story(
   [DvNotice],
-  `<dv-notice kind="ok">A partida terminou: vitória.</dv-notice>`,
+  `<dv-notice kind="ok">Vitória! A partida terminou.</dv-notice>`,
 );
 
 export const Atencao: StoryObj = story(

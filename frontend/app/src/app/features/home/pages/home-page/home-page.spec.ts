@@ -180,7 +180,7 @@ describe('Home', () => {
     const app = await setup('/');
     app.http.expectOne('/campaigns').flush([]);
     await app.settle();
-    expect(app.root().textContent).toContain('nenhuma campanha');
+    expect(app.root().textContent).toContain('Ainda não há campanhas');
     expect(app.root().querySelector('select')).toBeNull();
   });
 

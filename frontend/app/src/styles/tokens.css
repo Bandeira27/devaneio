@@ -21,7 +21,7 @@
   --dv-surface-0: oklch(21% 0.008 81); /* o fundo do app */
   --dv-surface-1: oklch(26% 0.011 81); /* painel: o que contém controles */
   --dv-surface-2: oklch(31% 0.013 81); /* página: cena, ficha, o que se lê */
-  --dv-surface-3: oklch(34.5% 0.015 81); /* o que flutua: folha, diálogo */
+  --dv-surface-3: oklch(34.5% 0.015 81); /* destaque que se sobrepõe ao fundo: o aviso "N novas" */
 
   /* Papéis */
   --dv-text: var(--dv-sepia);
@@ -141,12 +141,7 @@
   --dv-motion-distance: 0.25rem;
 }
 
-/*
- * Tela muito larga (90rem): a mesa ganha um terceiro painel (a ficha de quem joga), então o contêiner do app cresce com
- * ele (duas laterais + respiro + feed) e as laterais ficam um pouco mais estreitas. O cabeçalho, a home e a entrada
- * se alinham a essa mesma medida, então também ficam mais largos. O ponto de quebra é fixo porque CSS
- * não aceita token em `@media`.
- */
+/* Tela muito larga: a mesa ganha o terceiro painel e o contêiner cresce com ele (CSS não aceita token em @media; o 90rem se repete em table-page.css e action-dock.css). */
 @media (min-width: 90rem) {
   :root {
     --dv-rail-width: 19rem;

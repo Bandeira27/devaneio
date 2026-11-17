@@ -75,9 +75,7 @@
           @if (store.error()) {
             <dv-notice kind="error">{{ store.error() }}</dv-notice>
           }
-          <button dvButton="primary" type="submit" [dvLoading]="store.saving()">
-            Começar a jogar
-          </button>
+          <button dvButton="primary" type="submit" [dvLoading]="store.saving()">Jogar</button>
           @if (store.llmNotice()) {
             <dv-disclosure label="O que o mestre de IA recebe">
               <p>{{ store.llmNotice() }}</p>
