@@ -11,7 +11,7 @@ import { filter } from 'rxjs';
 import { DvBrand } from '@shared/ui/brand/brand';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { DvState } from '@shared/ui/state/state';
-import { RoutePending } from './route-pending';
+import { OPENING_TEXT, RoutePending } from './route-pending';
 
 /**
  * O shell do app: link de pular, cabeçalho com a marca e o contêiner por onde as páginas entram. Depois de cada
@@ -28,6 +28,7 @@ import { RoutePending } from './route-pending';
 })
 export class Shell {
   protected readonly pending = inject(RoutePending);
+  protected readonly openingText = OPENING_TEXT;
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private waiting: ReturnType<typeof setTimeout> | undefined;
 

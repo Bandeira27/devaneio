@@ -1,15 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import type { ChoiceOption } from '@shared/game/choice-option';
 import { DvIcon } from '../icon/icon';
 
 let nextId = 0;
 
-/** Uma opção de escolha única. */
-export interface ChoiceOption {
-  value: string;
-  label: string;
-  /** Uma linha de apoio (dano, pontos de vida, fórmula já traduzida). */
-  detail?: string;
-}
+export type { ChoiceOption };
 
 /**
  * Escolha única entre poucas opções, em cartões grandes (alvo, arma, dificuldade, habilidade, destino). Por baixo são

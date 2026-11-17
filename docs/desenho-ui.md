@@ -62,7 +62,7 @@ frontend/app/src/
     features/    home/  join/  invite/  character/  table/   (host/ e editor/ depois)
 ```
 
-`features` e `layout` usam `shared` e `core` (`shared/game` pode importar só tipos de `shared/ui`, como `ChoiceOption`); `shared` e `core` não dependem de `features`, de `layout` nem um do outro;
+`features` e `layout` usam `shared` e `core`; `shared` e `core` não dependem de `features`, de `layout` nem um do outro;
 uma feature não importa outra; só `shared/ui` importa o CDK. Isso é imposto por ESLint
 (`frontend/app/eslint.config.mjs`, provado por `tools/eslint-rules.spec.ts`), como o import-linter faz no backend.
 `src/app/testing/` é infraestrutura de teste e fica fora das camadas.
