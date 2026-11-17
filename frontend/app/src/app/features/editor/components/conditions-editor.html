@@ -1,0 +1,78 @@
+<fieldset class="conditions">
+  <legend>{{ label() }}</legend>
+  @if (hint()) {
+    <p class="dv-note">{{ hint() }}</p>
+  }
+  @for (condition of conditions(); track $index; let i = $index) {
+    <div class="row">
+      <dv-select
+        label="Tipo"
+        [announce]="false"
+        [options]="kinds"
+        [value]="condition.kind"
+        (valueChange)="setKind(i, $event)"
+      />
+      @switch (condition.kind) {
+        @case ('at_location') {
+          <dv-select
+            label="Local"
+            [announce]="false"
+            [options]="locations()"
+            [value]="target(condition) ?? ''"
+            [error]="store.errorAt(path() + '.' + i)"
+            (valueChange)="setTarget(i, $event)"
+          />
+        }
+        @case ('npc_down') {
+          <dv-select
+            label="NPC"
+            [announce]="false"
+            [options]="npcs()"
+            [value]="target(condition) ?? ''"
+            [error]="store.errorAt(path() + '.' + i)"
+            (valueChange)="setTarget(i, $event)"
+          />
+        }
+        @case ('beat_done') {
+          <dv-select
+            label="Marco"
+            [announce]="false"
+            [options]="beats()"
+            [value]="target(condition) ?? ''"
+            [error]="store.errorAt(path() + '.' + i)"
+            (valueChange)="setTarget(i, $event)"
+          />
+        }
+        @case ('check_passed') {
+          <dv-select
+            label="Habilidade"
+            [announce]="false"
+            [options]="skills()"
+            [value]="target(condition) ?? ''"
+            [error]="store.errorAt(path() + '.' + i)"
+            (valueChange)="setTarget(i, $event)"
+          />
+        }
+        @case ('turn_at_least') {
+          <dv-stepper
+            label="Turno"
+            [min]="0"
+            [max]="999"
+            [value]="turnOf(condition)"
+            (valueChange)="setTarget(i, '' + $event)"
+          />
+        }
+      }
+      <button
+        dvButton
+        type="button"
+        class="row__remove"
+        [attr.aria-label]="'Remover ' + name(condition, i)"
+        (click)="remove(i)"
+      >
+        Remover
+      </button>
+    </div>
+  }
+  <button dvButton type="button" class="add-condition" (click)="add()">Acrescentar condição</button>
+</fieldset>

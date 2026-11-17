@@ -1,0 +1,79 @@
+<section class="dv-card dv-stack" aria-labelledby="marcos-titulo">
+  <h2 id="marcos-titulo" class="dv-section">Marcos</h2>
+  <p class="dv-note">
+    Os passos da trama. Um marco começa quando seus requisitos estão concluídos e as condições de
+    começar valem, e termina quando as condições de terminar valem. Sem condições, só o anfitrião o
+    move.
+  </p>
+  @if (store.campaign(); as c) {
+    <dv-list-editor
+      noun="marco"
+      empty="Ainda não há marcos."
+      [items]="c.beats"
+      [nameOf]="nameOf"
+      (add)="store.add('beat')"
+      (remove)="remove($event)"
+      (move)="store.moveIn('beats', $event.index, $event.delta)"
+    >
+      <ng-template let-beat let-i="index">
+        <dv-item-problems word="marco" [id]="beat.id" />
+        <dv-name-id-fields
+          kind="beat"
+          label="Título"
+          field="title"
+          [id]="beat.id"
+          [name]="beat.title"
+          [path]="'beats.' + i"
+          (nameChange)="setTitle(i, beat, $event)"
+        />
+        <dv-field label="Descrição" hint="O que os jogadores leem quando o marco começa.">
+          <textarea
+            dvInput
+            rows="3"
+            [value]="beat.description"
+            (input)="patch(i, beat, { description: fieldValue($event) })"
+          ></textarea>
+        </dv-field>
+        @if (c.beats.length > 1) {
+          <fieldset class="checks">
+            <legend>Só começa depois de concluir</legend>
+            @for (other of c.beats; track $index) {
+              @if (other.id !== beat.id) {
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    [checked]="beat.requires.includes(other.id)"
+                    (change)="toggle(i, beat, other.id, $event)"
+                  />
+                  {{ other.title || other.id }}
+                </label>
+              }
+            }
+          </fieldset>
+        }
+        <dv-conditions-editor
+          label="Condições para começar"
+          hint="Todas precisam valer. Sem condições, começa assim que os requisitos estiverem concluídos."
+          [path]="'beats.' + i + '.activate_when'"
+          [ownBeatId]="beat.id"
+          [conditions]="beat.activate_when"
+          (conditionsChange)="patch(i, beat, { activate_when: [...$event] })"
+        />
+        <dv-conditions-editor
+          label="Condições para terminar"
+          hint="Todas precisam valer. Sem condições, só o anfitrião conclui o marco."
+          [path]="'beats.' + i + '.complete_when'"
+          [ownBeatId]="beat.id"
+          [conditions]="beat.complete_when"
+          (conditionsChange)="patch(i, beat, { complete_when: [...$event] })"
+        />
+        <dv-lines-field
+          label="Notas privadas"
+          hint="Só o anfitrião vê. Uma por linha."
+          [lines]="beat.private_notes"
+          (linesChange)="patch(i, beat, { private_notes: [...$event] })"
+        />
+      </ng-template>
+    </dv-list-editor>
+  }
+</section>

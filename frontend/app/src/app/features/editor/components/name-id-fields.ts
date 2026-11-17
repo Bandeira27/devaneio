@@ -15,15 +15,24 @@ import { EditorStore } from '../editor.store';
   selector: 'dv-name-id-fields',
   imports: [DvField, DvInput],
   template: `
-    <dv-field label="Nome" [announce]="false" [error]="store.errorAt(path() + '.name')">
-      <input dvInput type="text" [value]="name()" (input)="nameChange.emit(fieldValue($event))" />
+    <dv-field [label]="label()" [announce]="false" [error]="store.errorAt(path() + '.' + field())">
+      @if (multiline()) {
+        <textarea
+          dvInput
+          rows="3"
+          [value]="name()"
+          (input)="nameChange.emit(fieldValue($event))"
+        ></textarea>
+      } @else {
+        <input dvInput type="text" [value]="name()" (input)="nameChange.emit(fieldValue($event))" />
+      }
     </dv-field>
     <dv-field
       label="Identificador"
       [announce]="false"
       [hint]="
         store.isAuto(kind(), id())
-          ? 'Acompanha o nome. Escreva aqui para fixar outro.'
+          ? 'Acompanha ' + follows() + '. Escreva aqui para fixar outro.'
           : 'Letras minúsculas sem acento, números, - e _.'
       "
       [error]="idError() || store.errorAt(path() + '.id')"
@@ -37,6 +46,14 @@ export class NameIdFields {
   readonly kind = input.required<ItemKind>();
   readonly id = input.required<string>();
   readonly name = input.required<string>();
+  /** O rótulo do campo do nome ("Nome"; "Título" nos marcos). */
+  readonly label = input('Nome');
+  /** O campo do nome no JSON (`name`; `title` nos marcos), para achar o erro dele. */
+  readonly field = input('name');
+  /** O campo do nome é uma caixa de várias linhas (o texto de um fato)? */
+  readonly multiline = input(false);
+  /** O que o id acompanha, na dica ("o nome"; "o texto"). */
+  readonly follows = input('o nome');
   /** Onde o item está na campanha (`locations.2`), para achar os erros dele. */
   readonly path = input.required<string>();
   readonly nameChange = output<string>();

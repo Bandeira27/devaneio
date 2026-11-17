@@ -1,0 +1,25 @@
+.conditions {
+  display: grid;
+  gap: var(--dv-space-3);
+  justify-items: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.conditions legend {
+  padding: 0;
+  margin-bottom: var(--dv-space-1);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}
+
+.row {
+  display: grid;
+  gap: var(--dv-space-2);
+  justify-items: start;
+  width: 100%;
+  padding-left: var(--dv-space-3);
+  border-left: var(--dv-border-width) dotted var(--dv-line);
+}

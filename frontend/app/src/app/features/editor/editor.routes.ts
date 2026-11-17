@@ -2,7 +2,9 @@ import { Routes } from '@angular/router';
 import type { CanDeactivateFn } from '@angular/router';
 import { EditorListPage } from './pages/list-page/list-page';
 import { EditorPage } from './pages/edit-page/edit-page';
+import { BeatsSection } from './sections/beats-section';
 import { FactionsSection } from './sections/factions-section';
+import { FactsSection } from './sections/facts-section';
 import { LocationsSection } from './sections/locations-section';
 import { NpcsSection } from './sections/npcs-section';
 import { OverviewSection } from './sections/overview-section';
@@ -21,6 +23,8 @@ export const EDITOR_ROUTES: Routes = [
       { path: 'locais', component: LocationsSection },
       { path: 'npcs', component: NpcsSection },
       { path: 'faccoes', component: FactionsSection },
+      { path: 'marcos', component: BeatsSection },
+      { path: 'fatos', component: FactsSection },
     ],
   },
 ];

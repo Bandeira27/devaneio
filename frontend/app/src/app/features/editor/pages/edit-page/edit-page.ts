@@ -20,6 +20,8 @@ export const SECTIONS = [
   { path: 'locais', label: 'Locais' },
   { path: 'npcs', label: 'NPCs' },
   { path: 'faccoes', label: 'Facções' },
+  { path: 'marcos', label: 'Marcos' },
+  { path: 'fatos', label: 'Fatos' },
 ] as const;
 
 /**
