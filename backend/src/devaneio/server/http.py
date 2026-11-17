@@ -26,6 +26,7 @@ from .models import (
     CopilotRequest,
     CreateTableRequest,
     ErrorResponse,
+    InvitePreviewRequest,
     JoinRequest,
     SayRequest,
 )
@@ -85,6 +86,10 @@ class Handler(BaseHTTPRequestHandler):
     def _get_rules(self, match: re.Match[str]) -> tuple[int, Payload]:
         return 200, self.server.service.get_rules(match.group(1), self._token())
 
+    def _preview_invite(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(InvitePreviewRequest)
+        return 200, self.server.service.preview_invite(match.group(1), request)
+
     def _join_table(self, match: re.Match[str]) -> tuple[int, Payload]:
         request = self._read_json(JoinRequest)
         return 201, self.server.service.join_table(match.group(1), request)
@@ -117,6 +122,7 @@ class Handler(BaseHTTPRequestHandler):
         ("GET", re.compile(r"^/tables/([^/]+)$"), _get_table),
         ("GET", re.compile(r"^/tables/([^/]+)/campaign$"), _get_campaign),
         ("GET", re.compile(r"^/tables/([^/]+)/rules$"), _get_rules),
+        ("POST", re.compile(r"^/tables/([^/]+)/preview$"), _preview_invite),
         ("POST", re.compile(r"^/tables/([^/]+)/players$"), _join_table),
         ("POST", re.compile(r"^/tables/([^/]+)/commands$"), _command),
         ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),

@@ -48,8 +48,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `OSError`) vira `500 {"code": "internal"}` com traceback só no stderr: a mensagem original cita caminhos e
     trechos do arquivo. Segredos de NPC em `GET .../campaign` só para o anfitrião. `LlmConfig.host` e
     `description` nunca trazem usuário e senha da URL.
-16. **Convite e visão por papel**: no `POST .../players`, mesa inexistente e convite errado respondem igual (401) e o
-    limite de 8 jogadores só vale depois do convite (o `GET .../{id}` sem token ainda revela se a mesa existe: aceito,
+16. **Convite e visão por papel**: no `POST .../players` e no `POST .../preview` (que só devolve o título da campanha a
+    quem tem o convite), mesa inexistente e convite errado respondem igual (401) e o
+    limite de 8 jogadores só vale depois do convite (a prévia nem o consulta) (o `GET .../{id}` sem token ainda revela se a mesa existe: aceito,
     o id tem 64 bits). Quem não é anfitrião só vê o que o `olhar` do CLI mostra: `TableView.state` é
     `PlayerStateView` (sem `rng_seed`/`rng_draws`, que tornam o próximo sorteio previsível, sem `events` com `data`,
     sem `facts`, NPCs só do local e só como `NpcView`) e `GET .../campaign` é `CampaignView`. Campo novo em

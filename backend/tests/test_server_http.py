@@ -332,6 +332,42 @@ def test_a_refused_command_leaves_the_table_as_it_was(client):
     assert after == before
 
 
+def test_invite_preview_answers_with_the_title_and_nothing_else(client):
+    _, created, _ = create(client)
+    path = f"/tables/{created['table_id']}/preview"
+    status, body, _ = client.call("POST", path, body={"invite_code": "convite"})  # sem token
+    assert (status, body) == (200, {"title": "A Sombra do Vale"})
+
+
+def test_invite_preview_errors_do_not_say_whether_the_table_exists(client):
+    _, created, _ = create(client)
+    wrong = client.call(
+        "POST", f"/tables/{created['table_id']}/preview", body={"invite_code": "errado"}
+    )
+    unknown = client.call(
+        "POST", "/tables/0123456789abcdef/preview", body={"invite_code": "convite"}
+    )
+    assert wrong[0] == unknown[0] == 401
+    assert wrong[1] == unknown[1]  # mesmo código e mesma mensagem
+    assert wrong[1]["error"]["code"] == "invalid_invite"
+
+
+def test_invite_preview_needs_a_json_body(client):
+    _, created, _ = create(client)
+    path = f"/tables/{created['table_id']}/preview"
+    status, body, _ = client.call(
+        "POST",
+        path,
+        raw=b'{"invite_code": "convite"}',
+        headers={"Content-Type": "text/plain"},
+    )
+    assert (status, body["error"]["code"]) == (415, "unsupported_media_type")
+    status, body, _ = client.call("POST", path, body={})
+    assert (status, body["error"]["code"]) == (400, "bad_request")
+    status, body, _ = client.call("POST", path, body={"invite_code": "x" * 65})
+    assert (status, body["error"]["code"]) == (400, "bad_request")
+
+
 def test_join_errors(client):
     _, created, _ = create(client)
     path = f"/tables/{created['table_id']}/players"

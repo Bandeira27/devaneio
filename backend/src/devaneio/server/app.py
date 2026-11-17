@@ -47,6 +47,8 @@ from .models import (
     CopilotRequest,
     CreateTableRequest,
     EventsView,
+    InvitePreview,
+    InvitePreviewRequest,
     JoinRequest,
     LlmView,
     PlayerStateView,
@@ -88,6 +90,16 @@ LLM_NOTICE = (
 )
 NOTICE_WITH_SECRETS = (", segredos dos NPCs, fatos ocultos e notas privadas da campanha", "")
 NOTICE_WITHOUT_SECRETS = ("", "Segredos, fatos ocultos e notas privadas não vão. ")
+
+
+def _invalid_invite() -> ApiFailure:
+    """A falha única para mesa inexistente e convite errado (não revela qual dos dois)."""
+    return ApiFailure(401, "invalid_invite", "convite inválido")
+
+
+def _invite_matches(table: TableMeta, invite_code: str) -> bool:
+    """O convite confere com o guardado? Só o hash é guardado; a comparação é em tempo constante."""
+    return hmac.compare_digest(hash_secret(invite_code), table.invite_hash)
 
 
 class TableService:
@@ -152,6 +164,23 @@ class TableService:
             table=self._view(table_id, session, table, "host", HOST_ID),
         )
 
+    def preview_invite(self, table_id: str, request: InvitePreviewRequest) -> InvitePreview:
+        """O nome da mesa para quem tem um convite válido, antes de entrar.
+
+        Mesma resposta do ``join_table`` para mesa inexistente e convite errado (401). Só o título
+        da campanha sai; o limite de jogadores não é consultado, para a prévia não virar oráculo
+        de "mesa cheia" sem convite.
+        """
+        path = self.storage.path_for(table_id)
+        if path is None:
+            raise _invalid_invite()
+        with self.storage.lock(table_id):
+            session = self.load_session(path)
+        table = session.table
+        if table is None or not _invite_matches(table, request.invite_code):
+            raise _invalid_invite()
+        return InvitePreview(title=summarize(session.campaign).title)
+
     def join_table(self, table_id: str, request: JoinRequest) -> TableJoined:
         """Entrada de um jogador por convite.
 
@@ -160,14 +189,12 @@ class TableService:
         """
         path = self.storage.path_for(table_id)
         if path is None:
-            raise ApiFailure(401, "invalid_invite", "convite inválido")
+            raise _invalid_invite()
         with self.storage.lock(table_id):
             session = self.load_session(path)
             table = session.table
-            if table is None or not hmac.compare_digest(
-                hash_secret(request.invite_code), table.invite_hash
-            ):
-                raise ApiFailure(401, "invalid_invite", "convite inválido")
+            if table is None or not _invite_matches(table, request.invite_code):
+                raise _invalid_invite()
             if len(table.players) >= MAX_PLAYERS:
                 raise ApiFailure(409, "table_full", f"a mesa já tem {MAX_PLAYERS} jogadores")
             if request.name.casefold() in {p.name.casefold() for p in table.players.values()}:

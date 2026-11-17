@@ -15,6 +15,8 @@ from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.models import (
     CampaignView,
     CreateTableRequest,
+    InvitePreview,
+    InvitePreviewRequest,
     JoinRequest,
     PlayerStateView,
 )
@@ -246,6 +248,39 @@ def test_join_with_wrong_invite_or_unknown_table_answers_the_same(service, creat
         join(service, created, invite="outro")
     assert (unknown.value.status, unknown.value.code) == (401, "invalid_invite")
     assert (wrong.value.status, wrong.value.code) == (401, "invalid_invite")
+
+
+def test_invite_preview_shows_only_the_campaign_title(service, created):
+    preview = service.preview_invite(
+        created.table_id, InvitePreviewRequest(invite_code="convite-fixo")
+    )
+    assert preview == InvitePreview(title="A Sombra do Vale")
+    # o contrato da prévia é só o título: nada de id da campanha, premissa, jogadores ou mesa
+    assert set(InvitePreview.model_fields) == {"title"}
+
+
+@pytest.mark.parametrize("table_id", ["0123456789abcdef", "..", "nada"])
+def test_invite_preview_with_wrong_invite_or_unknown_table_answers_like_join(
+    service, created, table_id
+):
+    with pytest.raises(ApiFailure) as unknown:
+        service.preview_invite(table_id, InvitePreviewRequest(invite_code="convite-fixo"))
+    with pytest.raises(ApiFailure) as wrong:
+        service.preview_invite(created.table_id, InvitePreviewRequest(invite_code="outro"))
+    with pytest.raises(ApiFailure) as join_wrong:
+        join(service, created, invite="outro")
+    same = (join_wrong.value.status, join_wrong.value.code, join_wrong.value.message)
+    assert (unknown.value.status, unknown.value.code, unknown.value.message) == same
+    assert (wrong.value.status, wrong.value.code, wrong.value.message) == same
+
+
+def test_invite_preview_does_not_depend_on_the_table_being_full(service, created):
+    for i in range(7):  # anfitrião + 7 = 8, o máximo
+        join(service, created, name=f"Jogador{i}")
+    preview = service.preview_invite(
+        created.table_id, InvitePreviewRequest(invite_code="convite-fixo")
+    )
+    assert preview.title == "A Sombra do Vale"  # a prévia não é oráculo de "mesa cheia"
 
 
 def test_join_refuses_a_full_table_and_a_repeated_name(service, created):
