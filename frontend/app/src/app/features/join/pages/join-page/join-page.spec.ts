@@ -41,6 +41,27 @@ describe('Entrar na mesa', () => {
       expect(root().querySelector('.dv-stage__context strong')).toBeNull();
     });
 
+    it('se o aviso do convite já está na tela, o erro do envio não o duplica', async () => {
+      const { root, http, type, submit, settle } = await setup(url);
+      http
+        .expectOne(preview)
+        .flush(
+          { error: { code: 'invalid_invite', message: 'convite inválido' } },
+          { status: 401, statusText: 'Unauthorized' },
+        );
+      await settle();
+      await type('input', 'Bia');
+      await submit();
+      http
+        .expectOne(`/tables/${TABLE_ID}/players`)
+        .flush(
+          { error: { code: 'invalid_invite', message: 'convite inválido' } },
+          { status: 401, statusText: 'Unauthorized' },
+        );
+      await settle();
+      expect(root().querySelectorAll('dv-notice').length).toBe(1);
+    });
+
     it('sem rede a tela segue com o texto genérico e o formulário continua valendo', async () => {
       const { root, http, settle } = await setup(url);
       http.expectOne(preview).error(new ProgressEvent('error'));

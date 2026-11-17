@@ -38,6 +38,11 @@ def clean_name(value: object) -> object:
 
 PlayerName = Annotated[str, BeforeValidator(clean_name), Field(min_length=1, max_length=MAX_NAME)]
 
+MAX_INVITE = 64
+InviteCode = Annotated[
+    str, Field(min_length=1, max_length=MAX_INVITE)
+]  # o formato do convite, num lugar só
+
 
 def clean_line(value: object) -> object:
     """Limpa uma linha de comando.
@@ -71,14 +76,14 @@ class CreateTableRequest(StrictModel):
 class JoinRequest(StrictModel):
     """Entrar numa mesa: o código de convite e o nome."""
 
-    invite_code: str = Field(min_length=1, max_length=64)
+    invite_code: InviteCode
     name: PlayerName
 
 
 class InvitePreviewRequest(StrictModel):
     """Espiar para onde um convite leva: só o código de convite."""
 
-    invite_code: str = Field(min_length=1, max_length=64)
+    invite_code: InviteCode
 
 
 class CommandRequest(StrictModel):

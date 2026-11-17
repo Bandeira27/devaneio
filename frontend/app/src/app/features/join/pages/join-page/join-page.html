@@ -2,17 +2,21 @@
   <div class="dv-stage__context">
     <dv-steps [steps]="steps" [current]="0" />
     <h1 class="dv-display">Entrar na mesa</h1>
-    <p class="dv-lede dv-stage__extra">
-      @if (store.preview(); as preview) {
-        @if (preview.kind === 'ready') {
-          Você foi convidado para <strong>{{ preview.title }}</strong>, uma mesa de RPG com um
-          mestre de IA.
-        } @else {
-          Você foi convidado para uma mesa de RPG com um mestre de IA.
-        }
-      }
-      Diga como quer ser chamado e, no próximo passo, crie o seu personagem.
-    </p>
+    @if (invitedTo(); as title) {
+      <!-- O nome da mesa aparece em qualquer largura: é o que confirma que o link é o certo. -->
+      <p class="dv-lede" animate.enter="dv-enter">
+        Você foi convidado para <strong>{{ title }}</strong>.
+      </p>
+      <p class="dv-lede dv-stage__extra">
+        Uma mesa de RPG com um mestre de IA. Diga como quer ser chamado e, no próximo passo, crie o
+        seu personagem.
+      </p>
+    } @else {
+      <p class="dv-lede dv-stage__extra">
+        Você foi convidado para uma mesa de RPG com um mestre de IA. Diga como quer ser chamado e,
+        no próximo passo, crie o seu personagem.
+      </p>
+    }
     <dv-ornament class="dv-stage__extra" />
   </div>
 
@@ -40,7 +44,7 @@
     } @else {
       <p class="dv-note">Convite recebido pelo link.</p>
     }
-    @if (store.preview().kind === 'invalid') {
+    @if (store.preview().kind === 'invalid' && !store.error()) {
       <dv-notice kind="error">{{ invalidMessage() }}</dv-notice>
     }
     @if (store.error()) {

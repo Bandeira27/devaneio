@@ -179,7 +179,7 @@ class TableService:
         table = session.table
         if table is None or not _invite_matches(table, request.invite_code):
             raise _invalid_invite()
-        return InvitePreview(title=summarize(session.campaign).title)
+        return InvitePreview(title=session.campaign.title)
 
     def join_table(self, table_id: str, request: JoinRequest) -> TableJoined:
         """Entrada de um jogador por convite.

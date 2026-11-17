@@ -11,7 +11,7 @@ passos visíveis. A tela larga mostra o contexto ao lado da tarefa; o celular mo
 (endereço do servidor, código do convite) fica em "Opções avançadas", recolhido: o centro do convite é o link e o "Copiar".
 
 **A tela de entrar diz para onde o convite leva.** Com o convite no link, ela pergunta ao servidor o nome da mesa (o título
-da campanha; só quem tem o convite o recebe) e mostra "Você foi convidado para _nome_". A pergunta é feita uma vez ao abrir
+da campanha; só quem tem o convite o recebe) e mostra "Você foi convidado para _nome_" em qualquer largura (no celular é o que confirma que o link é o certo). A pergunta é feita uma vez ao abrir
 a tela, nunca por tecla; convite recusado mostra o aviso, e falha de rede deixa o texto genérico (a entrada não é bloqueada).
 
 ## Estados de uma tela ou região

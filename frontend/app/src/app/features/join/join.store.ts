@@ -39,8 +39,8 @@ export class JoinStore {
    */
   async loadPreview(): Promise<void> {
     const code = this.code().trim();
-    if (!isInviteCode(code)) {
-      return;
+    if (this.preview().kind !== 'idle' || !isInviteCode(code)) {
+      return; // uma vez por abertura da tela, e só com um código de formato válido
     }
     this.preview.set({ kind: 'loading' });
     try {

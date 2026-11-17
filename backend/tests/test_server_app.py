@@ -255,7 +255,10 @@ def test_invite_preview_shows_only_the_campaign_title(service, created):
         created.table_id, InvitePreviewRequest(invite_code="convite-fixo")
     )
     assert preview == InvitePreview(title="A Sombra do Vale")
-    # o contrato da prévia é só o título: nada de id da campanha, premissa, jogadores ou mesa
+
+
+def test_invite_preview_contract_is_only_the_title():
+    # nada de id da campanha, premissa, jogadores ou mesa
     assert set(InvitePreview.model_fields) == {"title"}
 
 
@@ -281,6 +284,49 @@ def test_invite_preview_does_not_depend_on_the_table_being_full(service, created
         created.table_id, InvitePreviewRequest(invite_code="convite-fixo")
     )
     assert preview.title == "A Sombra do Vale"  # a prévia não é oráculo de "mesa cheia"
+
+
+def test_invite_preview_of_a_save_without_table_answers_like_an_unknown_table(service, created):
+    table_id = "0123456789abcdef"
+    save_game(new_game(CAMPAIGN_PATH, service.storage.data_dir / f"{table_id}.json", seed=7))
+    with pytest.raises(ApiFailure, match="convite inválido") as info:
+        service.preview_invite(table_id, InvitePreviewRequest(invite_code="convite-fixo"))
+    assert (info.value.status, info.value.code) == (401, "invalid_invite")
+
+
+def test_invite_preview_of_another_table_with_its_own_invite_is_refused(tmp_path):
+    codes = iter(["convite-a", "convite-b"])
+    service = make_service(tmp_path, invite_source=lambda: next(codes))
+    request = CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
+    first = service.create_table(request)
+    second = service.create_table(request)
+    other = InvitePreviewRequest(invite_code="convite-b")
+    with pytest.raises(ApiFailure, match="convite inválido") as info:
+        service.preview_invite(first.table_id, other)
+    assert (info.value.status, info.value.code) == (401, "invalid_invite")
+    assert service.preview_invite(second.table_id, other).title == "A Sombra do Vale"
+
+
+def test_invite_preview_changes_nothing_on_disk(service, created):
+    path = service.storage.data_dir / f"{created.table_id}.json"
+    before = path.read_bytes()
+    service.preview_invite(created.table_id, InvitePreviewRequest(invite_code="convite-fixo"))
+    assert path.read_bytes() == before
+
+
+def test_invite_preview_request_accepts_sixty_four_characters():
+    assert InvitePreviewRequest(invite_code="x" * 64).invite_code == "x" * 64
+
+
+@pytest.mark.parametrize("code", ["", "x" * 65])
+def test_invite_preview_request_rejects_empty_and_sixty_five_characters(code):
+    with pytest.raises(ValueError, match="invite_code"):
+        InvitePreviewRequest(invite_code=code)
+
+
+def test_invite_preview_request_rejects_extra_fields():
+    with pytest.raises(ValueError, match="extra"):
+        InvitePreviewRequest.model_validate({"invite_code": "x", "name": "Bia"})
 
 
 def test_join_refuses_a_full_table_and_a_repeated_name(service, created):

@@ -25,6 +25,11 @@ export class JoinPage implements OnInit {
   readonly invite = input<string>();
 
   protected readonly store = inject(JoinStore);
+  /** O nome da mesa a que o convite leva, quando o servidor o disse. */
+  protected readonly invitedTo = computed(() => {
+    const preview = this.store.preview();
+    return preview.kind === 'ready' ? preview.title : '';
+  });
   protected readonly invalidMessage = computed(() => {
     const preview = this.store.preview();
     return preview.kind === 'invalid' ? preview.message : '';
@@ -33,6 +38,6 @@ export class JoinPage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId());
     this.store.code.set(this.invite() ?? '');
-    void this.store.loadPreview(); // só com o convite no link: quem cola o código à mão fica com o texto genérico
+    void this.store.loadPreview(); // sem o código no link, não há o que perguntar: fica o texto genérico
   }
 }
