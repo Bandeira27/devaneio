@@ -143,6 +143,7 @@ export function buildFeed(
       lastTurn = event.turn;
     }
     lastEventTurn = event.turn;
+    const outcome = event.outcome ?? null;
     items.push({
       type: 'event',
       key: `event-${event.index}`,
@@ -150,8 +151,8 @@ export function buildFeed(
       turn: event.turn,
       kind: event.kind,
       narration: event.narration ?? event.prose,
-      note: event.outcome === null ? event.text : event.text.replace(SEALED_SUFFIX, ''),
-      seal: event.outcome === null ? null : SEALS[event.outcome],
+      note: outcome === null ? event.text : event.text.replace(SEALED_SUFFIX, ''),
+      seal: outcome === null ? null : SEALS[outcome],
       tone: TONES[event.kind] ?? 'neutral',
       fade: ageFade(currentTurn - event.turn),
     });

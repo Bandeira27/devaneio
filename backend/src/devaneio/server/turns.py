@@ -26,8 +26,7 @@ from devaneio.schema import Campaign, Event, GameState
 from . import policy
 from .auth import find_player
 from .errors import ApiFailure
-from .models import MAX_NAME, CommandRequest, CommandResult, EventView
-from .models.responses import Outcome
+from .models import MAX_NAME, CommandRequest, CommandResult, EventView, Outcome
 
 MAX_JOIN_ARGS = 30  # id, nome, atributos e itens do `entrar`
 

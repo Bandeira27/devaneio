@@ -5,10 +5,12 @@ import json
 import pytest
 
 from conftest import CAMPAIGN_PATH
+from devaneio.engine.checks import OUTCOME_LABELS
 from devaneio.game import execute, new_game
+from devaneio.rules import CheckOutcome
 from devaneio.schema import Event
 from devaneio.server.models import EventView
-from devaneio.server.turns import events_view, outcome_of
+from devaneio.server.turns import _ATTACK_OUTCOMES, _CHECK_OUTCOMES, events_view, outcome_of
 
 
 def event(kind, **data):
@@ -72,9 +74,9 @@ def test_a_real_game_log_gets_the_badges_the_engine_logged(session):
     assert by_kind["move"] == [None]
     assert by_kind["check"][0] in {"critical_failure", "failure", "success", "critical_success"}
     assert by_kind["check"][1] in {"critical_miss", "miss", "hit", "critical_hit"}
-    if "damage" in by_kind:  # o ataque só gera dano se acertou
-        assert by_kind["check"][1] in {"hit", "critical_hit"}
-        assert by_kind["damage"][0] in {"damage", "incapacitated"}
+    # com a semente 7 o ataque acerta; sem o `if`, o teste falha em vez de passar vazio se isso mudar
+    assert by_kind["check"][1] in {"hit", "critical_hit"}
+    assert by_kind["damage"][0] in {"damage", "incapacitated"}
 
 
 def test_the_event_view_never_carries_the_dice_the_total_or_the_margin(session):
@@ -100,3 +102,30 @@ def test_outcome_is_part_of_the_contract_and_nothing_else_was_added():
         "outcome",
     ]
     assert EventView(index=0, turn=0, kind="move", text="t", prose="p").outcome is None
+
+
+def test_every_engine_degree_has_a_test_and_an_attack_badge():
+
+    degrees = {grade.value for grade in CheckOutcome}
+    assert set(_CHECK_OUTCOMES) == degrees
+    assert set(_ATTACK_OUTCOMES) == degrees
+
+
+def test_a_hidden_npc_event_reaches_the_player_neither_with_text_nor_with_outcome(session):
+    state, _ = execute(session, 'ferir sacerdote 2 "a"')  # o grupo está na vila: escondido
+    host = {e.index: e.outcome for e in events_view(state, 0, role="host")}
+    player = {e.index: e.outcome for e in events_view(state, 0, role="player")}
+    assert host[2] == "damage"
+    assert 2 not in player
+
+
+def test_the_engine_text_still_ends_with_the_words_the_front_strips_from_the_note(session):
+    # O front tira da nota ", <desfecho>" (feed.ts: SEALED_SUFFIX): se o motor mudar esses
+    # textos, o selo e a nota passariam a repetir o desfecho sem aviso.
+
+    session, _ = execute(session, "bia: testar lutar normal")
+    check = session.state.events[-1]
+    assert check.text.endswith(f", {OUTCOME_LABELS[CheckOutcome(check.data['outcome'])]}")
+    assert set(OUTCOME_LABELS.values()) == {"falha crítica", "falha", "sucesso", "sucesso crítico"}
+    session, _ = execute(session, 'ferir ferreiro 99 "x"')
+    assert session.state.events[-1].text.endswith(", fora de combate")

@@ -256,7 +256,8 @@ export interface CommandResult {
  *
  * ``outcome`` é só o desfecho para o selo do feed: o grau de um teste (``success``...), de um
  * ataque (``hit``...), ``damage``/``incapacitated`` num dano e ``heal`` numa cura. ``None`` nos
- * demais eventos. Nunca leva dado, margem nem total: esses ficam em ``data``.
+ * demais eventos. O campo nunca leva dado, margem nem total (``data`` não sai); o ``text`` do evento é
+ * outra coisa e já mostra a rolagem a quem o vê.
  */
 export interface EventView {
   index: number;

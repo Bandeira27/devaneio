@@ -164,6 +164,20 @@ describe('buildFeed', () => {
 });
 
 describe('selo de desfecho', () => {
+  it('um ataque com a nota real do motor diz Acerto e perde o ", sucesso"', () => {
+    const real =
+      'Bia testa Punhos (2d6 + FOR) contra Normal 9: 2d6 [6, 6] → total 17, sucesso crítico';
+    const item = buildFeed(
+      [event(0, 1, { kind: 'check', outcome: 'critical_hit', text: real })],
+      [],
+      1,
+    ).find((i) => i.type === 'event');
+    expect(item?.type === 'event' && item.seal?.label).toBe('Acerto crítico');
+    expect(item?.type === 'event' && item.note).toBe(
+      'Bia testa Punhos (2d6 + FOR) contra Normal 9: 2d6 [6, 6] → total 17',
+    );
+  });
+
   const sealOf = (item: FeedItem | undefined) => (item?.type === 'event' ? item.seal : undefined);
   const noteOf = (item: FeedItem | undefined) => (item?.type === 'event' ? item.note : undefined);
   const eventItem = (e: EventView) => buildFeed([e], [], 1).find((i) => i.type === 'event');

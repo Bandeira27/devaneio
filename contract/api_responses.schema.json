@@ -595,7 +595,7 @@
     },
     "EventView": {
       "additionalProperties": false,
-      "description": "Um evento do log como o cliente o recebe.\n\nSem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é\no parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do\nlote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para\ntodos os jogadores.\n\n``outcome`` é só o desfecho para o selo do feed: o grau de um teste (``success``...), de um\nataque (``hit``...), ``damage``/``incapacitated`` num dano e ``heal`` numa cura. ``None`` nos\ndemais eventos. Nunca leva dado, margem nem total: esses ficam em ``data``.",
+      "description": "Um evento do log como o cliente o recebe.\n\nSem ``data``. ``prose`` é sempre a narração da gramática do próprio evento. ``narration`` é\no parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do\nlote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para\ntodos os jogadores.\n\n``outcome`` é só o desfecho para o selo do feed: o grau de um teste (``success``...), de um\nataque (``hit``...), ``damage``/``incapacitated`` num dano e ``heal`` numa cura. ``None`` nos\ndemais eventos. O campo nunca leva dado, margem nem total (``data`` não sai); o ``text`` do evento é\noutra coisa e já mostra a rolagem a quem o vê.",
       "properties": {
         "index": {
           "type": "integer"
