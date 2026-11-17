@@ -1,15 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   effect,
   inject,
+  signal,
   untracked,
 } from '@angular/core';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { focusElement } from '@shared/ui/focus';
 import { DvState } from '@shared/ui/state/state';
 import { EditorStore } from '../editor.store';
 
@@ -32,13 +35,19 @@ const NEAR_LIMIT = 0.8;
 })
 export class PreviewSection {
   protected readonly store = inject(EditorStore);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** O anúncio curto para o leitor de tela (a região viva não repete o conteúdo da prévia). */
+  protected readonly status = signal('');
   /** Dá para pedir a prévia: a conferência terminou e a campanha não tem erros. */
   protected readonly ready = computed(
     () => !this.store.validating() && this.store.report()?.ok === true,
   );
   protected readonly percent = computed(() => {
     const preview = this.store.preview();
-    return preview === null ? 0 : Math.round((preview.copilot_chars / preview.copilot_limit) * 100);
+    // Para baixo: 99,6% não pode aparecer como 100% enquanto o selo ainda diz "perto do limite".
+    return preview === null || preview.copilot_limit <= 0
+      ? 0
+      : Math.floor((preview.copilot_chars / preview.copilot_limit) * 100);
   });
   protected readonly level = computed<'ok' | 'near' | 'over'>(() => {
     const preview = this.store.preview();
@@ -52,15 +61,54 @@ export class PreviewSection {
   });
 
   constructor() {
+    let refreshing = false;
     effect(() => {
-      // A primeira vez que a campanha está sem erros, a prévia vem sozinha; depois, só pelo botão.
+      // Só a atualização de uma prévia que já existe precisa de anúncio: a primeira carga tem o próprio "Preparando…".
+      const loading = this.store.previewing();
+      const hasPreview = untracked(() => this.store.preview() !== null);
+      if (loading && hasPreview) {
+        refreshing = true;
+        this.status.set('Atualizando a prévia…');
+      } else if (!loading && refreshing) {
+        refreshing = false;
+        this.status.set(
+          untracked(() => this.store.previewError()) === '' ? 'Prévia atualizada.' : '',
+        );
+      }
+    });
+    effect(() => {
+      // A primeira vez que a campanha está sem erros, a prévia vem sozinha; depois de uma falha ou de uma prévia antiga,
+      // só pelo botão (o erro não some sozinho numa edição).
       if (
         this.ready() &&
-        untracked(() => this.store.preview() === null && !this.store.previewing())
+        untracked(
+          () =>
+            this.store.preview() === null &&
+            !this.store.previewing() &&
+            this.store.previewError() === '',
+        )
       ) {
         void this.store.loadPreview();
       }
     });
+  }
+
+  /** "Tentar de novo": o aviso com o botão some ao clicar, então o foco volta ao título da seção. */
+  protected async retry(): Promise<void> {
+    await this.store.loadPreview();
+    this.focusTitle();
+  }
+
+  protected retryCheck(): void {
+    this.store.recheck();
+    this.focusTitle();
+  }
+
+  private focusTitle(): void {
+    const title = this.host.nativeElement.querySelector<HTMLElement>('#previa-titulo');
+    if (title) {
+      focusElement(title);
+    }
   }
 
   protected number(value: number): string {

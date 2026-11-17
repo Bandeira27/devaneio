@@ -172,7 +172,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     o editor cria ou copia. O corpo do editor tem teto próprio (512 KiB). `create` e `update` rodam sob um lock e `create` usa `os.link`, então
     dois pedidos com o mesmo id não se sobrescrevem; **risco aceito:** uma mesa criada no instante entre a checagem de uso e
     a troca do arquivo de uma campanha passa a reler o arquivo novo. A guarda de `Host`/`Origin` vale para toda requisição
-    enquanto o editor está ligado. Os testes estão em `test_server_editor.py`.
+    enquanto o editor está ligado. A prévia (`POST /editor/preview`) mostra ao autor o contexto do LLM **com** os segredos (`private_notes`, fatos
+    ocultos) por desenho, para ele conferir o que vazaria com `--segredos-no-llm`: por isso ela só existe sob as mesmas
+    guardas, não grava nada e o app a guarda só em memória. Os testes estão em `test_server_editor.py`.
 
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 

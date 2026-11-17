@@ -1,112 +1,118 @@
 <section class="dv-card dv-stack" aria-labelledby="previa-titulo">
-  <h2 id="previa-titulo" class="dv-section">Prévia</h2>
+  <h2 id="previa-titulo" class="dv-section" tabindex="-1">Prévia</h2>
   <p class="dv-note">
-    O que cada um enxerga desta campanha no começo de uma partida. Serve para conferir que nada
-    privado vaza.
+    O que cada um enxerga desta campanha no começo de uma partida. Procure nos textos abaixo as
+    notas privadas e os fatos ocultos que você escreveu: eles só devem aparecer na versão "com
+    segredos".
   </p>
+  <p class="dv-visually-hidden" role="status">{{ status() }}</p>
 
   @if (store.errors().length > 0) {
     <dv-state kind="unavailable">
       A prévia precisa de uma campanha sem erros. Corrija os problemas do resumo no topo para vê-la.
     </dv-state>
-  } @else if (store.previewError()) {
+  } @else if (store.checkError()) {
     <dv-state kind="error">
-      {{ store.previewError() }}
-      <button dvStateAction dvButton type="button" (click)="store.loadPreview()">
-        Tentar de novo
-      </button>
+      Não consegui conferir a campanha agora: {{ store.checkError() }}
+      <button dvStateAction dvButton type="button" (click)="retryCheck()">Conferir de novo</button>
     </dv-state>
-  } @else if (store.preview(); as preview) {
-    @if (store.previewStale()) {
-      <dv-notice kind="warn">
-        Esta prévia é de antes das últimas alterações.
-        <button
-          dvButton
-          type="button"
-          [dvLoading]="store.previewing()"
-          (click)="store.loadPreview()"
-        >
-          Atualizar prévia
-        </button>
+  } @else {
+    @if (store.previewError()) {
+      <dv-notice kind="error">
+        {{ store.previewError() }}
+        <button dvButton type="button" (click)="retry()">Tentar de novo</button>
       </dv-notice>
     }
-
-    <section class="block" aria-labelledby="previa-jogador">
-      <h3 id="previa-jogador" class="block__title">O jogador vê</h3>
-      <p class="block__title-text">{{ preview.player.title }}</p>
-      <p class="block__text">{{ preview.player.premise }}</p>
-      <p class="dv-note">Começa em {{ preview.player.location.name }}</p>
-      <p class="block__text">{{ preview.player.location.description }}</p>
-      @if (preview.player.location.exits.length > 0) {
-        <p class="dv-note">
-          Saídas:
-          @for (exit of preview.player.location.exits; track exit.id; let last = $last) {
-            {{ exit.name }}{{ last ? '' : ', ' }}
-          }
-        </p>
+    @if (store.preview(); as preview) {
+      <button dvButton type="button" [dvLoading]="store.previewing()" (click)="store.loadPreview()">
+        Atualizar prévia
+      </button>
+      @if (store.previewStale()) {
+        <dv-notice kind="warn">
+          Esta prévia é de antes das últimas alterações. Use "Atualizar prévia" para ver como está
+          agora.
+        </dv-notice>
       }
-      @if (preview.player.npcs.length > 0) {
-        <p class="dv-note">
-          Quem está lá:
-          @for (npc of preview.player.npcs; track npc.id; let last = $last) {
-            {{ npc.name }}{{ last ? '' : ', ' }}
-          }
-        </p>
-      }
-      <p class="dv-note">
-        Fatos ocultos, notas privadas e marcos que ainda não começaram não aparecem aqui.
-      </p>
-    </section>
 
-    <section class="block" aria-labelledby="previa-copiloto">
-      <h3 id="previa-copiloto" class="block__title">O copiloto do anfitrião</h3>
-      <p class="block__text">
-        O contexto tem {{ number(preview.copilot_chars) }} de
-        {{ number(preview.copilot_limit) }} caracteres ({{ percent() }}%).
-        @switch (level()) {
-          @case ('ok') {
-            <dv-badge tone="ok" icon="ok">Cabe com folga</dv-badge>
-          }
-          @case ('near') {
-            <dv-badge tone="warn" icon="warn">Perto do limite</dv-badge>
-          }
-          @case ('over') {
-            <dv-badge tone="danger" icon="danger">Passa do limite</dv-badge>
-          }
+      <section class="block" aria-labelledby="previa-jogador">
+        <h3 id="previa-jogador" class="block__title">O jogador vê</h3>
+        <p class="block__title-text">{{ preview.player.title }}</p>
+        <p class="block__text">{{ preview.player.premise }}</p>
+        <p class="dv-note">Começa em {{ preview.player.location.name }}</p>
+        <p class="block__text">{{ preview.player.location.description }}</p>
+        @if (preview.player.location.exits.length > 0) {
+          <p class="dv-note">
+            Saídas:
+            @for (exit of preview.player.location.exits; track exit.id; let last = $last) {
+              {{ exit.name }}{{ last ? '' : ', ' }}
+            }
+          </p>
         }
-      </p>
-      @if (level() !== 'ok') {
+        @if (preview.player.npcs.length > 0) {
+          <p class="dv-note">
+            Quem está lá:
+            @for (npc of preview.player.npcs; track npc.id; let last = $last) {
+              {{ npc.name }}{{ last ? '' : ', ' }}
+            }
+          </p>
+        }
         <p class="dv-note">
-          Perto do limite, o copiloto recebe menos eventos recentes e textos cortados; acima dele,
-          recusa a pergunta. Encurte descrições e notas muito longas.
+          Fatos ocultos, notas privadas e marcos que ainda não começaram não aparecem aqui.
         </p>
-      }
-    </section>
+      </section>
 
-    <section class="block" aria-labelledby="previa-llm">
-      <h3 id="previa-llm" class="block__title">O mestre de IA recebe</h3>
-      <p class="dv-note">
-        Por padrão, só o público: nenhum fato oculto nem nota privada. Isto é o que vai ao servidor
-        do LLM a cada ação.
-      </p>
-      <dv-disclosure label="Ver o que o mestre de IA recebe">
-        <pre class="code">{{ preview.llm }}</pre>
-      </dv-disclosure>
-      <p class="dv-note">
-        Com a opção --segredos-no-llm no servidor, ele recebe também os segredos dos NPCs presentes,
-        e a fala dele pode repeti-los para todos.
-      </p>
-      <dv-disclosure label="Ver o que o mestre de IA recebe com --segredos-no-llm">
-        <pre class="code">{{ preview.llm_secrets }}</pre>
-      </dv-disclosure>
-    </section>
-  } @else if (store.previewing() || !ready()) {
-    <dv-state kind="loading">Preparando a prévia…</dv-state>
-  }
+      <section class="block" aria-labelledby="previa-copiloto">
+        <h3 id="previa-copiloto" class="block__title">O copiloto do anfitrião</h3>
+        <p class="block__text">
+          O contexto tem {{ number(preview.copilot_chars) }} de
+          {{ number(preview.copilot_limit) }} caracteres ({{ percent() }}%).
+          @switch (level()) {
+            @case ('ok') {
+              <dv-badge tone="ok" icon="ok">Cabe com folga</dv-badge>
+            }
+            @case ('near') {
+              <dv-badge tone="warn" icon="warn">Perto do limite</dv-badge>
+            }
+            @case ('over') {
+              <dv-badge tone="danger" icon="danger">Passa do limite</dv-badge>
+            }
+          }
+        </p>
+        <p class="dv-note">
+          A partir de 80% do limite o copiloto passa a receber menos eventos recentes e textos
+          cortados; acima dele, recusa a pergunta.
+          @if (level() !== 'ok') {
+            Encurte as descrições e as notas muito longas (em Locais, NPCs, Marcos e Fatos).
+          }
+        </p>
+      </section>
 
-  @if (store.preview() && !store.previewStale()) {
-    <button dvButton type="button" [dvLoading]="store.previewing()" (click)="store.loadPreview()">
-      Atualizar prévia
-    </button>
+      <section class="block" aria-labelledby="previa-ia">
+        <h3 id="previa-ia" class="block__title">O mestre de IA recebe</h3>
+        <p class="dv-note">
+          Por padrão, só o que é público: nenhum fato oculto nem nota privada. É isto que vai ao
+          servidor da IA a cada ação dos jogadores.
+        </p>
+        <dv-disclosure label="Ver o que o mestre de IA recebe">
+          <pre class="code" tabindex="0" role="region" aria-label="O que o mestre de IA recebe">{{
+            preview.llm
+          }}</pre>
+        </dv-disclosure>
+        <p class="dv-note">
+          Se o anfitrião ligar no servidor a opção --segredos-no-llm, o mestre recebe também as
+          notas privadas dos NPCs presentes, e a fala dele pode repeti-las para todos.
+        </p>
+        <dv-disclosure label="Ver o que o mestre de IA receberia se os segredos fossem enviados">
+          <pre
+            class="code"
+            tabindex="0"
+            role="region"
+            aria-label="O que o mestre de IA receberia com os segredos"
+            >{{ preview.llm_secrets }}</pre>
+        </dv-disclosure>
+      </section>
+    } @else if (store.previewing() || store.validating()) {
+      <dv-state kind="loading">Preparando a prévia…</dv-state>
+    }
   }
 </section>

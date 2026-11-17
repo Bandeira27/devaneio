@@ -28,9 +28,11 @@
   overflow-wrap: anywhere;
 }
 
-/* O contexto do LLM é JSON: texto corrido que quebra a linha, nunca uma barra de rolagem na página. */
+/* O contexto da IA é JSON: texto que quebra a linha e rola dentro do bloco (focável por teclado), sem empurrar a página. */
 .code {
+  max-height: var(--dv-height-code);
   margin: 0;
+  overflow-y: auto;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   font-family: var(--dv-font-note);

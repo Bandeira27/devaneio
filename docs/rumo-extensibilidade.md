@@ -2,7 +2,7 @@
 
 **Status: direção definida em 2026-11-15; os passos 1 a 3 e o 5 (editor de campanhas, só de campanha) estão implementados; o 4 (ações declarativas) segue em aberto.** Este documento registra o que o dono
 decidiu e o que ficou por detalhar. A regra 9 do [AGENTS.md](../AGENTS.md) liberou a UI da mesa (desenho em
-[`desenho-ui.md`](desenho-ui.md)); o que depende de abri-la de novo (o editor de campanhas) está marcado. Os princípios do produto continuam no [README](../README.md).
+[`desenho-ui.md`](desenho-ui.md)); o editor de campanhas foi liberado e está implementado (ver o passo 5). Os princípios do produto continuam no [README](../README.md).
 
 ## A ideia
 

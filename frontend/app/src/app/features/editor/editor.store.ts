@@ -82,6 +82,7 @@ export class EditorStore {
   readonly previewing = signal(false);
   readonly previewError = signal('');
   private readonly previewOf = signal('');
+  private previewSequence = 0;
   /** A prévia é de antes das últimas alterações? */
   readonly previewStale = computed(
     () => this.preview() !== null && this.previewOf() !== JSON.stringify(this.campaign()),
@@ -182,6 +183,8 @@ export class EditorStore {
     this.info.set('');
     this.preview.set(null);
     this.previewError.set('');
+    this.previewSequence++; // uma prévia pedida para a campanha anterior não vale mais
+    this.previewing.set(false);
     this.autoCampaignId.set(false);
     this.auto.set(new Set());
     this.savedText.set(JSON.stringify(campaign));
@@ -379,15 +382,23 @@ export class EditorStore {
     if (campaign === null || this.previewing()) {
       return;
     }
+    const mine = ++this.previewSequence;
     this.previewing.set(true);
     this.previewError.set('');
     try {
-      this.preview.set(await firstValueFrom(this.api.editorPreview(campaign)));
-      this.previewOf.set(JSON.stringify(campaign));
+      const preview = await firstValueFrom(this.api.editorPreview(campaign));
+      if (mine === this.previewSequence) {
+        this.preview.set(preview);
+        this.previewOf.set(JSON.stringify(campaign)); // a campanha enviada, não a de agora: editar no meio deixa a prévia antiga
+      }
     } catch (error) {
-      this.previewError.set(messageOf(error));
+      if (mine === this.previewSequence) {
+        this.previewError.set(messageOf(error));
+      }
     } finally {
-      this.previewing.set(false);
+      if (mine === this.previewSequence) {
+        this.previewing.set(false);
+      }
     }
   }
 
