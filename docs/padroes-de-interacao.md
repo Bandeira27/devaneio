@@ -83,6 +83,10 @@ Vitória ou derrota aparece como aviso com a saída "Voltar ao início"; a hist�
 
 O servidor confere a campanha a cada edição, depois de uma pausa (500 ms); a tela só mostra: o selo "Conferindo…", "Sem erros" ou "N erros" (com texto e ícone), a lista de erros em português, o erro ao lado do campo e os avisos de autoria. **Gravar fica bloqueado com o motivo escrito** (erro, conferindo, nada mudou, ou "já tem mesa: salve uma cópia"). Alterações não gravadas pedem confirmação ao sair. Item de lista que se remove pede confirmação e diz o que some junto; o item novo abre sozinho e, depois de remover, o foco vai ao botão de acrescentar.
 
+## Prévia (editor)
+
+A prévia só se pede com a campanha sem erros (senão diz por quê) e mostra, em texto: o que o jogador vê, o que o mestre de IA recebe só com o público e o que recebe com os segredos, cada contexto recolhido num detalhe. Depois de uma edição ela é marcada como antiga, com o botão de atualizar no aviso. O tamanho do contexto do copiloto sai em números e em selo com texto e ícone (folga, perto do limite, passa do limite).
+
 ## Condições (editor)
 
 Uma condição se escolhe, não se escreve: o tipo vem de uma lista fechada em frases ("O grupo está em", "Um NPC caiu"...) e o que ela cita, de uma lista dos itens que existem (ou um número, no turno). Trocar o tipo recomeça a condição no primeiro item. Cada lista diz o que significa vazia ("só o anfitrião move", "só o anfitrião revela") e que todas as condições precisam valer.
