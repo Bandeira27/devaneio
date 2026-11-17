@@ -1,7 +1,9 @@
 <div class="shell">
   <a class="dv-skip" href="#conteudo" (click)="skip($event)">Pular para o conteúdo</a>
   <header class="shell__bar">
-    <a class="shell__brand" routerLink="/">Devaneio</a>
+    <div class="shell__inner">
+      <a class="shell__brand" routerLink="/" aria-label="Devaneio, início"><dv-brand /></a>
+    </div>
   </header>
   <main
     #main

@@ -23,7 +23,8 @@ describe('Shell', () => {
   it('mostra a marca como link para a página inicial', async () => {
     const root = await render();
     const brand = root.querySelector('a.shell__brand');
-    expect(brand?.textContent?.trim()).toBe('Devaneio');
+    expect(brand?.querySelector('.word')?.textContent).toBe('Devaneio');
+    expect(brand?.getAttribute('aria-label')).toBe('Devaneio, início');
     expect(brand?.getAttribute('href')).toBe('/');
   });
 

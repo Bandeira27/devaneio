@@ -2,6 +2,7 @@
 
 .dv-title {
   margin: 0;
+  overflow-wrap: anywhere; /* o nome de uma campanha ou cena é texto livre: nunca estoura a largura */
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-title);
   font-style: italic;
@@ -20,4 +21,14 @@
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
   color: var(--dv-text-muted);
+}
+
+/* O título de uma seção ou cartão. */
+.dv-section {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-section);
+  font-style: italic;
+  font-weight: var(--dv-weight-regular);
 }

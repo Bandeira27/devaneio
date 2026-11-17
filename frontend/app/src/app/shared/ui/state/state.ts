@@ -5,7 +5,9 @@ import {
   computed,
   input,
 } from '@angular/core';
+import { DvBrand } from '../brand/brand';
 import { DvIcon, type IconName } from '../icon/icon';
+import { DvOrnament } from '../ornament/ornament';
 
 /** O que a tela está dizendo: carregando, vazio, erro ou indisponível. */
 export type StateKind = 'loading' | 'empty' | 'error' | 'unavailable';
@@ -18,10 +20,10 @@ export type StateKind = 'loading' | 'empty' | 'error' | 'unavailable';
  */
 @Component({
   selector: 'dv-state',
-  imports: [DvIcon],
+  imports: [DvBrand, DvIcon, DvOrnament],
   template: `
     @if (cover()) {
-      <span class="mark" aria-hidden="true">Devaneio</span>
+      <span class="mark" aria-hidden="true"><dv-brand size="lg" /><dv-ornament /></span>
     }
     @if (kind() === 'loading') {
       <span class="pending" aria-hidden="true"><i></i><i></i><i></i></span>

@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { DvBrand } from '@shared/ui/brand/brand';
 import { DvState } from '@shared/ui/state/state';
 import { RoutePending } from './route-pending';
 
@@ -18,7 +19,7 @@ import { RoutePending } from './route-pending';
  */
 @Component({
   selector: 'dv-shell',
-  imports: [RouterLink, RouterOutlet, DvState],
+  imports: [RouterLink, RouterOutlet, DvBrand, DvState],
   providers: [RoutePending],
   templateUrl: './shell.html',
   styleUrl: './shell.css',

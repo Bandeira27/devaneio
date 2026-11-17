@@ -1,5 +1,5 @@
-<section class="dv-card scene" aria-label="Cena">
-  <h2 class="dv-title">{{ scene().name }}</h2>
+<section class="dv-card dv-card--page scene" aria-label="Cena">
+  <h2 class="dv-section">{{ scene().name }}</h2>
   <dv-key-value [items]="facts()" />
   @if (scene().description) {
     <dv-disclosure label="Ver a cena" [open]="wide">

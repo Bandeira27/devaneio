@@ -22,20 +22,20 @@ estética e da arquitetura do app está em [`desenho-ui.md`](desenho-ui.md).
 
 Todos começam por `--dv-`. Mudar um valor é mudar o tema inteiro; por isso nenhum estilo escreve valor próprio.
 
-| Grupo              | Tokens                                                                                                                                         |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Paleta**         | `smoke`, `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                                 |
-| **Superfícies**    | `surface-0` (página), `-1` (cartão), `-2` (hover), `-3` (o que flutua)                                                                         |
-| **Papéis**         | `text`, `text-muted`, `text-disabled`, `accent` (+ `hover`, `pressed`, `disabled`), `on-accent`, `ok`, `warn`, `info`, `danger`, `selection`   |
-| **Tom de status**  | cada tom tem `-surface`: fundo sobre o qual o texto do tom passa                                                                               |
-| **Contorno**       | `line` (decoração), `border-control` (≥ 3:1, carrega significado), `border-disabled`, `focus-ring`                                             |
-| **Desbotado**      | `fade-floor-text` (0,65, texto de leitura), `fade-floor-quiet` (0,85, cores de tom), `opacity-stain`                                           |
-| **Tipografia**     | famílias (`font-narration`, `font-note`, `font-ui`), tamanhos (`text-*`), `leading-*`, `weight-regular`                                        |
-| **Espaço e forma** | `space-1`, `2`, `3`, `4`, `6` e `8`, `radius`, `radius-lg`, `radius-round`, `touch` (44 px), `border-width`, `focus-*`, `size-pip`, `size-dot` |
-| **Medida**         | `measure-page`, `measure-table`, `measure-sheet`, `sheet-max-height`                                                                           |
-| **Camada**         | `z-base`, `z-raised`, `z-sticky`, `z-overlay`                                                                                                  |
-| **Elevação**       | `shadow-float` (folha, diálogo), `shadow-press` (pressionado)                                                                                  |
-| **Movimento**      | `duration-*`, `ease-*`, `stagger`, `motion-distance`                                                                                           |
+| Grupo              | Tokens                                                                                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Paleta**         | `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                                                                                                  |
+| **Superfícies**    | quatro degraus que sobem de verdade (≥ 1,06:1 entre vizinhos, medido): `surface-0` (fundo do app), `-1` (painel: o que contém controles), `-2` (página: cena, ficha, o que se lê), `-3` (o que flutua) |
+| **Papéis**         | `text`, `text-muted`, `text-disabled`, `speaker` (quem fala: tinta), `accent` (rosa: **só ação**; + `hover`, `pressed`, `disabled`), `on-accent`, `ok`, `warn`, `info`, `danger`, `selection`          |
+| **Tom de status**  | cada tom tem `-surface`: fundo sobre o qual o texto do tom passa                                                                                                                                       |
+| **Contorno**       | `line` (decoração), `border-control` (≥ 3:1, carrega significado), `border-disabled`, `focus-ring`                                                                                                     |
+| **Desbotado**      | `fade-floor-text` (0,65, texto de leitura), `fade-floor-quiet` (0,85, cores de tom), `opacity-stain`                                                                                                   |
+| **Tipografia**     | famílias (`font-narration`, `font-note`, `font-ui`), tamanhos (`text-display`, `-title`, `-section`, `-narration`, `-ui`, `-note`), `tracking-label`, `leading-*`, `weight-regular`                    |
+| **Espaço e forma** | `space-1`, `2`, `3`, `4`, `6` e `8`, `radius`, `radius-lg`, `radius-round`, `touch` (44 px), `border-width`, `focus-*`, `size-pip`, `size-dot`                                                         |
+| **Medida**         | `measure-page`, `measure-table`, `measure-sheet`, `sheet-max-height`                                                                                                                                   |
+| **Camada**         | `z-base`, `z-raised`, `z-sticky`, `z-overlay`                                                                                                                                                          |
+| **Elevação**       | `shadow-float` (folha, diálogo), `shadow-press` (pressionado)                                                                                                                                          |
+| **Movimento**      | `duration-*`, `ease-*`, `stagger`, `motion-distance`                                                                                                                                                   |
 
 ### Contraste
 
@@ -58,8 +58,11 @@ vai em nota fraca: vira selo com texto.
 
 ## Layout e responsividade
 
-Móvel primeiro. Dois pontos de quebra, **fixos e documentados** (CSS não aceita variável em `@media`): **40rem** e
-**64rem**. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
+Móvel primeiro. Os pontos de quebra são **fixos e documentados** (CSS não aceita variável em `@media`): **64rem** (duas
+colunas: a lateral da mesa, a home com mesas) é o que existe hoje; **90rem** (três painéis) entra com a mesa larga. O
+contêiner do app em tela larga é `--dv-measure-shell` (hoje o cabeçalho e as manchas; as telas passam a ocupá-lo com
+painéis lado a lado), em vez de esticar a coluna do celular. Medidas de leitura: `measure-page`, `-table`, `-home`,
+`-feed`, `-sheet`, `-dialog`, `-ornament`. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
 Áreas seguras (`env(safe-area-inset-*)`) e `dvh` onde há barra fixa.
 
 ## Componentes
@@ -78,6 +81,8 @@ está no JSDoc de cada um.
 | `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                          |
 | `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                           |
 | `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                    |
+| `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                 |
+| `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                         |
 | `dv-icon`                                | conjunto fechado de ícones decorativos                                                               |
 | `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                        |
 
@@ -86,6 +91,11 @@ rodapé `.dv-sheet__foot` com a ação primária à direita. No celular sobem do
 diálogo centralizado de até `--dv-measure-dialog`. Ações que gastam a vez (`Ir`, `Atacar`) pedem a confirmação dentro
 da própria folha. Escolhas curtas (habilidade, dificuldade, alvo, arma, modificador) usam `dv-choice`; botões em envio
 usam `dvLoading` e mantêm o rótulo.
+
+**Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-title`, `.dv-section`, marca em `text-display`),
+rótulos em caixa-alta com espaçamento (`tracking-label`), superfície, ornamento e cor com papel único (rosa = ação e
+seleção (o cartão escolhido de `dv-choice` também usa o rosa); tinta = quem fala). Três tipos de bloco: **painel** (`.dv-card`, controles), **página** (`.dv-card.dv-card--page`, o que se
+lê: mais clara, com filete de tinta no topo) e **sem caixa** (narração, grupo).
 
 O **cartão** e a **lista** não são componentes: são as classes `.dv-card` e `.dv-stack` (não havia comportamento a
 encapsular). Não há _tabs_ nem _toast_ (o feedback é contextual).

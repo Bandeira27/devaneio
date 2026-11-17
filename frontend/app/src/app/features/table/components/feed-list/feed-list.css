@@ -13,8 +13,9 @@
   color: var(--dv-text-muted);
 }
 
+/* O turno atual se destaca por ser texto pleno (os passados esmaecem): o rosa fica para ação. */
 .feed__turn--current {
-  color: var(--dv-accent);
+  color: var(--dv-text);
 }
 
 /*
@@ -71,7 +72,7 @@
 .feed__talk {
   margin: 0;
   padding-left: var(--dv-space-4);
-  border-left: var(--dv-border-width-strong) dotted var(--dv-accent);
+  border-left: var(--dv-border-width-strong) dotted var(--dv-speaker);
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
   font-style: italic;
@@ -87,7 +88,9 @@
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
   font-style: normal;
-  color: var(--dv-accent);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-speaker);
 }
 
 .feed__tag {
