@@ -70,7 +70,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     cita nome e hp: `ferir sacerdote` do anfitrião). `server/turns.hidden_events` reproduz os `move` para saber onde o
     grupo estava em cada evento, então o que é escondido continua escondido depois que o grupo chega ao NPC e `since`
     nunca perde evento visível; `EventView.index` mantém o índice original (a lista tem buracos) e `revision` conta todos
-    os eventos. O comando `log` é do anfitrião; o jogador lê `GET .../events`. A narração compartilhada do LLM e o prompt
+    os eventos. **O que o cliente vê de `data`**: só o `EventView.outcome`, derivado por `server/turns.outcome_of` (grau do
+    teste ou ataque, `damage`/`incapacitated`, `heal`), nunca rolagem, total ou margem; o teste que o prova está em
+    `test_server_outcome.py`. Campo novo no `EventView` é decisão de segurança: o `data` continua fora. O comando `log` é do anfitrião; o jogador lê `GET .../events`. A narração compartilhada do LLM e o prompt
     de proposta (`hide_events`) só recebem eventos que os jogadores veem, porque a fala do modelo vai a todos. Campo novo
     em `Event.data` que cite NPC precisa entrar em `PARTICIPANT_KEYS` (um teste percorre eventos reais do motor e falha
     se um id de NPC aparecer sob outra chave). O motor grava em `data["npc_locations"]` onde estava cada NPC do evento,
