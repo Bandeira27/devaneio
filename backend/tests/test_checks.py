@@ -167,3 +167,8 @@ def test_character_check_reports_actor(state, rules):
     result = check(state, rules)
     assert (result.actor_kind, result.actor_id) == ("character", "aria")
     assert result.state.events[0].data["actor_kind"] == "character"
+
+
+def test_attack_flag_is_recorded_in_the_event_and_defaults_to_false(state, rules):
+    assert check(state, rules).state.events[-1].data["attack"] is False
+    assert check(state, rules, attack=True).state.events[-1].data["attack"] is True

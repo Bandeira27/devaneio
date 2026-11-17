@@ -21,12 +21,13 @@ from devaneio.game import (
     parse_line,
     split_actor,
 )
-from devaneio.schema import Campaign, GameState
+from devaneio.schema import Campaign, Event, GameState
 
 from . import policy
 from .auth import find_player
 from .errors import ApiFailure
 from .models import MAX_NAME, CommandRequest, CommandResult, EventView
+from .models.responses import Outcome
 
 MAX_JOIN_ARGS = 30  # id, nome, atributos e itens do `entrar`
 
@@ -95,6 +96,37 @@ def hidden_for(role: Role, session: Session) -> frozenset[int]:
     return hidden_events(session.state, session.campaign)
 
 
+_CHECK_OUTCOMES: dict[str, Outcome] = {
+    "critical_failure": "critical_failure",
+    "failure": "failure",
+    "success": "success",
+    "critical_success": "critical_success",
+}
+_ATTACK_OUTCOMES: dict[str, Outcome] = {
+    "critical_failure": "critical_miss",
+    "failure": "miss",
+    "success": "hit",
+    "critical_success": "critical_hit",
+}
+
+
+def outcome_of(event: Event) -> Outcome | None:
+    """O desfecho do evento para o selo do feed, ou ``None`` se não tem selo.
+
+    É a única coisa de ``data`` que sai daqui: só o grau, nunca rolagem, total ou margem. Um grau
+    ausente ou desconhecido vira ``None`` em vez de erro.
+    """
+    if event.kind == "check":
+        table = _ATTACK_OUTCOMES if event.data.get("attack") is True else _CHECK_OUTCOMES
+        grade = event.data.get("outcome")
+        return table.get(grade) if isinstance(grade, str) else None
+    if event.kind == "damage":
+        return "incapacitated" if event.data.get("incapacitated") is True else "damage"
+    if event.kind == "heal":
+        return "heal"
+    return None
+
+
 def events_view(
     session: Session,
     since: int,
@@ -119,6 +151,7 @@ def events_view(
             text=event.text,
             prose=session.narrator.narrate(event, index, state),
             narration=cached.get(index),
+            outcome=outcome_of(event),
         )
         for index, event in enumerate(state.events)
         if index >= since and index not in hidden
