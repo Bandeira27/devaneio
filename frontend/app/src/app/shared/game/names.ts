@@ -23,8 +23,11 @@ export function validateName(name: string, empty = 'Dê um nome ao personagem.')
   return null;
 }
 
-/** Id em slug a partir do nome: sem acento, minúsculas, `-` no lugar do resto, no máximo 24 caracteres. */
-export function slugify(name: string): string {
+/**
+ * Id em slug a partir do nome: sem acento, minúsculas, `-` no lugar do resto, no máximo 24 caracteres. Sem nada
+ * aproveitável no nome, devolve `fallback`.
+ */
+export function slugify(name: string, fallback = 'personagem'): string {
   const slug = name
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
@@ -33,7 +36,7 @@ export function slugify(name: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 24)
     .replace(/-+$/g, '');
-  return slug === '' ? 'personagem' : slug;
+  return slug === '' ? fallback : slug;
 }
 
 /** O slug, com `-2`, `-3`... se já estiver em uso (por outro personagem ou por um NPC). */

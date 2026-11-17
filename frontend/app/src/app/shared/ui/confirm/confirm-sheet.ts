@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DvButton } from '@shared/ui/button/button';
-import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
-import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvButton } from '../button/button';
+import { SHEET_DATA, SheetRef } from '../sheet/sheet';
+import { DvSheetHead } from '../sheet/sheet-head';
 
 /** O que a folha de confirmar recebe: o título, o que vai acontecer e o texto do botão de confirmar. */
 export interface ConfirmSheetData {
@@ -11,8 +11,9 @@ export interface ConfirmSheetData {
 }
 
 /**
- * Confirma uma ação que mexe com a mesa toda (fim do turno, descansar). Devolve `true` ao confirmar e nada ao fechar
- * ou voltar. O foco abre no texto, não no botão de confirmar: um Enter sem querer não encerra o turno.
+ * Confirma uma ação que não tem volta ou mexe com muita coisa (fim do turno, revelar um fato, descartar alterações).
+ * Devolve `true` ao confirmar e nada ao fechar ou voltar. O foco abre no texto, não no botão de confirmar: um Enter
+ * sem querer não confirma.
  */
 @Component({
   selector: 'dv-confirm-sheet',

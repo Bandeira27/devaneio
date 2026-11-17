@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { AmountSheet, type AmountSheetData } from './amount-sheet';
-import { ConfirmSheet, type ConfirmSheetData } from './confirm-sheet';
 
 function mount<T>(component: new () => T, data: object) {
   const close = vi.fn();
@@ -47,25 +46,5 @@ describe('AmountSheet', () => {
     const { el } = mount(AmountSheet, { ...DATA, targets: [] });
     expect(el.textContent).toContain('Não há ninguém para ferir.');
     expect(el.querySelector('form')).toBeNull();
-  });
-});
-
-describe('ConfirmSheet', () => {
-  const data: ConfirmSheetData = {
-    title: 'Fim do turno',
-    text: 'Encerra o turno.',
-    action: 'Encerrar',
-  };
-
-  it('só confirma no botão primário e "Voltar" fecha sem nada', () => {
-    const { el, close } = mount(ConfirmSheet, data);
-    expect(el.textContent).toContain('Encerra o turno.');
-    const [back, confirm] = Array.from(
-      el.querySelectorAll<HTMLButtonElement>('.dv-sheet__foot button'),
-    );
-    back?.click();
-    expect(close).toHaveBeenLastCalledWith();
-    confirm?.click();
-    expect(close).toHaveBeenLastCalledWith(true);
   });
 });
