@@ -410,13 +410,16 @@ describe('Mesa', () => {
   });
 
   it.each([
-    ['won', 'vitória'],
-    ['lost', 'derrota'],
+    ['won', 'Vitória'],
+    ['lost', 'Derrota'],
   ] as const)('partida terminada (%s) mostra o resultado', async (status, word) => {
     const { root, events, settle } = await open(withCharacter({ status }));
     events('0').flush(eventsView(3));
     await settle();
-    expect(root().textContent).toContain(`A partida terminou.`);
+    const notice = root().querySelector('dv-notice') as HTMLElement;
+    expect(notice.textContent).toContain(word);
+    expect(notice.textContent).toContain('A partida terminou.');
+    expect(notice.querySelector('a[href="/"]')?.textContent).toContain('Voltar ao início');
   });
 
   it('sem conexão mostra o estado em texto e volta ao vivo', async () => {
