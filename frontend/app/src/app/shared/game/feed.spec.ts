@@ -6,6 +6,7 @@ import {
   FeedEvent,
   FeedItem,
   FeedTalk,
+  SEALS,
   ageOpacity,
   buildFeed,
 } from './feed';
@@ -159,5 +160,68 @@ describe('buildFeed', () => {
     const feed = buildFeed([event(0, 1), event(1, 2), event(2, 2)], [talk(1, 1), talk(2, 2)], 2);
     const keys = feed.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe('selo de desfecho', () => {
+  const sealOf = (item: FeedItem | undefined) => (item?.type === 'event' ? item.seal : undefined);
+  const noteOf = (item: FeedItem | undefined) => (item?.type === 'event' ? item.note : undefined);
+  const eventItem = (e: EventView) => buildFeed([e], [], 1).find((i) => i.type === 'event');
+
+  it('um teste ganha o selo do seu grau, com tom e ícone, e a nota perde o desfecho repetido', () => {
+    const item = eventItem(
+      event(0, 1, {
+        kind: 'check',
+        outcome: 'critical_success',
+        text: 'Ana testa: total 15, sucesso crítico',
+      }),
+    );
+    expect(sealOf(item)).toEqual({ label: 'Sucesso crítico', tone: 'ok', icon: 'ok' });
+    expect(noteOf(item)).toBe('Ana testa: total 15');
+    const failed = eventItem(
+      event(0, 1, { kind: 'check', outcome: 'failure', text: 'Ana testa: total 3, falha' }),
+    );
+    expect(sealOf(failed)).toEqual({ label: 'Falha', tone: 'danger', icon: 'danger' });
+    expect(noteOf(failed)).toBe('Ana testa: total 3');
+  });
+
+  it('o ataque diz acerto ou erro, e a queda diz fora de combate sem repetir na nota', () => {
+    expect(
+      sealOf(eventItem(event(0, 1, { kind: 'check', outcome: 'miss', text: 'x, falha' })))?.label,
+    ).toBe('Erro');
+    expect(
+      sealOf(eventItem(event(0, 1, { kind: 'check', outcome: 'hit', text: 'x, sucesso' })))?.label,
+    ).toBe('Acerto');
+    const down = eventItem(
+      event(0, 1, {
+        kind: 'damage',
+        outcome: 'incapacitated',
+        text: 'Vael sofre 4, hp 1 → 0, fora de combate',
+      }),
+    );
+    expect(sealOf(down)?.label).toBe('Fora de combate');
+    expect(noteOf(down)).toBe('Vael sofre 4, hp 1 → 0');
+  });
+
+  it('dano e cura têm selo, mas a nota fica inteira (o selo não está nela)', () => {
+    const hit = eventItem(event(0, 1, { kind: 'damage', outcome: 'damage', text: 'a, hp 5 → 3' }));
+    expect(sealOf(hit)?.label).toBe('Dano');
+    expect(noteOf(hit)).toBe('a, hp 5 → 3');
+    expect(
+      sealOf(eventItem(event(0, 1, { kind: 'heal', outcome: 'heal', text: 'b' })))?.label,
+    ).toBe('Cura');
+  });
+
+  it('sem desfecho não há selo e a nota fica como veio, mesmo terminando em "falha"', () => {
+    const item = eventItem(event(0, 1, { kind: 'move', outcome: null, text: 'Ir, sem falha' }));
+    expect(sealOf(item)).toBeNull();
+    expect(noteOf(item)).toBe('Ir, sem falha');
+  });
+
+  it('todo desfecho tem rótulo, e tom e ícone que combinam', () => {
+    for (const seal of Object.values(SEALS)) {
+      expect(seal.label.length).toBeGreaterThan(0);
+      expect(seal.icon).toBe(seal.tone === 'ok' ? 'ok' : 'danger');
+    }
   });
 });

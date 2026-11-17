@@ -392,6 +392,23 @@ describe('Mesa', () => {
     expect(root().querySelector('.feed__event[data-tone="danger"]')).not.toBeNull();
   });
 
+  it('o selo de desfecho aparece com ícone e texto, uma vez, só onde há desfecho', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(
+      eventsView(3, [
+        event(1, 1, { kind: 'check', outcome: 'failure', text: 'Bia testa Lutar: total 3, falha' }),
+        event(2, 1),
+      ]),
+    );
+    await settle();
+    const seals = root().querySelectorAll('.feed__seal');
+    expect(seals.length).toBe(1);
+    expect(seals[0]?.textContent?.trim()).toBe('Falha');
+    expect(seals[0]?.querySelector('dv-icon')).not.toBeNull();
+    expect(root().querySelector('.feed__note')?.textContent).toContain('total 3');
+    expect(root().querySelector('.feed__note')?.textContent).not.toMatch(/total 3, falha/);
+  });
+
   it('a nota de como foi resolvido sai em palavras de quem joga, sem códigos nem símbolos', async () => {
     const { root, events, settle } = await open();
     events('0').flush(

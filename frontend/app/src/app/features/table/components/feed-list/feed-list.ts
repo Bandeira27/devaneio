@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import type { FeedItem } from '@shared/game/feed';
-import { DvIcon } from '@shared/ui/icon/icon';
+import { DvBadge } from '@shared/ui/badge/badge';
 import { DvOrnament } from '@shared/ui/ornament/ornament';
 import { DvState } from '@shared/ui/state/state';
 
@@ -26,7 +26,7 @@ const NEAR_BOTTOM_PX = 160;
  */
 @Component({
   selector: 'dv-feed-list',
-  imports: [DvIcon, DvState, DvOrnament],
+  imports: [DvBadge, DvState, DvOrnament],
   templateUrl: './feed-list.html',
   styleUrl: './feed-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

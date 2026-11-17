@@ -1,4 +1,6 @@
 import type { EventView, TalkView } from '@contract/api_responses';
+import type { BadgeTone } from '../ui/badge/badge';
+import type { IconName } from '../ui/icon/icon';
 
 /**
  * Piso de opacidade do texto de leitura que já passou: o desbotado nunca tira a leitura (`--dv-fade-floor-text`;
@@ -10,6 +12,40 @@ export const FADE_PER_TURN = 0.1;
 
 /** O tom de um evento no feed: normal, de dano ou de cura. */
 export type FeedTone = 'neutral' | 'danger' | 'good';
+
+/** O selo de desfecho de um evento: texto, tom e ícone (o desfecho nunca vai só na cor). */
+export interface FeedSeal {
+  label: string;
+  tone: BadgeTone;
+  icon: IconName;
+}
+
+/** O desfecho que o servidor entrega (`EventView.outcome`), sem o `null`. */
+export type FeedOutcome = NonNullable<EventView['outcome']>;
+
+const GOOD: Pick<FeedSeal, 'tone' | 'icon'> = { tone: 'ok', icon: 'ok' };
+const BAD: Pick<FeedSeal, 'tone' | 'icon'> = { tone: 'danger', icon: 'danger' };
+
+/** O selo de cada desfecho: teste, ataque, dano e cura. */
+export const SEALS: Record<FeedOutcome, FeedSeal> = {
+  critical_success: { label: 'Sucesso crítico', ...GOOD },
+  success: { label: 'Sucesso', ...GOOD },
+  failure: { label: 'Falha', ...BAD },
+  critical_failure: { label: 'Falha crítica', ...BAD },
+  critical_hit: { label: 'Acerto crítico', ...GOOD },
+  hit: { label: 'Acerto', ...GOOD },
+  miss: { label: 'Erro', ...BAD },
+  critical_miss: { label: 'Erro crítico', ...BAD },
+  damage: { label: 'Dano', ...BAD },
+  incapacitated: { label: 'Fora de combate', ...BAD },
+  heal: { label: 'Cura', ...GOOD },
+};
+
+/**
+ * O que o motor escreve no fim da linha mecânica e o selo já diz: o grau de um teste (", sucesso crítico") e a queda
+ * (", fora de combate"). Tirado da nota para o leitor de tela ouvir o desfecho uma vez só.
+ */
+const SEALED_SUFFIX = /, (?:sucesso crítico|sucesso|falha crítica|falha|fora de combate)$/;
 
 /** O marcador de início de um turno. */
 export interface FeedTurn {
@@ -28,8 +64,10 @@ export interface FeedEvent {
   kind: string;
   /** O parágrafo do LLM se houver, senão a prosa da gramática. */
   narration: string;
-  /** A linha mecânica, como nota de margem. */
+  /** A linha mecânica, como nota de margem, sem o desfecho que o selo já diz. */
   note: string;
+  /** O desfecho em selo, ou `null` onde o evento não tem um. */
+  seal: FeedSeal | null;
   tone: FeedTone;
   /** De 0 (agora) a 1 (o mais antigo): cada papel do texto desbota até o seu piso (feed-list.css). */
   fade: number;
@@ -112,7 +150,8 @@ export function buildFeed(
       turn: event.turn,
       kind: event.kind,
       narration: event.narration ?? event.prose,
-      note: event.text,
+      note: event.outcome === null ? event.text : event.text.replace(SEALED_SUFFIX, ''),
+      seal: event.outcome === null ? null : SEALS[event.outcome],
       tone: TONES[event.kind] ?? 'neutral',
       fade: ageFade(currentTurn - event.turn),
     });

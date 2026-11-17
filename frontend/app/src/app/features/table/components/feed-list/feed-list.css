@@ -95,10 +95,9 @@
   color: var(--dv-speaker);
 }
 
-.feed__tag {
-  display: inline-flex;
-  vertical-align: text-bottom;
-  margin-right: var(--dv-space-1);
+/* O selo abre a linha mecânica; o texto da nota corre depois dele. */
+.feed__seal {
+  margin-right: var(--dv-space-2);
 }
 
 .feed__end {

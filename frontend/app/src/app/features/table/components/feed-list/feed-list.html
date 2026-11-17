@@ -25,18 +25,16 @@
           [style.--fade]="item.fade"
         >
           <p class="feed__narration">
-            @if (item.tone === 'danger') {
-              <dv-icon class="feed__tag" name="danger" size="sm" /><span class="dv-visually-hidden"
-                >Dano.
-              </span>
-            } @else if (item.tone === 'good') {
-              <dv-icon class="feed__tag" name="ok" size="sm" /><span class="dv-visually-hidden"
-                >Cura.
-              </span>
-            }
             {{ item.narration }}
           </p>
-          <p class="feed__note">{{ item.note }}</p>
+          <p class="feed__note">
+            @if (item.seal; as seal) {
+              <dv-badge class="feed__seal" [tone]="seal.tone" [icon]="seal.icon">{{
+                seal.label
+              }}</dv-badge>
+            }
+            {{ item.note }}
+          </p>
         </article>
       }
       @case ('talk') {
