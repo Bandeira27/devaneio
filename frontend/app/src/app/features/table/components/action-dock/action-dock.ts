@@ -40,10 +40,11 @@ export class ActionDock {
     queueMicrotask(() => this.focusActions());
   }
 
-  protected async go(): Promise<void> {
+  /** Abre a folha de `Ir`; com `exitId` (uma saída tocada na cena) ela já abre na confirmação desse destino. */
+  async go(exitId?: string): Promise<void> {
     const line = await this.sheet.open<string>(GoSheet, {
       label: 'Ir',
-      data: { exits: this.store.scene()?.exits ?? [] },
+      data: { exits: this.store.scene()?.exits ?? [], preselect: exitId },
     });
     if (line) {
       await this.store.run(line);

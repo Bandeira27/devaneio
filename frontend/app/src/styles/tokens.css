@@ -141,6 +141,20 @@
   --dv-motion-distance: 0.25rem;
 }
 
+/*
+ * Tela muito larga (90rem): a mesa ganha um terceiro painel (a ficha de quem joga), então o contêiner do app cresce com
+ * ele (duas laterais + respiro + feed) e as laterais ficam um pouco mais estreitas. O ponto de quebra é fixo porque CSS
+ * não aceita token em `@media`.
+ */
+@media (min-width: 90rem) {
+  :root {
+    --dv-rail-width: 19rem;
+    --dv-measure-wide: calc(
+      2 * var(--dv-rail-width) + 2 * var(--dv-space-6) + var(--dv-measure-feed)
+    );
+  }
+}
+
 /* Movimento reduzido: sem deslocamento e quase sem duração. O estado final vale na hora (nada espera a animação). */
 @media (prefers-reduced-motion: reduce) {
   :root {

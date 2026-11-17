@@ -2,3 +2,23 @@
   display: grid;
   gap: var(--dv-space-2);
 }
+
+.scene__label {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}
+
+.scene__none {
+  margin: 0;
+}
+
+.scene__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

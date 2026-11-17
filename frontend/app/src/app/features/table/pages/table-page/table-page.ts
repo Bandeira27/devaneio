@@ -21,6 +21,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { connectionBlockOf } from '../../table.derived';
 import { ActionDock } from '../../components/action-dock/action-dock';
+import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
 import { FeedList } from '../../components/feed-list/feed-list';
 import { PartyStrip } from '../../components/party-strip/party-strip';
@@ -31,6 +32,7 @@ import { TableStore } from '../../table.store';
 @Component({
   selector: 'dv-table-page',
   imports: [
+    CharacterCard,
     RouterLink,
     DvButton,
     DvDisclosure,

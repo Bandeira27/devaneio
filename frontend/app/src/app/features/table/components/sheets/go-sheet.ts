@@ -17,6 +17,8 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
 /** O que a folha de ir recebe: as saídas do local. */
 export interface GoSheetData {
   exits: { id: string; name: string }[];
+  /** O destino já escolhido (tocado na cena): a folha abre direto na confirmação. */
+  preselect?: string;
 }
 
 /**
@@ -66,7 +68,9 @@ export interface GoSheetData {
 export class GoSheet {
   protected readonly data = inject(SHEET_DATA) as GoSheetData;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
-  protected readonly picked = signal<{ id: string; name: string } | null>(null);
+  protected readonly picked = signal<{ id: string; name: string } | null>(
+    this.data.exits.find((exit) => exit.id === this.data.preselect) ?? null,
+  );
   private readonly injector = inject(Injector);
   private readonly confirm = viewChild<ElementRef<HTMLElement>>('confirm');
   private readonly list = viewChild<ElementRef<HTMLElement>>('list');
