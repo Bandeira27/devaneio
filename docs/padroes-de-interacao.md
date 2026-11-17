@@ -79,6 +79,10 @@ Vitória ou derrota aparece como aviso com a saída "Voltar ao início"; a hist�
 - Valor derivado nasce preenchido e editável (o personagem nasce com o nome de quem joga).
 - Campo que só importa às vezes não é pedido (o código do convite só aparece quando não veio no link).
 
+## Edição com validação ao vivo (editor)
+
+O servidor confere a campanha a cada edição, depois de uma pausa (500 ms); a tela só mostra: o selo "Conferindo…", "Sem erros" ou "N erros" (com texto e ícone), a lista de erros em português, o erro ao lado do campo e os avisos de autoria. **Gravar fica bloqueado com o motivo escrito** (erro, conferindo, nada mudou, ou "já tem mesa: salve uma cópia"). Alterações não gravadas pedem confirmação ao sair. Item de lista que se remove pede confirmação e diz o que some junto; o item novo abre sozinho e, depois de remover, o foco vai ao botão de acrescentar.
+
 ## Ação irreversível ou que gasta a vez
 
 Pede confirmação **dentro do mesmo fluxo**, em uma frase que diz o efeito ("Mover o grupo para X. Gasta a sua ação."),

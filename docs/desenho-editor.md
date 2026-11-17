@@ -40,7 +40,10 @@ Sem `--editor`, tudo isso é `404`. O corpo vai até 512 KiB. O catálogo passa 
 ## Partes
 
 1. **API** (este desenho e o `server/editor.py`).
-2. **App, base:** lista, nova e copiar; locais, NPCs e facções; validação ao vivo e salvar.
+2. **App, base** (feito): lista, nova e copiar; visão geral, locais, NPCs e facções; validação ao vivo e gravar; ids que
+   acompanham o nome e atualizam as referências quando renomeados; remover pede confirmação e solta o que apontava para o
+   item. O app vive em `features/editor/`; os componentes novos são `dv-select` e `dv-list-editor`, e a folha de confirmar
+   subiu para `shared/ui` (`dv-confirm-sheet`). O servidor é quem valida; o app só mostra.
 3. **App, marcos e fatos** com o editor de condições.
 4. **Prévia** e fechamento da documentação.
 

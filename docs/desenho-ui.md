@@ -59,7 +59,7 @@ frontend/app/src/
     core/        singletons sem UI: api (HttpClient + interceptor de Bearer + ApiError), session, live (long-poll)
     shared/      ui/ (componentes dv-* sobre o CDK), game/ (lógica pura: commands, feed, rules, cena, nomes, convite...)
     layout/      shell
-    features/    home/  join/  invite/  character/  table/   (table/host/ é o painel do anfitrião; editor/ depois)
+    features/    home/  join/  invite/  character/  table/  editor/   (table/host/ é o painel do anfitrião; editor/ é o editor de campanhas)
 ```
 
 `features` e `layout` usam `shared` e `core`; `shared` e `core` não dependem de `features`, de `layout` nem um do outro;

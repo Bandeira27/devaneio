@@ -235,4 +235,26 @@ describe('Home', () => {
     expect(root().textContent).toContain('não parece um link de convite');
     expect(router.url).toBe('/');
   });
+
+  describe('editor de campanhas', () => {
+    it('o link aparece quando o servidor tem o editor ligado', async () => {
+      const app = await setup('/');
+      app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+      app.http.expectOne('/editor/campaigns').flush([]);
+      await app.settle();
+      expect(app.root().querySelector('a[href="/editor"]')?.textContent).toContain(
+        'Editor de campanhas',
+      );
+    });
+
+    it('sem o editor (404) a home não oferece o link', async () => {
+      const app = await setup('/');
+      app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+      app.http
+        .expectOne('/editor/campaigns')
+        .flush({ error: { code: 'not_found', message: 'x' } }, { status: 404, statusText: 'x' });
+      await app.settle();
+      expect(app.root().querySelector('a[href="/editor"]')).toBeNull();
+    });
+  });
 });

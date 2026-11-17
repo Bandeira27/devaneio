@@ -1,0 +1,63 @@
+<div class="dv-page">
+  <header class="list__bar">
+    <h1 class="dv-title">Editor de campanhas</h1>
+    <a dvButton routerLink="/">Voltar ao início</a>
+  </header>
+  @switch (state()) {
+    @case ('loading') {
+      <dv-state kind="loading">Procurando as campanhas…</dv-state>
+    }
+    @case ('off') {
+      <dv-state kind="unavailable">
+        O editor está desligado neste servidor. Suba o servidor com a opção --editor, em localhost,
+        para usá-lo.
+      </dv-state>
+    }
+    @case ('failed') {
+      <dv-state kind="error">
+        {{ error() }}
+        <button dvStateAction dvButton type="button" (click)="load()">Tentar de novo</button>
+      </dv-state>
+    }
+    @case ('ready') {
+      <p class="dv-lede">
+        {{
+          campaigns().length === 0
+            ? 'Comece uma campanha do zero.'
+            : 'Crie uma campanha do zero ou ajuste uma que já existe.'
+        }}
+      </p>
+      <a dvButton="primary" routerLink="/editor/nova">Nova campanha</a>
+      @if (campaigns().length === 0) {
+        <p class="dv-note">Você ainda não tem campanhas aqui.</p>
+      }
+      <ul class="list">
+        @for (campaign of campaigns(); track campaign.id) {
+          <li class="list__item dv-card dv-card--page">
+            <div class="list__info">
+              <span class="list__title">{{ campaign.title }}</span>
+              @if (!campaign.writable) {
+                <dv-badge tone="info" icon="info">Tem mesa: só se copia</dv-badge>
+              }
+            </div>
+            <div class="list__actions">
+              <a
+                dvButton
+                [routerLink]="['/editor', campaign.id]"
+                [attr.aria-label]="(campaign.writable ? 'Editar ' : 'Ver ') + campaign.title"
+                >{{ campaign.writable ? 'Editar' : 'Ver' }}</a
+              >
+              <a
+                dvButton
+                [routerLink]="['/editor', 'nova']"
+                [queryParams]="{ copia: campaign.id }"
+                [attr.aria-label]="'Copiar ' + campaign.title"
+                >Copiar</a
+              >
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

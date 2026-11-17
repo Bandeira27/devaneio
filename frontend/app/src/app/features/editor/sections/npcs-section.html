@@ -1,0 +1,71 @@
+<section class="dv-card dv-stack" aria-labelledby="npcs-titulo">
+  <h2 id="npcs-titulo" class="dv-section">NPCs</h2>
+  <p class="dv-note">As pessoas e criaturas que o grupo encontra.</p>
+  @if (store.campaign(); as c) {
+    <dv-list-editor
+      noun="NPC"
+      empty="Ainda não há NPCs."
+      [items]="c.npcs"
+      [nameOf]="nameOf"
+      (add)="store.add('npc')"
+      (remove)="remove($event)"
+      (move)="store.moveIn('npcs', $event.index, $event.delta)"
+    >
+      <ng-template let-npc let-i="index">
+        <dv-name-id-fields
+          kind="npc"
+          [id]="npc.id"
+          [name]="npc.name"
+          [path]="'npcs.' + i"
+          (nameChange)="setName(i, npc, $event)"
+        />
+        <dv-field label="Descrição" hint="O que os jogadores veem ao encontrá-lo.">
+          <textarea
+            dvInput
+            rows="3"
+            [value]="npc.description"
+            (input)="patch(i, npc, { description: fieldValue($event) })"
+          ></textarea>
+        </dv-field>
+        <dv-select
+          [announce]="false"
+          label="Onde começa"
+          [options]="locations()"
+          [value]="npc.location_id ?? ''"
+          [error]="store.errorAt('npcs.' + i + '.location_id')"
+          (valueChange)="patch(i, npc, { location_id: $event === '' ? null : $event })"
+        />
+        <dv-select
+          [announce]="false"
+          label="Facção"
+          [options]="factions()"
+          [value]="npc.faction_id ?? ''"
+          [error]="store.errorAt('npcs.' + i + '.faction_id')"
+          (valueChange)="patch(i, npc, { faction_id: $event === '' ? null : $event })"
+        />
+        <dv-stepper
+          label="Disposição"
+          hint="Quanto mais baixo, mais hostil ao grupo."
+          [min]="-10"
+          [max]="10"
+          [value]="npc.disposition"
+          (valueChange)="patch(i, npc, { disposition: $event })"
+        />
+        <dv-select
+          [announce]="false"
+          label="Arma"
+          [options]="weapons()"
+          [value]="npc.weapon_id ?? ''"
+          [error]="store.errorAt('npcs.' + i + '.weapon_id')"
+          (valueChange)="patch(i, npc, { weapon_id: $event === '' ? null : $event })"
+        />
+        <dv-lines-field
+          label="Notas privadas"
+          hint="Só o anfitrião vê. Uma por linha."
+          [lines]="npc.private_notes"
+          (linesChange)="patch(i, npc, { private_notes: [...$event] })"
+        />
+      </ng-template>
+    </dv-list-editor>
+  }
+</section>

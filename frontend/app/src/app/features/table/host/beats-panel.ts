@@ -5,10 +5,10 @@ import { beatStatusText } from '@shared/game/host';
 import { DvBadge, type BadgeTone } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
+import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import type { IconName } from '@shared/ui/icon/icon';
 import { TableStore } from '../table.store';
-import { ConfirmSheet } from './sheets/confirm-sheet';
 
 const TONES: Record<BeatStatus, { tone: BadgeTone; icon: IconName | null }> = {
   pending: { tone: 'neutral', icon: null },

@@ -1,0 +1,45 @@
+<section class="dv-card dv-stack" aria-labelledby="faccoes-titulo">
+  <h2 id="faccoes-titulo" class="dv-section">Facções</h2>
+  <p class="dv-note">Grupos com metas próprias. Opcional.</p>
+  @if (store.campaign(); as c) {
+    <dv-list-editor
+      noun="facção"
+      empty="Ainda não há facções."
+      [items]="c.factions"
+      [nameOf]="nameOf"
+      (add)="store.add('faction')"
+      (remove)="remove($event)"
+      (move)="store.moveIn('factions', $event.index, $event.delta)"
+    >
+      <ng-template let-faction let-i="index">
+        <dv-name-id-fields
+          kind="faction"
+          [id]="faction.id"
+          [name]="faction.name"
+          [path]="'factions.' + i"
+          (nameChange)="setName(i, faction, $event)"
+        />
+        <dv-field label="Descrição">
+          <textarea
+            dvInput
+            rows="3"
+            [value]="faction.description"
+            (input)="patch(i, faction, { description: fieldValue($event) })"
+          ></textarea>
+        </dv-field>
+        <dv-lines-field
+          label="Metas"
+          hint="O que a facção quer. Uma por linha."
+          [lines]="faction.goals"
+          (linesChange)="patch(i, faction, { goals: [...$event] })"
+        />
+        <dv-lines-field
+          label="Notas privadas"
+          hint="Só o anfitrião vê. Uma por linha."
+          [lines]="faction.private_notes"
+          (linesChange)="patch(i, faction, { private_notes: [...$event] })"
+        />
+      </ng-template>
+    </dv-list-editor>
+  }
+</section>

@@ -1,0 +1,56 @@
+<section class="dv-card dv-stack" aria-labelledby="locais-titulo">
+  <h2 id="locais-titulo" class="dv-section">Locais</h2>
+  <p class="dv-note">Os lugares da história e como se vai de um a outro.</p>
+  @if (store.campaign(); as c) {
+    <dv-list-editor
+      noun="local"
+      empty="Ainda não há locais. A campanha precisa de pelo menos um."
+      [items]="c.locations"
+      [nameOf]="nameOf"
+      (add)="store.add('location')"
+      (remove)="remove($event)"
+      (move)="store.moveIn('locations', $event.index, $event.delta)"
+    >
+      <ng-template let-loc let-i="index">
+        <dv-name-id-fields
+          kind="location"
+          [id]="loc.id"
+          [name]="loc.name"
+          [path]="'locations.' + i"
+          (nameChange)="setName(i, loc, $event)"
+        />
+        <dv-field label="Descrição" hint="O que os jogadores veem ao chegar.">
+          <textarea
+            dvInput
+            rows="3"
+            [value]="loc.description"
+            (input)="patch(i, loc, { description: fieldValue($event) })"
+          ></textarea>
+        </dv-field>
+        @if (c.locations.length > 1) {
+          <fieldset class="checks">
+            <legend>Daqui se vai para</legend>
+            @for (other of c.locations; track $index) {
+              @if (other.id !== loc.id) {
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    [checked]="loc.connections.includes(other.id)"
+                    (change)="toggle(i, loc, other.id, $event)"
+                  />
+                  {{ other.name || other.id }}
+                </label>
+              }
+            }
+          </fieldset>
+        }
+        <dv-lines-field
+          label="Notas privadas"
+          hint="Só o anfitrião vê. Uma por linha."
+          [lines]="loc.private_notes"
+          (linesChange)="patch(i, loc, { private_notes: [...$event] })"
+        />
+      </ng-template>
+    </dv-list-editor>
+  }
+</section>

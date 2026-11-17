@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { END_TURN, REST, type AmountVerb } from '@shared/game/commands';
 import { DvButton } from '@shared/ui/button/button';
+import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { TableStore } from '../table.store';
 import { AMOUNT_COPY, AmountSheet } from './sheets/amount-sheet';
-import { ConfirmSheet } from './sheets/confirm-sheet';
 
 /**
  * As ferramentas do turno do anfitrião: fim do turno e descansar (pedem confirmação, mexem com o grupo todo) e ferir e

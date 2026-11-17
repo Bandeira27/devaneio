@@ -4,5 +4,5 @@
   <p class="field__hint" [id]="control().id + '-hint'">{{ hint() }}</p>
 }
 @if (error()) {
-  <p class="field__error" role="alert" [id]="control().id + '-error'">{{ error() }}</p>
+  <p class="field__error" [attr.role]="role()" [id]="control().id + '-error'">{{ error() }}</p>
 }

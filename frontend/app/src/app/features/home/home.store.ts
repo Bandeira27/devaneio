@@ -23,6 +23,8 @@ export class HomeStore {
   readonly campaigns = signal<CampaignSummary[]>([]);
   readonly state = signal<LoadState>('loading');
   readonly loadError = signal('');
+  /** O servidor tem o editor de campanhas ligado (`--editor`)? Sem ele, a home não oferece o link. */
+  readonly editorAvailable = signal(false);
 
   readonly campaignId = signal('');
   /** A premissa da campanha escolhida: o que o jogador vai encontrar. */
@@ -48,6 +50,7 @@ export class HomeStore {
   }
 
   async load(): Promise<void> {
+    void this.probeEditor();
     this.state.set('loading');
     this.loadError.set('');
     try {
@@ -58,6 +61,15 @@ export class HomeStore {
     } catch (error) {
       this.loadError.set(messageOf(error));
       this.state.set('failed');
+    }
+  }
+
+  private async probeEditor(): Promise<void> {
+    try {
+      await firstValueFrom(this.api.editorCampaigns());
+      this.editorAvailable.set(true);
+    } catch {
+      this.editorAvailable.set(false); // 404 sem `--editor`, ou o servidor fora do ar: a home segue sem o link
     }
   }
 

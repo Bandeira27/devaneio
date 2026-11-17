@@ -7,13 +7,17 @@ import type {
   CampaignView,
   CommandResult,
   CopilotAnswer,
+  EditorCampaign,
   EventsView,
   InvitePreview,
   RulesView,
+  PreviewView,
   SayResult,
+  SystemInfo,
   TableCreated,
   TableJoined,
   TableView,
+  ValidationReport,
 } from '@contract/api_responses';
 import type {
   CommandRequest,
@@ -94,6 +98,50 @@ export class ApiClient {
       request,
       this.as(tableId),
     );
+  }
+
+  // --- editor de campanhas (só com `--editor`; sem ele o servidor responde 404) ----------------------------------
+
+  /** As campanhas da pasta, com `writable` falso nas que já têm mesa. */
+  editorCampaigns(): Observable<EditorCampaign[]> {
+    return this.http.get<EditorCampaign[]>('/editor/campaigns');
+  }
+
+  /** A campanha inteira, para editar. */
+  editorCampaign(id: string): Observable<Campaign> {
+    return this.http.get<Campaign>(`/editor/campaigns/${encodeURIComponent(id)}`);
+  }
+
+  /** Confere a campanha como ela está agora; nunca grava. */
+  editorValidate(campaign: Campaign): Observable<ValidationReport> {
+    return this.http.post<ValidationReport>('/editor/validate', { campaign });
+  }
+
+  /** Grava uma campanha nova. */
+  editorCreate(campaign: Campaign): Observable<EditorCampaign> {
+    return this.http.post<EditorCampaign>('/editor/campaigns', { campaign });
+  }
+
+  /** Regrava uma campanha que nenhuma mesa usa. */
+  editorUpdate(id: string, campaign: Campaign): Observable<EditorCampaign> {
+    return this.http.put<EditorCampaign>(`/editor/campaigns/${encodeURIComponent(id)}`, {
+      campaign,
+    });
+  }
+
+  /** Os sistemas de regras que uma campanha pode citar. */
+  editorSystems(): Observable<SystemInfo[]> {
+    return this.http.get<SystemInfo[]>('/editor/systems');
+  }
+
+  /** As regras de um sistema (armas, habilidades...). */
+  editorSystem(id: string): Observable<RulesView> {
+    return this.http.get<RulesView>(`/editor/systems/${encodeURIComponent(id)}`);
+  }
+
+  /** O que o jogador e o LLM veem da campanha. */
+  editorPreview(campaign: Campaign): Observable<PreviewView> {
+    return this.http.post<PreviewView>('/editor/preview', { campaign });
   }
 
   private base(tableId: string): string {

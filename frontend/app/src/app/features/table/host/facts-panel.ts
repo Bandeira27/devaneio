@@ -10,9 +10,9 @@ import { reveal } from '@shared/game/commands';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { focusElement } from '@shared/ui/focus';
+import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { TableStore } from '../table.store';
-import { ConfirmSheet } from './sheets/confirm-sheet';
 
 const LABEL_MAX = 50;
 

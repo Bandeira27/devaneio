@@ -82,12 +82,15 @@ está no JSDoc de cada um.
 | `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                                      |
 | `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                                       |
 | `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                                |
+| `dv-select`                              | escolha de um item numa lista, com rótulo, dica e erro (`select` nativo); "(nenhum)" é a opção de valor vazio    |
+| `dv-list-editor`                         | lista editável (locais, NPCs...): itens recolhidos, formulário projetado, subir, descer, remover e acrescentar   |
 | `dv-character-card`                      | a ficha (pontos de vida, atributos, inventário): na folha "Ficha" e no painel da mesa larga                      |
 | `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Jogar), com o atual marcado                                     |
 | `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                             |
 | `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                                     |
 | `dv-icon`                                | conjunto fechado de ícones decorativos                                                                           |
 | `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                                    |
+| `dv-confirm-sheet`                       | folha de confirmar o que não tem volta (revelar, fim do turno, remover, descartar alterações)                    |
 
 **Folhas:** todas têm a mesma forma: cabeçalho (título igual ao rótulo do botão que a abriu e fechar por ícone), corpo e
 rodapé `.dv-sheet__foot` com a ação primária à direita. No celular sobem do pé; na tela larga (≥ 64rem) viram um

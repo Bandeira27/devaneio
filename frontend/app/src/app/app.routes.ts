@@ -39,6 +39,11 @@ export const routes: Routes = [
         title: 'Mesa',
         loadChildren: () => import('@features/table/table.routes').then((m) => m.TABLE_ROUTES),
       },
+      {
+        path: 'editor',
+        title: 'Editor de campanhas',
+        loadChildren: () => import('@features/editor/editor.routes').then((m) => m.EDITOR_ROUTES),
+      },
       { path: '**', redirectTo: '' },
     ],
   },
