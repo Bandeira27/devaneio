@@ -4,15 +4,18 @@ import contextlib
 import http.client
 import json
 import os
+import socket
 import threading
 from pathlib import Path
 
 import pytest
 
 from conftest import CAMPAIGN_PATH
-from devaneio.server import Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.__main__ import main
+from devaneio.server.catalog import CatalogError
 from devaneio.server.editor import (
+    CAMPAIGN_ID,
     EditorService,
     host_allowed,
     is_loopback,
@@ -389,3 +392,212 @@ def test_the_preview_of_an_invalid_campaign_is_refused_and_writes_nothing(api, f
     broken["locations"][0]["connections"] = ["fantasma"]
     assert api.call("POST", "/editor/preview", {"campaign": broken})[0] == 422
     assert sorted(p.name for p in folder.iterdir()) == ["sombra-do-vale.json"]
+
+
+# --- Catalog.register ----------------------------------------------------------------
+
+
+def test_register_replaces_the_same_id_without_duplicating_the_summary(setup, folder):
+    catalog, _, _ = setup
+    data = campaign_json(folder, title="Renomeada")
+    (folder / "sombra-do-vale.json").write_text(json.dumps(data), encoding="utf-8")
+    catalog.register(folder / "sombra-do-vale.json")
+    assert [s.title for s in catalog.summaries()] == ["Renomeada"]
+
+
+def test_register_refuses_the_same_id_in_another_file(setup, folder):
+    catalog, _, _ = setup
+    (folder / "copia.json").write_text(json.dumps(campaign_json(folder)), encoding="utf-8")
+    with pytest.raises(CatalogError, match="repetida"):
+        catalog.register(folder / "copia.json")
+    assert catalog.path("sombra-do-vale") == (folder / "sombra-do-vale.json").resolve()
+
+
+def test_register_refuses_a_file_outside_the_catalog_folder(setup, folder, tmp_path):
+    catalog, _, _ = setup
+    outside = tmp_path / "fora.json"
+    outside.write_text(json.dumps(campaign_json(folder, id="fora")), encoding="utf-8")
+    with pytest.raises(CatalogError, match="pasta do catálogo"):
+        catalog.register(outside)
+    assert catalog.path("fora") is None
+
+
+def test_register_refuses_a_subfolder_even_with_a_valid_campaign(setup, folder):
+    catalog, _, _ = setup
+    (folder / "sub").mkdir()
+    (folder / "sub" / "x.json").write_text(
+        json.dumps(campaign_json(folder, id="x")), encoding="utf-8"
+    )
+    with pytest.raises(CatalogError, match="pasta do catálogo"):
+        catalog.register(folder / "sub" / "x.json")
+
+
+def test_register_keeps_summaries_in_file_name_order(setup, folder):
+    catalog, _, _ = setup
+    (folder / "aaa.json").write_text(
+        json.dumps(campaign_json(folder, id="aaa", title="A")), encoding="utf-8"
+    )
+    catalog.register(folder / "aaa.json")
+    assert [s.id for s in catalog.summaries()] == ["aaa", "sombra-do-vale"]
+
+
+# --- Storage.campaigns_in_use --------------------------------------------------------
+
+
+def test_campaigns_in_use_ignores_corrupt_and_odd_saves(setup, folder):
+    _, storage, service = setup
+    service.create_table(CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=1))
+    d = storage.data_dir
+    (d / "0000000000000001.json").write_text("{não é json", encoding="utf-8")
+    (d / "0000000000000002.json").write_text('{"sem": "caminho"}', encoding="utf-8")
+    (d / "0000000000000003.json").write_text('{"campaign_path": 5}', encoding="utf-8")
+    (d / "0000000000000004.json").write_text("[1]", encoding="utf-8")
+    (d / "0000000000000005.json").write_bytes(b"\xff\xfe")
+    (d / "notas.json").write_text('{"campaign_path": "x.json"}', encoding="utf-8")
+    assert storage.campaigns_in_use() == {(folder / "sombra-do-vale.json").resolve()}
+
+
+def test_a_corrupt_save_does_not_block_listing_or_updating(api, folder, setup):
+    _, storage, _ = setup
+    (storage.data_dir / "0000000000000001.json").write_text("{quebrado", encoding="utf-8")
+    assert api.call("GET", "/editor/campaigns")[1][0]["writable"] is True
+    status, _ = api.call(
+        "PUT", "/editor/campaigns/sombra-do-vale", {"campaign": campaign_json(folder, title="Y")}
+    )
+    assert status == 200
+
+
+# --- systems com sistema do autor quebrado -------------------------------------------
+
+
+def test_systems_skip_a_broken_author_system_and_list_a_good_one(api, folder):
+    (folder / "sistemas").mkdir()
+    (folder / "sistemas" / "quebrado.json").write_text("{não é json", encoding="utf-8")
+    (folder / "sistemas" / "Maiuscula.json").write_text("{}", encoding="utf-8")
+    status, systems = api.call("GET", "/editor/systems")
+    assert status == 200
+    assert [s["id"] for s in systems] == ["default"]
+    assert api.call("GET", "/editor/systems/quebrado")[0] == 404
+
+
+def test_validate_names_a_broken_author_system_instead_of_crashing(api, folder):
+    (folder / "sistemas").mkdir()
+    (folder / "sistemas" / "quebrado.json").write_text("{não é json", encoding="utf-8")
+    status, report = api.call(
+        "POST", "/editor/validate", {"campaign": campaign_json(folder, rules_id="quebrado")}
+    )
+    assert status == 200
+    assert report["ok"] is False
+    assert any("quebrado" in e["message"] for e in report["errors"])
+
+
+# --- 405 contra 404 e fechamento da conexão -------------------------------------------
+
+
+def test_a_known_editor_path_with_the_wrong_method_is_405_and_an_unknown_one_is_404(api):
+    for method, path in [
+        ("DELETE", "/editor/campaigns"),
+        ("PUT", "/editor/validate"),
+        ("POST", "/editor/systems"),
+        ("GET", "/editor/preview"),
+    ]:
+        status, body = api.call(method, path, {} if method != "GET" else None)
+        assert status == 405, (method, path)
+        assert body["error"]["code"] == "method_not_allowed"
+    status, body = api.call("GET", "/editor/nada")
+    assert status == 404
+    assert body["error"]["code"] == "not_found"
+
+
+def test_the_correct_method_still_reaches_a_path_that_has_two_methods(api, folder):
+    assert api.call("GET", "/editor/campaigns/sombra-do-vale")[0] == 200
+    status, _ = api.call(
+        "PUT", "/editor/campaigns/sombra-do-vale", {"campaign": campaign_json(folder)}
+    )
+    assert status == 200
+
+
+def raw_exchange(port, request: bytes) -> bytes:
+    with socket.create_connection(("127.0.0.1", port), timeout=5) as sock:
+        sock.sendall(request)
+        chunks = []
+        while True:
+            data = sock.recv(65536)
+            if not data:
+                break
+            chunks.append(data)
+    return b"".join(chunks)
+
+
+def test_a_refused_write_closes_the_connection_and_the_body_is_not_a_second_request(api):
+    smuggled = b"GET /editor/campaigns HTTP/1.1\r\nHost: localhost:%d\r\n\r\n" % api.port
+    request = (
+        b"POST /editor/validate HTTP/1.1\r\nHost: evil.example\r\n"
+        b"Content-Type: application/json\r\nContent-Length: %d\r\n\r\n" % len(smuggled)
+    ) + smuggled
+    reply = raw_exchange(api.port, request)  # termina só se o servidor fechar a conexão
+    assert reply.count(b"HTTP/1.1 ") == 1
+    assert b"403" in reply.split(b"\r\n", 1)[0]
+    assert b"Connection: close" in reply
+
+
+def test_a_405_on_a_post_without_reading_the_body_closes_the_connection(api):
+    request = (
+        b"POST /editor/systems HTTP/1.1\r\nHost: localhost:%d\r\n"
+        b"Content-Type: application/json\r\nContent-Length: 2\r\n\r\n{}" % api.port
+    )
+    reply = raw_exchange(api.port, request)
+    assert b" 405 " in reply.split(b"\r\n", 1)[0]
+    assert reply.count(b"HTTP/1.1 ") == 1
+
+
+# --- achados da revisão: surrogate, pedidos simultâneos, permissão, id com quebra de linha ----------
+
+
+def test_text_that_cannot_be_encoded_is_refused_at_the_door_and_never_leaves_a_temp_file(
+    api, folder, setup
+):
+    data = campaign_json(folder, id="surrogate", title="a\ud800b")
+    status, _ = api.call(
+        "POST", "/editor/campaigns", raw=json.dumps({"campaign": data}).encode("ascii")
+    )
+    assert status == 400  # o corpo JSON com surrogate solto nem chega ao serviço
+    catalog, storage, _service = setup
+    with pytest.raises(
+        ApiFailure
+    ) as caught:  # e, se chegasse, o serviço recusa sem deixar temporário
+        EditorService(catalog, storage).create(data)
+    assert caught.value.status == 422
+    assert sorted(p.name for p in folder.iterdir()) == ["sombra-do-vale.json"]
+
+
+def test_two_creates_of_the_same_id_at_once_write_one_and_refuse_the_other(api, folder):
+    data = campaign_json(folder, id="corrida", title="Corrida")
+    results = []
+
+    def go():
+        results.append(api.call("POST", "/editor/campaigns", {"campaign": data})[0])
+
+    threads = [threading.Thread(target=go) for _ in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sorted(results) == [201, 409, 409, 409, 409, 409]
+    assert not list(folder.glob(".editor-*"))
+
+
+def test_a_rewritten_campaign_keeps_its_permission(api, folder):
+    path = folder / "sombra-do-vale.json"
+    path.chmod(0o664)
+    api.call(
+        "PUT", "/editor/campaigns/sombra-do-vale", {"campaign": campaign_json(folder, title="X")}
+    )
+    assert path.stat().st_mode & 0o777 == 0o664
+    api.call("POST", "/editor/campaigns", {"campaign": campaign_json(folder, id="nova", title="N")})
+    assert (folder / "nova.json").stat().st_mode & 0o777 == 0o644
+
+
+def test_an_id_with_a_trailing_newline_is_not_a_slug():
+    assert CAMPAIGN_ID.fullmatch("abc")
+    assert not CAMPAIGN_ID.fullmatch("abc\n")

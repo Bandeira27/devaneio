@@ -10,27 +10,20 @@ from __future__ import annotations
 
 import json
 import os
-import re
+import shutil
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
-from pydantic import ValidationError
-
-from devaneio.engine import initial_state
 from devaneio.game import (
     GameError,
-    check_content,
-    explain_validation_error,
-    load_pack_for,
+    check_campaign_data,
     load_rules_by_id,
-    load_rules_for,
+    preview_contexts,
     rules_ids,
 )
-from devaneio.llm.copilot import MAX_CONTEXT_CHARS, build_copilot_context
-from devaneio.llm.prompts import build_context
-from devaneio.rules import validate_campaign_against_rules
-from devaneio.schema import Campaign, CampaignIntegrityError, Character, load_campaign
+from devaneio.schema import ID_REGEX, Campaign, CampaignIntegrityError, load_campaign
 
 from .catalog import Catalog, CatalogError
 from .errors import ApiFailure
@@ -48,9 +41,8 @@ from .storage import Storage
 
 MAX_EDITOR_BODY = 512 * 1024
 LOOPBACK_NAMES = frozenset({"localhost", "127.0.0.1", "::1"})
-CAMPAIGN_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MAX_ID = 64
-PREVIEW_SEED = 0
+CAMPAIGN_ID = ID_REGEX  # o id vira nome de arquivo: o mesmo slug do esquema, conferido por inteiro
 
 
 def is_loopback(host: str) -> bool:
@@ -94,6 +86,9 @@ class EditorService:
         self.catalog = catalog
         self.storage = storage
         self.root = catalog.root
+        self._write_lock = (
+            threading.Lock()
+        )  # create e update: checar, gravar e registrar sem outro editor no meio
 
     # --- leitura -----------------------------------------------------------------
 
@@ -131,7 +126,7 @@ class EditorService:
 
     def system(self, rules_id: str) -> RulesView:
         """As regras de um sistema (habilidades, dificuldades...) para montar condições."""
-        if not CAMPAIGN_ID.match(rules_id) or len(rules_id) > MAX_ID:
+        if not CAMPAIGN_ID.fullmatch(rules_id) or len(rules_id) > MAX_ID:
             raise ApiFailure(404, "not_found", "sistema desconhecido")
         try:
             return RulesView.of(load_rules_by_id(rules_id, self.root))
@@ -142,96 +137,102 @@ class EditorService:
 
     def validate(self, data: dict[str, Any]) -> ValidationReport:
         """Confere a campanha como o servidor a confere ao carregar uma mesa, em português."""
-        report, _ = self._check(data)
+        report, _, _ = self._check(data)
         return report
 
-    def _check(self, data: dict[str, Any]) -> tuple[ValidationReport, Campaign | None]:
-        errors: list[ValidationIssue] = []
-        findings: list[AuthoringFinding] = []
-        campaign: Campaign | None = None
-        try:
-            campaign = load_campaign(data)
-        except ValidationError as exc:
-            errors += [ValidationIssue(path=p, message=m) for p, m in explain_validation_error(exc)]
-        except CampaignIntegrityError as exc:
-            errors += [ValidationIssue(path="", message=m) for m in exc.errors]
-        else:
-            if len(campaign.id) > MAX_ID:
-                errors.append(
-                    ValidationIssue(
-                        path="id",
-                        message=f"'id' passa de {MAX_ID} caracteres (vira o nome do arquivo)",
-                    )
+    def _check(self, data: dict[str, Any]) -> tuple[ValidationReport, Campaign | None, Any]:
+        result = check_campaign_data(data, self.root)
+        errors = [ValidationIssue(path=p, message=m) for p, m in result.errors]
+        if result.campaign is not None and len(result.campaign.id) > MAX_ID:
+            errors.append(
+                ValidationIssue(
+                    path="id", message=f"'id' passa de {MAX_ID} caracteres (vira o nome do arquivo)"
                 )
-            try:
-                rules = load_rules_for(campaign, self.root)
-                pack = load_pack_for(campaign, self.root)
-            except GameError as exc:
-                errors.append(ValidationIssue(path="", message=str(exc)))
-            else:
-                errors += [
-                    ValidationIssue(path="", message=m)
-                    for m in validate_campaign_against_rules(campaign, rules)
-                ]
-                findings = [
-                    AuthoringFinding(level=f.level, text=f.text)
-                    for f in check_content(campaign, rules, pack)
-                ]
-        ok = not errors
-        return ValidationReport(ok=ok, errors=errors, findings=findings), campaign if ok else None
+            )
+        findings = [AuthoringFinding(level=f.level, text=f.text) for f in result.findings]
+        report = ValidationReport(ok=not errors, errors=errors, findings=findings)
+        return report, (result.campaign if not errors else None), result.rules
 
     # --- escrita -----------------------------------------------------------------
 
     def create(self, data: dict[str, Any]) -> EditorCampaign:
-        """Grava uma campanha nova; o id não pode existir."""
-        campaign = self._valid(data)
+        """Grava uma campanha nova; o id não pode existir (nem por um pedido simultâneo)."""
+        campaign, _ = self._valid(data)
         path = self._path_for(campaign.id)
-        if path.exists():
-            raise ApiFailure(
-                409, "campaign_exists", f"já existe uma campanha '{campaign.id}'; escolha outro id"
-            )
-        return self._write(campaign, path)
+        with self._write_lock:
+            return self._write(campaign, path, replace=False)
 
     def update(self, campaign_id: str, data: dict[str, Any]) -> EditorCampaign:
         """Regrava uma campanha que nenhuma mesa usa; o id não muda."""
         path = self._known_path(campaign_id)
-        campaign = self._valid(data)
+        campaign, _ = self._valid(data)
         if campaign.id != campaign_id:
             raise ApiFailure(
                 409, "campaign_id_changed", "o id de uma campanha não muda: salve uma cópia"
             )
-        if path in self.storage.campaigns_in_use():
-            raise ApiFailure(
-                409,
-                "campaign_in_use",
-                "esta campanha já tem mesa e é relida por ela: salve uma cópia com outro id",
-            )
-        return self._write(campaign, path)
+        with self._write_lock:
+            if path in self.storage.campaigns_in_use():
+                raise ApiFailure(
+                    409,
+                    "campaign_in_use",
+                    "esta campanha já tem mesa e é relida por ela: salve uma cópia com outro id",
+                )
+            return self._write(campaign, path, replace=True)
 
-    def _valid(self, data: dict[str, Any]) -> Campaign:
-        report, campaign = self._check(data)
+    def _valid(self, data: dict[str, Any]) -> tuple[Campaign, Any]:
+        report, campaign, rules = self._check(data)
         if campaign is None:
             raise ApiFailure(
                 422,
                 "campaign_invalid",
                 f"a campanha tem {len(report.errors)} erro(s); corrija antes de salvar",
             )
-        return campaign
+        return campaign, rules
 
-    def _write(self, campaign: Campaign, path: Path) -> EditorCampaign:
-        text = json.dumps(campaign.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n"
-        handle, temp_name = tempfile.mkstemp(dir=self.root, prefix=".editor-", suffix=".tmp")
+    def _write(self, campaign: Campaign, path: Path, *, replace: bool) -> EditorCampaign:
+        """Grava num temporário da mesma pasta e troca de uma vez; sem ``replace``, falha se o arquivo já existe."""
         try:
-            with os.fdopen(handle, "w", encoding="utf-8") as out:
-                out.write(text)
-            os.replace(temp_name, path)
+            text = json.dumps(campaign.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n"
+            payload = text.encode("utf-8")
+        except (ValueError, UnicodeError):
+            raise ApiFailure(
+                422, "campaign_invalid", "a campanha tem caracteres que não podem ser gravados"
+            ) from None
+        temp: Path | None = None
+        try:
+            handle, temp_name = tempfile.mkstemp(dir=self.root, prefix=".editor-", suffix=".tmp")
+            temp = Path(temp_name)
+            with os.fdopen(handle, "wb") as out:
+                out.write(payload)
+            if path.exists():
+                shutil.copymode(
+                    path, temp
+                )  # mkstemp cria 0600: o arquivo regravado mantém a permissão que tinha
+            else:
+                temp.chmod(0o644)
+            if replace:
+                os.replace(temp, path)
+            else:
+                os.link(
+                    temp, path
+                )  # falha se já existe: dois pedidos com o mesmo id não se sobrescrevem
+        except FileExistsError:
+            raise ApiFailure(
+                409, "campaign_exists", f"já existe uma campanha '{campaign.id}'; escolha outro id"
+            ) from None
         except OSError as exc:
-            Path(temp_name).unlink(missing_ok=True)
             raise ApiFailure(500, "internal", "não foi possível gravar a campanha") from exc
+        finally:
+            if temp is not None:
+                temp.unlink(missing_ok=True)
         try:
             self.catalog.register(path)
-        except CatalogError as exc:
-            raise ApiFailure(409, "campaign_exists", str(exc)) from exc
+        except (CatalogError, OSError) as exc:
+            raise ApiFailure(
+                500,
+                "internal",
+                "a campanha foi gravada, mas o catálogo não a leu; reinicie o servidor",
+            ) from exc
         writable = path not in self.storage.campaigns_in_use()
         return EditorCampaign(id=campaign.id, title=campaign.title, writable=writable)
 
@@ -239,32 +240,21 @@ class EditorService:
 
     def preview(self, data: dict[str, Any]) -> PreviewView:
         """O que o jogador e o LLM veem desta campanha; não grava nada."""
-        campaign = self._valid(data)
-        rules = load_rules_for(campaign, self.root)
-        hero = Character(
-            id="jogador",
-            name="Jogador",
-            attributes={a.id: a.default for a in rules.attributes},
-            hp=1,
-            max_hp=1,
-        )
-        state = initial_state(campaign, rules, PREVIEW_SEED, [hero])
-        public = build_context(campaign, rules, state, hero.id, include_private=False)
-        private = build_context(campaign, rules, state, hero.id, include_private=True)
-        copilot = build_copilot_context(campaign, rules, state)
+        campaign, rules = self._valid(data)
+        contexts = preview_contexts(campaign, rules)
         return PreviewView(
-            player=CampaignView.of(campaign, state),
-            llm=_pretty(public),
-            llm_secrets=_pretty(private),
-            copilot_chars=len(json.dumps(copilot, ensure_ascii=False, separators=(",", ":"))),
-            copilot_limit=MAX_CONTEXT_CHARS,
+            player=CampaignView.of(campaign, contexts.state),
+            llm=_pretty(contexts.llm),
+            llm_secrets=_pretty(contexts.llm_secrets),
+            copilot_chars=contexts.copilot_chars,
+            copilot_limit=contexts.copilot_limit,
         )
 
     # --- caminho -----------------------------------------------------------------
 
     def _path_for(self, campaign_id: str) -> Path:
         """``<pasta>/<id>.json`` para um id em forma de slug; qualquer outra coisa é recusada."""
-        if not CAMPAIGN_ID.match(campaign_id) or len(campaign_id) > MAX_ID:
+        if not CAMPAIGN_ID.fullmatch(campaign_id) or len(campaign_id) > MAX_ID:
             raise ApiFailure(404, "not_found", "campanha desconhecida")
         path = (self.root / f"{campaign_id}.json").resolve()
         if path.parent != self.root:

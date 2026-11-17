@@ -169,7 +169,10 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     `/editor/*` é `404`. O id da campanha é o único dado que vira nome de arquivo: slug (`^[a-z0-9][a-z0-9_-]*$`), sempre
     `<pasta de campanhas>/<id>.json`, nunca caminho vindo da requisição; a escrita é atômica (arquivo temporário e
     `os.replace`) e só acontece sem erro de validação. **Campanha com mesa não é sobrescrita** (as mesas releem o arquivo):
-    o editor cria ou copia. O corpo do editor tem teto próprio (512 KiB). Os testes estão em `test_server_editor*.py`.
+    o editor cria ou copia. O corpo do editor tem teto próprio (512 KiB). `create` e `update` rodam sob um lock e `create` usa `os.link`, então
+    dois pedidos com o mesmo id não se sobrescrevem; **risco aceito:** uma mesa criada no instante entre a checagem de uso e
+    a troca do arquivo de uma campanha passa a reler o arquivo novo. A guarda de `Host`/`Origin` vale para toda requisição
+    enquanto o editor está ligado. Os testes estão em `test_server_editor.py`.
 
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 

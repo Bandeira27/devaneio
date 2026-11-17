@@ -20,6 +20,9 @@ autoria e uma prévia do que o jogador e o LLM veem. Um formato só: o editor l�
   contexto do copiloto frente ao teto. Não grava nada.
 - Nenhuma dependência nova e nenhum código do autor é executado: o editor só escreve JSON.
 
+O servidor só faz I/O: a conferência da campanha (`game.check_campaign_data`) e a prévia (`game.preview_contexts`) vivem em
+`game`, e `server/editor.py` as traduz para os modelos da API.
+
 ## API (`server/editor.py`)
 
 | Rota                                           | Faz                                                                            |

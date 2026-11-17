@@ -15,11 +15,12 @@ from .campaign import (
     TurnAtLeast,
 )
 from .campaign_validation import CampaignIntegrityError, load_campaign, validate_campaign
-from .common import Id, StrictModel
+from .common import ID_REGEX, Id, StrictModel
 from .game_state import BeatStatus, Character, Event, GameState, NpcState
 from .state_validation import validate_against_campaign
 
 __all__ = [
+    "ID_REGEX",
     "AtLocation",
     "Beat",
     "BeatDone",

@@ -10,7 +10,6 @@ português sem o caminho absoluto.
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeVar
@@ -28,13 +27,12 @@ from devaneio.rules import (
     load_rules_extending,
     validate_campaign_against_rules,
 )
-from devaneio.schema import Campaign, load_campaign
+from devaneio.schema import ID_REGEX, Campaign, load_campaign
 
 from .errors import GameError
 
 _T = TypeVar("_T")
 
-_SLUG = re.compile(r"[a-z0-9][a-z0-9_-]*")
 MAX_CONTENT_BYTES = 256 * 1024
 RULES_DIR = "sistemas"
 NARRATION_DIR = "narracoes"
@@ -72,7 +70,7 @@ def rules_ids(campaign_dir: Path) -> list[str]:
     own = sorted(
         path.stem
         for path in (campaign_dir / RULES_DIR).glob("*.json")
-        if _SLUG.fullmatch(path.stem)
+        if ID_REGEX.fullmatch(path.stem)
     )
     return [*dict.fromkeys(["default", *own])]
 

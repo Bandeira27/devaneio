@@ -1,11 +1,14 @@
 """Tipos e base compartilhados por todos os modelos do esquema."""
 
+import re
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 # Identificadores são slugs (minúsculas, dígitos, '_' e '-'): aparecem em templates, no LLM e em URLs.
-Id = Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9_-]*$")]
+ID_PATTERN = r"^[a-z0-9][a-z0-9_-]*$"
+ID_REGEX = re.compile(ID_PATTERN)  # use com ``fullmatch``: ``$`` aceitaria um ``\n`` no fim
+Id = Annotated[str, StringConstraints(pattern=ID_PATTERN)]
 
 
 class StrictModel(BaseModel):

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import socket
 import sys
 import traceback
 from collections.abc import Callable, Sequence
@@ -58,6 +59,8 @@ class ApiServer(ThreadingHTTPServer):
         static: StaticSite | None = None,
         editor: EditorService | None = None,
     ) -> None:
+        if ":" in address[0]:
+            self.address_family = socket.AF_INET6  # --host ::1
         super().__init__(address, Handler)
         self.service = service
         self.static = static  # o front, só com --web; sem ele a API é só JSON
@@ -258,8 +261,9 @@ class Handler(BaseHTTPRequestHandler):
     def _guard_editor(self, method: str, path: str) -> None:
         """Sem ``--editor``, ``/editor/*`` não existe; com ele, só pedidos de dentro desta máquina (rule 05, item 25).
 
-        ``Host`` precisa ser um nome local com a porta do servidor (DNS rebinding) e, num pedido que muda
-        algo, o ``Origin`` que vier precisa ser o próprio servidor (CSRF).
+        Vale para toda requisição, não só ``/editor/*``: ``Host`` precisa ser um nome local com a porta do
+        servidor (DNS rebinding) e, num pedido que muda algo, o ``Origin`` que vier precisa ser o próprio
+        servidor (CSRF). Um front servido de outra origem (dev server) precisa de proxy.
         """
         editor = self.server.editor
         if editor is None:

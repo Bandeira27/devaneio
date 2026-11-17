@@ -8,7 +8,6 @@ livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao 
 
 from __future__ import annotations
 
-import json
 import re
 import secrets
 import threading
@@ -16,6 +15,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from devaneio.game import saved_campaign_path
 
 from .presentation import Presentation
 
@@ -94,14 +95,10 @@ class Storage:
         """
         used: set[Path] = set()
         for path in self.data_dir.glob("*.json"):
-            if not TABLE_ID.match(path.stem):
-                continue
-            try:
-                raw = json.loads(path.read_text(encoding="utf-8"))["campaign_path"]
-            except (OSError, ValueError, KeyError, TypeError):
-                continue
-            if isinstance(raw, str):
-                used.add((path.parent / raw).resolve())
+            if TABLE_ID.match(path.stem):
+                campaign_path = saved_campaign_path(path)
+                if campaign_path is not None:
+                    used.add(campaign_path)
         return used
 
     def _table(self, table_id: str) -> _Table:
