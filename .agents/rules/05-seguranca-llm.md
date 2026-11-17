@@ -162,6 +162,15 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     aceito (XSS leria o token), reduzido por CSP e pelo lint. **Pré-condição do editor de campanhas:** validar o
     cabeçalho `Host` e responder só em localhost, contra DNS rebinding.
 
+25. **O editor de campanhas escreve arquivo sem login, então a defesa é o lugar.** Só existe com `--editor`; o servidor
+    **recusa subir** com `--editor` fora de loopback (`127.0.0.1`, `::1`, `localhost`). Com ele ligado, todo pedido
+    confere `Host` (só `localhost`, `127.0.0.1` ou `[::1]`, com a porta do servidor: contra DNS rebinding) e, em
+    `POST`/`PUT`, o `Origin` quando vier (precisa ser o próprio servidor: contra CSRF); senão `403`. Sem `--editor`,
+    `/editor/*` é `404`. O id da campanha é o único dado que vira nome de arquivo: slug (`^[a-z0-9][a-z0-9_-]*$`), sempre
+    `<pasta de campanhas>/<id>.json`, nunca caminho vindo da requisição; a escrita é atômica (arquivo temporário e
+    `os.replace`) e só acontece sem erro de validação. **Campanha com mesa não é sobrescrita** (as mesas releem o arquivo):
+    o editor cria ou copia. O corpo do editor tem teto próprio (512 KiB). Os testes estão em `test_server_editor*.py`.
+
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 
 - O que o modelo pode fazer mudou? Atualize a allow-list *e* o teste que a prova.
