@@ -1,0 +1,53 @@
+@if (items().length === 0) {
+  <p class="dv-note">{{ empty() }}</p>
+} @else {
+  <ul class="list">
+    @for (item of items(); track $index; let i = $index; let first = $first; let last = $last) {
+      <li class="item">
+        <dv-disclosure
+          [label]="nameOf()(item, i)"
+          [open]="isOpen(i)"
+          (openChange)="setOpen(i, $event)"
+        >
+          <div class="form dv-stack">
+            <ng-container
+              [ngTemplateOutlet]="template()"
+              [ngTemplateOutletContext]="context(item, i)"
+            />
+            <div class="tools">
+              <button
+                dvButton
+                type="button"
+                [dvBlocked]="first"
+                [attr.aria-label]="'Subir ' + nameOf()(item, i)"
+                (click)="move.emit({ index: i, delta: -1 })"
+              >
+                Subir
+              </button>
+              <button
+                dvButton
+                type="button"
+                [dvBlocked]="last"
+                [attr.aria-label]="'Descer ' + nameOf()(item, i)"
+                (click)="move.emit({ index: i, delta: 1 })"
+              >
+                Descer
+              </button>
+              <button
+                dvButton
+                type="button"
+                [attr.aria-label]="'Remover ' + nameOf()(item, i)"
+                (click)="remove.emit(i)"
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        </dv-disclosure>
+      </li>
+    }
+  </ul>
+}
+<button #addButton dvButton type="button" class="add" (click)="add.emit()">
+  <dv-icon name="go" size="sm" />Acrescentar {{ noun() }}
+</button>

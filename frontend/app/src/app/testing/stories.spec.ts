@@ -20,6 +20,8 @@ import * as notice from '../shared/ui/notice/notice.stories';
 import * as pips from '../shared/ui/pips/pips.stories';
 import * as sheet from '../shared/ui/sheet/sheet.stories';
 import * as stepper from '../shared/ui/stepper/stepper.stories';
+import * as selectS from '../shared/ui/select/select.stories';
+import * as listEditorS from '../shared/ui/list-editor/list-editor.stories';
 import type { StoryRecipe } from './story';
 
 /** Todos os arquivos de stories (tools/stories-list.spec.ts falha se um `*.stories.ts` novo não estiver aqui). */
@@ -43,6 +45,8 @@ const FILES: Record<string, Record<string, unknown>> = {
   'shared/ui/pips/pips.stories.ts': pips,
   'shared/ui/sheet/sheet.stories.ts': sheet,
   'shared/ui/stepper/stepper.stories.ts': stepper,
+  'shared/ui/select/select.stories.ts': selectS,
+  'shared/ui/list-editor/list-editor.stories.ts': listEditorS,
 };
 
 /** Um componente novo por receita: o template e os imports vêm da story, então o decorador é aplicado em tempo de execução (JIT). */
