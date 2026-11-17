@@ -62,7 +62,7 @@
               [scene]="scene"
               [canGo]="!store.blockedReason() && !store.actionBusy()"
               [blockedReasonId]="store.blockedReason() ? 'dock-reason' : null"
-              (exitChosen)="goThroughExit($event)"
+              (exitChosen)="actions()?.go($event)"
             />
           }
           <dv-party-strip

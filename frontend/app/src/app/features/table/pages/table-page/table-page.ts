@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
@@ -60,7 +59,7 @@ export class TablePage implements OnInit {
 
   private readonly documentTitle = inject(Title);
   private readonly feed = viewChild(FeedList);
-  private gone = false;
+  private firstScene = true; // a primeira cena (ao abrir a mesa) não rouba o foco
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
@@ -77,12 +76,26 @@ export class TablePage implements OnInit {
   protected readonly unseen = signal(0);
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => (this.gone = true));
     publishDockHeight(this.dock);
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
       this.store.state();
       afterNextRender(() => this.refocusHeading(), { injector: this.injector });
+    });
+    effect(() => {
+      // A cena mudou (foi-se por uma saída): o botão tocado, que ganhou o foco de volta ao fechar a folha, deixou de
+      // existir. Se o foco se perdeu, ele passa à história, onde a pessoa lê o que aconteceu.
+      const scene = this.store.scene()?.name; // o que muda ao ir por uma saída
+      afterNextRender(
+        () => {
+          const story = this.story()?.nativeElement;
+          if (story && scene !== undefined && !this.firstScene && isFocusFree()) {
+            focusElement(story);
+          }
+          this.firstScene = false;
+        },
+        { injector: this.injector },
+      );
     });
     effect(() => {
       const campaign = this.store.title();
@@ -95,26 +108,6 @@ export class TablePage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId());
     void this.store.load();
-  }
-
-  /**
-   * Vai por uma saída tocada na cena. A cena muda e o botão tocado (que recebe o foco de volta ao fechar a folha) deixa
-   * de existir: se o foco se perdeu, ele passa à história, onde a pessoa lê o que aconteceu.
-   */
-  protected async goThroughExit(exitId: string): Promise<void> {
-    await this.actions()?.go(exitId);
-    if (this.gone) {
-      return; // saiu da página com a folha aberta
-    }
-    afterNextRender(
-      () => {
-        const story = this.story()?.nativeElement;
-        if (story && isFocusFree()) {
-          focusElement(story);
-        }
-      },
-      { injector: this.injector },
-    );
   }
 
   private refocusHeading(): void {

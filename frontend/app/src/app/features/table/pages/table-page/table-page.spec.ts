@@ -216,6 +216,45 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(document.querySelector('.dv-sheet')).toBeNull();
   });
 
+  it('depois de ir por uma saída (a cena muda e o botão some), o foco passa à história, não ao body', async () => {
+    const campaign = {
+      locations: [
+        { id: 'vila', name: 'Vila', description: '', connections: ['floresta'], private_notes: [] },
+        { id: 'floresta', name: 'Floresta', description: '', connections: [], private_notes: [] },
+      ],
+      npcs: [],
+    } as unknown as Campaign;
+    const { root, events, http, settle } = await open(withCharacter(), campaign);
+    events('0').flush(eventsView(3));
+    await settle();
+    const exit = root().querySelector('.scene__list button') as HTMLButtonElement;
+    exit.focus();
+    exit.click();
+    await settle();
+    const confirm = document.querySelector(
+      '.dv-sheet__foot .dv-button--primary',
+    ) as HTMLButtonElement;
+    confirm.click();
+    await settle();
+    http.expectOne(`/tables/${TABLE_ID}/commands`).flush({
+      revision: 4,
+      events: [],
+      text: '',
+      status: 'active',
+      turn_ended: false,
+    });
+    await settle();
+    const moved = withCharacter({ revision: 4 });
+    moved.state = { ...moved.state, current_location_id: 'floresta' };
+    http.expectOne(`/tables/${TABLE_ID}`).flush(moved);
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaign);
+    await settle();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await settle();
+    expect(root().querySelector('.scene__list button')).toBeNull(); // a saída tocada deixou de existir
+    expect(document.activeElement).toBe(root().querySelector('[aria-label="A história"]'));
+  });
+
   it('sem conexão, as saídas da cena também ficam bloqueadas', async () => {
     const { root, events, settle } = await open();
     events('0').flush(
