@@ -24,7 +24,7 @@ Todos começam por `--dv-`. Mudar um valor é mudar o tema inteiro; por isso nen
 
 | Grupo              | Tokens                                                                                                                                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Paleta**         | `smoke`, `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                                                                                         |
+| **Paleta**         | `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                                                                                                  |
 | **Superfícies**    | quatro degraus que sobem de verdade (≥ 1,06:1 entre vizinhos, medido): `surface-0` (fundo do app), `-1` (painel: o que contém controles), `-2` (página: cena, ficha, o que se lê), `-3` (o que flutua) |
 | **Papéis**         | `text`, `text-muted`, `text-disabled`, `speaker` (quem fala: tinta), `accent` (rosa: **só ação**; + `hover`, `pressed`, `disabled`), `on-accent`, `ok`, `warn`, `info`, `danger`, `selection`          |
 | **Tom de status**  | cada tom tem `-surface`: fundo sobre o qual o texto do tom passa                                                                                                                                       |
@@ -58,10 +58,11 @@ vai em nota fraca: vira selo com texto.
 
 ## Layout e responsividade
 
-Móvel primeiro. Três pontos de quebra, **fixos e documentados** (CSS não aceita variável em `@media`): **40rem**,
-**64rem** (duas colunas) e **90rem** (três painéis, previstos para a mesa). O contêiner do app em tela larga é
-`--dv-measure-shell`; as telas se compõem em painéis lado a lado com a classe `.dv-panels` (e `grid-template-columns` de
-cada tela), em vez de esticar a coluna do celular. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
+Móvel primeiro. Os pontos de quebra são **fixos e documentados** (CSS não aceita variável em `@media`): **64rem** (duas
+colunas: a lateral da mesa, a home com mesas) é o que existe hoje; **90rem** (três painéis) entra com a mesa larga. O
+contêiner do app em tela larga é `--dv-measure-shell` (hoje o cabeçalho e as manchas; as telas passam a ocupá-lo com
+painéis lado a lado), em vez de esticar a coluna do celular. Medidas de leitura: `measure-page`, `-table`, `-home`,
+`-feed`, `-sheet`, `-dialog`, `-ornament`. Componentes que mudam com o espaço que recebem usam `@container`. Largura de leitura em `ch`/`measure-*`.
 Áreas seguras (`env(safe-area-inset-*)`) e `dvh` onde há barra fixa.
 
 ## Componentes
@@ -91,9 +92,9 @@ diálogo centralizado de até `--dv-measure-dialog`. Ações que gastam a vez (`
 da própria folha. Escolhas curtas (habilidade, dificuldade, alvo, arma, modificador) usam `dv-choice`; botões em envio
 usam `dvLoading` e mantêm o rótulo.
 
-**Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-display`, `.dv-title`, `.dv-section`),
-rótulos em caixa-alta com espaçamento (`.dv-eyebrow`), superfície, ornamento e cor com papel único (rosa = ação; tinta =
-quem fala). Três tipos de bloco: **painel** (`.dv-card`, controles), **página** (`.dv-card.dv-card--page`, o que se
+**Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-title`, `.dv-section`, marca em `text-display`),
+rótulos em caixa-alta com espaçamento (`tracking-label`), superfície, ornamento e cor com papel único (rosa = ação e
+seleção (o cartão escolhido de `dv-choice` também usa o rosa); tinta = quem fala). Três tipos de bloco: **painel** (`.dv-card`, controles), **página** (`.dv-card.dv-card--page`, o que se
 lê: mais clara, com filete de tinta no topo) e **sem caixa** (narração, grupo).
 
 O **cartão** e a **lista** não são componentes: são as classes `.dv-card` e `.dv-stack` (não havia comportamento a

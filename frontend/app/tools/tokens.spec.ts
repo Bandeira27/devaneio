@@ -68,11 +68,13 @@ describe('contraste dos tokens', () => {
     expect(contrast(color('--dv-speaker'), color(surface))).toBeGreaterThanOrEqual(MIN);
   });
 
-  it('as superfícies sobem em degraus visíveis (>= 1,06:1 entre vizinhas)', () => {
+  it('as superfícies ficam mais claras a cada degrau, e a diferença se vê (>= 1,1:1 entre vizinhas)', () => {
+    const lightness = (name: string): number => Number(/^oklch\(([\d.]+)%/.exec(value(name))?.[1]);
     for (let i = 1; i < SURFACES.length; i++) {
-      const lower = color(SURFACES[i - 1] as string);
-      const upper = color(SURFACES[i] as string);
-      expect(contrast(upper, lower), SURFACES[i]).toBeGreaterThanOrEqual(1.06);
+      const lower = SURFACES[i - 1] as string;
+      const upper = SURFACES[i] as string;
+      expect(lightness(upper), upper).toBeGreaterThan(lightness(lower));
+      expect(contrast(color(upper), color(lower)), upper).toBeGreaterThanOrEqual(1.1);
     }
   });
 

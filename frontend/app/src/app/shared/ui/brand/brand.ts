@@ -14,7 +14,7 @@ export type BrandSize = 'md' | 'lg';
   selector: 'dv-brand',
   template: `<span class="seal" aria-hidden="true">D</span><span class="word">Devaneio</span>`,
   styleUrl: './brand.css',
-  host: { '[class]': "'brand brand--' + size()" },
+  host: { '[class]': "'brand--' + size()" },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvBrand {

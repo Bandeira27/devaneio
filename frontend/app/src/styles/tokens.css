@@ -8,7 +8,6 @@
  */
 :root {
   /* Paleta base */
-  --dv-smoke: oklch(27.4% 0.01 81);
   --dv-sepia: oklch(87.8% 0.045 90);
   --dv-ink: oklch(72% 0.052 93); /* tinta velha */
   --dv-rose: oklch(72% 0.063 38); /* rosa de poeira */
@@ -19,8 +18,8 @@
   --dv-dusk: oklch(74% 0.05 230); /* informação */
 
   /* Superfícies, da mais funda à mais alta */
-  --dv-surface-0: oklch(23% 0.009 81); /* o fundo do app */
-  --dv-surface-1: var(--dv-smoke); /* painel: o que contém controles */
+  --dv-surface-0: oklch(21% 0.008 81); /* o fundo do app */
+  --dv-surface-1: oklch(26% 0.011 81); /* painel: o que contém controles */
   --dv-surface-2: oklch(31% 0.013 81); /* página: cena, ficha, o que se lê */
   --dv-surface-3: oklch(34.5% 0.015 81); /* o que flutua: folha, diálogo */
 

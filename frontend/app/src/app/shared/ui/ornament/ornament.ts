@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 /**
- * Um filete com um losango no meio, para abrir uma tela ou separar capítulos (o turno do feed). É decoração: SVG
+ * Um filete com um losango no meio, que abre a tela de abertura (`dv-state cover`); o turno do feed vai usá-lo para separar capítulos. É decoração: SVG
  * inline em `currentColor` (a cor vem de quem o usa), `aria-hidden`, sem foco nem movimento. Ocupa a largura que o
  * contêiner der, até `--dv-measure-ornament`.
  */
