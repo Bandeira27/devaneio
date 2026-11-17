@@ -20,8 +20,9 @@ import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
-import { isWide } from '@shared/ui/wide';
+import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { connectionBlockOf } from '../../table.derived';
+import { publishDockHeight } from './dock-height';
 import { ActionDock } from '../../components/action-dock/action-dock';
 import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
@@ -75,7 +76,7 @@ export class TablePage implements OnInit {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => (this.gone = true));
-    this.keepDockHeight();
+    publishDockHeight(this.dock);
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
       this.store.state();
@@ -105,9 +106,9 @@ export class TablePage implements OnInit {
     }
     afterNextRender(
       () => {
-        const active = document.activeElement;
-        if (active === null || active === document.body || !active.isConnected) {
-          this.story()?.nativeElement.focus({ preventScroll: true });
+        const story = this.story()?.nativeElement;
+        if (story && isFocusFree()) {
+          focusElement(story);
         }
       },
       { injector: this.injector },
@@ -115,51 +116,24 @@ export class TablePage implements OnInit {
   }
 
   private refocusHeading(): void {
-    const active = document.activeElement;
-    if (active === null || active === document.body) {
-      const heading = this.host.nativeElement.querySelector('h1');
-      if (heading) {
-        heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
-      }
+    const heading = this.host.nativeElement.querySelector('h1');
+    if (heading && isFocusFree()) {
+      focusElement(heading);
     }
   }
 
   /** Leva a tela ao fim da história e tira o aviso de novidades. */
   protected toEnd(): void {
     this.feed()?.scrollToEnd();
-    this.story()?.nativeElement.focus({ preventScroll: true }); // o botão some: o foco fica na história
+    const story = this.story()?.nativeElement;
+    if (story) {
+      focusElement(story); // o botão some: o foco fica na história
+    }
   }
 
   /** O link "Pular para as ações": com rota por hash, `href="#..."` navegaria, então o foco é movido à mão. */
   protected skipToActions(event: Event): void {
     event.preventDefault();
     this.actions()?.focusActions();
-  }
-
-  /**
-   * Mede a barra de ações quando ela é fixa no pé (celular) e publica a altura em `--dv-dock-height` na raiz, para a
-   * rolagem e o foco pararem acima dela. Na tela larga a barra não cobre nada e a altura é zero.
-   */
-  private keepDockHeight(): void {
-    effect((onCleanup) => {
-      const dock = this.dock()?.nativeElement;
-      if (!dock || typeof ResizeObserver === 'undefined') {
-        return;
-      }
-      // Na raiz, para o `scroll-padding-bottom` do documento (base.css) valer para tudo que ganha foco ou rola.
-      const root = document.documentElement;
-      const publish = (): void => {
-        // Só no celular a barra cobre o pé da tela; na tela larga ela fica na coluna e a altura é zero.
-        root.style.setProperty('--dv-dock-height', isWide() ? '0px' : `${dock.offsetHeight}px`);
-      };
-      const observer = new ResizeObserver(publish);
-      observer.observe(dock);
-      publish();
-      onCleanup(() => {
-        observer.disconnect();
-        root.style.removeProperty('--dv-dock-height');
-      });
-    });
   }
 }
