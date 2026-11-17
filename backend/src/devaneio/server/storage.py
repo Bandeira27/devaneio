@@ -16,6 +16,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from devaneio.game import saved_campaign_path
+
 from .presentation import Presentation
 
 TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
@@ -85,6 +87,19 @@ class Storage:
     def count(self) -> int:
         """Quantas mesas existem."""
         return sum(1 for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
+
+    def campaigns_in_use(self) -> set[Path]:
+        """Os arquivos de campanha que alguma mesa usa (cada mesa guarda o caminho, relativo ao arquivo dela).
+
+        Uma mesa ilegível não conta como uso: sem o caminho, não há o que proteger.
+        """
+        used: set[Path] = set()
+        for path in self.data_dir.glob("*.json"):
+            if TABLE_ID.match(path.stem):
+                campaign_path = saved_campaign_path(path)
+                if campaign_path is not None:
+                    used.add(campaign_path)
+        return used
 
     def _table(self, table_id: str) -> _Table:
         """O cadeado da mesa, criado na primeira vez.

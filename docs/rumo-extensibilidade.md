@@ -77,8 +77,8 @@ Um assistente separado, só do anfitrião, com o contexto **privado** completo. 
 3. Copiloto do anfitrião (precisa do passo 1).
 4. Ações declarativas, com a classificação como metadado.
 5. Editor com formulários gerados do schema. Um mínimo, só de campanha, já depois do passo 2, para ter retorno
-   cedo. **Segue fora de escopo na regra 9 do AGENTS.md** (a UI da mesa já foi liberada: ela vem antes do editor, e o
-   editor só existirá com `--editor` e em localhost, ver [`desenho-ui.md`](desenho-ui.md)).
+   cedo. **Liberado pelo dono em 2026-11-17** (regra 9 do AGENTS.md): o editor só existe com `--editor` e em localhost,
+   desenho em [`desenho-editor.md`](desenho-editor.md).
 
 Antes de qualquer implementação, um documento de desenho detalhando o vocabulário acima.
 

@@ -18,6 +18,7 @@ from devaneio.game import LlmConfig, LlmError
 
 from .app import COPILOT_COOLDOWN, SAY_COOLDOWN, TableService
 from .catalog import Catalog, CatalogError
+from .editor import EditorService, is_loopback
 from .http import make_server
 from .static import StaticError, StaticSite
 from .storage import Storage
@@ -75,7 +76,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
     )
+    parser.add_argument(
+        "--editor",
+        action="store_true",
+        help="liga o editor de campanhas (sem login: só aceita --host de loopback e pedidos de localhost)",
+    )
     args = parser.parse_args(argv)
+    if args.editor and not is_loopback(args.host):
+        print(
+            "erro: --editor não tem login e só vale em loopback; use --host 127.0.0.1 (ou ::1, localhost).",
+            file=sys.stderr,
+        )
+        return 1
 
     try:
         catalog = Catalog(args.campanhas)
@@ -84,15 +96,17 @@ def main(argv: list[str] | None = None) -> int:
     except (CatalogError, LlmError, StaticError, OSError) as exc:
         print(f"erro: {exc}", file=sys.stderr)
         return 1
+    storage = Storage(args.dados, max_tables=args.max_mesas)
     service = TableService(
         catalog,
-        Storage(args.dados, max_tables=args.max_mesas),
+        storage,
         llm=llm,
         say_cooldown=args.intervalo_say,
         copilot_cooldown=args.intervalo_copiloto,
         llm_secrets=args.segredos_no_llm,
     )
-    server = make_server(args.host, args.porta, service, static)
+    editor = EditorService(catalog, storage) if args.editor else None
+    server = make_server(args.host, args.porta, service, static, editor)
     port = server.server_address[1]
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         print(
@@ -101,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
     print(f"Devaneio: mesa em http://{args.host}:{port} ({len(catalog.summaries())} campanha(s))")
+    if editor is not None:
+        print(f"Editor de campanhas em http://{args.host}:{port}/#/editor (só desta máquina).")
     if llm is not None:
         print(f"LLM ligado ({llm.description}): o contexto das mesas vai a esse servidor.")
     try:

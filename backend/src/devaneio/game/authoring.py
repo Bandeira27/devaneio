@@ -9,11 +9,25 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Literal
+from pathlib import Path
+from typing import Any, Literal, get_args
+
+from pydantic import ValidationError
 
 from devaneio.narration import NarrationPack, lint_pack
-from devaneio.rules import RuleSystem
-from devaneio.schema import AtLocation, Campaign, CheckPassed, Condition, NpcDown
+from devaneio.rules import RuleSystem, validate_campaign_against_rules
+from devaneio.schema import (
+    AtLocation,
+    Campaign,
+    CampaignIntegrityError,
+    CheckPassed,
+    Condition,
+    NpcDown,
+    load_campaign,
+)
+
+from .content import load_pack_for, load_rules_for
+from .errors import GameError
 
 
 @dataclass(frozen=True)
@@ -71,3 +85,114 @@ def _out_of_sight(
     if location is None:
         return False
     return not any(isinstance(c, AtLocation) and c.location_id == location for c in same_list)
+
+
+@dataclass(frozen=True)
+class CampaignCheck:
+    """O resultado de conferir uma campanha ainda não gravada.
+
+    ``errors`` são ``(caminho do campo, frase)``; só com ``errors`` vazio há ``campaign`` e ``rules``.
+    ``findings`` são os achados de autoria.
+    """
+
+    errors: list[tuple[str, str]]
+    findings: list[Finding]
+    campaign: Campaign | None = None
+    rules: RuleSystem | None = None
+
+
+def check_campaign_data(data: Any, campaign_dir: Path) -> CampaignCheck:
+    """Confere uma campanha (JSON cru) como o jogo a conferiria ao carregar, com tudo em português.
+
+    Estrutura (Pydantic), integridade, o sistema e a narração que ela cita (procurados ao lado de
+    ``campaign_dir``) e, por fim, os achados de autoria. Nunca levanta por causa do conteúdo.
+    """
+    try:
+        campaign = load_campaign(data)
+    except ValidationError as exc:
+        return CampaignCheck(explain_validation_error(exc), [])
+    except CampaignIntegrityError as exc:
+        return CampaignCheck([("", message) for message in exc.errors], [])
+    try:
+        rules = load_rules_for(campaign, campaign_dir)
+        pack = load_pack_for(campaign, campaign_dir)
+    except GameError as exc:
+        return CampaignCheck([("", str(exc))], [])
+    errors = [("", message) for message in validate_campaign_against_rules(campaign, rules)]
+    findings = check_content(campaign, rules, pack)
+    if errors:
+        return CampaignCheck(errors, findings)
+    return CampaignCheck([], findings, campaign, rules)
+
+
+# Os nomes das variantes de ``Condition``: o Pydantic os põe no caminho do erro, e o autor não os vê.
+_CONDITION_KINDS = frozenset(
+    get_args(model.model_fields["kind"].annotation)[0] for model in get_args(get_args(Condition)[0])
+)
+
+
+def explain_validation_error(error: ValidationError) -> list[tuple[str, str]]:
+    """Os erros de estrutura do Pydantic em português: ``(caminho, mensagem)``.
+
+    O caminho é o do campo (``locations.2.connections.0``), sem o nome da variante de uma condição. O campo
+    citado na frase é o último nome do caminho; num item de lista, ``item N de <lista>``.
+    """
+    out: list[tuple[str, str]] = []
+    for item in error.errors():
+        loc = _clean_loc(item["loc"])
+        out.append((".".join(str(p) for p in loc), _explain(item, _field_name(loc))))
+    return out
+
+
+def _clean_loc(loc: tuple[int | str, ...]) -> list[int | str]:
+    """O caminho sem o nome da variante de condição que o Pydantic põe antes do campo."""
+    return [
+        part
+        for index, part in enumerate(loc)
+        if not (
+            isinstance(part, str)
+            and part in _CONDITION_KINDS
+            and index > 0
+            and isinstance(loc[index - 1], int)
+        )
+    ]
+
+
+def _field_name(loc: list[int | str]) -> str:
+    """Como a frase chama o campo: o nome, ou ``item N de <lista>`` quando o erro é num item de lista."""
+    if not loc:
+        return "a campanha"
+    last = loc[-1]
+    if isinstance(last, int):
+        names = [p for p in loc if isinstance(p, str)]
+        return f"item {last + 1} de '{names[-1]}'" if names else f"item {last + 1}"
+    return f"'{last}'"
+
+
+def _explain(item: Any, field: str) -> str:
+    kind = item["type"]
+    ctx = item.get("ctx") or {}
+    if kind == "missing":
+        return f"falta preencher {field}"
+    if kind == "extra_forbidden":
+        return f"{field} não é um campo conhecido"
+    if kind == "string_pattern_mismatch":
+        return (
+            f"{field} só pode ter letras minúsculas sem acento, números, '-' e '_', "
+            "começando por letra ou número"
+        )
+    if kind == "string_type":
+        return f"{field} precisa ser um texto"
+    if kind in {"int_type", "int_parsing", "int_from_float"}:
+        return f"{field} precisa ser um número inteiro"
+    if kind == "list_type":
+        return f"{field} precisa ser uma lista"
+    if kind in {"dict_type", "model_type", "model_attributes_type"}:
+        return f"{field} precisa ser um bloco de campos"
+    if kind == "greater_than_equal":
+        return f"{field} precisa ser pelo menos {ctx.get('ge')}"
+    if kind == "literal_error":
+        return f"{field} tem um valor que não é aceito"
+    if kind in {"union_tag_invalid", "union_tag_not_found"}:
+        return f"{field}: tipo de condição desconhecido"
+    return f"{field} não está certo ({item['msg']})"

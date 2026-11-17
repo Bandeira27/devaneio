@@ -12,7 +12,7 @@ transição entre telas (a página vira, cabeçalho parado, folha de espera), fu
 marca, ornamento), entrada em dois painéis (contexto e tarefa) e mesa em até três painéis (cena e grupo, história, ficha
 e ações). Os textos de referência: [`design-system.md`](design-system.md),
 [`movimento.md`](movimento.md) e [`padroes-de-interacao.md`](padroes-de-interacao.md). A revisão de UI tem papel
-(`ui-reviewer`) e skill (`review-ui`). O selo de desfecho do teste (ícone, texto e tom na nota mecânica) já está no feed. Fica para depois: o editor de campanhas; o painel do
+(`ui-reviewer`) e skill (`review-ui`). O selo de desfecho do teste (ícone, texto e tom na nota mecânica) já está no feed. O editor de campanhas está em [`desenho-editor.md`](desenho-editor.md); o painel do
 anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md).
 
 ## Decisões

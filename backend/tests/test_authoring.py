@@ -1,11 +1,15 @@
 import json
 import subprocess
 import sys
+from datetime import date
+from typing import Literal
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 
 from conftest import CAMPAIGN_PATH
-from devaneio.game import check_content
+from devaneio.game import check_content, explain_validation_error
+from devaneio.game.authoring import _CONDITION_KINDS
 from devaneio.narration import builtin_pack_dict, lint_pack, load_builtin_pack, load_pack
 from devaneio.schema import Campaign
 
@@ -168,3 +172,97 @@ def test_verificar_reports_a_pack_warning_and_still_exits_0(tmp_path, campaign_d
     result = run_verify(path)
     assert result.returncode == 0
     assert "aviso: narração 'meu': regra auxiliar 'sobra'" in result.stdout
+
+
+# --- explain_validation_error: cada tipo de erro vira uma frase em português ------------
+
+
+def explained(data):
+    with pytest.raises(ValidationError) as caught:
+        Campaign.model_validate(data)
+    return dict(explain_validation_error(caught.value))
+
+
+@pytest.fixture
+def raw():
+    return json.loads(CAMPAIGN_PATH.read_text(encoding="utf-8"))
+
+
+def test_explain_missing_and_unknown_fields(raw):
+    del raw["title"]
+    raw["locations"][0]["inventado"] = 1
+    out = explained(raw)
+    assert out["title"] == "falta preencher 'title'"
+    assert out["locations.0.inventado"] == "'inventado' não é um campo conhecido"
+
+
+def test_explain_text_list_and_block_types(raw):
+    raw["title"] = 3
+    raw["locations"] = "nada"
+    raw["npcs"][0] = 7
+    out = explained(raw)
+    assert out["title"] == "'title' precisa ser um texto"
+    assert out["locations"] == "'locations' precisa ser uma lista"
+    assert out["npcs.0"] == "item 1 de 'npcs' precisa ser um bloco de campos"
+
+
+def test_explain_slug_pattern(raw):
+    raw["id"] = "Com Espaço"
+    out = explained(raw)
+    assert "letras minúsculas sem acento" in out["id"]
+
+
+def test_explain_unknown_condition_kind_has_no_variant_name_in_the_path(raw):
+    raw["beats"][0]["activate_when"] = [{"kind": "invente"}]
+    out = explained(raw)
+    assert (
+        out["beats.0.activate_when.0"] == "item 1 de 'activate_when': tipo de condição desconhecido"
+    )
+
+
+def test_explain_turn_at_least_number_type(raw):
+    raw["beats"][0]["activate_when"] = [{"kind": "turn_at_least", "turn": "x"}]
+    out = explained(raw)
+    assert out["beats.0.activate_when.0.turn"] == "'turn' precisa ser um número inteiro"
+
+
+def test_explain_list_items_name_the_list_and_the_position(raw):
+    raw["locations"][0]["private_notes"] = ["ok", 3]
+    raw["locations"][0]["connections"] = [5]
+    out = explained(raw)
+    assert out["locations.0.private_notes.1"] == "item 2 de 'private_notes' precisa ser um texto"
+    assert out["locations.0.connections.0"] == "item 1 de 'connections' precisa ser um texto"
+
+
+def test_the_condition_kinds_in_error_paths_come_from_the_schema():
+    assert {
+        "at_location",
+        "npc_down",
+        "beat_done",
+        "turn_at_least",
+        "check_passed",
+    } == _CONDITION_KINDS
+
+
+class _Limits(BaseModel):
+    low: int = Field(ge=2)
+    mode: Literal["a", "b"]
+    day: date
+
+
+def test_explain_minimum_choices_and_unknown_types():
+    with pytest.raises(ValidationError) as caught:
+        _Limits.model_validate({"low": 0, "mode": "z", "day": "x"})
+    out = dict(explain_validation_error(caught.value))
+    assert out["low"] == "'low' precisa ser pelo menos 2"
+    assert out["mode"] == "'mode' tem um valor que não é aceito"
+    # Tipo de erro que não conhecemos: frase genérica, com o que o Pydantic disse.
+    assert out["day"].startswith("'day' não está certo (")
+
+
+def test_explain_root_errors_have_no_quotes():
+    with pytest.raises(ValidationError) as caught:
+        _Limits.model_validate([])
+    assert dict(explain_validation_error(caught.value)) == {
+        "": "a campanha precisa ser um bloco de campos"
+    }

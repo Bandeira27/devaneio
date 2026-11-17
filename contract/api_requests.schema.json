@@ -110,6 +110,21 @@
       "title": "JoinRequest",
       "type": "object"
     },
+    "SaveRequest": {
+      "additionalProperties": false,
+      "description": "A campanha a gravar: o servidor a valida de novo e só grava sem erro.",
+      "properties": {
+        "campaign": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "campaign"
+      ],
+      "title": "SaveRequest",
+      "type": "object"
+    },
     "SayRequest": {
       "additionalProperties": false,
       "description": "Um texto livre para o mestre de IA: o texto e a revisão que o cliente viu.",
@@ -129,6 +144,21 @@
         "revision"
       ],
       "title": "SayRequest",
+      "type": "object"
+    },
+    "ValidateRequest": {
+      "additionalProperties": false,
+      "description": "A campanha como o editor a tem agora, ainda sem passar pela validação (JSON cru).",
+      "properties": {
+        "campaign": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "campaign"
+      ],
+      "title": "ValidateRequest",
       "type": "object"
     }
   },
@@ -152,6 +182,12 @@
     },
     "copilot": {
       "$ref": "#/$defs/CopilotRequest"
+    },
+    "editor_validate": {
+      "$ref": "#/$defs/ValidateRequest"
+    },
+    "editor_save": {
+      "$ref": "#/$defs/SaveRequest"
     }
   },
   "required": [
@@ -160,7 +196,9 @@
     "invite_preview",
     "command",
     "say",
-    "copilot"
+    "copilot",
+    "editor_validate",
+    "editor_save"
   ],
   "title": "ApiRequests",
   "type": "object"

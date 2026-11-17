@@ -12,7 +12,13 @@ from devaneio.llm import (
     clean_text,
 )
 
-from .authoring import Finding, check_content
+from .authoring import (
+    CampaignCheck,
+    Finding,
+    check_campaign_data,
+    check_content,
+    explain_validation_error,
+)
 from .commands import (
     COMMANDS,
     READ_ONLY,
@@ -23,16 +29,24 @@ from .commands import (
     parse_line,
     split_actor,
 )
-from .content import load_campaign_content
+from .content import (
+    load_campaign_content,
+    load_pack_for,
+    load_rules_by_id,
+    load_rules_for,
+    rules_ids,
+)
 from .errors import GameError
 from .freeform import FreeformResult, LlmUnavailableError, run_freeform
 from .output import format_output, narrate_batch, status_banner
-from .session import Session, connect_llm, load_game, new_game, save_game
+from .preview import PreviewContexts, preview_contexts
+from .session import Session, connect_llm, load_game, new_game, save_game, saved_campaign_path
 from .table import Player, Role, TableMeta
 
 __all__ = [
     "COMMANDS",
     "READ_ONLY",
+    "CampaignCheck",
     "ChatClient",
     "CommandError",
     "CopilotContextTooLarge",
@@ -44,23 +58,32 @@ __all__ = [
     "LlmError",
     "LlmUnavailableError",
     "Player",
+    "PreviewContexts",
     "Role",
     "Session",
     "TableMeta",
     "ask_copilot",
+    "check_campaign_data",
     "check_content",
     "clean_text",
     "connect_llm",
     "execute",
+    "explain_validation_error",
     "format_output",
     "is_command",
     "load_campaign_content",
     "load_game",
+    "load_pack_for",
+    "load_rules_by_id",
+    "load_rules_for",
     "narrate_batch",
     "new_game",
     "parse_line",
+    "preview_contexts",
+    "rules_ids",
     "run_freeform",
     "save_game",
+    "saved_campaign_path",
     "split_actor",
     "status_banner",
 ]

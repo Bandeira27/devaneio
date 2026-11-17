@@ -9,7 +9,7 @@ import random
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 from devaneio.engine import advance_beats, initial_state, reveal_facts
 from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
@@ -39,6 +39,8 @@ class SaveFile(StrictModel):
     poder ser movida junto com a campanha.
     """
 
+    CAMPAIGN_PATH_FIELD: ClassVar[str] = "campaign_path"
+
     save_version: Literal[1] = 1
     campaign_path: str
     state: GameState
@@ -46,6 +48,18 @@ class SaveFile(StrictModel):
     table: TableMeta | None = None
     # Opcional: partidas antigas não têm e abrem sem aviso.
     content: ContentHashes | None = None
+
+
+def saved_campaign_path(save_path: Path) -> Path | None:
+    """O arquivo de campanha que uma partida usa, ou nada se o arquivo da partida não se lê.
+
+    Lê só o campo ``campaign_path`` de ``SaveFile`` (relativo ao arquivo da partida), sem validar o estado todo.
+    """
+    try:
+        raw = json.loads(save_path.read_text(encoding="utf-8"))[SaveFile.CAMPAIGN_PATH_FIELD]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return (save_path.parent / raw).resolve() if isinstance(raw, str) else None
 
 
 @dataclass

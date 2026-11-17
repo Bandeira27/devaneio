@@ -36,6 +36,11 @@ export interface ApiResponses {
   campaign: Campaign;
   campaign_view: CampaignView;
   rules: RulesView;
+  editor_campaigns: EditorCampaign[];
+  editor_campaign: EditorCampaign;
+  editor_report: ValidationReport;
+  editor_systems: SystemInfo[];
+  editor_preview: PreviewView;
   error: ErrorResponse;
 }
 /**
@@ -566,6 +571,58 @@ export interface ModifierInfo {
 export interface CombatInfo {
   default_weapon: string | null;
   fallen_can_act: boolean;
+}
+/**
+ * Uma campanha da pasta, como o editor a lista.
+ *
+ * ``writable`` é falso quando alguma mesa já usa o arquivo: o editor não o sobrescreve, só copia.
+ */
+export interface EditorCampaign {
+  id: string;
+  title: string;
+  writable: boolean;
+}
+/**
+ * O resultado da validação: `ok` quando não há erro (os achados de autoria podem existir mesmo assim).
+ */
+export interface ValidationReport {
+  ok: boolean;
+  errors: ValidationIssue[];
+  findings: AuthoringFinding[];
+}
+/**
+ * Um erro que impede de salvar: o caminho do campo (`locations.2.name`, vazio se é geral) e a frase.
+ */
+export interface ValidationIssue {
+  path: string;
+  message: string;
+}
+/**
+ * Um achado de autoria: `erro` impede a campanha de funcionar como esperado; `aviso` é um risco aceitável.
+ */
+export interface AuthoringFinding {
+  level: "erro" | "aviso";
+  text: string;
+}
+/**
+ * Um sistema de regras que a campanha pode citar.
+ */
+export interface SystemInfo {
+  id: string;
+  name: string;
+}
+/**
+ * O que cada um enxerga da campanha: o jogador, o LLM sem e com segredos, e o contexto do copiloto.
+ *
+ * ``llm`` é o contexto público; ``llm_secrets`` o que o LLM recebe com ``--segredos-no-llm``. O contexto do
+ * copiloto (a campanha inteira) tem ``copilot_chars`` caracteres para um teto de ``copilot_limit``.
+ */
+export interface PreviewView {
+  player: CampaignView;
+  llm: string;
+  llm_secrets: string;
+  copilot_chars: number;
+  copilot_limit: number;
 }
 /**
  * O corpo de toda resposta de erro.

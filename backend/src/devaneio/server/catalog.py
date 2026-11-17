@@ -6,6 +6,7 @@ requisição.
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -25,6 +26,7 @@ class Catalog:
 
     def __init__(self, root: Path) -> None:
         self.root = Path(root).resolve()
+        self._lock = threading.Lock()
         self._paths: dict[str, Path] = {}
         self._summaries: list[CampaignSummary] = []
         for path in sorted(self.root.glob("*.json")):
@@ -45,8 +47,30 @@ class Catalog:
 
     def summaries(self) -> list[CampaignSummary]:
         """Título e premissa de cada campanha."""
-        return list(self._summaries)
+        with self._lock:
+            return list(self._summaries)
 
     def path(self, campaign_id: str) -> Path | None:
         """O arquivo de uma campanha pelo id, ou nada se o id não existe."""
-        return self._paths.get(campaign_id)
+        with self._lock:
+            return self._paths.get(campaign_id)
+
+    def register(self, path: Path) -> None:
+        """Passa a conhecer (ou relê) uma campanha gravada depois da subida, sem reiniciar o servidor.
+
+        O arquivo precisa estar na pasta do catálogo. Se já havia uma campanha com o mesmo id, ela é trocada.
+        """
+        resolved = Path(path).resolve()
+        if resolved.parent != self.root:
+            raise CatalogError("a campanha precisa estar na pasta do catálogo")
+        campaign = self._load(resolved)
+        with self._lock:
+            other = self._paths.get(campaign.id)
+            if other is not None and other != resolved:
+                raise CatalogError(
+                    f"campanha '{campaign.id}' repetida: {other.name} e {resolved.name}"
+                )
+            self._paths[campaign.id] = resolved
+            self._summaries = [s for s in self._summaries if s.id != campaign.id]
+            self._summaries.append(summarize(campaign))
+            self._summaries.sort(key=lambda s: self._paths[s.id].name)
