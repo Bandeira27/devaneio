@@ -8,7 +8,7 @@
   gap: var(--dv-space-2);
   min-height: var(--dv-touch);
   padding: 0 var(--dv-space-4);
-  border: var(--dv-border-width) dotted var(--dv-border-control);
+  border: var(--dv-border-width) solid var(--dv-border-control); /* sólido = o que se toca (pontilhado é papel) */
   border-radius: var(--dv-radius);
   background: transparent;
   color: var(--dv-text);

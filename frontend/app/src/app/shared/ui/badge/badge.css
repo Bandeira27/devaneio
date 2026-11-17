@@ -2,37 +2,32 @@
   display: inline-flex;
   align-items: center;
   gap: var(--dv-space-1);
-  padding: 0 var(--dv-space-2);
-  border: var(--dv-border-width) dotted var(--dv-line);
-  border-radius: var(--dv-radius);
-  background: var(--dv-surface-2);
-  color: var(--dv-text);
+  padding: 0;
+  /* Uma anotação à margem: o filete pontilhado e fraco é só do texto (pontilhado é informação) e o selo não é clicável. */
+  text-decoration: underline dotted var(--dv-line);
+  text-underline-offset: 0.3em;
+  cursor: default;
+  color: var(--dv-text-muted);
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
   line-height: var(--dv-leading-ui);
 }
 
 :host(.badge--ok) {
-  border-color: var(--dv-ok);
-  background: var(--dv-ok-surface);
   color: var(--dv-ok);
 }
 
 :host(.badge--warn) {
-  border-color: var(--dv-warn);
-  background: var(--dv-warn-surface);
   color: var(--dv-warn);
 }
 
 :host(.badge--info) {
-  border-color: var(--dv-info);
-  background: var(--dv-info-surface);
   color: var(--dv-info);
 }
 
 :host(.badge--danger) {
-  border-color: var(--dv-danger);
-  background: var(--dv-danger-surface);
   color: var(--dv-danger);
 }
 
