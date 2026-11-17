@@ -23,11 +23,12 @@ describe('CharacterCard', () => {
   it('mostra os atributos pelo nome, os pontos de vida e o inventário com o nome das armas', async () => {
     const fixture = TestBed.createComponent(Host);
     await fixture.whenStable();
-    const text = (fixture.nativeElement as HTMLElement).textContent as string;
+    const el = fixture.nativeElement as HTMLElement;
+    const text = el.textContent as string;
     expect(text).toContain('Força');
-    expect(text).toContain('3');
+    expect(el.querySelector('dv-key-value')?.textContent).toMatch(/Força\s*3/);
     expect(text).toContain('Punhos');
     expect(text).toContain('item-sem-arma'); // o que não é arma aparece como está
-    expect((fixture.nativeElement as HTMLElement).querySelector('dv-pips')).not.toBeNull();
+    expect(el.querySelector('dv-pips')?.getAttribute('aria-label')).toBe('pontos de vida: 6 de 10');
   });
 });

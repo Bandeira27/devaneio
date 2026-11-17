@@ -45,16 +45,9 @@
   }
 }
 
-/* As ações do turno (Ir, Testar, Atacar, Falar) são o centro; Ficha e Comando são de apoio: menores e mais discretas. */
-.dock__minor {
-  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
-}
-
+/* As ações do turno são o centro; Ficha e Comando são de apoio: mais discretas (texto em tinta). */
 .dock__minor .dv-button {
-  min-height: var(--dv-touch);
   color: var(--dv-text-muted);
-  border-style: dotted;
-  border-color: var(--dv-line);
 }
 
 /* Na tela muito larga a ficha já está no painel ao lado: o botão sobra. */

@@ -136,19 +136,40 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     }
   });
 
-  it('tocar numa saída da cena abre a confirmação de Ir já no destino; nada é enviado antes de confirmar', async () => {
-    const { root, events, http, settle } = await open();
+  it('tocar numa saída da cena abre a confirmação de Ir já no destino tocado; nada é enviado antes de confirmar', async () => {
+    const campaign = {
+      locations: [
+        {
+          id: 'vila',
+          name: 'Vila de Pedra',
+          description: 'Casas.',
+          connections: ['floresta', 'pantano'],
+          private_notes: [],
+        },
+        { id: 'floresta', name: 'Floresta', description: '', connections: [], private_notes: [] },
+        { id: 'pantano', name: 'Pântano', description: '', connections: [], private_notes: [] },
+      ],
+      npcs: [],
+    } as unknown as Campaign;
+    const { root, events, http, settle } = await open(withCharacter(), campaign);
     events('0').flush(eventsView(3));
     await settle();
-    const exit = root().querySelector('.scene__list button') as HTMLButtonElement;
-    const name = exit.textContent?.trim() as string;
-    exit.click();
+    const exits = Array.from(root().querySelectorAll('.scene__list button')) as HTMLButtonElement[];
+    expect(exits.length).toBe(2);
+    exits[1]?.click(); // a segunda saída
     await settle();
     const sheet = document.querySelector('.dv-sheet') as HTMLElement;
-    expect(sheet.textContent).toContain('Mover o grupo para');
-    expect(sheet.textContent).toContain(name);
+    expect(sheet.querySelector('strong')?.textContent).toBe('Pântano'); // abriu no destino tocado, não na lista
     http.expectNone(`/tables/${TABLE_ID}/commands`);
-    document.querySelectorAll('.cdk-overlay-container').forEach((el) => el.replaceChildren());
+    const back = Array.from(sheet.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Voltar',
+    ) as HTMLButtonElement;
+    back.click();
+    await settle();
+    expect(sheet.textContent).toContain('Floresta'); // "Voltar" leva à lista de destinos
+    (sheet.querySelector('[aria-label="Fechar"]') as HTMLButtonElement).click(); // sem escolher
+    await settle();
+    expect(document.querySelector('.dv-sheet')).toBeNull();
   });
 
   it('sem conexão, as saídas da cena também ficam bloqueadas', async () => {
@@ -158,8 +179,12 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
       { status: 500, statusText: 'x' } as never,
     );
     await settle();
-    const exit = root().querySelector('.scene__list button');
-    expect(exit?.getAttribute('aria-disabled')).toBe('true');
+    const exit = root().querySelector('.scene__list button') as HTMLButtonElement;
+    expect(exit.getAttribute('aria-disabled')).toBe('true');
+    expect(exit.getAttribute('aria-describedby')).toBe('dock-reason'); // o motivo está ligado
+    exit.click();
+    await settle();
+    expect(document.querySelector('.dv-sheet')).toBeNull(); // o clique é engolido
   });
 
   it('o turno do feed é um cabeçalho de capítulo com ornamento', async () => {

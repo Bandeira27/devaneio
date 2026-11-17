@@ -143,7 +143,8 @@
 
 /*
  * Tela muito larga (90rem): a mesa ganha um terceiro painel (a ficha de quem joga), então o contêiner do app cresce com
- * ele (duas laterais + respiro + feed) e as laterais ficam um pouco mais estreitas. O ponto de quebra é fixo porque CSS
+ * ele (duas laterais + respiro + feed) e as laterais ficam um pouco mais estreitas. O cabeçalho, a home e a entrada
+ * se alinham a essa mesma medida, então também ficam mais largos. O ponto de quebra é fixo porque CSS
  * não aceita token em `@media`.
  */
 @media (min-width: 90rem) {

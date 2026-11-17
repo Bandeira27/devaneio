@@ -13,10 +13,11 @@
               dvButton
               type="button"
               [dvBlocked]="!canGo()"
-              [attr.aria-label]="'Ir para ' + exit.name"
+              [attr.aria-describedby]="blockedReasonId()"
               (click)="exitChosen.emit(exit.id)"
             >
-              <dv-icon name="go" size="sm" />{{ exit.name }}
+              <dv-icon name="go" size="sm" /><span class="dv-visually-hidden">Ir para </span
+              >{{ exit.name }}
             </button>
           </li>
         }

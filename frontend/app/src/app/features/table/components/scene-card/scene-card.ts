@@ -24,6 +24,8 @@ export class SceneCard {
   readonly scene = input.required<Scene>();
   /** Dá para agir agora? Sem isso as saídas ficam bloqueadas. */
   readonly canGo = input(true);
+  /** O id do texto que diz por que não dá para agir (ligado às saídas bloqueadas por `aria-describedby`), se houver. */
+  readonly blockedReasonId = input<string | null>(null);
   /** O id da saída que a pessoa tocou. */
   readonly exitChosen = output<string>();
   /** Na tela larga (a coluna lateral) a descrição já nasce aberta; no celular, recolhida para a cena ocupar pouco. */

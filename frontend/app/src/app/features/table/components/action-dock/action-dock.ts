@@ -25,12 +25,18 @@ export class ActionDock {
   private readonly sheet = inject(Sheet);
   private readonly root = viewChild.required<ElementRef<HTMLElement>>('root');
 
-  /** Leva o foco ao primeiro botão que ainda age (ou à própria barra, se todos estão bloqueados). */
+  /**
+   * Leva o foco ao primeiro botão que ainda age, das ações do turno antes das de apoio, e que esteja à vista (o botão
+   * "Ficha" some na tela muito larga). Se não há nenhum, o foco vai para a própria barra.
+   */
   focusActions(): void {
     const root = this.root().nativeElement;
-    const first = root.querySelector<HTMLElement>(
-      "button:not([disabled]):not([aria-disabled='true'])",
-    );
+    const acts = "button:not([disabled]):not([aria-disabled='true'])";
+    const candidates = [
+      ...root.querySelectorAll<HTMLElement>(`.dock__main ${acts}`),
+      ...root.querySelectorAll<HTMLElement>(`.dock__minor ${acts}`),
+    ];
+    const first = candidates.find((el) => el.checkVisibility?.() !== false);
     (first ?? root).focus();
   }
 

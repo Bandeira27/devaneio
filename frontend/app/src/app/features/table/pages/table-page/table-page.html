@@ -55,7 +55,8 @@
             <dv-scene-card
               [scene]="scene"
               [canGo]="!store.blockedReason() && !store.actionBusy()"
-              (exitChosen)="actions()?.go($event)"
+              [blockedReasonId]="store.blockedReason() ? 'dock-reason' : null"
+              (exitChosen)="goThroughExit($event)"
             />
           }
           <dv-party-strip
