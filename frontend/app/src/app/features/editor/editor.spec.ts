@@ -419,4 +419,97 @@ describe('Editor de campanhas: edição', () => {
     expect(options).toContain('NPC: Bram');
     expect(options).toContain('Marco: Chegada');
   });
+
+  it('os erros de integridade de um marco e de um fato aparecem dentro do item (frases reais do servidor)', async () => {
+    const report: ValidationReport = {
+      ok: false,
+      errors: [
+        { path: '', message: "marco 'chegada', activate_when: local 'x' não existe" },
+        { path: '', message: "fato 'culto' fala de 'x', que não existe" },
+      ],
+      findings: [],
+    };
+    const { root, click, settle } = await open('/editor/c', {
+      campaign: {
+        ...hostCampaign,
+        id: 'c',
+        facts: [{ id: 'culto', text: 'Bram é do culto', about: null, reveal_when: [] }],
+      },
+      report,
+    });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-beats-section dv-item-problems')?.textContent).toContain(
+      "local 'x' não existe",
+    );
+    await click('a[href="/editor/c/fatos"]');
+    (root().querySelectorAll('dv-facts-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-facts-section dv-item-problems')?.textContent).toContain(
+      "fala de 'x'",
+    );
+  });
+
+  it('remover uma condição tira só ela e leva o foco ao botão da que ocupou o lugar', async () => {
+    const campaign = {
+      ...hostCampaign,
+      id: 'c',
+      beats: hostCampaign.beats.map((b, i) =>
+        i === 0
+          ? {
+              ...b,
+              activate_when: [
+                { kind: 'turn_at_least' as const, turn: 1 },
+                { kind: 'turn_at_least' as const, turn: 2 },
+                { kind: 'turn_at_least' as const, turn: 3 },
+              ],
+            }
+          : b,
+      ),
+    };
+    const { root, click, settle, answer, validations } = await open('/editor/c', { campaign });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    document.body.append(root());
+    const remove = root().querySelectorAll<HTMLButtonElement>(
+      'dv-conditions-editor .row__remove',
+    )[1] as HTMLButtonElement;
+    expect(remove.getAttribute('aria-label')).toContain('Remover condição 2');
+    expect(remove.getAttribute('aria-label')).toContain('condições para começar (marco Chegada)');
+    remove.click();
+    await settle();
+    await answer();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(validations.at(-1)?.beats[0]?.activate_when).toEqual([
+      { kind: 'turn_at_least', turn: 1 },
+      { kind: 'turn_at_least', turn: 3 },
+    ]);
+    const next = root().querySelectorAll('dv-conditions-editor .row__remove')[1];
+    expect(document.activeElement).toBe(next);
+    root().remove();
+  });
+
+  it('sem NPC para citar, a condição "um NPC foi derrotado" diz o que falta em vez de um campo vazio', async () => {
+    const campaign = {
+      ...hostCampaign,
+      id: 'c',
+      npcs: [],
+      beats: hostCampaign.beats.map((b, i) =>
+        i === 0 ? { ...b, activate_when: [{ kind: 'npc_down' as const, npc_id: '' }] } : b,
+      ),
+    };
+    const { root, click, settle } = await open('/editor/c', { campaign });
+    await click('a[href="/editor/c/marcos"]');
+    (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
+    await new Promise((resolve) => setTimeout(resolve));
+    await settle();
+    expect(root().querySelector('dv-beats-section details[open]')?.textContent).toContain(
+      'Ainda não há NPCs. Crie um em NPCs.',
+    );
+  });
 });

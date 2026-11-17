@@ -5,7 +5,9 @@ import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvListEditor } from '@shared/ui/list-editor/list-editor';
+import type { SelectOption } from '@shared/ui/select/select';
 import { Sheet } from '@shared/ui/sheet/sheet';
+import { CheckList } from '../components/check-list';
 import { ConditionsEditor } from '../components/conditions-editor';
 import { confirmRemove } from '../components/confirm-remove';
 import { ItemProblems } from '../components/item-problems';
@@ -20,6 +22,7 @@ import { EditorStore } from '../editor.store';
 @Component({
   selector: 'dv-beats-section',
   imports: [
+    CheckList,
     ConditionsEditor,
     DvField,
     DvInput,
@@ -29,7 +32,6 @@ import { EditorStore } from '../editor.store';
     NameIdFields,
   ],
   templateUrl: './beats-section.html',
-  styleUrl: './editor-sections.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BeatsSection {
@@ -49,10 +51,9 @@ export class BeatsSection {
     this.store.replaceIn('beats', index, { ...beat, ...patch });
   }
 
-  protected toggle(index: number, beat: Beat, target: string, event: Event): void {
-    const on = (event.target as HTMLInputElement).checked;
-    const requires = on ? [...beat.requires, target] : beat.requires.filter((r) => r !== target);
-    this.patch(index, beat, { requires });
+  /** Os outros marcos, como opções de requisito. */
+  protected others(beats: readonly Beat[], own: string): SelectOption[] {
+    return beats.filter((b) => b.id !== own).map((b) => ({ value: b.id, label: b.title || b.id }));
   }
 
   protected async remove(index: number): Promise<void> {
@@ -63,7 +64,7 @@ export class BeatsSection {
     const ok = await confirmRemove(
       this.sheet,
       'Remover o marco',
-      `Remover "${beat.title || beat.id}"? Os marcos que exigiam este perdem o requisito. Condições que o citam ficam apontando para um marco que não existe, e o editor avisa.`,
+      `Remover "${beat.title || beat.id}"? Os marcos que exigiam este perdem o requisito. As condições que citavam este marco ficam sem marco, e o editor avisa.`,
     );
     if (ok) {
       this.store.remove('beat', beat.id);

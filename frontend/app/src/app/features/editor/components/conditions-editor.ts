@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  model,
+} from '@angular/core';
 import {
   CONDITION_KINDS,
   conditionTarget,
@@ -8,6 +18,7 @@ import {
   type ConditionKind,
 } from '@shared/game/campaign-edit';
 import { DvButton } from '@shared/ui/button/button';
+import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { DvSelect, type SelectOption } from '@shared/ui/select/select';
 import { DvStepper } from '@shared/ui/stepper/stepper';
 import { EditorStore } from '../editor.store';
@@ -33,11 +44,15 @@ export class ConditionsEditor {
   readonly hint = input('');
   /** Onde a lista está (`beats.0.activate_when`), para achar os erros de cada condição. */
   readonly path = input.required<string>();
+  /** De quem é a lista ("marco Chegada"), para os botões repetidos terem nome próprio. */
+  readonly owner = input('');
   /** O marco dono da lista: ele não pode depender da própria conclusão. */
   readonly ownBeatId = input('');
   readonly conditions = model.required<readonly Condition[]>();
 
   protected readonly store = inject(EditorStore);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   protected readonly kinds = KINDS;
   protected readonly target = conditionTarget;
   protected readonly locations = computed<SelectOption[]>(() =>
@@ -58,27 +73,60 @@ export class ConditionsEditor {
   protected add(): void {
     const campaign = this.store.campaign();
     if (campaign !== null) {
-      this.conditions.update((list) => [
-        ...list,
-        defaultCondition('at_location', campaign, this.skillIds()),
-      ]);
+      const next = defaultCondition('at_location', campaign, this.skillIds(), this.ownBeatId());
+      this.conditions.update((list) => [...list, next]);
+      this.focusAfterRender(() => this.rows().at(-1)?.querySelector<HTMLElement>('select'));
     }
   }
 
   protected remove(index: number): void {
     this.conditions.update((list) => list.filter((_, i) => i !== index));
+    // O botão clicado some (ou passa a ser o da condição seguinte): o foco vai ao "Remover" que ocupou o lugar, ou ao "Acrescentar".
+    this.focusAfterRender(
+      () =>
+        this.rows()[Math.min(index, this.rows().length - 1)]?.querySelector<HTMLElement>(
+          '.row__remove',
+        ) ?? this.host.nativeElement.querySelector<HTMLElement>('.add-condition'),
+    );
   }
 
   protected setKind(index: number, kind: string): void {
     const campaign = this.store.campaign();
     if (campaign !== null) {
-      const next = defaultCondition(kind as ConditionKind, campaign, this.skillIds());
+      const next = defaultCondition(
+        kind as ConditionKind,
+        campaign,
+        this.skillIds(),
+        this.ownBeatId(),
+      );
       this.conditions.update((list) => list.map((c, i) => (i === index ? next : c)));
     }
   }
 
   protected setTarget(index: number, target: string): void {
     this.conditions.update((list) => list.map((c, i) => (i === index ? withTarget(c, target) : c)));
+  }
+
+  /** O rótulo do campo que escolhe o que a condição cita. */
+  protected targetLabel(kind: ConditionKind): string {
+    return {
+      at_location: 'Local',
+      npc_down: 'NPC',
+      beat_done: 'Marco',
+      check_passed: 'Habilidade',
+      turn_at_least: 'Turno',
+    }[kind];
+  }
+
+  /** O que se pode escolher para o tipo. */
+  protected optionsFor(kind: ConditionKind): SelectOption[] {
+    return {
+      at_location: this.locations(),
+      npc_down: this.npcs(),
+      beat_done: this.beats(),
+      check_passed: this.skills(),
+      turn_at_least: [],
+    }[kind];
   }
 
   protected turnOf(condition: Condition): number {
@@ -88,6 +136,45 @@ export class ConditionsEditor {
   protected name(condition: Condition, index: number): string {
     const kind = CONDITION_KINDS.find((k) => k.kind === condition.kind)?.label ?? condition.kind;
     return `condição ${index + 1} (${kind})`;
+  }
+
+  /** O que dizer quando não há o que escolher para o tipo (ou `''` se há). */
+  protected emptyText(kind: ConditionKind): string {
+    const none: Record<ConditionKind, [number, string]> = {
+      at_location: [this.locations().length, 'Ainda não há locais. Crie um em Locais.'],
+      npc_down: [this.npcs().length, 'Ainda não há NPCs. Crie um em NPCs.'],
+      beat_done: [this.beats().length, 'Não há outro marco para citar. Crie um em Marcos.'],
+      turn_at_least: [1, ''],
+      check_passed: [
+        this.skills().length,
+        this.store.rules() === null
+          ? 'O sistema de regras não carregou: confira em Visão geral.'
+          : 'Este sistema de regras não tem habilidades.',
+      ],
+    };
+    const [count, text] = none[kind];
+    return count === 0 ? text : '';
+  }
+
+  /** O nome de um botão da lista, com a lista e de quem ela é (os mesmos botões se repetem pela página). */
+  protected where(): string {
+    return `${this.label().toLowerCase()}${this.owner() ? ` (${this.owner()})` : ''}`;
+  }
+
+  private rows(): HTMLElement[] {
+    return Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>('.row'));
+  }
+
+  private focusAfterRender(target: () => HTMLElement | null | undefined): void {
+    afterNextRender(
+      () => {
+        const el = target();
+        if (el && isFocusFree()) {
+          focusElement(el);
+        }
+      },
+      { injector: this.injector },
+    );
   }
 
   private skillIds(): string[] {

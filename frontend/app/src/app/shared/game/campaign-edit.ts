@@ -246,17 +246,18 @@ export type ConditionKind = Condition['kind'];
 /** Os tipos de condição, na ordem do menu, com a frase que o autor lê. */
 export const CONDITION_KINDS: readonly { kind: ConditionKind; label: string }[] = [
   { kind: 'at_location', label: 'O grupo está em' },
-  { kind: 'npc_down', label: 'Um NPC caiu' },
+  { kind: 'npc_down', label: 'Um NPC foi derrotado' },
   { kind: 'beat_done', label: 'Um marco foi concluído' },
-  { kind: 'turn_at_least', label: 'Chegou ao turno' },
+  { kind: 'turn_at_least', label: 'A partir do turno' },
   { kind: 'check_passed', label: 'Alguém passou num teste de' },
 ];
 
-/** A condição padrão de um tipo: aponta para o primeiro item que existe (ou fica vazia, e o validador avisa). */
+/** A condição padrão de um tipo: aponta para o primeiro item que existe (para o marco, o primeiro que não é o dono da lista) ou fica vazia, e o validador avisa. */
 export function defaultCondition(
   kind: ConditionKind,
   campaign: Campaign,
   skillIds: readonly string[],
+  ownBeatId = '',
 ): Condition {
   switch (kind) {
     case 'at_location':
@@ -264,7 +265,7 @@ export function defaultCondition(
     case 'npc_down':
       return { kind, npc_id: campaign.npcs[0]?.id ?? '' };
     case 'beat_done':
-      return { kind, beat_id: campaign.beats[0]?.id ?? '' };
+      return { kind, beat_id: campaign.beats.find((b) => b.id !== ownBeatId)?.id ?? '' }; // nunca o próprio marco
     case 'turn_at_least':
       return { kind, turn: 1 };
     case 'check_passed':

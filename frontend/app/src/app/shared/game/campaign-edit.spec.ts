@@ -214,4 +214,36 @@ describe('edição da campanha', () => {
     });
     expect(conditionTarget({ kind: 'turn_at_least', turn: 4 })).toBeNull();
   });
+
+  it('a condição "marco concluído" nunca aponta para o próprio marco', () => {
+    expect(defaultCondition('beat_done', hostCampaign, [], 'chegada')).toEqual({
+      kind: 'beat_done',
+      beat_id: 'altar',
+    });
+    const alone = { ...hostCampaign, beats: hostCampaign.beats.slice(0, 1) };
+    expect(defaultCondition('beat_done', alone, [], 'chegada')).toEqual({
+      kind: 'beat_done',
+      beat_id: '',
+    });
+  });
+
+  it('o alvo de uma condição troca em todos os tipos', () => {
+    expect(withTarget({ kind: 'at_location', location_id: 'a' }, 'b')).toEqual({
+      kind: 'at_location',
+      location_id: 'b',
+    });
+    expect(withTarget({ kind: 'npc_down', npc_id: 'a' }, 'b')).toEqual({
+      kind: 'npc_down',
+      npc_id: 'b',
+    });
+    expect(withTarget({ kind: 'check_passed', skill_id: 'a' }, 'b')).toEqual({
+      kind: 'check_passed',
+      skill_id: 'b',
+    });
+  });
+
+  it('remover um marco limpa os requisitos dos outros', () => {
+    const c = removeItem(hostCampaign, 'beat', 'chegada');
+    expect(c.beats.find((b) => b.id === 'altar')?.requires).toEqual([]);
+  });
 });

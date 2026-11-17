@@ -28,7 +28,8 @@
           (nameChange)="setText(i, fact, $event)"
         />
         <dv-select
-          label="Fala de"
+          label="Sobre quem ou o quê"
+          hint="Só para organizar: o fato continua escondido."
           [announce]="false"
           [options]="subjects()"
           [value]="fact.about ?? ''"
@@ -37,7 +38,8 @@
         />
         <dv-conditions-editor
           label="Condições para revelar"
-          hint="Todas precisam valer. Sem condições, só o anfitrião revela o fato."
+          hint="Só o anfitrião revela o fato."
+          [owner]="'fato ' + nameOf(fact)"
           [path]="'facts.' + i + '.reveal_when'"
           [conditions]="fact.reveal_when"
           (conditionsChange)="patch(i, fact, { reveal_when: [...$event] })"

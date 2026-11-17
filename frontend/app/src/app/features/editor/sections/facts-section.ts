@@ -21,7 +21,6 @@ const SHORT = 40;
   selector: 'dv-facts-section',
   imports: [ConditionsEditor, DvListEditor, DvSelect, ItemProblems, NameIdFields],
   templateUrl: './facts-section.html',
-  styleUrl: './editor-sections.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FactsSection {

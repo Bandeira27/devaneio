@@ -34,26 +34,24 @@
             (input)="patch(i, beat, { description: fieldValue($event) })"
           ></textarea>
         </dv-field>
+        @if (c.beats.length === 1) {
+          <p class="dv-note">
+            Com mais de um marco, você poderá exigir que um termine antes de outro.
+          </p>
+        }
         @if (c.beats.length > 1) {
-          <fieldset class="checks">
-            <legend>Só começa depois de concluir</legend>
-            @for (other of c.beats; track $index) {
-              @if (other.id !== beat.id) {
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    [checked]="beat.requires.includes(other.id)"
-                    (change)="toggle(i, beat, other.id, $event)"
-                  />
-                  {{ other.title || other.id }}
-                </label>
-              }
-            }
-          </fieldset>
+          <dv-check-list
+            legend="Só começa depois de concluir"
+            hint="Sem nenhum marcado, este marco não exige nada."
+            [options]="others(c.beats, beat.id)"
+            [selected]="beat.requires"
+            (selectedChange)="patch(i, beat, { requires: [...$event] })"
+          />
         }
         <dv-conditions-editor
           label="Condições para começar"
-          hint="Todas precisam valer. Sem condições, começa assim que os requisitos estiverem concluídos."
+          hint="Começa assim que os requisitos estiverem concluídos."
+          [owner]="'marco ' + (beat.title || beat.id)"
           [path]="'beats.' + i + '.activate_when'"
           [ownBeatId]="beat.id"
           [conditions]="beat.activate_when"
@@ -61,7 +59,8 @@
         />
         <dv-conditions-editor
           label="Condições para terminar"
-          hint="Todas precisam valer. Sem condições, só o anfitrião conclui o marco."
+          hint="Só o anfitrião conclui o marco."
+          [owner]="'marco ' + (beat.title || beat.id)"
           [path]="'beats.' + i + '.complete_when'"
           [ownBeatId]="beat.id"
           [conditions]="beat.complete_when"

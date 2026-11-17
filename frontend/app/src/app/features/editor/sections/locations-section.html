@@ -28,21 +28,12 @@
           ></textarea>
         </dv-field>
         @if (c.locations.length > 1) {
-          <fieldset class="checks">
-            <legend>Daqui se vai para</legend>
-            @for (other of c.locations; track $index) {
-              @if (other.id !== loc.id) {
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    [checked]="loc.connections.includes(other.id)"
-                    (change)="toggle(i, loc, other.id, $event)"
-                  />
-                  {{ other.name || other.id }}
-                </label>
-              }
-            }
-          </fieldset>
+          <dv-check-list
+            legend="Daqui se vai para"
+            [options]="others(c.locations, loc.id)"
+            [selected]="loc.connections"
+            (selectedChange)="patch(i, loc, { connections: [...$event] })"
+          />
         }
         <dv-lines-field
           label="Notas privadas"

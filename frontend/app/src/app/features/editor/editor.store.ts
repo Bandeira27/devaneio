@@ -487,7 +487,7 @@ function whereIs(campaign: Campaign, path: string): string {
   const label = SECTION_LABEL[head as keyof typeof SECTION_LABEL];
   return item === undefined
     ? label
-    : `${label} › ${item.name ?? item.title ?? shorten(item.text) ?? item.id}`;
+    : `${label} › ${item.name || item.title || shorten(item.text) || item.id}`;
 }
 
 function shorten(text: string | undefined): string | undefined {

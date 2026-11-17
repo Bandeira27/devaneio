@@ -70,4 +70,16 @@ describe('DvSelect', () => {
     expect(select.value).toBe('fantasma');
     expect(select.options[0]?.textContent?.trim()).toBe('fantasma (não encontrado)');
   });
+
+  it('valor vazio sem opção de "nenhum" mostra "(escolha…)", e não a primeira opção', async () => {
+    const { fixture, select, host } = await render();
+    host.options = [
+      { value: 'vila', label: 'Vila' },
+      { value: 'floresta', label: 'Floresta' },
+    ];
+    host.value.set('');
+    await fixture.whenStable();
+    expect(select.options[0]?.textContent?.trim()).toBe('(escolha…)');
+    expect(select.value).toBe('');
+  });
 });
