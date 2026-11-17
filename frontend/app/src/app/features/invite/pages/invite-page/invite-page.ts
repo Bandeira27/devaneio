@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvCopyField } from '@shared/ui/copy-field/copy-field';
@@ -34,11 +34,7 @@ export class InvitePage implements OnInit {
 
   protected readonly store = inject(InviteStore);
 
-  constructor() {
-    effect(() => this.store.tableId.set(this.tableId()));
-  }
-
   ngOnInit(): void {
-    this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
+    this.store.tableId.set(this.tableId());
   }
 }

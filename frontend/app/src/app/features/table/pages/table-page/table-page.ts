@@ -74,7 +74,6 @@ export class TablePage implements OnInit {
   protected readonly unseen = signal(0);
 
   constructor() {
-    effect(() => this.store.tableId.set(this.tableId()));
     inject(DestroyRef).onDestroy(() => (this.gone = true));
     this.keepDockHeight();
     effect(() => {
@@ -91,7 +90,7 @@ export class TablePage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
+    this.store.tableId.set(this.tableId());
     void this.store.load();
   }
 

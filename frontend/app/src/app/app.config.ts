@@ -2,6 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import {
   PreloadAllModules,
+  RouteReuseStrategy,
   TitleStrategy,
   provideRouter,
   withComponentInputBinding,
@@ -12,6 +13,7 @@ import {
 import { apiInterceptor } from '@core/api/api.interceptor';
 import { PageTitle } from './layout/shell/page-title';
 import { routes } from './app.routes';
+import { ParamsAwareReuse } from './route-reuse';
 
 /**
  * A configuração do app. O roteamento é por hash (`/#/mesa/...`): o servidor só entrega `index.html` em `/`,
@@ -40,6 +42,7 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     { provide: TitleStrategy, useExisting: PageTitle },
+    { provide: RouteReuseStrategy, useClass: ParamsAwareReuse },
     provideHttpClient(withFetch(), withInterceptors([apiInterceptor])),
   ],
 };

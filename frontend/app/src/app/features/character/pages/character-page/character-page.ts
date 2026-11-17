@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GUEST_STEPS, HOST_STEPS } from '@shared/game/entry-steps';
 import { DvButton } from '@shared/ui/button/button';
@@ -43,12 +43,8 @@ export class CharacterPage implements OnInit {
 
   protected readonly store = inject(CharacterStore);
 
-  constructor() {
-    effect(() => this.store.tableId.set(this.tableId()));
-  }
-
   ngOnInit(): void {
-    this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
+    this.store.tableId.set(this.tableId());
     void this.store.load();
   }
 }
