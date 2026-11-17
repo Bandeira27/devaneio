@@ -15,7 +15,7 @@ import { SessionStore } from '@core/session/session-store';
 import { buildFeed } from '@shared/game/feed';
 import { llmNoticeOf } from '@shared/game/llm-notice';
 import type { LoadState } from '@shared/game/load-state';
-import { usableWeapons } from '@shared/game/rules';
+import { humanizeFormula, usableWeapons } from '@shared/game/rules';
 import { TableActions } from './table.actions';
 import {
   blockedReasonOf,
@@ -68,7 +68,16 @@ export class TableStore implements OnDestroy {
   readonly party = computed<Character[]>(() => Object.values(this.table()?.state.characters ?? {}));
   readonly character = computed(() => characterOf(this.table()));
   readonly scene = computed(() => sceneFor(this.table(), this.campaign()));
-  readonly feedItems = computed(() => buildFeed(this.events(), this.talk(), this.turn()));
+  /** O feed da mesa; a nota de como foi resolvido sai com os atributos pelo nome ("Força 3"), não pelo código do sistema. */
+  readonly feedItems = computed(() => {
+    const items = buildFeed(this.events(), this.talk(), this.turn());
+    const attributes = this.rules()?.attributes ?? [];
+    return attributes.length === 0
+      ? items
+      : items.map((item) =>
+          item.type === 'event' ? { ...item, note: humanizeFormula(item.note, attributes) } : item,
+        );
+  });
   readonly blockedReason = computed(
     () =>
       connectionBlockOf(this.liveStatus()) ||

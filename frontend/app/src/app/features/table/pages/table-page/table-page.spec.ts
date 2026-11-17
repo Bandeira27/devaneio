@@ -330,6 +330,18 @@ describe('Mesa', () => {
     expect(root().querySelector('.feed__event[data-tone="danger"]')).not.toBeNull();
   });
 
+  it('a nota de como foi resolvido mostra os atributos pelo nome, não pelo código do sistema', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(
+      eventsView(3, [event(1, 1, { text: 'Bia testa Lutar: 2d6 [3, 4] + FOR 2 = 9 (AGI 1).' })]),
+    );
+    await settle();
+    const note = root().querySelector('.feed__note')?.textContent ?? '';
+    expect(note).toContain('Força 2');
+    expect(note).toContain('Agilidade 1');
+    expect(note).not.toMatch(/\bFOR\b|\bAGI\b/);
+  });
+
   it('os turnos passados desbotam e o atual fica nítido', async () => {
     const { root, events, settle } = await open();
     events('0').flush(eventsView(3, [event(0, 0), event(1, 2)]));
