@@ -6,7 +6,7 @@ falas de NPC e avisa de risco de spoiler. Quem aplica é o anfitrião, pelos com
 
 ## Decisões
 
-- **Só na mesa HTTP.** Sem comando no CLI e sem UI (o frontend ainda não tem cliente).
+- **Só na mesa HTTP.** Sem comando no CLI. A UI é o painel do anfitrião ([`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)).
 - **Pergunta avulsa, sem estado.** Cada chamada leva o contexto atual e a pergunta. O servidor não guarda nada.
 - **Contexto: a campanha inteira.** O anfitrião já vê tudo pela API, e só assim o copiloto sugere o próximo marco.
 - **Custo próprio.** Vaga e intervalo mínimo independentes do `/say`: o copiloto não segura os jogadores nem o contrário.

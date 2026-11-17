@@ -96,6 +96,7 @@
   --dv-icon-stroke: 1.5;
   --dv-size-pip: 0.625rem;
   --dv-size-dot: 0.5rem;
+  --dv-blur-secret: 0.3rem; /* a "tinta borrada" de um fato que o grupo ainda não conhece (painel do anfitrião) */
 
   /* Medidas de leitura e de folha */
   --dv-measure-page: 36rem;

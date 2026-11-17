@@ -408,6 +408,20 @@ describe('Mesa', () => {
     expect(root().querySelector('.feed__note')?.textContent).toContain('total 3');
   });
 
+  it('o link do painel do anfitrião só aparece para o anfitrião', async () => {
+    const host = await open(withCharacter({ role: 'host' }));
+    host.events('0').flush(eventsView(3));
+    await host.settle();
+    expect(host.root().querySelector('a[href$="/anfitriao"]')?.textContent).toContain('Anfitrião');
+  });
+
+  it('o jogador não vê o link do painel do anfitrião', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    expect(root().querySelector('a[href$="/anfitriao"]')).toBeNull();
+  });
+
   it('a nota de como foi resolvido sai em palavras de quem joga, sem códigos nem símbolos', async () => {
     const { root, events, settle } = await open();
     events('0').flush(

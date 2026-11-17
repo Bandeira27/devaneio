@@ -1,0 +1,43 @@
+<section class="dv-card dv-stack" aria-labelledby="fatos-titulo">
+  <h2 id="fatos-titulo" class="dv-section">Fatos</h2>
+  @if (store.host(); as host) {
+    @if (host.facts.length === 0) {
+      <p class="dv-note">Esta campanha não tem fatos.</p>
+    }
+    <ul class="list">
+      @for (f of host.facts; track f.id) {
+        <li class="item">
+          <div class="item__head">
+            @if (f.revealedTurn === null) {
+              <dv-badge tone="warn" icon="warn">Oculto</dv-badge>
+              <button
+                dvButton
+                type="button"
+                [dvBlocked]="store.actionBusy()"
+                [attr.aria-label]="labelOf(f.text)"
+                (click)="reveal(f.id, f.text)"
+              >
+                Revelar
+              </button>
+            } @else {
+              <dv-badge tone="ok" icon="ok" animate.enter="dv-enter"
+                >Revelado no turno {{ f.revealedTurn }}</dv-badge
+              >
+            }
+          </div>
+          <p
+            class="item__text"
+            [class.item__text--secret]="f.revealedTurn === null"
+            [attr.data-fact]="f.id"
+            tabindex="-1"
+          >
+            {{ f.text }}
+          </p>
+          @if (f.about) {
+            <p class="dv-note">Sobre {{ f.about }}</p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

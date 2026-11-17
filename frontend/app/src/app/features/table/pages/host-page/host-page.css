@@ -1,0 +1,40 @@
+/*
+ * Celular: uma coluna, na ordem de leitura e de foco (copiloto, ferramentas, marcos, fatos, NPCs e locais).
+ * Tela larga (64rem): duas colunas; a da esquerda tem o que o anfitrião usa o tempo todo (copiloto e ferramentas) e a
+ * da direita o que ele consulta (marcos, fatos, NPCs e locais). A página rola: não há rolagem aninhada.
+ */
+.host {
+  display: grid;
+  gap: var(--dv-space-4);
+  max-width: var(--dv-measure-table);
+  margin-inline: auto;
+}
+
+.host__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dv-space-2) var(--dv-space-4);
+}
+
+.host__bar .dv-title {
+  flex: 1 1 auto;
+}
+
+.host__layout,
+.host__column {
+  display: grid;
+  gap: var(--dv-space-4);
+  align-content: start;
+}
+
+@media (min-width: 64rem) {
+  .host {
+    max-width: var(--dv-measure-wide);
+  }
+
+  .host__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}

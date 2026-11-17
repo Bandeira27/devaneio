@@ -65,3 +65,62 @@ export function join(
   });
   return ['entrar', token('id', characterId), quote(clean), ...pairs].join(' ');
 }
+
+/** Um marco muda de estado à mão: `marco ativar|concluir|falhar <id>`. */
+export type BeatAction = 'ativar' | 'concluir' | 'falhar';
+
+/** A linha `marco <ação> <id>`. */
+export function beat(action: BeatAction, beatId: string): string {
+  return `marco ${action} ${token('marco', beatId)}`;
+}
+
+/** A linha `revelar <id do fato>`. */
+export function reveal(factId: string): string {
+  return `revelar ${token('fato', factId)}`;
+}
+
+/** O tamanho de uma linha de texto que o servidor aceita (comando, fala, pergunta ao copiloto): 500 caracteres. */
+export const MAX_LINE = 500;
+
+/** Limites só da tela (o motor não os impõe): a quantia de um dano ou cura à mão e o tamanho da fonte dele. */
+export const MAX_AMOUNT = 99;
+
+/** O tamanho máximo da fonte de um dano ou de uma cura ("a queda", "poção"). */
+export const MAX_SOURCE = 60;
+
+/** Os dois comandos de quantia do anfitrião. */
+export type AmountVerb = 'ferir' | 'curar';
+
+function amountLine(verb: AmountVerb, targetId: string, amount: number, source: string): string {
+  if (!Number.isInteger(amount) || amount < 1 || amount > MAX_AMOUNT) {
+    throw new CommandError(`quantia inválida: ${String(amount)}`);
+  }
+  const base = `${verb} ${token('alvo', targetId)} ${amount}`;
+  const clean = source.trim();
+  if (clean === '') {
+    return base;
+  }
+  if ([...clean].some((ch) => ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127)) {
+    throw new CommandError('a fonte não pode ter quebra de linha nem caracteres de controle');
+  }
+  if (clean.length > MAX_SOURCE) {
+    throw new CommandError(`a fonte passa de ${MAX_SOURCE} caracteres`);
+  }
+  return `${base} ${quote(clean)}`;
+}
+
+/** A linha `ferir <alvo> <quantia> ["fonte"]`. */
+export function hurt(targetId: string, amount: number, source = ''): string {
+  return amountLine('ferir', targetId, amount, source);
+}
+
+/** A linha `curar <alvo> <quantia> ["fonte"]`. */
+export function heal(targetId: string, amount: number, source = ''): string {
+  return amountLine('curar', targetId, amount, source);
+}
+
+/** A linha `fim`: encerra o turno. */
+export const END_TURN = 'fim';
+
+/** A linha `descansar`: cura o grupo e passa o turno. */
+export const REST = 'descansar';
