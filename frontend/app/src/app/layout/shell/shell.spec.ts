@@ -78,12 +78,14 @@ describe('Shell', () => {
 
 describe('Shell: folha de transição', () => {
   const visible = signal(false);
+  const busy = signal(false);
 
   function mount() {
     visible.set(false);
+    busy.set(false);
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     TestBed.overrideComponent(Shell, {
-      set: { providers: [{ provide: RoutePending, useValue: { visible } }] },
+      set: { providers: [{ provide: RoutePending, useValue: { visible, busy } }] },
     });
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
@@ -99,6 +101,7 @@ describe('Shell: folha de transição', () => {
   it('com espera, a folha cobre a página, a região fica ocupada e o leitor de tela ouve "Abrindo…"', () => {
     const { fixture, el } = mount();
     visible.set(true);
+    busy.set(true);
     fixture.detectChanges();
     expect(el.querySelector('.shell__cover')?.getAttribute('aria-hidden')).toBe('true');
     expect(el.querySelector('main')?.getAttribute('aria-busy')).toBe('true');

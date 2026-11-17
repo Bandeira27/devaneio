@@ -3,11 +3,12 @@ import {
   NavigationCancel,
   NavigationEnd,
   NavigationError,
+  NavigationSkipped,
   NavigationStart,
   Router,
 } from '@angular/router';
 import { Subject } from 'rxjs';
-import { MIN_VISIBLE_MS, RoutePending, SHOW_AFTER_MS } from './route-pending';
+import { RoutePending, SHOW_AFTER_MS } from './route-pending';
 
 describe('RoutePending', () => {
   let events: Subject<unknown>;
@@ -27,6 +28,13 @@ describe('RoutePending', () => {
   const start = () => events.next(new NavigationStart(1, '/x'));
   const end = () => events.next(new NavigationEnd(1, '/x', '/x'));
 
+  it('`busy` vale do começo ao fim de toda navegação, mesmo a rápida', () => {
+    start();
+    expect(pending.busy()).toBe(true);
+    end();
+    expect(pending.busy()).toBe(false);
+  });
+
   it('navegação rápida nunca mostra a folha', () => {
     start();
     vi.advanceTimersByTime(SHOW_AFTER_MS - 10);
@@ -35,23 +43,13 @@ describe('RoutePending', () => {
     expect(pending.visible()).toBe(false);
   });
 
-  it('navegação lenta mostra a folha depois do atraso e a segura pelo tempo mínimo', () => {
+  it('navegação lenta mostra a folha depois do atraso e a tira no instante em que acaba', () => {
     start();
     vi.advanceTimersByTime(SHOW_AFTER_MS + 1);
     expect(pending.visible()).toBe(true);
-    end(); // acabou logo depois de aparecer: a folha não pisca
-    vi.advanceTimersByTime(MIN_VISIBLE_MS - 50);
-    expect(pending.visible()).toBe(true);
-    vi.advanceTimersByTime(100);
+    end(); // a tela pronta não espera a folha
     expect(pending.visible()).toBe(false);
-  });
-
-  it('se já ficou o tempo mínimo, some assim que a navegação acaba', () => {
-    start();
-    vi.advanceTimersByTime(SHOW_AFTER_MS + MIN_VISIBLE_MS + 50);
-    end();
-    vi.advanceTimersByTime(1);
-    expect(pending.visible()).toBe(false);
+    expect(pending.busy()).toBe(false);
   });
 
   it.each([
@@ -59,22 +57,45 @@ describe('RoutePending', () => {
     ['com erro', () => new NavigationError(1, '/x', new Error('falhou'))],
   ])('navegação %s também encerra a espera', (_nome, make) => {
     start();
-    vi.advanceTimersByTime(SHOW_AFTER_MS + MIN_VISIBLE_MS + 10);
+    vi.advanceTimersByTime(SHOW_AFTER_MS + 10);
     expect(pending.visible()).toBe(true);
     events.next(make());
-    vi.advanceTimersByTime(1);
+    expect(pending.visible()).toBe(false);
+    expect(pending.busy()).toBe(false);
+  });
+
+  it('navegação ignorada (mesma URL) também encerra a espera', () => {
+    start();
+    events.next(new NavigationSkipped(1, '/x', 'igual', 0));
+    expect(pending.busy()).toBe(false);
+  });
+
+  it('uma navegação em cima da outra, ainda sem folha, conta o atraso desde a última', () => {
+    start();
+    vi.advanceTimersByTime(SHOW_AFTER_MS - 10);
+    start();
+    vi.advanceTimersByTime(SHOW_AFTER_MS - 10);
+    expect(pending.visible()).toBe(false);
+    vi.advanceTimersByTime(20);
+    expect(pending.visible()).toBe(true);
+  });
+
+  it('ao destruir, a folha pendente não aparece depois', () => {
+    start();
+    TestBed.resetTestingModule(); // destrói o serviço: o temporizador tem de ser limpo
+    vi.advanceTimersByTime(SHOW_AFTER_MS * 2);
     expect(pending.visible()).toBe(false);
   });
 
-  it('uma navegação em cima da outra mantém a folha em vez de piscar', () => {
+  it('um redirecionamento (cancela e recomeça) conta o atraso de novo, sem deixar a folha presa', () => {
     start();
     vi.advanceTimersByTime(SHOW_AFTER_MS + 1);
-    end();
-    start(); // antes do tempo mínimo acabar
-    vi.advanceTimersByTime(MIN_VISIBLE_MS * 2);
+    events.next(new NavigationCancel(1, '/x', 'redirecionado'));
+    start();
+    expect(pending.visible()).toBe(false);
+    vi.advanceTimersByTime(SHOW_AFTER_MS + 1);
     expect(pending.visible()).toBe(true);
     end();
-    vi.advanceTimersByTime(1);
     expect(pending.visible()).toBe(false);
   });
 });

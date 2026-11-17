@@ -12,7 +12,6 @@ export class InviteStore {
 
   readonly entry = computed(() => this.session.get(this.tableId()));
   readonly code = computed(() => this.entry()?.invite ?? null);
-  readonly isHost = computed(() => this.entry()?.role === 'host' && this.code() !== null);
   readonly origin = computed(() => normalizeOrigin(this.addressText()));
   readonly addressError = computed(() =>
     this.origin() === null ? 'Escreva um endereço como 192.168.0.5:8765.' : '',

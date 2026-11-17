@@ -32,8 +32,7 @@
   height: var(--dv-size-dot);
   border-radius: var(--dv-radius-round);
   background: var(--dv-text-muted);
-  animation: dv-pulse var(--dv-duration-narrative) var(--dv-ease-standard)
-    var(--dv-iterations-pending);
+  animation: dv-pulse var(--dv-duration-slow) var(--dv-ease-standard) var(--dv-iterations-pending);
 }
 
 .pending i:nth-child(2) {

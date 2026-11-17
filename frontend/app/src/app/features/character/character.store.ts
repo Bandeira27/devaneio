@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { RulesView, TableView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
-import { ApiFailure, messageOf } from '@core/api/api-failure';
+import { isRetryable, messageOf } from '@core/api/api-failure';
 import { withStaleRetry } from '@core/api/stale-retry';
 import { SessionStore } from '@core/session/session-store';
 import { CommandError, join } from '@shared/game/commands';
@@ -71,7 +71,7 @@ export class CharacterStore {
     } catch (error) {
       this.session.forgetIfLost(tableId, error);
       this.loadError.set(messageOf(error));
-      this.loadRetryable.set(!(error instanceof ApiFailure) || error.retryable);
+      this.loadRetryable.set(isRetryable(error));
       this.state.set('failed');
     }
   }

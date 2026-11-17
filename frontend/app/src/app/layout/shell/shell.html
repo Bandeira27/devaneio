@@ -8,7 +8,7 @@
     class="shell__main"
     id="conteudo"
     tabindex="-1"
-    [attr.aria-busy]="pending.visible() ? 'true' : null"
+    [attr.aria-busy]="pending.busy() ? 'true' : null"
   >
     <router-outlet />
     @if (pending.visible()) {

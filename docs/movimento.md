@@ -29,21 +29,21 @@ Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o es
 
 ## Catálogo
 
-| Movimento                            | Onde                                                 | Pergunta | Duração e curva                                                                               |
-| ------------------------------------ | ---------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------- |
-| Pressionar                           | botões                                               | 2, 5     | `instant`, `standard`                                                                         |
-| Estado de campo e controle           | foco, erro, `hover`                                  | 1        | `fast`, `standard`                                                                            |
-| Entrada e saída de aviso e pendência | avisos, "enviando…"                                  | 1, 2, 3  | `base` ao entrar, `fast` ao sair                                                              |
-| Folha e diálogo                      | ações                                                | 3, 5     | `slow`, `emphasized` (sai mais rápido)                                                        |
-| Expandir e recolher                  | detalhes, cena                                       | 1, 3     | `base` (sem animar `height`)                                                                  |
-| **Tinta nova**                       | evento ou fala que chegou **depois** do carregamento | 1, 3, 4  | `narrative`, `decelerate`                                                                     |
-| Envelhecimento                       | opacidade por idade                                  | 4        | `slow` ao mudar o turno                                                                       |
-| Mudança de hp                        | pontos de vida                                       | 1, 2     | `base`                                                                                        |
-| Cópia feita                          | campo de cópia                                       | 2        | `fast`                                                                                        |
-| Aviso "N novas"                      | feed da mesa                                         | 2, 5     | `base` ao entrar, `fast` ao sair                                                              |
-| Troca de rota                        | páginas                                              | 1, 3     | `fast` sai, `base` entra (`withViewTransitions`): só a página "vira", o cabeçalho fica parado |
-| Folha de transição                   | troca de tela que demora                             | 1, 2     | `base` ao entrar, `fast` ao sair; só depois de 150 ms de espera e por no mínimo 300 ms        |
-| Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça, só enquanto pendente                                                        |
+| Movimento                            | Onde                                                 | Pergunta | Duração e curva                                                                                         |
+| ------------------------------------ | ---------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| Pressionar                           | botões                                               | 2, 5     | `instant`, `standard`                                                                                   |
+| Estado de campo e controle           | foco, erro, `hover`                                  | 1        | `fast`, `standard`                                                                                      |
+| Entrada e saída de aviso e pendência | avisos, "enviando…"                                  | 1, 2, 3  | `base` ao entrar, `fast` ao sair                                                                        |
+| Folha e diálogo                      | ações                                                | 3, 5     | `slow`, `emphasized` (sai mais rápido)                                                                  |
+| Expandir e recolher                  | detalhes, cena                                       | 1, 3     | `base` (sem animar `height`)                                                                            |
+| **Tinta nova**                       | evento ou fala que chegou **depois** do carregamento | 1, 3, 4  | `narrative`, `decelerate`                                                                               |
+| Envelhecimento                       | opacidade por idade                                  | 4        | `slow` ao mudar o turno                                                                                 |
+| Mudança de hp                        | pontos de vida                                       | 1, 2     | `base`                                                                                                  |
+| Cópia feita                          | campo de cópia                                       | 2        | `fast`                                                                                                  |
+| Aviso "N novas"                      | feed da mesa                                         | 2, 5     | `base` ao entrar, `fast` ao sair                                                                        |
+| Troca de rota                        | páginas                                              | 1, 3     | `fast` sai, `base` entra (`withViewTransitions`): só a página "vira", o cabeçalho fica parado           |
+| Folha de transição                   | troca de tela que demora                             | 1, 2     | `base` ao entrar, `fast` ao sair; só depois de 150 ms de espera, e some no instante em que a tela chega |
+| Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça, só enquanto pendente                                                                  |
 
 Estado atual do app: pressionar e estados de botão, entrada e saída de avisos e pendências (`dv-enter`/`dv-leave`), folha (`dv-sheet-in`/`-out`, com fundo no mesmo ritmo), mudança de hp, cópia, pendência (`dv-pulse`), troca de rota com a página virando e a folha de transição e a tinta nova (`reveal` do feed, só no que chegou depois do carregamento) existem. Os tokens ainda sem uso estão numa lista de espera no `design-lint.spec.ts`, que só pode encolher.
 

@@ -104,7 +104,7 @@ describe('a regra de ouro, provada em CSS de exemplo', () => {
 const source0 = (file: string): string => readFileSync(file, 'utf-8');
 
 /** Tokens declarados para os PRs de componentes e de telas, ainda sem consumidor: a lista só pode encolher. */
-const WAITING = ['--dv-z-overlay'];
+const WAITING: string[] = [];
 
 describe('o estilo do app só consome tokens', () => {
   const tokensCss = readFileSync(join(src, 'styles/tokens.css'), 'utf-8');

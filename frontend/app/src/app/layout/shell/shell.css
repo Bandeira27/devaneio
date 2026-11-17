@@ -83,6 +83,14 @@
 .shell__cover {
   position: absolute;
   inset: 0;
-  z-index: var(--dv-z-sticky);
+  /* Acima de tudo que a página tem (o dock e a lateral da mesa são sticky). */
+  z-index: var(--dv-z-overlay);
   background: var(--dv-surface-0);
+  pointer-events: none; /* nunca engole o toque: se a tela já chegou, ela já responde */
+}
+
+/* O conteúdo da folha acompanha a rolagem: numa página rolada ela ainda mostra que algo está abrindo. */
+.shell__cover dv-state {
+  position: sticky;
+  top: 0;
 }

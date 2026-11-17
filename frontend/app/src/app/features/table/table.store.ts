@@ -8,7 +8,7 @@ import type {
 } from '@contract/api_responses';
 import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '@core/api/api-client';
-import { ApiFailure, messageOf } from '@core/api/api-failure';
+import { isRetryable, messageOf } from '@core/api/api-failure';
 import { LiveFeed, LiveStatus } from '@core/live/live-feed';
 import { TableLive } from '@core/live/table-live';
 import { SessionStore } from '@core/session/session-store';
@@ -120,7 +120,7 @@ export class TableStore implements OnDestroy {
     } catch (error) {
       this.session.forgetIfLost(tableId, error);
       this.loadError.set(messageOf(error));
-      this.loadRetryable.set(!(error instanceof ApiFailure) || error.retryable);
+      this.loadRetryable.set(isRetryable(error));
       this.state.set('failed');
     }
   }

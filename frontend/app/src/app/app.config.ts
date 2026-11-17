@@ -25,6 +25,7 @@ export const appConfig: ApplicationConfig = {
       withHashLocation(),
       withComponentInputBinding(),
       // As telas são poucas e pequenas: baixa todas em segundo plano, e a troca de tela quase nunca espera o código.
+      // Só baixa: nenhum módulo de feature pode chamar a rede ao ser carregado (a rede é de `ngOnInit` e das stores).
       withPreloading(PreloadAllModules),
       // Troca de tela: só a página "vira" (o cabeçalho tem nome próprio e fica parado); com movimento reduzido, ou sem quadros sendo desenhados (aba escondida), troca na hora.
       withViewTransitions({
