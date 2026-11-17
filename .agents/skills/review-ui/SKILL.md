@@ -16,6 +16,7 @@ escreve a mudança também deve passar por ela antes de pedir revisão.
 ## Checklist
 
 **Fluxo**
+
 - [ ] O caso comum cabe em poucos toques (ação frequente: no máximo 3).
 - [ ] Ação que gasta a vez ou não se desfaz pede confirmação **dentro** do fluxo, ou oferece desfazer.
 - [ ] Rótulos iguais em todo lugar (botão = título da folha); verbo no imperativo.
@@ -23,9 +24,11 @@ escreve a mudança também deve passar por ela antes de pedir revisão.
 - [ ] Nenhum beco sem saída: erro e vazio têm ação (tentar de novo, voltar, criar).
 
 **Estados** (os que fizerem sentido)
+
 - [ ] Carregando, vazio, erro, em envio (rótulo mantido, botão não clicável), bloqueado **com motivo ligado** (`aria-describedby`), sem conexão.
 
 **Acessibilidade**
+
 - [ ] Um `h1` por tela; landmarks; ordem do HTML = ordem visual e de foco.
 - [ ] Foco devolvido quando o elemento focado some (fechar folha, trocar de etapa, dispensar aviso, desfazer).
 - [ ] Nome acessível em todo controle; ícone sozinho tem `aria-label`.
@@ -34,12 +37,24 @@ escreve a mudança também deve passar por ela antes de pedir revisão.
 - [ ] Teclado: tudo alcançável, Esc fecha o que é modal, setas nos grupos de escolha.
 
 **Tokens e movimento**
+
 - [ ] Nenhum valor literal de cor, duração, curva, sombra, `z-index`.
 - [ ] Cada movimento responde a uma das 5 perguntas da rule 12 (diga qual na descrição do PR); só `opacity`, `transform`, cor.
 - [ ] Com `prefers-reduced-motion` o estado final vale na hora e nada desliza.
 
+**Composição e hierarquia**
+
+- [ ] Tela larga: a informação ocupa o espaço em painéis lado a lado (contexto | tarefa; cena | história | ficha), não numa coluna de celular esticada; o cabeçalho e o conteúdo se alinham ao mesmo contêiner.
+- [ ] O que é primário tem peso (ação do turno, "Continuar", o link do convite); o apoio e o técnico ficam recolhidos ou discretos.
+- [ ] Rosa só em ação e seleção; quem fala em tinta; hierarquia por escala, caixa e superfície (as fontes só têm peso 400).
+
+**Transição**
+
+- [ ] Trocar de tela não mostra tela errada nem salto de layout; espera longa mostra a folha de transição e nunca bloqueia o toque.
+
 **Matriz visual** (navegador embutido ou `npm run storybook`, com o painel visível)
-- [ ] 375×812, 768×1024 e 1280×800; sem rolagem horizontal em 320 px; texto a 200 % sem perda.
+
+- [ ] 375×812, 768×1024, 1300×800 e 1440+ (três painéis da mesa); sem rolagem horizontal em 320 px; texto a 200 % sem perda.
 - [ ] Telas: mesa (feed longo, ação pendente, bloqueada, sem personagem, desconectada, partida encerrada), home (com e sem mesas), convite, entrar, personagem, as folhas.
 
 ## Armadilhas de verificação
