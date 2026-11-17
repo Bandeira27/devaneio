@@ -22,7 +22,7 @@
 
 /*
  * Memória por idade: `--fade` vai de 0 (agora) a 1 (o mais antigo). Cada papel desbota até o seu piso: o texto de
- * leitura até --dv-fade-floor-text; o que é cor de tom (nota, falante, dano, cura) até --dv-fade-floor-quiet, que é
+ * leitura até --dv-fade-floor-text; o que é cor de tom (nota, falante e o selo de desfecho) até --dv-fade-floor-quiet, que é
  * onde essas cores ainda passam no contraste (tools/tokens.spec.ts).
  */
 .feed__event,
@@ -47,16 +47,6 @@
   line-height: var(--dv-leading-narration);
 }
 
-.feed__event[data-tone='danger'] .feed__narration {
-  color: var(--dv-danger);
-}
-
-.feed__event[data-tone='good'] .feed__narration {
-  color: var(--dv-ok);
-}
-
-.feed__event[data-tone='danger'] .feed__narration,
-.feed__event[data-tone='good'] .feed__narration,
 .feed__note,
 .feed__speaker {
   opacity: calc(1 - var(--fade) * (1 - var(--dv-fade-floor-quiet)));

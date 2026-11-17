@@ -28,7 +28,7 @@ Nenhuma tela fica sem saída: erro e vazio sempre oferecem uma ação.
 
 ## Desfecho no feed
 
-Teste, ataque, dano e cura mostram o desfecho num **selo** que abre a nota mecânica: ícone, texto e tom (nunca só a cor), não clicável. O servidor entrega só o grau (`EventView.outcome`); a nota perde o desfecho que o selo já diz, para o leitor de tela ouvir uma vez. Evento sem desfecho não tem selo.
+Teste, ataque, dano e cura mostram o desfecho num **selo** que abre a nota mecânica: ícone, texto e tom (nunca só a cor), não clicável. O servidor entrega só o grau (`EventView.outcome`); o servidor tira da nota o desfecho que o selo já diz, para o leitor de tela ouvir uma vez. A cor do desfecho fica só no selo: a narração não se colore. Evento sem desfecho não tem selo.
 
 ## Composição para a tela larga
 

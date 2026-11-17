@@ -55,7 +55,7 @@ sempre pelos tokens `shadow-*`. Nada de gradiente de cor.
 
 Narração e títulos em IM Fell English (itálico nos títulos, ≥ 15 px: a fonte é irregular em tamanho pequeno), notas
 mecânicas em Special Elite, controles na fonte do sistema. Informação operacional ("já agiu", "fora de combate") não
-vai em nota fraca: vira selo com texto. O **selo de desfecho** abre a nota mecânica de cada teste, ataque, dano e cura no feed ("Sucesso", "Erro", "Dano", "Cura"...): ícone, texto e tom, não clicável, e a nota perde o desfecho que ele já diz.
+vai em nota fraca: vira selo com texto. O **selo de desfecho** abre a nota mecânica de cada teste, ataque, dano e cura no feed ("Sucesso", "Errou", "Ferido", "Curado"...): ícone, texto e tom, não clicável, e a cor do desfecho fica só nele.
 
 ## Layout e responsividade
 

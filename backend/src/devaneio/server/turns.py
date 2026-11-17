@@ -9,7 +9,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from devaneio.engine import GameStatus, game_status, npc_ids_at
+from devaneio.engine import (
+    INCAPACITATED_SUFFIX,
+    OUTCOME_LABELS,
+    GameStatus,
+    game_status,
+    npc_ids_at,
+)
 from devaneio.game import (
     CommandError,
     GameOverError,
@@ -21,6 +27,7 @@ from devaneio.game import (
     parse_line,
     split_actor,
 )
+from devaneio.rules import CheckOutcome
 from devaneio.schema import Campaign, Event, GameState
 
 from . import policy
@@ -126,6 +133,24 @@ def outcome_of(event: Event) -> Outcome | None:
     return None
 
 
+def text_of(event: Event) -> str:
+    """A linha mecânica do evento sem o desfecho que o selo já diz.
+
+    Um teste termina em ``, <grau>`` e um dano que derruba em ``, fora de combate``. Quando o evento
+    tem selo (``outcome_of``), o servidor tira esse fim: o cliente mostra o selo e a nota sem
+    repetir o desfecho (o leitor de tela o ouve uma vez). O log do motor e o comando ``log`` ficam
+    com a linha inteira.
+    """
+    if outcome_of(event) is None:
+        return event.text
+    suffix = ""
+    if event.kind == "check":
+        suffix = f", {OUTCOME_LABELS[CheckOutcome(event.data['outcome'])]}"
+    elif event.kind == "damage" and event.data.get("incapacitated") is True:
+        suffix = INCAPACITATED_SUFFIX
+    return event.text.removesuffix(suffix)
+
+
 def events_view(
     session: Session,
     since: int,
@@ -147,7 +172,7 @@ def events_view(
             index=index,
             turn=event.turn,
             kind=event.kind,
-            text=event.text,
+            text=text_of(event),
             prose=session.narrator.narrate(event, index, state),
             narration=cached.get(index),
             outcome=outcome_of(event),

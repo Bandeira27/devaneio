@@ -57,7 +57,7 @@ move o grupo todo e gasta a ação de quem mandou: como no motor, é decisão da
 atual (os outros respondem como alvo inexistente). O anfitrião, ao agir por um jogador, gasta a ação dele. O log que o
 jogador lê (`GET .../events`) **não traz eventos sobre NPC que o grupo não via na hora** (o que o anfitrião faz com `ferir`
 num NPC escondido): o `index` de cada evento é o original, então a lista pode ter buracos, e `revision` conta todos os
-eventos (pode subir sem evento novo para o jogador). `EventView.outcome` é só o desfecho para o selo do feed, igual para todos: o grau de um teste (`critical_failure`, `failure`, `success`, `critical_success`), de um ataque (`critical_miss`, `miss`, `hit`, `critical_hit`), `damage` ou `incapacitated` num dano, `heal` numa cura; `null` nos demais eventos. O servidor o deriva do evento e nunca expõe com ele dado, margem nem total. O comando `log` é do anfitrião. Linhas de comando têm até 500
+eventos (pode subir sem evento novo para o jogador). `EventView.outcome` é só o desfecho para o selo do feed, igual para todos: o grau de um teste (`critical_failure`, `failure`, `success`, `critical_success`), de um ataque (`critical_miss`, `miss`, `hit`, `critical_hit`), `damage` ou `incapacitated` num dano, `heal` numa cura; `null` nos demais eventos. O servidor o deriva do evento e nunca expõe com ele dado, margem nem total. Com `outcome`, o `text` vem sem o desfecho no fim (", sucesso", ", fora de combate"): o selo o diz. O comando `log` é do anfitrião. Linhas de comando têm até 500
 caracteres e passam por NFKC; controle e invisíveis dão `400`, e `entrar` aceita até 30 argumentos de até 40 caracteres.
 
 `revision` é o número de eventos que o cliente viu: comando que muda a partida com revisão velha recebe `409` (leia

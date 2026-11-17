@@ -10,9 +10,6 @@ export const FADE_FLOOR = 0.65;
 /** O quanto cada turno de idade desbota. */
 export const FADE_PER_TURN = 0.1;
 
-/** O tom de um evento no feed: normal, de dano ou de cura. */
-export type FeedTone = 'neutral' | 'danger' | 'good';
-
 /** O selo de desfecho de um evento: texto, tom e ícone (o desfecho nunca vai só na cor). */
 export interface FeedSeal {
   label: string;
@@ -32,20 +29,14 @@ export const SEALS: Record<FeedOutcome, FeedSeal> = {
   success: { label: 'Sucesso', ...GOOD },
   failure: { label: 'Falha', ...BAD },
   critical_failure: { label: 'Falha crítica', ...BAD },
-  critical_hit: { label: 'Acerto crítico', ...GOOD },
-  hit: { label: 'Acerto', ...GOOD },
-  miss: { label: 'Erro', ...BAD },
-  critical_miss: { label: 'Erro crítico', ...BAD },
-  damage: { label: 'Dano', ...BAD },
+  critical_hit: { label: 'Acertou em cheio', ...GOOD },
+  hit: { label: 'Acertou', ...GOOD },
+  miss: { label: 'Errou', ...BAD },
+  critical_miss: { label: 'Errou feio', ...BAD },
+  damage: { label: 'Ferido', ...BAD },
   incapacitated: { label: 'Fora de combate', ...BAD },
-  heal: { label: 'Cura', ...GOOD },
+  heal: { label: 'Curado', ...GOOD },
 };
-
-/**
- * O que o motor escreve no fim da linha mecânica e o selo já diz: o grau de um teste (", sucesso crítico") e a queda
- * (", fora de combate"). Tirado da nota para o leitor de tela ouvir o desfecho uma vez só.
- */
-const SEALED_SUFFIX = /, (?:sucesso crítico|sucesso|falha crítica|falha|fora de combate)$/;
 
 /** O marcador de início de um turno. */
 export interface FeedTurn {
@@ -64,11 +55,10 @@ export interface FeedEvent {
   kind: string;
   /** O parágrafo do LLM se houver, senão a prosa da gramática. */
   narration: string;
-  /** A linha mecânica, como nota de margem, sem o desfecho que o selo já diz. */
+  /** A linha mecânica, como nota de margem (o servidor já tirou dela o desfecho que o selo diz). */
   note: string;
   /** O desfecho em selo, ou `null` onde o evento não tem um. */
   seal: FeedSeal | null;
-  tone: FeedTone;
   /** De 0 (agora) a 1 (o mais antigo): cada papel do texto desbota até o seu piso (feed-list.css). */
   fade: number;
 }
@@ -85,8 +75,6 @@ export interface FeedTalk {
 
 /** Um item do feed: marcador de turno, evento ou fala. */
 export type FeedItem = FeedTurn | FeedEvent | FeedTalk;
-
-const TONES: Record<string, FeedTone> = { damage: 'danger', heal: 'good', rest: 'good' };
 
 /** Opacidade por idade em turnos: 1 na cena atual, cai `FADE_PER_TURN` por turno, nunca abaixo do piso. */
 export function ageOpacity(age: number, floor = FADE_FLOOR): number {
@@ -151,9 +139,8 @@ export function buildFeed(
       turn: event.turn,
       kind: event.kind,
       narration: event.narration ?? event.prose,
-      note: outcome === null ? event.text : event.text.replace(SEALED_SUFFIX, ''),
+      note: event.text,
       seal: outcome === null ? null : SEALS[outcome],
-      tone: TONES[event.kind] ?? 'neutral',
       fade: ageFade(currentTurn - event.turn),
     });
   }

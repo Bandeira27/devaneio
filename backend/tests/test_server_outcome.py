@@ -10,7 +10,13 @@ from devaneio.game import execute, new_game
 from devaneio.rules import CheckOutcome
 from devaneio.schema import Event
 from devaneio.server.models import EventView
-from devaneio.server.turns import _ATTACK_OUTCOMES, _CHECK_OUTCOMES, events_view, outcome_of
+from devaneio.server.turns import (
+    _ATTACK_OUTCOMES,
+    _CHECK_OUTCOMES,
+    events_view,
+    outcome_of,
+    text_of,
+)
 
 
 def event(kind, **data):
@@ -119,13 +125,27 @@ def test_a_hidden_npc_event_reaches_the_player_neither_with_text_nor_with_outcom
     assert 2 not in player
 
 
-def test_the_engine_text_still_ends_with_the_words_the_front_strips_from_the_note(session):
-    # O front tira da nota ", <desfecho>" (feed.ts: SEALED_SUFFIX): se o motor mudar esses
-    # textos, o selo e a nota passariam a repetir o desfecho sem aviso.
-
+def test_the_text_comes_without_the_outcome_the_badge_already_says(session):
     session, _ = execute(session, "bia: testar lutar normal")
     check = session.state.events[-1]
-    assert check.text.endswith(f", {OUTCOME_LABELS[CheckOutcome(check.data['outcome'])]}")
-    assert set(OUTCOME_LABELS.values()) == {"falha crítica", "falha", "sucesso", "sucesso crítico"}
+    label = OUTCOME_LABELS[CheckOutcome(check.data["outcome"])]
+    assert check.text.endswith(f", {label}")  # o motor continua escrevendo a linha inteira
+    sent = events_view(session, 0, role="host")[-1]
+    assert sent.outcome is not None
+    assert sent.text == check.text.removesuffix(f", {label}")
     session, _ = execute(session, 'ferir ferreiro 99 "x"')
-    assert session.state.events[-1].text.endswith(", fora de combate")
+    down = session.state.events[-1]
+    assert down.text.endswith(", fora de combate")
+    assert events_view(session, 0, role="host")[-1].text == down.text.removesuffix(
+        ", fora de combate"
+    )
+
+
+@pytest.mark.parametrize("kind", ["move", "heal", "rest"])
+def test_text_is_untouched_where_there_is_no_suffix_to_strip(kind):
+    assert text_of(Event(turn=1, kind=kind, text="a, falha", data={})) == "a, falha"
+    assert text_of(Event(turn=1, kind="damage", text="a, hp 5 → 3", data={})) == "a, hp 5 → 3"
+
+
+def test_the_set_of_suffixes_is_the_engine_labels():
+    assert set(OUTCOME_LABELS.values()) == {"falha crítica", "falha", "sucesso", "sucesso crítico"}

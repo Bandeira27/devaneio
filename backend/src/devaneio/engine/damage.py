@@ -16,6 +16,9 @@ from devaneio.schema import Campaign, Character, Event, GameState, NpcState
 from .errors import EngineError
 from .lookup import combatant, npc_locations
 
+# O fim da linha de um dano que derruba: a apresentação o tira quando mostra o selo de desfecho.
+INCAPACITATED_SUFFIX = ", fora de combate"
+
 TargetKind = Literal["character", "npc"]
 
 
@@ -140,7 +143,7 @@ def _hit(
     if incapacitated and isinstance(target, NpcState):
         target.alive = False
 
-    text = f"{text}, hp {hp_before} → {hp_after}" + (", fora de combate" if incapacitated else "")
+    text = f"{text}, hp {hp_before} → {hp_after}" + (INCAPACITATED_SUFFIX if incapacitated else "")
     new_state.rng_draws = rng_draws
     new_state.events.append(
         Event(
