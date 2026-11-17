@@ -141,6 +141,28 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     }
   });
 
+  it('a descrição da cena fica sempre à vista, sem "Ver a cena" nem accordion', async () => {
+    const campaign = {
+      locations: [
+        {
+          id: 'vila',
+          name: 'Vila de Pedra',
+          description: 'Casas de pedra agarradas à encosta.',
+          connections: [],
+          private_notes: [],
+        },
+      ],
+      npcs: [],
+    } as unknown as Campaign;
+    const { root, events, settle } = await open(withCharacter(), campaign);
+    events('0').flush(eventsView(3));
+    await settle();
+    const scene = root().querySelector('[aria-label="Cena"]') as HTMLElement;
+    expect(scene.textContent).toContain('Casas de pedra agarradas à encosta.');
+    expect(scene.querySelector('details')).toBeNull();
+    expect(scene.textContent).not.toContain('Ver a cena');
+  });
+
   it('tocar numa saída da cena abre a confirmação de Ir já no destino tocado; nada é enviado antes de confirmar', async () => {
     const campaign = {
       locations: [
@@ -266,7 +288,7 @@ describe('Mesa', () => {
     expect(events('20').request.params.get('since')).toBe('120');
   });
 
-  it('o feed mostra a narração, a nota mecânica em detalhes e a fala do mestre', async () => {
+  it('o feed mostra a narração, a nota mecânica sempre à vista (sem accordion) e a fala do mestre', async () => {
     const { root, events, settle } = await open();
     events('0').flush(
       eventsView(
@@ -282,6 +304,9 @@ describe('Mesa', () => {
     expect(text).toContain('O vento muda de direção.');
     expect(text).not.toContain('prosa 2'); // a narração do LLM substitui a prosa do evento
     expect(text).toContain('mecânica 2');
+    expect(root().querySelectorAll('.feed__note').length).toBe(2); // uma nota por evento, direto no texto
+    expect(root().querySelector('dv-feed-list details')).toBeNull();
+    expect(text).not.toContain('Como foi resolvido');
     expect(text).toContain('Mestre');
     expect(text).toContain('Cuidado com o altar.');
     expect(root().querySelectorAll('.feed__turn').length).toBe(2);

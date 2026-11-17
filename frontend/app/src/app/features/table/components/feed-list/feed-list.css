@@ -63,12 +63,10 @@
 }
 
 .feed__note {
-  display: block;
-  margin-top: var(--dv-space-1);
-}
-
-.feed__note p {
-  margin: 0 0 var(--dv-space-2);
+  margin: var(--dv-space-1) 0 var(--dv-space-2);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
 }
 
 .feed__talk {

@@ -36,9 +36,7 @@
             }
             {{ item.narration }}
           </p>
-          <dv-disclosure class="feed__note" label="Como foi resolvido">
-            <p>{{ item.note }}</p>
-          </dv-disclosure>
+          <p class="feed__note">{{ item.note }}</p>
         </article>
       }
       @case ('talk') {

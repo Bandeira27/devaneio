@@ -127,8 +127,8 @@ entram no build do app (`tsconfig.app.json`) nem exigem JSDoc.
 
 Pensada pela tarefa: quem joga lê a história o tempo todo e age uma vez por turno.
 
-- **Celular:** uma coluna. Situação do turno ("Sua vez de agir", "Você já agiu · falta Zed"), cena compacta (descrição
-  recolhida em "Ver a cena") e grupo, depois a história; a **barra de ações fica fixa no pé**: as ações do turno (Ir,
+- **Celular:** uma coluna. Situação do turno ("Sua vez de agir", "Você já agiu · falta Zed"), cena (com a descrição sempre à vista, sem accordion)
+  e grupo, depois a história; a **barra de ações fica fixa no pé**: as ações do turno (Ir,
   Testar, Atacar e, com LLM, Falar) em cima e, numa linha de apoio menor, Ficha e Comando. A mesa mede a barra e publica
   `--dv-dock-height` na raiz; o `scroll-padding-bottom` do documento faz o fim da história e o que ganha foco pararem
   acima dela. Quem leu mais acima vê "N novas" quando chega algo; tocar leva ao fim e o foco vai para a história.
@@ -137,7 +137,8 @@ Pensada pela tarefa: quem joga lê a história o tempo todo e age uma vez por tu
 - **Tela muito larga (≥ 90rem): três painéis.** Cena e grupo à esquerda, a história no meio, e à direita a **ficha de quem
   joga sempre visível** (`dv-character-card`, o mesmo conteúdo da folha "Ficha") com as ações presas logo abaixo; o botão
   "Ficha" some. O contêiner do app cresce com o terceiro painel (`--dv-measure-wide` muda em 90rem).
-- **A história:** o turno é um cabeçalho de capítulo (ornamento e o número em itálico); a narração é o protagonista.
+- **A história:** o turno é um cabeçalho de capítulo (ornamento e o número em itálico); a narração é o protagonista, e a
+  linha de como foi resolvido fica logo abaixo dela, sempre à vista, em tinta e fonte de nota (sem accordion).
   As **saídas da cena** são botões: tocar abre a folha de `Ir` já na confirmação do destino.
 - **Ordem do HTML = ordem de leitura e de foco** (situação e cena, história, minha ficha, ações), sem `order` para reordenar. O
   "Pular para as ações" (`.dv-skip`, visível só com foco) leva ao primeiro botão que ainda age. O `.shell` usa
