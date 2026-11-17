@@ -16,6 +16,18 @@ Como o app do jogador se comporta, para que telas diferentes se sintam iguais. O
 
 Nenhuma tela fica sem saída: erro e vazio sempre oferecem uma ação.
 
+## Transição entre telas
+
+- O cabeçalho é a âncora: fica parado e só a página "vira" (sai para a esquerda, entra da direita, um deslocamento curto).
+- Se a troca demora mais de 150 ms (código ou dados), uma **folha de transição** cobre a página que estava saindo, com a
+  marca e "Abrindo…", e fica por no mínimo 300 ms para não piscar. A região principal ganha `aria-busy` e o leitor de tela
+  ouve "Abrindo…". Troca rápida nunca mostra a folha.
+- As telas são pré-carregadas em segundo plano (`withPreloading`).
+- **Nenhuma tela errada, nem por um instante:** quem já entrou na mesa não vê o convite do convidado; quem não é anfitrião
+  não vê a tela do convite. Essas decisões são `canActivate` da rota, não redirecionamento depois de desenhar.
+- O carregamento tem a forma da tela pronta (dentro do mesmo contêiner) e diz o que está abrindo ("Abrindo o seu personagem…").
+- Erro que não melhora tentando de novo (mesa que sumiu, sessão vencida) oferece só **Voltar ao início**.
+
 ## Botões
 
 - O rótulo é um verbo no imperativo e é **o mesmo** em todo lugar: o botão que abre uma folha dá o título dela

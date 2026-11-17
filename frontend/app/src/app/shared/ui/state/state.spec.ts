@@ -12,6 +12,9 @@ class Host {
   readonly kind = signal<StateKind>('empty');
 }
 
+@Component({ imports: [DvState], template: `<dv-state kind="loading" cover>Abrindo…</dv-state>` })
+class CoverHost {}
+
 describe('DvState', () => {
   async function render() {
     const fixture = TestBed.createComponent(Host);
@@ -41,6 +44,15 @@ describe('DvState', () => {
     expect(el.hasAttribute('aria-busy')).toBe(false); // um status que nunca vira "não ocupado" não seria anunciado
     expect(el.querySelector('.pending')).not.toBeNull();
     expect(el.querySelector('dv-icon')).toBeNull();
+  });
+
+  it('com `cover` mostra a marca e ganha a forma de abertura de tela; sem, não', async () => {
+    const fixture = TestBed.createComponent(CoverHost);
+    await fixture.whenStable();
+    const el = (fixture.nativeElement as HTMLElement).querySelector('dv-state') as HTMLElement;
+    expect(el.classList.contains('state--cover')).toBe(true);
+    expect(el.querySelector('.mark')?.textContent).toBe('Devaneio');
+    expect(el.getAttribute('role')).toBe('status');
   });
 
   it('mostra a mensagem e a ação projetada', async () => {

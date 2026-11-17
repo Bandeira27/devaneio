@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, TitleStrategy, provideRouter } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { PageTitle } from './page-title';
+import { RoutePending } from './route-pending';
 import { Shell } from './shell';
 
 @Component({ template: '<h1>Entrar na mesa</h1><p>texto</p>' })
@@ -72,5 +73,37 @@ describe('Shell', () => {
     expect(TestBed.inject(Title).getTitle()).toBe('Convite · Devaneio');
     await router.navigateByUrl('/b');
     expect(TestBed.inject(Title).getTitle()).toBe('Devaneio');
+  });
+});
+
+describe('Shell: folha de transição', () => {
+  const visible = signal(false);
+
+  function mount() {
+    visible.set(false);
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.overrideComponent(Shell, {
+      set: { providers: [{ provide: RoutePending, useValue: { visible } }] },
+    });
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    return { fixture, el: fixture.nativeElement as HTMLElement };
+  }
+
+  it('sem espera, não há folha e a região principal não está ocupada', () => {
+    const { el } = mount();
+    expect(el.querySelector('.shell__cover')).toBeNull();
+    expect(el.querySelector('main')?.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('com espera, a folha cobre a página, a região fica ocupada e o leitor de tela ouve "Abrindo…"', () => {
+    const { fixture, el } = mount();
+    visible.set(true);
+    fixture.detectChanges();
+    expect(el.querySelector('.shell__cover')?.getAttribute('aria-hidden')).toBe('true');
+    expect(el.querySelector('main')?.getAttribute('aria-busy')).toBe('true');
+    expect(el.querySelector('[role="status"].dv-visually-hidden')?.textContent).toContain(
+      'Abrindo…',
+    );
   });
 });

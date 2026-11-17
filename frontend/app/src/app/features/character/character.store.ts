@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { RulesView, TableView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
-import { messageOf } from '@core/api/api-failure';
+import { ApiFailure, messageOf } from '@core/api/api-failure';
 import { withStaleRetry } from '@core/api/stale-retry';
 import { SessionStore } from '@core/session/session-store';
 import { CommandError, join } from '@shared/game/commands';
@@ -22,6 +22,8 @@ export class CharacterStore {
   readonly tableId = signal('');
   readonly state = signal<LoadState>('loading');
   readonly loadError = signal('');
+  /** Vale tentar de novo (rede, tempo, servidor)? Mesa que sumiu ou sessão vencida não melhoram tentando. */
+  readonly loadRetryable = signal(true);
   readonly table = signal<TableView | null>(null);
   readonly rules = signal<RulesView | null>(null);
   private readonly taken = signal<string[]>([]);
@@ -43,6 +45,7 @@ export class CharacterStore {
     const tableId = this.tableId();
     this.state.set('loading');
     this.loadError.set('');
+    this.loadRetryable.set(true);
     try {
       const [table, rules, campaign] = await Promise.all([
         firstValueFrom(this.api.table(tableId)),
@@ -68,6 +71,7 @@ export class CharacterStore {
     } catch (error) {
       this.session.forgetIfLost(tableId, error);
       this.loadError.set(messageOf(error));
+      this.loadRetryable.set(!(error instanceof ApiFailure) || error.retryable);
       this.state.set('failed');
     }
   }

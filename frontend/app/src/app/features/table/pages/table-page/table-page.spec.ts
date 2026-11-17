@@ -378,6 +378,55 @@ describe('Mesa', () => {
     expect(root().textContent).toContain('Esta mesa não existe mais neste servidor.');
   });
 
+  it('mesa que sumiu ao abrir não oferece "Tentar de novo", só voltar; falha de rede oferece', async () => {
+    const gone = await setup(url);
+    gone.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p2',
+      role: 'player',
+      title: 'x',
+      savedAt: 1,
+    });
+    gone.http
+      .expectOne(`/tables/${TABLE_ID}`)
+      .flush(
+        { error: { code: 'table_not_found', message: 'x' } },
+        { status: 404, statusText: 'x' },
+      );
+    gone.http
+      .match(() => true)
+      .forEach((r) =>
+        r.flush(
+          { error: { code: 'table_not_found', message: 'x' } },
+          { status: 404, statusText: 'x' },
+        ),
+      );
+    await gone.settle();
+    const buttons = Array.from(gone.root().querySelectorAll('button')).map((b) =>
+      b.textContent?.trim(),
+    );
+    expect(buttons).not.toContain('Tentar de novo');
+    expect(gone.root().textContent).toContain('Voltar ao início');
+  });
+
+  it('falha de rede ao abrir a mesa oferece "Tentar de novo"', async () => {
+    const app = await setup(url);
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p2',
+      role: 'player',
+      title: 'x',
+      savedAt: 1,
+    });
+    app.http.expectOne(`/tables/${TABLE_ID}`).error(new ProgressEvent('error'));
+    app.http.match(() => true).forEach((r) => r.error(new ProgressEvent('error')));
+    await app.settle();
+    const buttons = Array.from(app.root().querySelectorAll('button')).map((b) =>
+      b.textContent?.trim(),
+    );
+    expect(buttons).toContain('Tentar de novo');
+  });
+
   it('falha ao abrir a mesa mostra o erro e esquece o token inválido', async () => {
     const app = await setup(url);
     app.session.save(TABLE_ID, {

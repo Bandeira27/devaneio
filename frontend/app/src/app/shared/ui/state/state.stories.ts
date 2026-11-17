@@ -10,6 +10,10 @@ export const Carregando: StoryObj = story(
   [DvState],
   `<dv-state kind="loading">Abrindo a mesa…</dv-state>`,
 );
+export const Abertura: StoryObj = story(
+  [DvState],
+  `<dv-state kind="loading" cover>Abrindo o seu personagem…</dv-state>`,
+);
 export const Vazio: StoryObj = story(
   [DvState],
   `<dv-state>Nada aconteceu ainda. A história começa quando alguém agir.</dv-state>`,

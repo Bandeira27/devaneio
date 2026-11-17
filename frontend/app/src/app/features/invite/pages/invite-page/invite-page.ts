@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvCopyField } from '@shared/ui/copy-field/copy-field';
 import { DvField } from '@shared/ui/field/field';
@@ -22,7 +22,6 @@ export class InvitePage implements OnInit {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(InviteStore);
-  private readonly router = inject(Router);
 
   constructor() {
     effect(() => this.store.tableId.set(this.tableId()));
@@ -30,9 +29,5 @@ export class InvitePage implements OnInit {
 
   ngOnInit(): void {
     this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
-    // Só o anfitrião tem o código; quem chegou aqui sem ele vai direto para a mesa.
-    if (!this.store.isHost()) {
-      void this.router.navigate(['/mesa', this.tableId(), 'personagem']);
-    }
   }
 }

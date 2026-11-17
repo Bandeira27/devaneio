@@ -8,19 +8,24 @@ import {
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { DvState } from '@shared/ui/state/state';
+import { RoutePending } from './route-pending';
 
 /**
  * O shell do app: link de pular, cabeçalho com a marca e o contêiner por onde as páginas entram. Depois de cada
- * navegação o foco vai para o `h1` da nova tela, para o leitor de tela dizer onde o usuário chegou.
+ * navegação o foco vai para o `h1` da nova tela, para o leitor de tela dizer onde o usuário chegou. Quando a troca de
+ * tela demora (`RoutePending`), uma folha de transição cobre a página que está saindo, em vez de deixá-la parada.
  */
 @Component({
   selector: 'dv-shell',
-  imports: [RouterLink, RouterOutlet],
+  imports: [RouterLink, RouterOutlet, DvState],
+  providers: [RoutePending],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Shell {
+  protected readonly pending = inject(RoutePending);
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private waiting: ReturnType<typeof setTimeout> | undefined;
 
