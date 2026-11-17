@@ -127,7 +127,7 @@ export function hostViewOf(
       finishBlock:
         current === 'active'
           ? ''
-          : `Só um marco ativo pode ser concluído ou falhar; este está ${beatStatusText(current)}.`,
+          : `Só um marco ativo conclui ou falha; este está ${beatStatusText(current)}.`,
     };
   });
 
