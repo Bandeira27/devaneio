@@ -1,10 +1,12 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import {
+  PreloadAllModules,
   TitleStrategy,
   provideRouter,
   withComponentInputBinding,
   withHashLocation,
+  withPreloading,
   withViewTransitions,
 } from '@angular/router';
 import { apiInterceptor } from '@core/api/api.interceptor';
@@ -22,7 +24,10 @@ export const appConfig: ApplicationConfig = {
       routes,
       withHashLocation(),
       withComponentInputBinding(),
-      // Cross-fade entre telas; com movimento reduzido, ou sem quadros sendo desenhados (aba escondida), troca na hora.
+      // As telas são poucas e pequenas: baixa todas em segundo plano, e a troca de tela quase nunca espera o código.
+      // Só baixa: nenhum módulo de feature pode chamar a rede ao ser carregado (a rede é de `ngOnInit` e das stores).
+      withPreloading(PreloadAllModules),
+      // Troca de tela: só a página "vira" (o cabeçalho tem nome próprio e fica parado); com movimento reduzido, ou sem quadros sendo desenhados (aba escondida), troca na hora.
       withViewTransitions({
         onViewTransitionCreated: ({ transition }) => {
           if (

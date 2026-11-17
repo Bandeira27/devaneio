@@ -68,6 +68,15 @@ const FRIENDLY: Readonly<Record<string, string>> = {
   internal: 'O servidor falhou. Tente de novo em instantes.',
 };
 
+/**
+ * Vale tentar de novo depois? Falha da API diz por `retryable` (rede, tempo, servidor); mesa que sumiu (404) e sessão
+ * vencida (401) não melhoram tentando. O que não é falha da API (um erro de programação) deixa tentar, por falta de
+ * melhor saída.
+ */
+export function isRetryable(error: unknown): boolean {
+  return !(error instanceof ApiFailure) || error.retryable;
+}
+
 /** "regra quebrada" → "Regra quebrada." (a frase do servidor, apresentável). */
 function sentence(text: string): string {
   const trimmed = text.trim();

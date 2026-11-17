@@ -3,12 +3,16 @@
 
   @switch (store.state()) {
     @case ('loading') {
-      <dv-state kind="loading">Abrindo a mesa…</dv-state>
+      <dv-state kind="loading" cover>Abrindo o seu personagem…</dv-state>
     }
     @case ('failed') {
       <dv-state kind="error">
         {{ store.loadError() }}
-        <button dvStateAction dvButton type="button" (click)="store.load()">Tentar de novo</button>
+        @if (store.loadRetryable()) {
+          <button dvStateAction dvButton type="button" (click)="store.load()">
+            Tentar de novo
+          </button>
+        }
       </dv-state>
       <a dvButton routerLink="/">Voltar ao início</a>
     }

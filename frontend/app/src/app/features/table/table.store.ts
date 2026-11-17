@@ -8,7 +8,7 @@ import type {
 } from '@contract/api_responses';
 import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '@core/api/api-client';
-import { messageOf } from '@core/api/api-failure';
+import { isRetryable, messageOf } from '@core/api/api-failure';
 import { LiveFeed, LiveStatus } from '@core/live/live-feed';
 import { TableLive } from '@core/live/table-live';
 import { SessionStore } from '@core/session/session-store';
@@ -40,6 +40,8 @@ export class TableStore implements OnDestroy {
   readonly tableId = signal('');
   readonly state = signal<LoadState>('loading');
   readonly loadError = signal('');
+  /** Vale tentar de novo (rede, tempo, servidor)? Mesa que sumiu ou sessão vencida não melhoram tentando. */
+  readonly loadRetryable = signal(true);
   readonly rules = signal<RulesView | null>(null);
   private readonly snapshot = new TableSnapshot(this.api, () => this.tableId());
   private readonly actions = new TableActions(this.api, () => this.tableId(), this.snapshot);
@@ -100,6 +102,7 @@ export class TableStore implements OnDestroy {
     const tableId = this.tableId();
     this.state.set('loading');
     this.loadError.set('');
+    this.loadRetryable.set(true);
     try {
       const [table, rules, campaign] = await Promise.all([
         firstValueFrom(this.api.table(tableId)),
@@ -117,6 +120,7 @@ export class TableStore implements OnDestroy {
     } catch (error) {
       this.session.forgetIfLost(tableId, error);
       this.loadError.set(messageOf(error));
+      this.loadRetryable.set(isRetryable(error));
       this.state.set('failed');
     }
   }

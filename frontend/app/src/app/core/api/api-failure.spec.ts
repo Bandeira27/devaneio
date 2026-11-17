@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApiFailure, messageOf } from './api-failure';
+import { ApiFailure, isRetryable, messageOf } from './api-failure';
 
 function response(status: number, error: unknown): HttpErrorResponse {
   return new HttpErrorResponse({ status, error });
@@ -81,5 +81,18 @@ describe('messageOf', () => {
     expect(messageOf(new ApiFailure(400, 'novo_codigo', 'algo novo'))).toBe('Algo novo.');
     expect(messageOf(new ApiFailure(400, 'novo_codigo', 'Já tem ponto.'))).toBe('Já tem ponto.');
     expect(messageOf(new Error('x'))).toBe('Algo deu errado. Tente de novo.');
+  });
+});
+
+describe('isRetryable', () => {
+  it('rede e servidor valem tentar de novo; mesa sumida e sessão vencida, não', () => {
+    expect(isRetryable(new ApiFailure(0, 'network', 'x'))).toBe(true);
+    expect(isRetryable(new ApiFailure(503, 'internal', 'x'))).toBe(true);
+    expect(isRetryable(new ApiFailure(404, 'table_not_found', 'x'))).toBe(false);
+    expect(isRetryable(new ApiFailure(401, 'unauthorized', 'x'))).toBe(false);
+  });
+
+  it('o que não é falha da API deixa tentar', () => {
+    expect(isRetryable(new Error('bug'))).toBe(true);
   });
 });

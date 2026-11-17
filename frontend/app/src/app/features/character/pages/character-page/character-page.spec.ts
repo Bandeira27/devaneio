@@ -211,5 +211,27 @@ describe('Personagem', () => {
     );
     expect(app.session.get(TABLE_ID)).toBeNull();
     expect(app.root().querySelector('a[href="/"]')).not.toBeNull();
+    const buttons = Array.from(app.root().querySelectorAll('button')).map((b) =>
+      b.textContent?.trim(),
+    );
+    expect(buttons).not.toContain('Tentar de novo'); // sessão vencida não melhora tentando
+  });
+
+  it('falha de rede ao abrir oferece "Tentar de novo"', async () => {
+    const app = await setup(url);
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p2',
+      role: 'player',
+      title: 'x',
+      savedAt: 1,
+    });
+    app.http.expectOne(`/tables/${TABLE_ID}`).error(new ProgressEvent('error'));
+    app.http.match(() => true).forEach((r) => r.error(new ProgressEvent('error')));
+    await app.settle();
+    const buttons = Array.from(app.root().querySelectorAll('button')).map((b) =>
+      b.textContent?.trim(),
+    );
+    expect(buttons).toContain('Tentar de novo');
   });
 });

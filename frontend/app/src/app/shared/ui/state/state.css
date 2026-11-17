@@ -32,8 +32,7 @@
   height: var(--dv-size-dot);
   border-radius: var(--dv-radius-round);
   background: var(--dv-text-muted);
-  animation: dv-pulse var(--dv-duration-narrative) var(--dv-ease-standard)
-    var(--dv-iterations-pending);
+  animation: dv-pulse var(--dv-duration-slow) var(--dv-ease-standard) var(--dv-iterations-pending);
 }
 
 .pending i:nth-child(2) {
@@ -42,4 +41,20 @@
 
 .pending i:nth-child(3) {
   animation-delay: calc(var(--dv-stagger) * 2);
+}
+
+/* Abertura de tela (e a folha de transição do shell): centralizada na altura da tela, sem saltar quando a tela chega. */
+:host(.state--cover) {
+  justify-items: center;
+  align-content: start;
+  min-height: 60dvh;
+  padding-top: var(--dv-space-8);
+  text-align: center;
+}
+
+.mark {
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-title);
+  font-style: italic;
+  color: var(--dv-text);
 }

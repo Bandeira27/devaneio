@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   OnInit,
   effect,
@@ -53,6 +55,8 @@ export class TablePage implements OnInit {
 
   private readonly documentTitle = inject(Title);
   private readonly feed = viewChild(FeedList);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
   private readonly actions = viewChild(ActionDock);
   private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
@@ -68,6 +72,11 @@ export class TablePage implements OnInit {
     effect(() => this.store.tableId.set(this.tableId()));
     this.keepDockHeight();
     effect(() => {
+      // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
+      this.store.state();
+      afterNextRender(() => this.refocusHeading(), { injector: this.injector });
+    });
+    effect(() => {
       const campaign = this.store.title();
       if (campaign) {
         this.documentTitle.setTitle(`${campaign} · Devaneio`);
@@ -78,6 +87,17 @@ export class TablePage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
     void this.store.load();
+  }
+
+  private refocusHeading(): void {
+    const active = document.activeElement;
+    if (active === null || active === document.body || !this.host.nativeElement.contains(active)) {
+      const heading = this.host.nativeElement.querySelector('h1');
+      if (heading && (active === null || active === document.body)) {
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      }
+    }
   }
 
   /** Leva a tela ao fim da história e tira o aviso de novidades. */

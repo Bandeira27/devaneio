@@ -3,7 +3,24 @@
   <header class="shell__bar">
     <a class="shell__brand" routerLink="/">Devaneio</a>
   </header>
-  <main #main class="shell__main" id="conteudo" tabindex="-1">
+  <main
+    #main
+    class="shell__main"
+    id="conteudo"
+    tabindex="-1"
+    [attr.aria-busy]="pending.busy() ? 'true' : null"
+  >
     <router-outlet />
+    @if (pending.visible()) {
+      <div
+        class="shell__cover"
+        aria-hidden="true"
+        animate.enter="dv-enter"
+        animate.leave="dv-leave"
+      >
+        <dv-state kind="loading" cover>Abrindo…</dv-state>
+      </div>
+    }
   </main>
+  <p class="dv-visually-hidden" role="status">{{ pending.visible() ? 'Abrindo…' : '' }}</p>
 </div>

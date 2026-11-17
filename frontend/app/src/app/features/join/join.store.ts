@@ -22,11 +22,6 @@ export class JoinStore {
   readonly joining = signal(false);
   readonly error = signal('');
 
-  /** Já entrou nesta mesa por este navegador: vai direto, sem pedir o convite de novo. */
-  alreadyIn(): boolean {
-    return this.session.get(this.tableId()) !== null;
-  }
-
   setName(value: string): void {
     this.name.set(value);
     this.nameError.set('');

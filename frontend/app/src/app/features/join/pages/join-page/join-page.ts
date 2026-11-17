@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
@@ -22,7 +21,6 @@ export class JoinPage implements OnInit {
   readonly invite = input<string>();
 
   protected readonly store = inject(JoinStore);
-  private readonly router = inject(Router);
 
   constructor() {
     effect(() => {
@@ -34,8 +32,5 @@ export class JoinPage implements OnInit {
   ngOnInit(): void {
     this.store.tableId.set(this.tableId()); // os inputs já chegaram; o effect só roda depois
     this.store.code.set(this.invite() ?? '');
-    if (this.store.alreadyIn()) {
-      void this.router.navigate(['/mesa', this.tableId()]);
-    }
   }
 }
