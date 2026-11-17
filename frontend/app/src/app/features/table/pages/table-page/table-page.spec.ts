@@ -141,6 +141,23 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     }
   });
 
+  it('a ficha do painel nasce aberta e pode ser recolhida e reaberta', async () => {
+    const { root, events, settle } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    const details = root().querySelector('.table__mine details') as HTMLDetailsElement;
+    expect(details.open).toBe(true);
+    expect(details.querySelector('summary')?.textContent).toContain('Bia'); // o rótulo é o nome do personagem
+    details.open = false;
+    details.dispatchEvent(new Event('toggle'));
+    await settle();
+    expect(details.open).toBe(false);
+    details.open = true;
+    details.dispatchEvent(new Event('toggle'));
+    await settle();
+    expect(details.open).toBe(true);
+  });
+
   it('a descrição da cena fica sempre à vista, sem "Ver a cena" nem accordion', async () => {
     const campaign = {
       locations: [

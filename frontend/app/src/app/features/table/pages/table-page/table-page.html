@@ -95,8 +95,9 @@
         @if (store.character(); as mine) {
           @if (store.rules(); as rules) {
             <section class="table__mine dv-card dv-card--page" aria-label="Minha ficha">
-              <h2 class="dv-section">{{ mine.name }}</h2>
-              <dv-character-card [character]="mine" [rules]="rules" />
+              <dv-disclosure [label]="mine.name" [(open)]="mineOpen">
+                <dv-character-card [character]="mine" [rules]="rules" />
+              </dv-disclosure>
             </section>
           }
         }

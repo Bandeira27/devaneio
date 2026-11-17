@@ -71,6 +71,8 @@ export class TablePage implements OnInit {
     const status = this.store.liveStatus();
     return status === 'expired' || status === 'gone' ? connectionBlockOf(status) : '';
   });
+  /** A ficha do painel da mesa larga está aberta? Só vale na sessão: ao reabrir a mesa ela volta aberta. */
+  protected readonly mineOpen = signal(true);
   /** Quantos itens do feed chegaram enquanto se lia mais acima. */
   protected readonly unseen = signal(0);
 
