@@ -56,3 +56,31 @@
     display: none;
   }
 }
+
+/*
+ * Altura baixa (celular em paisagem, ou zoom alto): as ações do turno e as de apoio dividem a mesma linha e os avisos
+ * ficam curtos, para a barra fixa não tomar a tela. O ponto de quebra é fixo porque CSS não aceita token em `@media`.
+ */
+@media (max-height: 30rem) {
+  .dock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .dock > * {
+    flex: 1 1 100%;
+  }
+
+  .dock > .dock__main {
+    flex: 3 1 0;
+  }
+
+  .dock > .dock__minor {
+    flex: 1 1 0;
+  }
+
+  .dock dv-notice {
+    max-height: 4rem;
+  }
+}
