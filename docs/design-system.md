@@ -47,7 +47,7 @@ de foco e texto desabilitado ≥ 3:1. O que desbota é medido **por papel** sobr
 ## Elevação
 
 O Desbotado é plano. Quem **repousa** se separa por superfície (0 a 3) e por contorno: o **pontilhado** é papel e
-informação, o **sólido fino** é o que se toca (botões e o primário cheio de rosa). O selo é informação: sem caixa nem fundo, só ícone,
+informação, o **sólido fino** é o que se toca (botões, campos de texto, cartões de escolha e o primário cheio de rosa). O selo é informação: sem caixa nem fundo, só ícone,
 texto em caixa-alta e um filete pontilhado, para nunca parecer um botão. **Sombra** só em quem flutua (folha, diálogo) e no estado pressionado,
 sempre pelos tokens `shadow-*`. Nada de gradiente de cor.
 
