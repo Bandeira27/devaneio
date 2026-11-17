@@ -8,6 +8,7 @@ const event = (index: number): EventView => ({
   text: `t${index}`,
   prose: `p${index}`,
   narration: null,
+  outcome: null,
 });
 const talk = (seq: number): TalkView => ({ seq, after: 0, to: 'bia', text: `f${seq}` });
 

@@ -57,7 +57,15 @@ describe('TableActions', () => {
   it('com a resposta trazendo eventos, a tela mostra o feed e não a resposta', async () => {
     const { http, actions } = setup();
     const done = actions.run('ir floresta');
-    const event = { index: 1, turn: 0, kind: 'move', text: 'm', prose: 'p', narration: null };
+    const event = {
+      index: 1,
+      turn: 0,
+      kind: 'move',
+      text: 'm',
+      prose: 'p',
+      narration: null,
+      outcome: null,
+    };
     http.expectOne(`/tables/${TABLE_ID}/commands`).flush(ok({ events: [event], text: 'Floresta' }));
     await done;
     expect(actions.reply()).toBe('');

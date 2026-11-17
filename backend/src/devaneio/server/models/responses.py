@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import Field
 
 from devaneio.engine import GameStatus
@@ -22,6 +24,21 @@ class TableCreated(StrictModel):
     table: TableView
 
 
+Outcome = Literal[
+    "critical_failure",
+    "failure",
+    "success",
+    "critical_success",
+    "critical_miss",
+    "miss",
+    "hit",
+    "critical_hit",
+    "damage",
+    "incapacitated",
+    "heal",
+]
+
+
 class EventView(StrictModel):
     """Um evento do log como o cliente o recebe.
 
@@ -29,6 +46,10 @@ class EventView(StrictModel):
     o parágrafo do LLM para o lote de uma ação de texto livre, só no primeiro evento visível do
     lote (nos outros é ``None``). Os dois são exibição, nunca voltam ao estado, e são iguais para
     todos os jogadores.
+
+    ``outcome`` é só o desfecho para o selo do feed: o grau de um teste (``success``...), de um
+    ataque (``hit``...), ``damage``/``incapacitated`` num dano e ``heal`` numa cura. ``None`` nos
+    demais eventos. Nunca leva dado, margem nem total: esses ficam em ``data``.
     """
 
     index: int
@@ -37,6 +58,7 @@ class EventView(StrictModel):
     text: str
     prose: str
     narration: str | None = None
+    outcome: Outcome | None = None
 
 
 class TalkView(StrictModel):

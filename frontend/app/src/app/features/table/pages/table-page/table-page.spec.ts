@@ -10,6 +10,7 @@ const event = (index: number, turn: number, over: Partial<EventView> = {}): Even
   text: `mecânica ${index}`,
   prose: `prosa ${index}`,
   narration: null,
+  outcome: null,
   ...over,
 });
 const eventsView = (
