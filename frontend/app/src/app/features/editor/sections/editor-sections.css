@@ -1,0 +1,24 @@
+/* As seções do editor: um cartão por seção, campos em pilha e as ligações como caixas de marcar. */
+.checks {
+  display: grid;
+  gap: var(--dv-space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.checks legend {
+  padding: 0;
+  margin-bottom: var(--dv-space-1);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--dv-space-2);
+  min-height: var(--dv-touch);
+  font-size: var(--dv-text-ui);
+}

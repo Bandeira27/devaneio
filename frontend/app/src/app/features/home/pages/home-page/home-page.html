@@ -138,5 +138,8 @@
         </form>
       </dv-disclosure>
     </section>
+    @if (store.editorAvailable()) {
+      <a dvButton routerLink="/editor">Editor de campanhas</a>
+    }
   </div>
 </div>

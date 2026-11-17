@@ -1,0 +1,66 @@
+/*
+ * Celular: uma coluna; a barra de gravar fica fixa no pé da tela. Tela larga: a coluna fica mais larga.
+ */
+.editor {
+  display: grid;
+  gap: var(--dv-space-4);
+  max-width: var(--dv-measure-table);
+  margin-inline: auto;
+}
+
+.editor__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dv-space-2) var(--dv-space-4);
+}
+
+.editor__bar .dv-title {
+  flex: 1 1 auto;
+}
+
+.editor__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2);
+}
+
+/* A seção aberta: contorno mais firme e o texto pleno (a cor não é a única marca: o `aria-current` também vale). */
+.editor__current {
+  border-width: var(--dv-border-width-strong);
+  color: var(--dv-text);
+}
+
+.editor__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2) var(--dv-space-4);
+}
+
+.editor__status:empty {
+  display: none;
+}
+
+.editor__problems {
+  margin: var(--dv-space-1) 0 0;
+  padding-left: var(--dv-space-4);
+  overflow-wrap: anywhere;
+}
+
+.editor__save {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--dv-z-sticky);
+  display: grid;
+  gap: var(--dv-space-2);
+  justify-items: start;
+  padding: var(--dv-space-3) 0 max(var(--dv-space-3), env(safe-area-inset-bottom));
+  border-top: var(--dv-border-width) dotted var(--dv-line);
+  background: var(--dv-surface-0);
+}
+
+@media (min-width: 64rem) {
+  .editor {
+    max-width: var(--dv-measure-feed);
+  }
+}
