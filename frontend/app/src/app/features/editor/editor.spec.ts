@@ -512,4 +512,157 @@ describe('Editor de campanhas: edição', () => {
       'Ainda não há NPCs. Crie um em NPCs.',
     );
   });
+
+  describe('prévia', () => {
+    const PREVIEW = {
+      player: {
+        id: 'c',
+        title: 'A Sombra do Vale',
+        premise: 'Um culto desperta.',
+        location: {
+          id: 'vila',
+          name: 'Vila',
+          description: 'Casas de pedra.',
+          exits: [{ id: 'floresta', name: 'Floresta' }],
+        },
+        npcs: [{ id: 'ferreiro', name: 'Bram' }],
+        beats: [],
+        facts: [],
+      },
+      llm: '{"turno": 0, "publico": true}',
+      llm_secrets: '{"turno": 0, "segredos": ["SEGREDO-X"]}',
+      copilot_chars: 12000,
+      copilot_limit: 60000,
+    };
+
+    async function openPreview(preview: object = PREVIEW) {
+      const app = await open('/editor/c/previa', { campaign: { ...hostCampaign, id: 'c' } });
+      await sleep();
+      app.http.expectOne('/editor/preview').flush(preview);
+      await app.settle();
+      return app;
+    }
+
+    it('mostra o que o jogador vê, o que o LLM recebe sem e com segredos e o tamanho do copiloto', async () => {
+      const { root, text } = await openPreview();
+      expect(text()).toContain('A Sombra do Vale');
+      expect(text()).toContain('Começa em Vila');
+      expect(text().replace(/\s+/g, ' ')).toContain('Saídas: Floresta');
+      expect(text().replace(/\s+/g, ' ')).toContain('Quem está lá: Bram');
+      expect(text()).toContain('12.000 de 60.000 caracteres (20%)');
+      expect(text()).toContain('Cabe com folga');
+      const code = Array.from(root().querySelectorAll('pre')).map((p) => p.textContent);
+      expect(code[0]).toContain('"publico": true');
+      expect(code[0]).not.toContain('SEGREDO-X');
+      expect(code[1]).toContain('SEGREDO-X');
+      expect(text()).toContain('--segredos-no-llm');
+    });
+
+    it('perto do limite e acima dele o aviso diz o que acontece, em texto e ícone', async () => {
+      const near = await openPreview({ ...PREVIEW, copilot_chars: 50000 });
+      expect(near.text()).toContain('Perto do limite');
+      expect(near.text()).toContain('menos eventos recentes');
+    });
+
+    it('acima do limite diz "Passa do limite"', async () => {
+      const over = await openPreview({ ...PREVIEW, copilot_chars: 70000 });
+      expect(over.text()).toContain('Passa do limite');
+      expect(over.text()).toContain('recusa a pergunta');
+    });
+
+    it('com erros na campanha não pede a prévia e diz por quê', async () => {
+      const report: ValidationReport = {
+        ok: false,
+        errors: [{ path: '', message: 'algo está errado' }],
+        findings: [],
+      };
+      const { http, text } = await open('/editor/c/previa', {
+        campaign: { ...hostCampaign, id: 'c' },
+        report,
+      });
+      await sleep();
+      http.expectNone('/editor/preview');
+      expect(text()).toContain('A prévia precisa de uma campanha sem erros');
+    });
+
+    it('depois de uma edição a prévia fica marcada como antiga e "Atualizar" pede outra', async () => {
+      const { root, http, click, type, answer, settle, button, text } = await openPreview();
+      await click('a[href="/editor/c"]');
+      await type('dv-overview-section input[type="text"]', 'Outro título');
+      await answer();
+      await click('a[href="/editor/c/previa"]');
+      expect(text()).toContain('Esta prévia é de antes das últimas alterações');
+      (button('Atualizar prévia') as HTMLButtonElement).click();
+      await settle();
+      http
+        .expectOne('/editor/preview')
+        .flush({ ...PREVIEW, player: { ...PREVIEW.player, title: 'Outro título' } });
+      await settle();
+      expect(root().textContent).not.toContain('antes das últimas alterações');
+      expect(root().textContent).toContain('Outro título');
+    });
+
+    it('editar enquanto a prévia é pedida deixa a prévia marcada como antiga quando ela chega', async () => {
+      const { http, root, harness, settle, answer } = await open('/editor/c', {
+        campaign: { ...hostCampaign, id: 'c' },
+      });
+      // Com a prévia no ar, `settle` esperaria por ela: navega e edita direto, só rodando a detecção.
+      (root().querySelector('a[href="/editor/c/previa"]') as HTMLElement).click();
+      await sleep();
+      harness.detectChanges();
+      const pending = http.expectOne('/editor/preview');
+      (root().querySelector('a[href="/editor/c"]') as HTMLElement).click();
+      await sleep();
+      harness.detectChanges();
+      const title = root().querySelector(
+        'dv-overview-section input[type="text"]',
+      ) as HTMLInputElement;
+      title.value = 'Mudei no meio';
+      title.dispatchEvent(new Event('input'));
+      harness.detectChanges();
+      pending.flush(PREVIEW);
+      await settle();
+      await answer();
+      (root().querySelector('a[href="/editor/c/previa"]') as HTMLElement).click();
+      await settle();
+      expect(root().textContent).toContain('Esta prévia é de antes das últimas alterações');
+    });
+
+    it('voltar à aba da prévia não pede de novo (a prévia já está na memória)', async () => {
+      const { http, click, settle, text } = await openPreview();
+      await click('a[href="/editor/c"]');
+      await click('a[href="/editor/c/previa"]');
+      await settle();
+      http.expectNone('/editor/preview');
+      expect(text()).toContain('A Sombra do Vale');
+    });
+
+    it('os limites: 80% já é "perto" e o teto exato ainda não é "passa"', async () => {
+      const at80 = await openPreview({ ...PREVIEW, copilot_chars: 48000 });
+      expect(at80.text()).toContain('Perto do limite');
+      expect(at80.text()).not.toContain('Passa do limite');
+    });
+
+    it('99,6% aparece como 99% (para baixo), não como 100%', async () => {
+      const near = await openPreview({ ...PREVIEW, copilot_chars: 59760 });
+      expect(near.text()).toContain('(99%)');
+    });
+
+    it('falha ao pedir a prévia mostra o erro com "Tentar de novo"', async () => {
+      const { http, settle, text, button } = await open('/editor/c/previa', {
+        campaign: { ...hostCampaign, id: 'c' },
+      });
+      await sleep();
+      http
+        .expectOne('/editor/preview')
+        .flush({ error: { code: 'internal', message: 'x' } }, { status: 500, statusText: 'x' });
+      await settle();
+      expect(text()).toContain('O servidor falhou');
+      (button('Tentar de novo') as HTMLButtonElement).click();
+      await settle();
+      http.expectOne('/editor/preview').flush(PREVIEW);
+      await settle();
+      expect(text()).toContain('A Sombra do Vale');
+    });
+  });
 });

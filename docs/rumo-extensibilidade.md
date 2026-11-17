@@ -1,8 +1,8 @@
 # Rumo: o Devaneio como plataforma de campanhas extensível
 
-**Status: direção definida em 2026-11-15; os passos 1 a 3 estão implementados.** Este documento registra o que o dono
+**Status: direção definida em 2026-11-15; os passos 1 a 3 e o 5 (editor de campanhas, só de campanha) estão implementados; o 4 (ações declarativas) segue em aberto.** Este documento registra o que o dono
 decidiu e o que ficou por detalhar. A regra 9 do [AGENTS.md](../AGENTS.md) liberou a UI da mesa (desenho em
-[`desenho-ui.md`](desenho-ui.md)); o que depende de abri-la de novo (o editor de campanhas) está marcado. Os princípios do produto continuam no [README](../README.md).
+[`desenho-ui.md`](desenho-ui.md)); o editor de campanhas foi liberado e está implementado (ver o passo 5). Os princípios do produto continuam no [README](../README.md).
 
 ## A ideia
 
@@ -49,7 +49,7 @@ O risco a reduzir: o modelo repetir a quem não deve o que recebeu. Nada elimina
 a informação**. Em ordem de valor:
 
 1. **Público e privado por campo.** Todo elemento tem campo público e notas privadas (generaliza `secrets`).
-   Por padrão o LLM só recebe o público. O editor mostra uma **prévia do que o modelo vai ver**.
+   Por padrão o LLM só recebe o público. O editor mostra uma **prévia do que o modelo vai ver**, sem e com segredos (implementado).
 2. **O motor decide as revelações.** Um segredo vira um `Fact` com condição de revelação (um teste bem-sucedido,
    por exemplo). O motor o marca como revelado e só então ele entra no contexto de todos. Implementado: `Campaign.facts` com `reveal_when` e `GameState.revealed_facts`.
    A regra "não revele" continua no prompt, mas deixou de ser a defesa principal.
