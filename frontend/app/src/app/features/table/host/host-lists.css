@@ -44,7 +44,6 @@
 }
 
 .item__text--secret:hover,
-.item__text--secret:focus,
 .item:focus-within .item__text--secret {
   filter: none;
 }
@@ -55,4 +54,8 @@
   margin: 0;
   padding-left: var(--dv-space-4);
   overflow-wrap: anywhere;
+}
+
+.item__text:focus {
+  outline: none; /* só recebe foco por código, depois de revelar */
 }

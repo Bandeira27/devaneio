@@ -37,6 +37,15 @@ async function open(table: TableView = hostTable(), role: 'host' | 'player' = 'h
   return { ...app, text, live };
 }
 
+/** Clica no botão primário da folha de confirmação aberta. */
+async function confirm(settle: () => Promise<void>, label: string): Promise<void> {
+  const button = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('.dv-sheet__foot button'),
+  ).find((b) => b.textContent?.includes(label));
+  button?.click();
+  await settle();
+}
+
 describe('Painel do anfitrião', () => {
   it('mostra as seções, o turno e o caminho de volta à mesa', async () => {
     const { root, text } = await open();
@@ -82,6 +91,8 @@ describe('Painel do anfitrião', () => {
     );
     conclude?.click();
     await settle();
+    http.expectNone(`/tables/${TABLE_ID}/commands`); // concluir pede confirmação
+    await confirm(settle, 'Concluir');
     const request = http.expectOne(`/tables/${TABLE_ID}/commands`);
     expect(request.request.body).toEqual({ line: 'marco concluir chegada', revision: 3 });
     request.flush({ revision: 4, events: [], text: 'ok', status: 'active', turn_ended: false });
@@ -98,6 +109,8 @@ describe('Painel do anfitrião', () => {
     );
     reveal?.click();
     await settle();
+    http.expectNone(`/tables/${TABLE_ID}/commands`); // revelar não tem volta: pede confirmação
+    await confirm(settle, 'Revelar');
     expect(http.expectOne(`/tables/${TABLE_ID}/commands`).request.body.line).toBe('revelar poco');
   });
 
@@ -202,5 +215,74 @@ describe('Painel do anfitrião', () => {
     confirm?.click();
     await settle();
     expect(http.expectOne(`/tables/${TABLE_ID}/commands`).request.body.line).toBe('fim');
+  });
+
+  it('cada botão repetido tem nome próprio (o marco ou o fato a que se refere)', async () => {
+    const { root } = await open();
+    const names = Array.from(
+      root().querySelectorAll('dv-beats-panel button, dv-facts-panel button'),
+    ).map((b) => b.getAttribute('aria-label'));
+    expect(names).toContain('Ativar Chegada');
+    expect(names).toContain('Concluir Chegada');
+    expect(names.some((n) => n?.startsWith('Revelar: A chave está no poco'))).toBe(true);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it('o botão bloqueado aponta para o motivo escrito', async () => {
+    const { root } = await open();
+    const activate = root().querySelector<HTMLButtonElement>(
+      'dv-beats-panel button[aria-label="Ativar O altar"]',
+    );
+    expect(activate?.getAttribute('aria-disabled')).toBe('true');
+    const reason = root().querySelector('#' + activate?.getAttribute('aria-describedby'));
+    expect(reason?.textContent).toContain('Falta concluir: Chegada.');
+    const available = root().querySelector<HTMLButtonElement>(
+      'dv-beats-panel button[aria-label="Concluir Chegada"]',
+    );
+    expect(available?.getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('Ferir abre a folha, escolhe o alvo e manda a linha', async () => {
+    const { root, http, settle } = await open();
+    const hurt = Array.from(
+      root().querySelectorAll<HTMLButtonElement>('dv-turn-tools button'),
+    ).find((b) => b.textContent?.trim() === 'Ferir');
+    hurt?.click();
+    await settle();
+    const form = document.querySelector('dv-amount-sheet form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+    expect(http.expectOne(`/tables/${TABLE_ID}/commands`).request.body.line).toBe('ferir bia 1');
+  });
+
+  it('a pergunta ao copiloto em várias linhas vai como uma linha só (o servidor recusa quebra)', async () => {
+    const llm = { enabled: true, description: 'x', notice: null, secrets: false };
+    const { root, http, type, submit } = await open(hostTable({ llm }));
+    await type('dv-copilot-panel textarea', 'Bram disse:\n\n  "a chave"\nE agora?');
+    await submit();
+    expect(http.expectOne(`/tables/${TABLE_ID}/copilot`).request.body).toEqual({
+      text: 'Bram disse: "a chave" E agora?',
+    });
+    expect(root().querySelector('dv-copilot-panel')).not.toBeNull();
+  });
+
+  it('se a mesa não carrega, a saída leva de volta à mesa', async () => {
+    const app = await setup(url);
+    app.session.save(TABLE_ID, {
+      token: 'tk',
+      playerId: 'p1',
+      role: 'host',
+      title: 'x',
+      savedAt: 1,
+    });
+    app.http
+      .expectOne(`/tables/${TABLE_ID}`)
+      .flush({ error: { code: 'x', message: 'x' } }, { status: 500, statusText: 'x' });
+    app.http.expectOne(`/tables/${TABLE_ID}/rules`).flush(rulesView());
+    app.http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(hostCampaign);
+    await app.settle();
+    expect(app.root().querySelector(`a[href$="/mesa/${TABLE_ID}"]`)?.textContent).toContain(
+      'Voltar à mesa',
+    );
   });
 });

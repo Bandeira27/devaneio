@@ -1,5 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommandError, MAX_SOURCE, heal, hurt } from '@shared/game/commands';
+import {
+  CommandError,
+  MAX_AMOUNT,
+  MAX_SOURCE,
+  heal,
+  hurt,
+  type AmountVerb,
+} from '@shared/game/commands';
 import type { ToolTarget } from '@shared/game/host';
 import { DvButton } from '@shared/ui/button/button';
 import { DvChoice, type ChoiceOption } from '@shared/ui/choice/choice';
@@ -12,11 +19,11 @@ import { DvStepper } from '@shared/ui/stepper/stepper';
 
 /** O que a folha de ferir ou curar recebe: o verbo e os alvos possíveis. */
 export interface AmountSheetData {
-  verb: 'ferir' | 'curar';
+  verb: AmountVerb;
   targets: ToolTarget[];
 }
 
-const COPY = {
+export const AMOUNT_COPY = {
   ferir: { title: 'Ferir', action: 'Ferir', source: 'a queda, uma armadilha' },
   curar: { title: 'Curar', action: 'Curar', source: 'uma poção, uma magia' },
 } as const;
@@ -32,7 +39,7 @@ const COPY = {
     } @else {
       <form class="dv-stack" (submit)="$event.preventDefault(); send()">
         <dv-choice legend="Quem" [options]="options()" [(value)]="target" />
-        <dv-stepper label="Quantia" [min]="1" [max]="99" [(value)]="amount" />
+        <dv-stepper label="Quantia" [min]="1" [max]="maxAmount" [(value)]="amount" />
         <dv-field
           label="Fonte (opcional)"
           [hint]="'Aparece no registro: ' + copy.source + '.'"
@@ -58,9 +65,10 @@ const COPY = {
 export class AmountSheet {
   protected readonly data = inject(SHEET_DATA) as AmountSheetData;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
-  protected readonly copy = COPY[this.data.verb];
+  protected readonly copy = AMOUNT_COPY[this.data.verb];
   protected readonly fieldValue = fieldValue;
   protected readonly max = MAX_SOURCE;
+  protected readonly maxAmount = MAX_AMOUNT;
   protected readonly target = signal(this.data.targets[0]?.id ?? '');
   protected readonly amount = signal(1);
   protected readonly source = signal('');

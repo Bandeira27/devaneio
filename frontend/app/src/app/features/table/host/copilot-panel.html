@@ -16,6 +16,7 @@
         [error]="hint()"
       >
         <textarea
+          #question
           dvInput
           rows="3"
           [attr.maxlength]="max"
@@ -33,14 +34,25 @@
         {{ copilot.error() }}
       </dv-notice>
     }
-    <div role="status" class="copilot__reply">
+    <div role="status">
       @if (copilot.busy()) {
         <dv-badge tone="info" [pending]="true">O copiloto está pensando…</dv-badge>
       } @else if (copilot.answer()) {
-        <p class="dv-note">Sobre: {{ copilot.asked() }}</p>
-        <p class="copilot__answer">{{ copilot.answer() }}</p>
-        <button dvButton type="button" (click)="copilot.clear()">Limpar</button>
+        <span class="dv-visually-hidden">O copiloto respondeu.</span>
       }
     </div>
+    @if (copilot.answer() && !copilot.busy()) {
+      <div
+        class="copilot__reply"
+        tabindex="-1"
+        #reply
+        aria-label="Resposta do copiloto"
+        role="group"
+      >
+        <p class="dv-note">Sobre: {{ copilot.asked() }}</p>
+        <p class="copilot__answer">{{ copilot.answer() }}</p>
+        <button dvButton type="button" (click)="clear()">Limpar</button>
+      </div>
+    }
   }
 </section>

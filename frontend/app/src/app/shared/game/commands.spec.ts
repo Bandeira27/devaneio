@@ -1,6 +1,7 @@
 import {
   CommandError,
   END_TURN,
+  MAX_AMOUNT,
   MAX_SOURCE,
   REST,
   attack,
@@ -98,9 +99,11 @@ describe('comandos do anfitrião', () => {
     expect(() => beat('ativar', 'a b')).toThrow(CommandError);
     expect(() => reveal('x; fim')).toThrow(CommandError);
     expect(() => hurt('bram; fim', 1)).toThrow(CommandError);
-    for (const amount of [0, -1, 1.5, 1000, Number.NaN]) {
+    for (const amount of [0, -1, 1.5, MAX_AMOUNT + 1, Number.NaN]) {
       expect(() => hurt('bram', amount)).toThrow(CommandError);
     }
     expect(() => heal('bia', 1, 'a'.repeat(MAX_SOURCE + 1))).toThrow(CommandError);
+    expect(() => hurt('bram', 1, 'a\nb')).toThrow(CommandError);
+    expect(() => hurt('bram', 1, 'a\u0007b')).toThrow(CommandError);
   });
 });

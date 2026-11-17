@@ -7,12 +7,6 @@
     <ul class="list">
       @for (f of host.facts; track f.id) {
         <li class="item">
-          <p class="item__text" [class.item__text--secret]="f.revealedTurn === null" tabindex="0">
-            {{ f.text }}
-          </p>
-          @if (f.about) {
-            <p class="dv-note">Sobre {{ f.about }}</p>
-          }
           <div class="item__head">
             @if (f.revealedTurn === null) {
               <dv-badge tone="warn" icon="warn">Oculto</dv-badge>
@@ -20,7 +14,8 @@
                 dvButton
                 type="button"
                 [dvBlocked]="store.actionBusy()"
-                (click)="reveal(f.id)"
+                [attr.aria-label]="labelOf(f.text)"
+                (click)="reveal(f.id, f.text)"
               >
                 Revelar
               </button>
@@ -30,6 +25,17 @@
               >
             }
           </div>
+          <p
+            class="item__text"
+            [class.item__text--secret]="f.revealedTurn === null"
+            [attr.data-fact]="f.id"
+            tabindex="-1"
+          >
+            {{ f.text }}
+          </p>
+          @if (f.about) {
+            <p class="dv-note">Sobre {{ f.about }}</p>
+          }
         </li>
       }
     </ul>

@@ -77,6 +77,11 @@ export function isFullCampaign(campaign: Campaign | CampaignView | null): campai
   return campaign !== null && 'locations' in campaign;
 }
 
+/** O estado inteiro (o do anfitrião), e não a visão resumida do jogador. */
+export function isFullState(state: GameState | PlayerStateView | null): state is GameState {
+  return state !== null && 'rng_seed' in state;
+}
+
 const STATUS_TEXT: Record<BeatStatus, string> = {
   pending: 'pendente',
   active: 'ativo',
@@ -89,15 +94,19 @@ export function beatStatusText(status: BeatStatus): string {
   return STATUS_TEXT[status];
 }
 
-/** Monta a visão do anfitrião; `null` enquanto a campanha ou o estado inteiros não chegaram. */
+/**
+ * Monta a visão do anfitrião; `null` enquanto a campanha ou o estado inteiros não chegaram. O bloqueio dos botões de
+ * marco (`activateBlock`, `finishBlock`) é só conforto da tela e espelha `engine/beats.py` (ativar exige pendente com
+ * os requisitos concluídos; concluir e falhar, ativo): quem decide é o motor.
+ */
 export function hostViewOf(
   campaign: Campaign | CampaignView | null,
   state: GameState | PlayerStateView | null,
 ): HostView | null {
-  if (!isFullCampaign(campaign) || state === null || !('rng_seed' in state)) {
+  if (!isFullCampaign(campaign) || !isFullState(state)) {
     return null;
   }
-  const full: GameState = state as GameState;
+  const full = state;
   const beatTitle = new Map(campaign.beats.map((b) => [b.id, b.title]));
   const npcName = new Map(campaign.npcs.map((n) => [n.id, n.name]));
   const locationName = new Map(campaign.locations.map((l) => [l.id, l.name]));

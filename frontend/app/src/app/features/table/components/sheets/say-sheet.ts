@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { MAX_LINE } from '@shared/game/commands';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { DvInput } from '@shared/ui/field/input';
 import { SheetRef } from '@shared/ui/sheet/sheet';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
-
-export const MAX_SAY = 500;
 
 /** Folha de falar com o mestre de IA; devolve o texto escrito. */
 @Component({
@@ -40,7 +39,7 @@ export const MAX_SAY = 500;
 export class SaySheet {
   protected readonly fieldValue = fieldValue;
   protected readonly ref = inject<SheetRef<string>>(SheetRef);
-  protected readonly max = MAX_SAY;
+  protected readonly max = MAX_LINE;
   protected readonly text = signal('');
   protected readonly error = signal('');
 

@@ -34,6 +34,9 @@
 
   <section class="dv-card dv-stack" aria-labelledby="locais-titulo">
     <h2 id="locais-titulo" class="dv-section">Locais</h2>
+    @if (host.locations.length === 0) {
+      <p class="dv-note">Esta campanha não tem locais.</p>
+    }
     <ul class="list">
       @for (l of host.locations; track l.id) {
         <li class="item">

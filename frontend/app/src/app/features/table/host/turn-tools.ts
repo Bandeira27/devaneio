@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { END_TURN, REST } from '@shared/game/commands';
+import { END_TURN, REST, type AmountVerb } from '@shared/game/commands';
 import { DvButton } from '@shared/ui/button/button';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { TableStore } from '../table.store';
-import { AmountSheet } from './sheets/amount-sheet';
+import { AMOUNT_COPY, AmountSheet } from './sheets/amount-sheet';
 import { ConfirmSheet } from './sheets/confirm-sheet';
 
 /**
@@ -54,10 +54,7 @@ export class TurnTools {
       label: 'Fim do turno',
       data: {
         title: 'Fim do turno',
-        text: 'Encerra o turno {n} para todos: o diretor age e os NPCs hostis reagem.'.replace(
-          '{n}',
-          String(this.store.turn()),
-        ),
+        text: `Encerra o turno ${this.store.turn()} para todos: o diretor age e os NPCs hostis reagem.`,
         action: 'Encerrar o turno',
       },
     });
@@ -80,9 +77,9 @@ export class TurnTools {
     }
   }
 
-  protected async amount(verb: 'ferir' | 'curar'): Promise<void> {
+  protected async amount(verb: AmountVerb): Promise<void> {
     const line = await this.sheet.open<string>(AmountSheet, {
-      label: verb === 'ferir' ? 'Ferir' : 'Curar',
+      label: AMOUNT_COPY[verb].title,
       data: { verb, targets: this.store.host()?.targets ?? [] },
     });
     if (line) {

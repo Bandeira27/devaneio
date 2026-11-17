@@ -22,18 +22,18 @@ pendentes) e só ele dá `fim`, `ferir`, `curar`, `descansar`, `marco` e `revela
 
 ## Blocos
 
-- **Copiloto.** Pergunta de até 500 caracteres, resposta síncrona. Estados: LLM desligado (explica), pensando, e as
+- **Copiloto.** Pergunta de até 500 caracteres numa linha só (o servidor recusa quebra de linha: o que for colado em várias linhas vira espaço), resposta síncrona. O foco vai à resposta quando ela chega e o aviso vivo diz só que chegou. Estados: LLM desligado (explica), pensando, e as
   recusas `409 copilot_busy`, `429 copilot_rate_limited`, `422 context_too_large`, `502` (mensagens já em
   `core/api/api-failure.ts`). Aviso fixo de que ele vê a campanha inteira, segredos inclusive, e que a resposta só o
   anfitrião lê. Sem memória entre perguntas.
 - **Ferramentas do turno.** Fim do turno e Descansar (com confirmação: mexem com o grupo todo), Ferir e Curar (alvo,
   quantidade e fonte opcional, em folha). O anfitrião pode ferir NPC escondido: isso não aparece para os jogadores.
 - **Marcos.** Título, status em selo (texto e ícone), requisitos, notas privadas; Ativar, Concluir e Falhar bloqueados com
-  o motivo conforme o status.
-- **Fatos.** Texto, de quem fala, "Oculto" ou "Revelado no turno N" e o botão Revelar. O oculto aparece como tinta
+  o motivo conforme o status; Concluir e Falhar pedem confirmação, e cada botão leva o nome do marco.
+- **Fatos.** Texto, de quem fala, "Oculto" ou "Revelado no turno N" e o botão Revelar (com confirmação: não tem volta). O oculto aparece como tinta
   borrada, que clareia em hover, foco e toque; o selo "Oculto" sempre está lá, e o leitor de tela lê o texto normalmente.
   Ao revelar, o fato "se revela" (mudança de estado que o anfitrião precisa notar: [`movimento.md`](movimento.md)).
-- **NPCs e locais.** Só leitura: local, hp, vivo ou caído, "hostil" (pelo limiar do sistema) e as notas privadas.
+- **NPCs e locais.** Só leitura: local, hp, vivo ou caído, disposição (número; o limiar de hostilidade não vem em `RulesView`) e as notas privadas.
 
 ## Fora do painel
 

@@ -28,6 +28,7 @@ export class CopilotActions {
     this.busy.set(true);
     this.error.set('');
     this.answer.set('');
+    this.asked.set('');
     try {
       const result = await firstValueFrom(this.api.copilot(this.tableId(), { text }));
       this.asked.set(text);
