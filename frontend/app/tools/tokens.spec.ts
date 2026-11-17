@@ -88,13 +88,6 @@ describe('contraste dos tokens', () => {
     }
   });
 
-  it.each(['ok', 'warn', 'info', 'danger'])('o tom %s passa sobre o fundo dele', (tone) => {
-    expect(
-      contrast(color(`--dv-${tone}`), color(`--dv-${tone}-surface`)),
-      tone,
-    ).toBeGreaterThanOrEqual(MIN);
-  });
-
   it('o texto do botão de acento passa sobre o acento, com o mouse e pressionado', () => {
     for (const state of ['--dv-accent', '--dv-accent-hover', '--dv-accent-pressed']) {
       expect(contrast(color('--dv-on-accent'), color(state)), state).toBeGreaterThanOrEqual(MIN);

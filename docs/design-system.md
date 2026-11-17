@@ -27,7 +27,7 @@ Todos começam por `--dv-`. Mudar um valor é mudar o tema inteiro; por isso nen
 | **Paleta**         | `sepia`, `ink`, `rose`, `verdigris`, `brick`, `amber`, `dusk`, `stain` (só decoração)                                                                                                                                                                     |
 | **Superfícies**    | quatro degraus que sobem de verdade (≥ 1,1:1 entre vizinhos, medido pelo teste de tokens): `surface-0` (fundo do app), `-1` (painel: o que contém controles), `-2` (página: cena, ficha, o que se lê), `-3` (destaque que se sobrepõe: o aviso "N novas") |
 | **Papéis**         | `text`, `text-muted`, `text-disabled`, `speaker` (quem fala: tinta), `accent` (rosa: **só ação**; + `hover`, `pressed`, `disabled`), `on-accent`, `ok`, `warn`, `info`, `danger`, `selection`                                                             |
-| **Tom de status**  | cada tom tem `-surface`: fundo sobre o qual o texto do tom passa                                                                                                                                                                                          |
+| **Tom de status**  | `ok`, `warn`, `info`, `danger`: cor de ícone e texto (passam em todas as superfícies, sem fundo próprio)                                                                                                                                                  |
 | **Contorno**       | `line` (decoração), `border-control` (≥ 3:1, carrega significado), `border-disabled`, `focus-ring`                                                                                                                                                        |
 | **Desbotado**      | `fade-floor-text` (0,65, texto de leitura), `fade-floor-quiet` (0,85, cores de tom), `opacity-stain`                                                                                                                                                      |
 | **Tipografia**     | famílias (`font-narration`, `font-note`, `font-ui`), tamanhos (`text-display`, `-title`, `-section`, `-narration`, `-ui`, `-note`), `tracking-label`, `leading-*`, `weight-regular`                                                                       |
@@ -47,7 +47,8 @@ de foco e texto desabilitado ≥ 3:1. O que desbota é medido **por papel** sobr
 ## Elevação
 
 O Desbotado é plano. Quem **repousa** se separa por superfície (0 a 3) e por contorno: o **pontilhado** é papel e
-informação, o **sólido fino** é o que se toca. **Sombra** só em quem flutua (folha, diálogo) e no estado pressionado,
+informação, o **sólido fino** é o que se toca (botões, campos de texto, cartões de escolha e o primário cheio de rosa). O selo é informação: sem caixa nem fundo, só ícone,
+texto em caixa-alta e um filete pontilhado, para nunca parecer um botão. **Sombra** só em quem flutua (folha, diálogo) e no estado pressionado,
 sempre pelos tokens `shadow-*`. Nada de gradiente de cor.
 
 ## Tipografia
@@ -70,23 +71,23 @@ painéis lado a lado), em vez de esticar a coluna do celular. Medidas de leitura
 Todos em `frontend/app/src/app/shared/ui/`, com spec e story. O contrato (entradas, estados, teclado, ARIA, movimento)
 está no JSDoc de cada um.
 
-| Componente                               | Para quê                                                                                             |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `dvButton` (diretiva)                    | botão: `dvBlocked` (bloqueado com motivo, continua focável), `dvLoading` (em envio), `:active`, tons |
-| `dv-field` + `dvInput`                   | rótulo, dica e erro de `input`, `select` e `textarea`                                                |
-| `dv-stepper`, `dv-copy-field`, `dv-pips` | valor com − e +, texto para copiar, pontos de vida (mudança animada)                                 |
-| `dv-notice`                              | aviso com ícone: informação, confirmação, atenção, erro; dispensável                                 |
-| `dv-badge`                               | selo de estado curto, com texto, tom e ícone; `pending` pulsa                                        |
-| `dv-state`                               | carregando, vazio, erro ou indisponível, com ação opcional                                           |
-| `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                          |
-| `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                           |
-| `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                    |
-| `dv-character-card`                      | a ficha (pontos de vida, atributos, inventário): na folha "Ficha" e no painel da mesa larga          |
-| `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Jogar), com o atual marcado                         |
-| `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                 |
-| `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                         |
-| `dv-icon`                                | conjunto fechado de ícones decorativos                                                               |
-| `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                        |
+| Componente                               | Para quê                                                                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `dvButton` (diretiva)                    | botão: `dvBlocked` (bloqueado com motivo, continua focável), `dvLoading` (em envio), `:active`, tons             |
+| `dv-field` + `dvInput`                   | rótulo, dica e erro de `input`, `select` e `textarea`                                                            |
+| `dv-stepper`, `dv-copy-field`, `dv-pips` | valor com − e +, texto para copiar, pontos de vida (mudança animada)                                             |
+| `dv-notice`                              | aviso com ícone: informação, confirmação, atenção, erro; dispensável                                             |
+| `dv-badge`                               | selo de estado: anotação sem caixa (ícone, texto em caixa-alta e filete pontilhado), tom na cor; `pending` pulsa |
+| `dv-state`                               | carregando, vazio, erro ou indisponível, com ação opcional                                                       |
+| `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                                      |
+| `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                                       |
+| `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                                |
+| `dv-character-card`                      | a ficha (pontos de vida, atributos, inventário): na folha "Ficha" e no painel da mesa larga                      |
+| `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Jogar), com o atual marcado                                     |
+| `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                             |
+| `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                                     |
+| `dv-icon`                                | conjunto fechado de ícones decorativos                                                                           |
+| `Sheet`, `dv-sheet-head`                 | folha modal que sobe do pé, com saída animada                                                                    |
 
 **Folhas:** todas têm a mesma forma: cabeçalho (título igual ao rótulo do botão que a abriu e fechar por ícone), corpo e
 rodapé `.dv-sheet__foot` com a ação primária à direita. No celular sobem do pé; na tela larga (≥ 64rem) viram um

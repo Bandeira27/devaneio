@@ -40,12 +40,6 @@
   --dv-danger: var(--dv-brick);
   --dv-selection: oklch(44% 0.07 74);
 
-  /* Fundo de cada tom de status (selo e aviso): o texto do tom passa sobre ele */
-  --dv-ok-surface: oklch(32% 0.02 171);
-  --dv-warn-surface: oklch(33% 0.035 85);
-  --dv-info-surface: oklch(32% 0.02 230);
-  --dv-danger-surface: oklch(32% 0.04 28);
-
   /* Estados das superfícies que se tocam */
   --dv-surface-hover: var(--dv-surface-2);
   --dv-surface-pressed: var(--dv-surface-3);
