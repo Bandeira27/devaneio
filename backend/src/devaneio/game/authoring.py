@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
+
+from pydantic import ValidationError
 
 from devaneio.narration import NarrationPack, lint_pack
 from devaneio.rules import RuleSystem
@@ -71,3 +73,73 @@ def _out_of_sight(
     if location is None:
         return False
     return not any(isinstance(c, AtLocation) and c.location_id == location for c in same_list)
+
+
+_CONDITION_KINDS = frozenset(
+    {"at_location", "npc_down", "beat_done", "turn_at_least", "check_passed"}
+)
+
+
+def explain_validation_error(error: ValidationError) -> list[tuple[str, str]]:
+    """Os erros de estrutura do Pydantic em português: ``(caminho, mensagem)``.
+
+    O caminho é o do campo (``locations.2.connections.0``) e, sem o nome da variante de uma condição, é o
+    mesmo que o autor vê no formulário. Um tipo de erro que não conhecemos vira uma frase genérica com o campo.
+    """
+    out: list[tuple[str, str]] = []
+    for item in error.errors():
+        loc = _clean_loc(item["loc"])
+        field = str(loc[-1]) if loc else "a campanha"
+        out.append((".".join(str(p) for p in loc), _explain(item["type"], field, item)))
+    return out
+
+
+def _clean_loc(loc: tuple[int | str, ...]) -> list[int | str]:
+    """O caminho sem o nome da variante de condição que o Pydantic põe antes do campo."""
+    cleaned: list[int | str] = []
+    for index, part in enumerate(loc):
+        if (
+            isinstance(part, str)
+            and part in _CONDITION_KINDS
+            and index > 0
+            and isinstance(loc[index - 1], int)
+        ):
+            continue
+        cleaned.append(part)
+    return cleaned
+
+
+def _explain(kind: str, field: str, item: Any) -> str:
+    ctx = item.get("ctx") or {}
+    if kind == "missing":
+        return f"falta preencher '{field}'"
+    if kind == "extra_forbidden":
+        return f"'{field}' não é um campo conhecido"
+    if kind == "string_pattern_mismatch":
+        return (
+            f"'{field}' só pode ter letras minúsculas sem acento, números, '-' e '_', "
+            "começando por letra ou número"
+        )
+    if kind in {"string_too_short", "too_short"}:
+        return f"'{field}' não pode ficar vazio"
+    if kind in {"string_too_long", "too_long"}:
+        return f"'{field}' passa do tamanho máximo"
+    if kind in {"string_type", "string_unicode"}:
+        return f"'{field}' precisa ser um texto"
+    if kind in {"int_type", "int_parsing", "int_from_float"}:
+        return f"'{field}' precisa ser um número inteiro"
+    if kind in {"bool_type", "bool_parsing"}:
+        return f"'{field}' precisa ser sim ou não"
+    if kind == "list_type":
+        return f"'{field}' precisa ser uma lista"
+    if kind in {"dict_type", "model_type", "model_attributes_type"}:
+        return f"'{field}' precisa ser um bloco de campos"
+    if kind in {"greater_than_equal", "greater_than"}:
+        return f"'{field}' precisa ser pelo menos {ctx.get('ge', ctx.get('gt', 0))}"
+    if kind in {"less_than_equal", "less_than"}:
+        return f"'{field}' precisa ser no máximo {ctx.get('le', ctx.get('lt', 0))}"
+    if kind in {"literal_error", "enum"}:
+        return f"'{field}' tem um valor que não é aceito"
+    if kind in {"union_tag_invalid", "union_tag_not_found"}:
+        return f"'{field}': tipo de condição desconhecido"
+    return f"'{field}' não está certo"

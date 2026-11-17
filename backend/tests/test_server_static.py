@@ -380,7 +380,9 @@ def test_the_web_flag_reaches_the_server_and_a_bad_folder_stops_the_start(
     seen = []
     monkeypatch.setattr(
         "devaneio.server.__main__.make_server",
-        lambda host, port, _service, static=None: seen.append(static) or _FakeServer(host, port),
+        lambda host, port, _service, static=None, _editor=None: (
+            seen.append(static) or _FakeServer(host, port)
+        ),
     )
     base = [
         "--campanhas",

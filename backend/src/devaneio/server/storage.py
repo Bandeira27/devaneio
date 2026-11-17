@@ -8,6 +8,7 @@ livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao 
 
 from __future__ import annotations
 
+import json
 import re
 import secrets
 import threading
@@ -85,6 +86,23 @@ class Storage:
     def count(self) -> int:
         """Quantas mesas existem."""
         return sum(1 for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
+
+    def campaigns_in_use(self) -> set[Path]:
+        """Os arquivos de campanha que alguma mesa usa (cada mesa guarda o caminho, relativo ao arquivo dela).
+
+        Uma mesa ilegível não conta como uso: sem o caminho, não há o que proteger.
+        """
+        used: set[Path] = set()
+        for path in self.data_dir.glob("*.json"):
+            if not TABLE_ID.match(path.stem):
+                continue
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))["campaign_path"]
+            except (OSError, ValueError, KeyError, TypeError):
+                continue
+            if isinstance(raw, str):
+                used.add((path.parent / raw).resolve())
+        return used
 
     def _table(self, table_id: str) -> _Table:
         """O cadeado da mesa, criado na primeira vez.

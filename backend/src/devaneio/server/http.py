@@ -19,6 +19,7 @@ from pydantic import BaseModel, ValidationError
 
 from .app import TableService
 from .auth import bearer_token
+from .editor import MAX_EDITOR_BODY, EditorService, host_allowed, origin_allowed
 from .errors import ApiFailure
 from .models import (
     ApiError,
@@ -28,7 +29,9 @@ from .models import (
     ErrorResponse,
     InvitePreviewRequest,
     JoinRequest,
+    SaveRequest,
     SayRequest,
+    ValidateRequest,
 )
 from .static import MAX_STATIC_BYTES, SECURITY_HEADERS, StaticFile, StaticSite
 
@@ -53,10 +56,12 @@ class ApiServer(ThreadingHTTPServer):
         address: tuple[str, int],
         service: TableService,
         static: StaticSite | None = None,
+        editor: EditorService | None = None,
     ) -> None:
         super().__init__(address, Handler)
         self.service = service
         self.static = static  # o front, só com --web; sem ele a API é só JSON
+        self.editor = editor  # só com --editor (e só em loopback): sem ele, /editor/* é 404
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -67,6 +72,7 @@ class Handler(BaseHTTPRequestHandler):
     sys_version = ""
     timeout = 15  # segundos sem dados na conexão: cliente que some não prende a thread
     protocol_version = "HTTP/1.1"
+    _body_read = False  # o corpo do pedido já foi lido? (senão, recusar exige fechar a conexão)
 
     # --- rotas -------------------------------------------------------------------
 
@@ -116,6 +122,42 @@ class Handler(BaseHTTPRequestHandler):
             match.group(1), self._token(), since, wait=wait, since_talk=since_talk
         )
 
+    # --- editor (só com --editor) -------------------------------------------------
+
+    def _editor(self) -> EditorService:
+        editor = self.server.editor
+        if editor is None:
+            raise ApiFailure(404, "not_found", f"rota desconhecida: {urlsplit(self.path).path}")
+        return editor
+
+    def _editor_campaigns(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().list_campaigns()
+
+    def _editor_get(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().get_campaign(match.group(1))
+
+    def _editor_validate(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(ValidateRequest, limit=MAX_EDITOR_BODY)
+        return 200, self._editor().validate(request.campaign)
+
+    def _editor_create(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(SaveRequest, limit=MAX_EDITOR_BODY)
+        return 201, self._editor().create(request.campaign)
+
+    def _editor_update(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(SaveRequest, limit=MAX_EDITOR_BODY)
+        return 200, self._editor().update(match.group(1), request.campaign)
+
+    def _editor_systems(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().systems()
+
+    def _editor_system(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().system(match.group(1))
+
+    def _editor_preview(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(ValidateRequest, limit=MAX_EDITOR_BODY)
+        return 200, self._editor().preview(request.campaign)
+
     ROUTES: tuple[Route, ...] = (
         ("GET", re.compile(r"^/campaigns$"), _campaigns),
         ("POST", re.compile(r"^/tables$"), _create_table),
@@ -128,6 +170,14 @@ class Handler(BaseHTTPRequestHandler):
         ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),
         ("POST", re.compile(r"^/tables/([^/]+)/copilot$"), _copilot),
         ("GET", re.compile(r"^/tables/([^/]+)/events$"), _get_events),
+        ("GET", re.compile(r"^/editor/campaigns$"), _editor_campaigns),
+        ("POST", re.compile(r"^/editor/campaigns$"), _editor_create),
+        ("GET", re.compile(r"^/editor/campaigns/([^/]+)$"), _editor_get),
+        ("PUT", re.compile(r"^/editor/campaigns/([^/]+)$"), _editor_update),
+        ("POST", re.compile(r"^/editor/validate$"), _editor_validate),
+        ("POST", re.compile(r"^/editor/preview$"), _editor_preview),
+        ("GET", re.compile(r"^/editor/systems$"), _editor_systems),
+        ("GET", re.compile(r"^/editor/systems/([^/]+)$"), _editor_system),
     )
 
     # --- despacho ----------------------------------------------------------------
@@ -163,15 +213,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def _dispatch(self, method: str) -> None:
         path = urlsplit(self.path).path
+        self._body_read = False
         try:
+            self._guard_editor(method, path)
+            found_route = None
+            path_known = False
             for route_method, pattern, handler in self.ROUTES:
                 match = pattern.match(path)
                 if match is None:
                     continue
-                if route_method != method:
-                    raise ApiFailure(405, "method_not_allowed", f"{method} não vale para {path}")
+                path_known = True  # a rota existe, talvez para outro método
+                if route_method == method:
+                    found_route = (handler, match)
+                    break
+            if path_known and found_route is None:
+                raise ApiFailure(405, "method_not_allowed", f"{method} não vale para {path}")
+            if found_route is not None:
+                handler, match = found_route
                 status, payload = handler(self, match)
-                break
             else:
                 # A API vem sempre antes: só o que nenhuma rota de API reconhece pode ser arquivo.
                 site = self.server.static
@@ -184,6 +243,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_file(found, head_only=method == "HEAD")
                 return
         except ApiFailure as exc:
+            if method not in ("GET", "HEAD") and not self._body_read:
+                self.close_connection = (
+                    True  # recusou sem ler o corpo: os bytes não podem virar outra requisição
+                )
             self._send_error(exc.status, exc.code, exc.message)
             return
         except Exception:  # noqa: BLE001 — fronteira do handler HTTP: 500 genérico, traceback no stderr
@@ -191,6 +254,29 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error(500, "internal", "erro interno")
             return
         self._send(status, payload)
+
+    def _guard_editor(self, method: str, path: str) -> None:
+        """Sem ``--editor``, ``/editor/*`` não existe; com ele, só pedidos de dentro desta máquina (rule 05, item 25).
+
+        ``Host`` precisa ser um nome local com a porta do servidor (DNS rebinding) e, num pedido que muda
+        algo, o ``Origin`` que vier precisa ser o próprio servidor (CSRF).
+        """
+        editor = self.server.editor
+        if editor is None:
+            if path == "/editor" or path.startswith("/editor/"):
+                raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
+            return
+        host = self.headers.get("Host")
+        refused: ApiFailure | None = None
+        if not host_allowed(host, self.server.server_address[1]):
+            refused = ApiFailure(403, "host_not_allowed", "o editor só responde em localhost")
+        elif method not in ("GET", "HEAD") and not origin_allowed(self.headers.get("Origin"), host):
+            refused = ApiFailure(403, "origin_not_allowed", "origem não permitida")
+        if refused is not None:
+            self.close_connection = (
+                True  # o corpo não foi lido: fecha, ou os bytes viram a próxima requisição
+            )
+            raise refused
 
     # --- leitura -----------------------------------------------------------------
 
@@ -207,15 +293,16 @@ class Handler(BaseHTTPRequestHandler):
         # self.headers.get é case-insensitive (email.message.Message), como manda o HTTP.
         return bearer_token(self.headers.get("Authorization"))
 
-    def _read_json(self, model: type[M]) -> M:
+    def _read_json(self, model: type[M], *, limit: int = MAX_BODY) -> M:
         try:
-            length = self._declared_length()
+            length = self._declared_length(limit)
         except ApiFailure:
             # Corpo recusado sem ler: fecha a conexão, ou os bytes viram a próxima requisição.
             self.close_connection = True
             raise
         try:
             body = self.rfile.read(length)
+            self._body_read = True
         except (TimeoutError, ConnectionError):
             # Cliente mandou menos do que anunciou e sumiu: nada a responder, só fechar.
             self.close_connection = True
@@ -228,7 +315,7 @@ class Handler(BaseHTTPRequestHandler):
             )
             raise ApiFailure(400, "bad_request", f"corpo inválido: {problems}") from None
 
-    def _declared_length(self) -> int:
+    def _declared_length(self, limit: int) -> int:
         if self.headers.get("Transfer-Encoding"):
             raise ApiFailure(
                 400, "bad_request", "Transfer-Encoding não é aceito; envie Content-Length"
@@ -241,8 +328,8 @@ class Handler(BaseHTTPRequestHandler):
         if not (raw_length.isascii() and raw_length.isdigit()):
             raise ApiFailure(411, "length_required", "Content-Length ausente ou inválido")
         length = int(raw_length)
-        if length > MAX_BODY:
-            raise ApiFailure(413, "payload_too_large", f"corpo acima de {MAX_BODY} bytes")
+        if length > limit:
+            raise ApiFailure(413, "payload_too_large", f"corpo acima de {limit} bytes")
         content_type = self.headers.get("Content-Type", "").split(";")[0].strip().lower()
         if content_type != JSON:
             raise ApiFailure(415, "unsupported_media_type", f"Content-Type precisa ser {JSON}")
@@ -332,7 +419,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def make_server(
-    host: str, port: int, service: TableService, static: StaticSite | None = None
+    host: str,
+    port: int,
+    service: TableService,
+    static: StaticSite | None = None,
+    editor: EditorService | None = None,
 ) -> ApiServer:
     """Cria o servidor HTTP, sem iniciá-lo."""
-    return ApiServer((host, port), service, static)
+    return ApiServer((host, port), service, static, editor)

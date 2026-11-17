@@ -8,6 +8,14 @@ from devaneio.schema import (
 )
 
 from .campaign import CampaignSummary, CampaignView
+from .editor import (
+    EditorCampaign,
+    PreviewView,
+    SaveRequest,
+    SystemInfo,
+    ValidateRequest,
+    ValidationReport,
+)
 from .requests import (
     CommandRequest,
     CopilotRequest,
@@ -51,6 +59,8 @@ class ApiRequests(StrictModel):
     command: CommandRequest
     say: SayRequest
     copilot: CopilotRequest
+    editor_validate: ValidateRequest
+    editor_save: SaveRequest
 
 
 class ApiResponses(StrictModel):
@@ -68,4 +78,9 @@ class ApiResponses(StrictModel):
     campaign: Campaign
     campaign_view: CampaignView
     rules: RulesView
+    editor_campaigns: list[EditorCampaign]
+    editor_campaign: EditorCampaign
+    editor_report: ValidationReport
+    editor_systems: list[SystemInfo]
+    editor_preview: PreviewView
     error: ErrorResponse

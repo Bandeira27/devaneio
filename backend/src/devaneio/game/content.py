@@ -10,6 +10,7 @@ português sem o caminho absoluto.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeVar
@@ -33,6 +34,7 @@ from .errors import GameError
 
 _T = TypeVar("_T")
 
+_SLUG = re.compile(r"[a-z0-9][a-z0-9_-]*")
 MAX_CONTENT_BYTES = 256 * 1024
 RULES_DIR = "sistemas"
 NARRATION_DIR = "narracoes"
@@ -51,13 +53,28 @@ def load_campaign_content(campaign_path: Path) -> tuple[Campaign, RuleSystem, Na
 
 def load_rules_for(campaign: Campaign, campaign_dir: Path) -> RuleSystem:
     """O sistema de regras que a campanha cita, procurado ao lado dela e depois nos embutidos."""
+    return load_rules_by_id(campaign.rules_id, campaign_dir)
+
+
+def load_rules_by_id(rules_id: str, campaign_dir: Path) -> RuleSystem:
+    """Um sistema de regras pelo id, procurado em ``sistemas/`` ao lado das campanhas e depois nos embutidos."""
     return _load(
         "sistema de regras",
-        campaign.rules_id,
+        rules_id,
         campaign_dir / RULES_DIR,
         builtin_rules_dict,
         load_rules_extending,
     )
+
+
+def rules_ids(campaign_dir: Path) -> list[str]:
+    """Os ids de sistema que uma campanha desta pasta pode citar: os do autor e o embutido."""
+    own = sorted(
+        path.stem
+        for path in (campaign_dir / RULES_DIR).glob("*.json")
+        if _SLUG.fullmatch(path.stem)
+    )
+    return [*dict.fromkeys(["default", *own])]
 
 
 def load_pack_for(campaign: Campaign, campaign_dir: Path) -> NarrationPack:

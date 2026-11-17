@@ -15,6 +15,8 @@ export interface ApiRequests {
   command: CommandRequest;
   say: SayRequest;
   copilot: CopilotRequest;
+  editor_validate: ValidateRequest;
+  editor_save: SaveRequest;
 }
 /**
  * Criar uma mesa: a campanha, o nome do anfitrião e, opcionalmente, a semente.
@@ -56,4 +58,20 @@ export interface SayRequest {
  */
 export interface CopilotRequest {
   text: string;
+}
+/**
+ * A campanha como o editor a tem agora, ainda sem passar pela validação (JSON cru).
+ */
+export interface ValidateRequest {
+  campaign: {
+    [k: string]: unknown;
+  };
+}
+/**
+ * A campanha a gravar: o servidor a valida de novo e só grava sem erro.
+ */
+export interface SaveRequest {
+  campaign: {
+    [k: string]: unknown;
+  };
 }

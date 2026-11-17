@@ -73,6 +73,28 @@
       "title": "AttributeInfo",
       "type": "object"
     },
+    "AuthoringFinding": {
+      "additionalProperties": false,
+      "description": "Um achado de autoria: `erro` impede a campanha de funcionar como esperado; `aviso` é um risco aceitável.",
+      "properties": {
+        "level": {
+          "enum": [
+            "erro",
+            "aviso"
+          ],
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "text"
+      ],
+      "title": "AuthoringFinding",
+      "type": "object"
+    },
     "Beat": {
       "additionalProperties": false,
       "description": "Marco da trama. ``requires`` lista marcos que precisam estar concluídos antes.\n\n``activate_when``: condições para passar de pendente a ativo (além dos requisitos);\nvazia, ativa assim que os requisitos estiverem concluídos.\n``complete_when``: condições para concluir automaticamente; vazia, só conclui por ação\nexplícita (o mestre/jogador decide).",
@@ -547,6 +569,29 @@
         "value"
       ],
       "title": "DifficultyInfo",
+      "type": "object"
+    },
+    "EditorCampaign": {
+      "additionalProperties": false,
+      "description": "Uma campanha da pasta, como o editor a lista.\n\n``writable`` é falso quando alguma mesa já usa o arquivo: o editor não o sobrescreve, só copia.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "writable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "writable"
+      ],
+      "title": "EditorCampaign",
       "type": "object"
     },
     "ErrorResponse": {
@@ -1399,6 +1444,36 @@
       "title": "PlayerView",
       "type": "object"
     },
+    "PreviewView": {
+      "additionalProperties": false,
+      "description": "O que cada um enxerga da campanha: o jogador, o LLM sem e com segredos, e o contexto do copiloto.\n\n``llm`` é o contexto público; ``llm_secrets`` o que o LLM recebe com ``--segredos-no-llm``. O contexto do\ncopiloto (a campanha inteira) tem ``copilot_chars`` caracteres para um teto de ``copilot_limit``.",
+      "properties": {
+        "player": {
+          "$ref": "#/$defs/CampaignView"
+        },
+        "llm": {
+          "type": "string"
+        },
+        "llm_secrets": {
+          "type": "string"
+        },
+        "copilot_chars": {
+          "type": "integer"
+        },
+        "copilot_limit": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "player",
+        "llm",
+        "llm_secrets",
+        "copilot_chars",
+        "copilot_limit"
+      ],
+      "title": "PreviewView",
+      "type": "object"
+    },
     "RulesView": {
       "additionalProperties": false,
       "description": "O sistema de regras como os jogadores precisam dele.\n\nO catálogo para montar as ações da tela e o formulário de personagem. Regra do sistema é\ndado público; ficam de fora só os campos que a tela não usa (``max_hp``, ``rest``,\n``outcomes``, ``dispositions``).",
@@ -1530,6 +1605,25 @@
         "formula"
       ],
       "title": "SkillInfo",
+      "type": "object"
+    },
+    "SystemInfo": {
+      "additionalProperties": false,
+      "description": "Um sistema de regras que a campanha pode citar.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "SystemInfo",
       "type": "object"
     },
     "TableCreated": {
@@ -1705,6 +1799,52 @@
       "title": "TurnAtLeast",
       "type": "object"
     },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "description": "Um erro que impede de salvar: o caminho do campo (`locations.2.name`, vazio se é geral) e a frase.",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "message"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    },
+    "ValidationReport": {
+      "additionalProperties": false,
+      "description": "O resultado da validação: `ok` quando não há erro (os achados de autoria podem existir mesmo assim).",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "errors": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "type": "array"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/AuthoringFinding"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "ok",
+        "errors",
+        "findings"
+      ],
+      "title": "ValidationReport",
+      "type": "object"
+    },
     "WeaponInfo": {
       "additionalProperties": false,
       "description": "Uma arma, com a habilidade e o dano.",
@@ -1780,6 +1920,27 @@
     "rules": {
       "$ref": "#/$defs/RulesView"
     },
+    "editor_campaigns": {
+      "items": {
+        "$ref": "#/$defs/EditorCampaign"
+      },
+      "type": "array"
+    },
+    "editor_campaign": {
+      "$ref": "#/$defs/EditorCampaign"
+    },
+    "editor_report": {
+      "$ref": "#/$defs/ValidationReport"
+    },
+    "editor_systems": {
+      "items": {
+        "$ref": "#/$defs/SystemInfo"
+      },
+      "type": "array"
+    },
+    "editor_preview": {
+      "$ref": "#/$defs/PreviewView"
+    },
     "error": {
       "$ref": "#/$defs/ErrorResponse"
     }
@@ -1797,6 +1958,11 @@
     "campaign",
     "campaign_view",
     "rules",
+    "editor_campaigns",
+    "editor_campaign",
+    "editor_report",
+    "editor_systems",
+    "editor_preview",
     "error"
   ],
   "title": "ApiResponses",

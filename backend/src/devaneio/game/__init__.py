@@ -12,7 +12,7 @@ from devaneio.llm import (
     clean_text,
 )
 
-from .authoring import Finding, check_content
+from .authoring import Finding, check_content, explain_validation_error
 from .commands import (
     COMMANDS,
     READ_ONLY,
@@ -23,7 +23,13 @@ from .commands import (
     parse_line,
     split_actor,
 )
-from .content import load_campaign_content
+from .content import (
+    load_campaign_content,
+    load_pack_for,
+    load_rules_by_id,
+    load_rules_for,
+    rules_ids,
+)
 from .errors import GameError
 from .freeform import FreeformResult, LlmUnavailableError, run_freeform
 from .output import format_output, narrate_batch, status_banner
@@ -52,13 +58,18 @@ __all__ = [
     "clean_text",
     "connect_llm",
     "execute",
+    "explain_validation_error",
     "format_output",
     "is_command",
     "load_campaign_content",
     "load_game",
+    "load_pack_for",
+    "load_rules_by_id",
+    "load_rules_for",
     "narrate_batch",
     "new_game",
     "parse_line",
+    "rules_ids",
     "run_freeform",
     "save_game",
     "split_actor",
