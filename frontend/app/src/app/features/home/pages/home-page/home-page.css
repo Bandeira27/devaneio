@@ -44,7 +44,7 @@
 
 /* Na tela larga: as mesas guardadas ao lado de criar e entrar. */
 @media (min-width: 64rem) {
-  .home {
+  .home--split {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
     gap: var(--dv-space-6);
@@ -52,7 +52,7 @@
 }
 
 @media (min-width: 64rem) {
-  .home-page {
+  .home-page--split {
     max-width: var(--dv-measure-home);
   }
 }

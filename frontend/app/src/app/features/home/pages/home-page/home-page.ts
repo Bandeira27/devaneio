@@ -5,6 +5,7 @@ import {
   Injector,
   OnInit,
   afterNextRender,
+  computed,
   inject,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -31,6 +32,10 @@ export class HomePage implements OnInit {
   protected readonly store = inject(HomeStore);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Há mesas guardadas (ou uma acabou de ser esquecida): a tela divide em duas colunas; sem elas, uma só, centralizada. */
+  protected readonly hasSaved = computed(
+    () => this.store.saved().length > 0 || this.store.forgotten() !== null,
+  );
   protected readonly when = (time: number): string => whenOf(time, Date.now());
 
   /** Esquece a mesa e leva o foco ao "Desfazer" (o botão clicado some junto com a linha). */

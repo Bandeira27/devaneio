@@ -1,11 +1,11 @@
-<div class="dv-page home-page">
+<div class="dv-page home-page" [class.home-page--split]="hasSaved()">
   <h1 class="dv-visually-hidden">Início</h1>
   <p class="dv-lede">
     Uma mesa de RPG com um mestre que tece a história enquanto você joga. Crie uma mesa ou entre
     numa que já começou.
   </p>
 
-  <div class="home">
+  <div class="home" [class.home--split]="hasSaved()">
     @if (store.saved().length > 0 || store.forgotten()) {
       <section class="dv-card dv-stack home__saved" aria-labelledby="titulo-guardadas">
         <h2 class="dv-title" id="titulo-guardadas">Suas mesas</h2>
