@@ -6,13 +6,6 @@
   list-style: none;
 }
 
-.saved__item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--dv-space-3);
-}
-
 .saved__link {
   display: grid;
   color: var(--dv-text);
@@ -29,6 +22,24 @@
   color: var(--dv-text-muted);
 }
 
+.saved__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-3);
+}
+
+.saved__info {
+  display: grid;
+}
+
+.saved__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--dv-space-2);
+}
+
 .home__premise {
   margin: 0;
   font-family: var(--dv-font-narration);
@@ -36,23 +47,32 @@
   line-height: var(--dv-leading-narration);
 }
 
-.home,
+.home__premise-block {
+  display: grid;
+  gap: var(--dv-space-2);
+}
+
+.home-page {
+  display: grid;
+  gap: var(--dv-space-6);
+  max-width: var(--dv-measure-page);
+  margin-inline: auto;
+}
+
+.home__cover,
 .home__start {
   display: grid;
+  align-content: start;
   gap: var(--dv-space-4);
 }
 
-/* Na tela larga: as mesas guardadas ao lado de criar e entrar. */
+/* Na tela larga: a capa (a campanha, as mesas guardadas) à esquerda e as ações à direita, sempre lado a lado. */
 @media (min-width: 64rem) {
-  .home--split {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    gap: var(--dv-space-6);
-  }
-}
-
-@media (min-width: 64rem) {
-  .home-page--split {
+  .home-page {
     max-width: var(--dv-measure-home);
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: var(--dv-space-8);
+    align-items: start;
+    padding-top: var(--dv-space-6);
   }
 }

@@ -32,3 +32,24 @@
   font-style: italic;
   font-weight: var(--dv-weight-regular);
 }
+
+/* A abertura de uma tela larga: a frase que apresenta a tela, maior que o título. */
+.dv-display {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-display);
+  font-style: italic;
+  font-weight: var(--dv-weight-regular);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+/* Rótulo curto em caixa-alta, na fonte de notas: nomeia sem competir com o conteúdo. */
+.dv-eyebrow {
+  margin: 0;
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-text-muted);
+}

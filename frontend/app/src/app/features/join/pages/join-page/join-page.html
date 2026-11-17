@@ -1,8 +1,15 @@
-<div class="dv-page">
-  <h1 class="dv-title">Entrar na mesa</h1>
-  <p class="dv-lede">Você foi convidado para uma mesa. Diga como quer ser chamado.</p>
+<div class="dv-stage">
+  <div class="dv-stage__context">
+    <dv-steps [steps]="['Convite', 'Personagem', 'Jogar']" [current]="0" />
+    <h1 class="dv-display">Entrar na mesa</h1>
+    <p class="dv-lede">
+      Você foi convidado para uma mesa de RPG com um mestre de IA. Diga como quer ser chamado e, no
+      próximo passo, crie o seu personagem.
+    </p>
+    <dv-ornament />
+  </div>
 
-  <form class="dv-card dv-stack" (submit)="$event.preventDefault(); store.join()">
+  <form class="dv-stage__task dv-card" (submit)="$event.preventDefault(); store.join()">
     <dv-field label="Seu nome" [error]="store.nameError()">
       <input
         dvInput

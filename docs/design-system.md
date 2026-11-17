@@ -81,6 +81,7 @@ está no JSDoc de cada um.
 | `dv-key-value`                           | pares rótulo e valor (`dl`)                                                                          |
 | `dv-disclosure`                          | detalhe que abre e fecha (sobre `details`)                                                           |
 | `dv-choice`                              | escolha única em cartões grandes (rádios nativos)                                                    |
+| `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Jogar), com o atual marcado                         |
 | `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                 |
 | `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                         |
 | `dv-icon`                                | conjunto fechado de ícones decorativos                                                               |
@@ -91,6 +92,12 @@ rodapé `.dv-sheet__foot` com a ação primária à direita. No celular sobem do
 diálogo centralizado de até `--dv-measure-dialog`. Ações que gastam a vez (`Ir`, `Atacar`) pedem a confirmação dentro
 da própria folha. Escolhas curtas (habilidade, dificuldade, alvo, arma, modificador) usam `dv-choice`; botões em envio
 usam `dvLoading` e mantêm o rótulo.
+
+**As telas de entrada** (entrar, convite, personagem) usam o **palco** `.dv-stage`: no celular uma coluna; a partir de
+64rem, o contexto à esquerda (passos, título em `.dv-display`, texto, ornamento, resumo da ficha) e a tarefa à direita.
+A **home** é capa + painel: à esquerda a apresentação, a premissa da campanha e as mesas guardadas ("Continuar" na mais
+recente), à direita criar mesa e "Tenho um convite" (recolhido). O cabeçalho e todas essas telas se alinham ao mesmo
+contêiner (`--dv-measure-shell`).
 
 **Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-title`, `.dv-section`, marca em `text-display`),
 rótulos em caixa-alta com espaçamento (`tracking-label`), superfície, ornamento e cor com papel único (rosa = ação e

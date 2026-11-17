@@ -1,33 +1,45 @@
-<div class="dv-page">
-  <h1 class="dv-title">Chame o grupo</h1>
-  <p class="dv-lede">Mande este link a quem vai jogar. Ele leva direto à sua mesa.</p>
+<div class="dv-stage">
+  <div class="dv-stage__context">
+    <dv-steps [steps]="['Mesa', 'Personagem', 'Jogar']" [current]="0" />
+    <h1 class="dv-display">Chame o grupo</h1>
+    <p class="dv-lede">Mande este link a quem vai jogar. Ele leva direto à sua mesa.</p>
+    <dv-ornament />
+  </div>
 
-  <section class="dv-card dv-stack" aria-label="Link do convite">
-    <dv-field
-      label="Endereço do servidor"
-      hint="É o endereço que o celular dos outros alcança, não o seu localhost."
-      [error]="store.addressError()"
-    >
-      <input
-        dvInput
-        type="text"
-        autocomplete="off"
-        [value]="store.addressText()"
-        (input)="store.addressText.set(fieldValue($event))"
-      />
-    </dv-field>
-    @if (store.localWarning()) {
-      <dv-notice>
-        Esse endereço é só deste aparelho. Para os outros entrarem, troque pelo IP do seu computador
-        na rede, como 192.168.0.5:8765.
-      </dv-notice>
-    }
-    @if (store.link()) {
-      <dv-copy-field label="Link do convite" [text]="store.link()" />
-    }
-    <p class="dv-note">Código do convite: {{ store.code() }}</p>
-  </section>
+  <div class="dv-stage__task">
+    <section class="dv-card dv-stack" aria-label="Link do convite">
+      @if (store.link()) {
+        <dv-copy-field label="Link do convite" [text]="store.link()" />
+      } @else {
+        <dv-notice kind="error">{{ store.addressError() }}</dv-notice>
+      }
+      <dv-disclosure label="Opções avançadas: endereço e código">
+        <div class="dv-stack">
+          <dv-field
+            label="Endereço do servidor"
+            hint="É o endereço que o celular dos outros alcança, não o seu localhost."
+            [error]="store.addressError()"
+          >
+            <input
+              dvInput
+              type="text"
+              autocomplete="off"
+              [value]="store.addressText()"
+              (input)="store.addressText.set(fieldValue($event))"
+            />
+          </dv-field>
+          @if (store.localWarning()) {
+            <dv-notice>
+              Esse endereço é só deste aparelho. Para os outros entrarem, troque pelo IP do seu
+              computador na rede, como 192.168.0.5:8765.
+            </dv-notice>
+          }
+          <p class="dv-note">Código do convite: {{ store.code() }}</p>
+        </div>
+      </dv-disclosure>
+    </section>
 
-  <a dvButton="primary" [routerLink]="['/mesa', tableId(), 'personagem']">Criar meu personagem</a>
-  <a dvButton [routerLink]="['/mesa', tableId()]">Ir para a mesa sem personagem</a>
+    <a dvButton="primary" [routerLink]="['/mesa', tableId(), 'personagem']">Criar meu personagem</a>
+    <a dvButton [routerLink]="['/mesa', tableId()]">Ir para a mesa sem personagem</a>
+  </div>
 </div>

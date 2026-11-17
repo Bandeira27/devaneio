@@ -1,0 +1,23 @@
+/* O resumo da ficha só aparece ao lado do formulário (tela larga); no celular ele repetiria o que está logo abaixo. */
+.character__preview {
+  display: none;
+}
+
+/* Os atributos em duas colunas quando há espaço. */
+.character__attributes {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+@media (min-width: 40rem) {
+  .character__attributes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .character__preview {
+    display: grid;
+    gap: var(--dv-space-3);
+  }
+}

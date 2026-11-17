@@ -26,6 +26,15 @@ describe('Convite do anfitrião', () => {
     expect(root().textContent).toContain(`Código do convite: ${INVITE}`);
   });
 
+  it('o link com "Copiar" vem primeiro; endereço e código ficam em "Opções avançadas"', async () => {
+    const { root } = await host();
+    const section = root().querySelector('section') as HTMLElement;
+    expect(section.firstElementChild?.tagName.toLowerCase()).toBe('dv-copy-field');
+    const advanced = section.querySelector('dv-disclosure') as HTMLElement;
+    expect(advanced.textContent).toContain('Opções avançadas');
+    expect(advanced.querySelector('input:not([readonly])')).not.toBeNull();
+  });
+
   it('troca o endereço e o aviso some', async () => {
     const { root, type } = await host();
     await type('input:not([readonly])', '192.168.0.5:8765');

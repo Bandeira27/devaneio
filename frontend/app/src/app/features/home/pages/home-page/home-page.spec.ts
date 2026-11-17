@@ -23,23 +23,36 @@ describe('Home', () => {
     expect((root().querySelector('select') as HTMLSelectElement).value).toBe('sombra-do-vale');
   });
 
-  it('sem mesas guardadas fica numa coluna só, centralizada', async () => {
+  it('a capa (apresentação e campanha) e o painel de ações ficam lado a lado, com ou sem mesas guardadas', async () => {
     const { root } = await open();
-    expect(root().querySelector('.home--split')).toBeNull();
+    const columns = Array.from(root().querySelectorAll('.home-page > *')).map((el) => el.className);
+    expect(columns).toEqual(['home__cover', 'home__start']);
+    expect(root().querySelector('.home__saved')).toBeNull(); // sem mesas, a capa não tem a lista
+    expect(root().querySelector('h1')?.textContent).toContain('mestre que tece a história');
   });
 
-  it('com mesas guardadas divide em duas colunas', async () => {
+  it('a mesa guardada mais recente é "Continuar" (primário); as outras são "Abrir"', async () => {
     const app = await setup('/');
     app.session.save(TABLE_ID, {
-      token: 'tk',
+      token: 'a',
       playerId: 'p1',
       role: 'host',
-      title: 'A Sombra do Vale',
-      savedAt: Date.now(),
+      title: 'Nova',
+      savedAt: 20,
+    });
+    app.session.save('1111111111111111', {
+      token: 'b',
+      playerId: 'p2',
+      role: 'player',
+      title: 'Velha',
+      savedAt: 10,
     });
     app.http.expectOne('/campaigns').flush(CAMPAIGNS);
     await app.settle();
-    expect(app.root().querySelector('.home--split')).not.toBeNull();
+    const links = Array.from(app.root().querySelectorAll('.saved__link')) as HTMLElement[];
+    expect(links.map((l) => l.textContent?.trim())).toEqual(['Continuar', 'Abrir']);
+    expect(links[0]?.classList.contains('dv-button--primary')).toBe(true);
+    expect(links[1]?.classList.contains('dv-button--primary')).toBe(false);
   });
 
   it('mostra a premissa da campanha escolhida', async () => {
@@ -182,7 +195,7 @@ describe('Home', () => {
     await app.settle();
     const link = app.root().querySelector('.saved__link') as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe(`/mesa/${TABLE_ID}`);
-    expect(link.textContent).toContain('jogador');
+    expect(app.root().querySelector('.saved__item')?.textContent).toContain('jogador');
     await app.click('.saved__item button');
     expect(app.root().querySelector('.saved__item')).toBeNull();
     expect(app.session.get(TABLE_ID)).toBeNull();

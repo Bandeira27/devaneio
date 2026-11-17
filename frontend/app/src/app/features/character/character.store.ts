@@ -89,6 +89,21 @@ export class CharacterStore {
     }
   }
 
+  /** O resumo da ficha ao vivo: cada atributo com o valor escolhido (aparece ao lado do formulário na tela larga). */
+  readonly preview = computed<{ label: string; value: string }[]>(() =>
+    (this.rules()?.attributes ?? []).map((a) => ({
+      label: a.name,
+      value: String(this.values()[a.id] ?? a.default),
+    })),
+  );
+  /** A soma dos atributos escolhidos. */
+  readonly total = computed(() =>
+    (this.rules()?.attributes ?? []).reduce(
+      (sum, a) => sum + (this.values()[a.id] ?? a.default),
+      0,
+    ),
+  );
+
   /** Os atributos diferem dos valores padrão: só então "Restaurar padrão" faz algo. */
   readonly changed = computed(() => {
     const rules = this.rules();

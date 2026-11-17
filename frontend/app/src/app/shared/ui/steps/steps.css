@@ -1,0 +1,42 @@
+ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2) var(--dv-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dv-space-2);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-text-muted);
+}
+
+.number {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: var(--dv-border-width) dotted var(--dv-border-control);
+  border-radius: var(--dv-radius-round);
+}
+
+.current {
+  color: var(--dv-text);
+}
+
+.current .number {
+  border-style: solid;
+  border-color: var(--dv-ink);
+}
+
+.done .label {
+  text-decoration: line-through;
+  text-decoration-style: dotted;
+}
