@@ -30,6 +30,15 @@ anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)
 - **Botões** para as ações, com chat opcional para digitar comandos; o texto livre pelo LLM segue como ação.
 - **Mesa primeiro, editor depois.** O editor (depois) só existe com `--editor` e só em localhost.
 
+## Navegação por campanha
+
+`/` lista as campanhas em cards; `/c/:campaignId` é o quadro da campanha (`layout/campaign-shell`, com a barra lateral) e
+tem como filhas a visão geral, as mesas (`/mesas`) e o roteiro (`/roteiro/...`, o editor de campanhas, só com `--editor`).
+A mesa em jogo (`/mesa/:tableId/...`) e as telas de entrada ficam fora do quadro, em tela cheia. As páginas de dentro
+leem o `campaignId` da rota de fora (`paramsInheritanceStrategy: 'always'`). Cada mesa guardada neste aparelho anota o id da
+campanha (`StoredTable.campaignId`; as antigas casam pelo título); o catálogo de campanhas e a pergunta "o editor está
+ligado?" vivem num serviço só (`core/catalog`). O desenho de interação está em [`padroes-de-interacao.md`](padroes-de-interacao.md).
+
 ## Estética: Desbotado
 
 Uma memória desbotada, "meio velha, meio incerta de existir", como a palavra devaneio. Fumaça e sépia, IM Fell English na
@@ -58,8 +67,8 @@ frontend/app/src/
   app/
     core/        singletons sem UI: api (HttpClient + interceptor de Bearer + ApiError), session, live (long-poll)
     shared/      ui/ (componentes dv-* sobre o CDK), game/ (lógica pura: commands, feed, rules, cena, nomes, convite...)
-    layout/      shell
-    features/    home/  join/  invite/  character/  table/  editor/   (table/host/ é o painel do anfitrião; editor/ é o editor de campanhas)
+    features/    home/  campaign/  join/  invite/  character/  table/  editor/   (home/ lista as campanhas em cards; campaign/ é a visão geral e as mesas de uma campanha; table/host/ é o painel do anfitrião; editor/ é o roteiro)
+    layout/      shell/ (cabeçalho e página)  campaign-shell/ (a barra lateral de uma campanha)
 ```
 
 `features` e `layout` usam `shared` e `core`; `shared` e `core` não dependem de `features`, de `layout` nem um do outro;
