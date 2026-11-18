@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import unicodedata
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BeforeValidator, Field
 
@@ -91,6 +91,14 @@ class CommandRequest(StrictModel):
 
     line: CommandLine
     # Número de eventos que o cliente viu: comando que muda a partida com revisão velha é recusado.
+    revision: int = Field(ge=0)
+
+
+class LifecycleRequest(StrictModel):
+    """Uma mudança de fase da mesa, pedida pelo anfitrião: iniciar, pausar, retomar ou encerrar."""
+
+    action: Literal["start", "pause", "resume", "end"]
+    # Número de eventos que o cliente viu: mudar a fase com a mesa andada (um comando no meio) é recusado.
     revision: int = Field(ge=0)
 
 

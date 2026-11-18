@@ -86,17 +86,22 @@ def connect_llm(config: LlmConfig) -> ChatClient:
     return OpenAiCompatClient(config)
 
 
-def new_game(campaign_path: Path, save_path: Path, seed: int | None = None) -> Session:
+def new_game(
+    campaign_path: Path, save_path: Path, seed: int | None = None, *, start: bool = True
+) -> Session:
     """Cria uma partida nova e a grava.
 
-    Semente aleatória (< 2**53, portável) se não for dada.
+    Semente aleatória (< 2**53, portável) se não for dada. Com ``start=False`` a história ainda não
+    começou: sem a abertura (marcos e fatos que já valem), que a mesa roda ao iniciar a partida.
     """
     campaign_path = Path(campaign_path).resolve()
     campaign, rules, pack = load_campaign_content(campaign_path)
     if seed is None:
         seed = random.SystemRandom().getrandbits(53)
-    state, _ = advance_beats(initial_state(campaign, rules, seed), campaign)
-    state, _ = reveal_facts(state, campaign)
+    state = initial_state(campaign, rules, seed)
+    if start:
+        state, _ = advance_beats(state, campaign)
+        state, _ = reveal_facts(state, campaign)
     session = Session(
         campaign,
         rules,

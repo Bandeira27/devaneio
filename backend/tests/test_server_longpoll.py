@@ -6,7 +6,7 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest
 from devaneio.server.storage import MAX_WAITERS
@@ -29,6 +29,7 @@ def table(service):
     created = service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
     )
+    open_for_play(service, created.table_id)
     joined = service.join_table(created.table_id, JoinRequest(invite_code="convite", name="Bia"))
     service.run_command(
         created.table_id,

@@ -7,7 +7,7 @@ from itertools import count
 import pytest
 from pydantic import ValidationError
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.models import CommandRequest, CopilotRequest, CreateTableRequest, JoinRequest
@@ -82,6 +82,7 @@ class Desk:
         created = service.create_table(
             CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
         )
+        open_for_play(service, created.table_id)
         self.id, self.host = created.table_id, created.host_token
         joined = service.join_table(self.id, JoinRequest(invite_code="convite", name="Bia"))
         self.player = joined.token
@@ -251,6 +252,7 @@ def test_a_token_from_another_table_is_refused_and_nothing_is_sent(desk, script)
     other = desk.service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Caio", seed=7)
     )
+    open_for_play(desk.service, other.table_id)
     refused = desk.refused(other.host_token)
     assert (refused.status, refused.code) == (401, "unauthorized")
     assert script.requests == []

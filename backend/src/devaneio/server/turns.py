@@ -192,6 +192,9 @@ def apply(
     """Executa um comando de um jogador sobre a partida e devolve o resultado, a nova sessão e a mesa."""
     state = session.state
     plan = resolve(player, request.line, state)
+    refusal = policy.phase_refusal(table.phase, player.role, plan.kind)
+    if refusal is not None:
+        raise ApiFailure(409, *refusal)
     check_turn(table, state, plan, request.revision)
     before = set(state.characters)
     new_session, text = execute(session, plan.line)

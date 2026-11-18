@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hmac
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -37,6 +38,7 @@ from .auth import hash_secret, new_invite, new_token
 from .catalog import Catalog
 from .copilot import CopilotDesk
 from .errors import ApiFailure
+from .lifecycle import LifecycleDesk
 from .models import (
     TURN_POLICY,
     CampaignSummary,
@@ -50,6 +52,7 @@ from .models import (
     InvitePreview,
     InvitePreviewRequest,
     JoinRequest,
+    LifecycleRequest,
     LlmView,
     PlayerStateView,
     PlayerView,
@@ -116,6 +119,7 @@ class TableService:
         llm_secrets: bool = False,
         token_source: Callable[[], str] = new_token,
         invite_source: Callable[[], str] = new_invite,
+        clock: Callable[[], float] = time.time,
     ) -> None:
         self.catalog = catalog
         self.storage = storage
@@ -124,6 +128,8 @@ class TableService:
         self._warned: set[tuple[str, str]] = set()
         self._token_source = token_source
         self._invite_source = invite_source
+        self._clock = clock
+        self._lifecycle = LifecycleDesk(storage, self.load_session, clock)
         self._say = (
             SayDesk(storage, llm, self.load_session, say_cooldown, llm_secrets)
             if llm is not None
@@ -152,10 +158,12 @@ class TableService:
             raise ApiFailure(409, "table_limit", "este servidor já tem o máximo de mesas")
         token, invite = self._token_source(), self._invite_source()
         host = Player(name=request.host_name, role="host", token_hash=hash_secret(token))
-        table = TableMeta(invite_hash=hash_secret(invite), players={HOST_ID: host})
+        table = TableMeta(invite_hash=hash_secret(invite), players={HOST_ID: host}, phase="lobby")
         table_id, save_path = self.storage.new_table_path()
         with self.storage.lock(table_id):
-            session = replace(new_game(campaign_path, save_path, request.seed), table=table)
+            session = replace(
+                new_game(campaign_path, save_path, request.seed, start=False), table=table
+            )
             save_game(session)
         return TableCreated(
             table_id=table_id,
@@ -195,6 +203,8 @@ class TableService:
             table = session.table
             if table is None or not _invite_matches(table, request.invite_code):
                 raise _invalid_invite()
+            if table.phase == "ended":
+                raise ApiFailure(409, "table_ended", "a partida foi encerrada")
             if len(table.players) >= MAX_PLAYERS:
                 raise ApiFailure(409, "table_full", f"a mesa já tem {MAX_PLAYERS} jogadores")
             if request.name.casefold() in {p.name.casefold() for p in table.players.values()}:
@@ -339,6 +349,16 @@ class TableService:
         session, table, player_id, player = self._open(table_id, token)
         return self._view(table_id, session, table, player.role, player_id)
 
+    def set_phase(self, table_id: str, token: str | None, request: LifecycleRequest) -> TableView:
+        """Inicia, pausa, retoma ou encerra a partida (só o anfitrião); devolve a mesa como ele a vê."""
+        path = self.storage.path_for(table_id)
+        if path is None:
+            raise ApiFailure(404, "table_not_found", "mesa não encontrada")
+        if token is None:
+            raise ApiFailure(401, "unauthorized", "token ausente")
+        session, table, player_id = self._lifecycle.run(table_id, path, token, request)
+        return self._view(table_id, session, table, "host", player_id)
+
     def get_campaign(self, table_id: str, token: str | None) -> Campaign | CampaignView:
         """A campanha como o papel de quem pergunta pode ver.
 
@@ -424,6 +444,8 @@ class TableService:
             acted=dict(table.acted),
             revision=len(session.state.events),
             status=game_status(session.state),
+            phase=table.phase,
+            elapsed_seconds=table.elapsed(self._clock()),
             llm=self._llm_view(),
             you=you,
             state=state if role == "host" else PlayerStateView.of(state, session.rules),

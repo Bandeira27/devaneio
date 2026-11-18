@@ -110,6 +110,31 @@
       "title": "JoinRequest",
       "type": "object"
     },
+    "LifecycleRequest": {
+      "additionalProperties": false,
+      "description": "Uma mudança de fase da mesa, pedida pelo anfitrião: iniciar, pausar, retomar ou encerrar.",
+      "properties": {
+        "action": {
+          "enum": [
+            "start",
+            "pause",
+            "resume",
+            "end"
+          ],
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "action",
+        "revision"
+      ],
+      "title": "LifecycleRequest",
+      "type": "object"
+    },
     "SaveRequest": {
       "additionalProperties": false,
       "description": "A campanha a gravar: o servidor a valida de novo e só grava sem erro.",
@@ -177,6 +202,9 @@
     "command": {
       "$ref": "#/$defs/CommandRequest"
     },
+    "lifecycle": {
+      "$ref": "#/$defs/LifecycleRequest"
+    },
     "say": {
       "$ref": "#/$defs/SayRequest"
     },
@@ -195,6 +223,7 @@
     "join_table",
     "invite_preview",
     "command",
+    "lifecycle",
     "say",
     "copilot",
     "editor_validate",

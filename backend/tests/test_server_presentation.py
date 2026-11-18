@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.server import Catalog, Storage, TableService
 from devaneio.server.models import CreateTableRequest, JoinRequest
 from devaneio.server.presentation import MAX_NARRATIONS, MAX_TALK, Presentation
@@ -70,6 +70,7 @@ def test_wait_without_since_talk_does_not_return_at_once_for_old_talk(service):
     created = service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
     )
+    open_for_play(service, created.table_id)
     table_id, host = created.table_id, created.host_token
     service.storage.presentation(table_id).add_talk(after=1, to="ana", text="antiga")
     revision = service.get_table(table_id, host).revision
@@ -84,6 +85,7 @@ def test_wait_without_since_talk_wakes_for_a_new_talk_and_returns_only_that(serv
     created = service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
     )
+    open_for_play(service, created.table_id)
     table_id, host = created.table_id, created.host_token
     joined = service.join_table(table_id, JoinRequest(invite_code="convite", name="Bia"))
     presentation = service.storage.presentation(table_id)

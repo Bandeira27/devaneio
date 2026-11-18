@@ -71,7 +71,9 @@ def execute(session: Session, line: str) -> tuple[Session, str]:
         raise GameOverError(status)
     try:
         new_state, text = handler(session, actor, args)
-        if new_state is not session.state and name != "fim":
+        waiting = session.table is not None and session.table.phase == "lobby"
+        # Na sala de espera a história ainda não começou: criar personagem não dispara a abertura.
+        if new_state is not session.state and name != "fim" and not waiting:
             new_state, beat_texts = advance_beats(new_state, session.campaign)
             new_state, reveal_texts = reveal_facts(new_state, session.campaign)
             text = "\n".join([text, *beat_texts, *reveal_texts])

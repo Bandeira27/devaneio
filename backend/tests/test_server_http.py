@@ -10,7 +10,7 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.game import new_game, save_game
 from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
@@ -22,8 +22,9 @@ TOKENS = count(1)
 
 
 class Client:
-    def __init__(self, base_url):
+    def __init__(self, base_url, service=None):
         self.base_url = base_url
+        self.service = service  # para abrir a partida das mesas criadas (``create``)
 
     def call(self, method, path, *, body=None, auth=None, headers=None, raw=None):
         data = None
@@ -74,15 +75,19 @@ def client(service):
     thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.02), daemon=True)
     thread.start()
     try:
-        yield Client(f"http://127.0.0.1:{server.server_address[1]}")
+        yield Client(f"http://127.0.0.1:{server.server_address[1]}", service)
     finally:
         server.shutdown()
         server.server_close()
 
 
-def create(client, **fields):
+def create(client, *, lobby=False, **fields):
+    """Cria a mesa; sem ``lobby`` ela já vem em andamento (como antes da sala de espera)."""
     body = {"campaign_id": "sombra-do-vale", "host_name": "Ana", "seed": 7, **fields}
-    return client.call("POST", "/tables", body=body)
+    status, created, headers = client.call("POST", "/tables", body=body)
+    if status == 201 and not lobby:
+        open_for_play(client.service, created["table_id"])
+    return status, created, headers
 
 
 def test_create_then_read_a_table(client, issued):
@@ -96,7 +101,7 @@ def test_create_then_read_a_table(client, issued):
         }
     ]
 
-    status, created, headers = create(client)
+    status, created, headers = create(client, lobby=True)
     assert status == 201
     assert headers["Content-Type"] == "application/json; charset=utf-8"
     assert headers["Cache-Control"] == "no-store"
@@ -112,6 +117,7 @@ def test_create_then_read_a_table(client, issued):
     assert status == 200
     assert view == created["table"]
     assert view["state"]["rng_seed"] == 7
+    assert (view["phase"], view["elapsed_seconds"], view["revision"]) == ("lobby", 0, 0)
     assert view["players"] == [{"id": "p1", "name": "Ana", "role": "host", "character_ids": []}]
     assert "hash" not in json.dumps(view)
 
@@ -770,7 +776,7 @@ def test_the_copilot_route_answers_the_host_only(tmp_path, issued):
         )
         thread.start()
         try:
-            http = Client(f"http://127.0.0.1:{server.server_address[1]}")
+            http = Client(f"http://127.0.0.1:{server.server_address[1]}", service)
             _, created, _ = create(http)
             table, host = created["table_id"], created["host_token"]
             _, joined, _ = http.call(
@@ -855,3 +861,33 @@ def test_the_rules_route_over_http(client, issued):
     assert client.call("GET", f"/tables/{'0' * 16}/rules", auth=host)[0] == 404
     assert client.call("POST", f"/tables/{table}/rules", body={}, auth=host)[0] == 405
     assert client.call("GET", f"/tables/{table}", auth=host)[1]["you"] == "p1"
+
+
+def test_the_lifecycle_route_starts_pauses_and_ends_the_game(client):
+    _, created, _ = create(client, lobby=True)
+    table, host = created["table_id"], created["host_token"]
+    path = f"/tables/{table}/lifecycle"
+    status, body, _ = client.call("POST", path, body={"action": "start", "revision": 0}, auth=host)
+    assert (status, body["error"]["code"]) == (409, "no_characters")
+    _, result, _ = client.call(
+        "POST",
+        f"/tables/{table}/commands",
+        body={"line": 'entrar ana "Ana"', "revision": 0},
+        auth=host,
+    )
+    status, view, _ = client.call(
+        "POST", path, body={"action": "start", "revision": result["revision"]}, auth=host
+    )
+    assert (status, view["phase"], view["role"]) == (200, "running", "host")
+    status, body, _ = client.call(
+        "POST", path, body={"action": "explodir", "revision": view["revision"]}, auth=host
+    )
+    assert (status, body["error"]["code"]) == (400, "bad_request")
+    status, view, _ = client.call(
+        "POST", path, body={"action": "pause", "revision": view["revision"]}, auth=host
+    )
+    assert (status, view["phase"]) == (200, "paused")
+    status, _, _ = client.call("GET", path, auth=host)
+    assert status == 405
+    status, body, _ = client.call("POST", path, body={"action": "end", "revision": 0})
+    assert (status, body["error"]["code"]) == (401, "unauthorized")

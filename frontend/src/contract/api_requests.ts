@@ -13,6 +13,7 @@ export interface ApiRequests {
   join_table: JoinRequest;
   invite_preview: InvitePreviewRequest;
   command: CommandRequest;
+  lifecycle: LifecycleRequest;
   say: SayRequest;
   copilot: CopilotRequest;
   editor_validate: ValidateRequest;
@@ -44,6 +45,13 @@ export interface InvitePreviewRequest {
  */
 export interface CommandRequest {
   line: string;
+  revision: number;
+}
+/**
+ * Uma mudança de fase da mesa, pedida pelo anfitrião: iniciar, pausar, retomar ou encerrar.
+ */
+export interface LifecycleRequest {
+  action: "start" | "pause" | "resume" | "end";
   revision: number;
 }
 /**

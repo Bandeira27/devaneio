@@ -1,5 +1,7 @@
 """Política da mesa: os papéis particionam os comandos do jogo e o fim de turno automático."""
 
+import pytest
+
 from devaneio.game import COMMANDS, READ_ONLY, TableMeta
 from devaneio.schema import GameState
 from devaneio.server import policy
@@ -88,3 +90,44 @@ def test_characters_nobody_owns_are_not_waited_for():
     table = _table({"ana": 3}, p1=["ana"])
     assert policy.eligible(table, state) == ["ana"]
     assert policy.everyone_acted(table, state) is True
+
+
+# --- fase da mesa --------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("phase", ["lobby", "running", "paused", "ended"])
+@pytest.mark.parametrize("role", ["host", "player"])
+def test_reading_and_unknown_commands_are_never_refused_by_the_phase(phase, role):
+    assert policy.phase_refusal(phase, role, "read") is None
+    assert policy.phase_refusal(phase, role, None) is None  # o execute dá a mensagem de sempre
+
+
+@pytest.mark.parametrize("kind", ["join", "action", "host", policy.SAY_KIND])
+@pytest.mark.parametrize("role", ["host", "player"])
+def test_a_running_game_refuses_nothing_by_phase(kind, role):
+    assert policy.phase_refusal("running", role, kind) is None
+
+
+@pytest.mark.parametrize("role", ["host", "player"])
+def test_the_lobby_only_lets_characters_be_created(role):
+    assert policy.phase_refusal("lobby", role, "join") is None
+    for kind in ("action", "host", policy.SAY_KIND):
+        assert policy.phase_refusal("lobby", role, kind) == (
+            "not_started",
+            "a partida ainda não começou",
+        )
+
+
+def test_a_pause_stops_the_players_but_not_the_host():
+    for kind in ("join", "action", "host", policy.SAY_KIND):
+        assert policy.phase_refusal("paused", "host", kind) is None
+        assert policy.phase_refusal("paused", "player", kind) == (
+            "paused",
+            "a partida está pausada pelo anfitrião",
+        )
+
+
+@pytest.mark.parametrize("role", ["host", "player"])
+def test_an_ended_game_only_reads(role):
+    for kind in ("join", "action", "host", policy.SAY_KIND):
+        assert policy.phase_refusal("ended", role, kind) == ("ended", "a partida foi encerrada")

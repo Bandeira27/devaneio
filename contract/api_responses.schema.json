@@ -1718,6 +1718,19 @@
         "status": {
           "$ref": "#/$defs/GameStatus"
         },
+        "phase": {
+          "enum": [
+            "lobby",
+            "running",
+            "paused",
+            "ended"
+          ],
+          "type": "string"
+        },
+        "elapsed_seconds": {
+          "minimum": 0,
+          "type": "integer"
+        },
         "llm": {
           "$ref": "#/$defs/LlmView"
         },
@@ -1745,6 +1758,8 @@
         "acted",
         "revision",
         "status",
+        "phase",
+        "elapsed_seconds",
         "llm",
         "you",
         "state"

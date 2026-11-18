@@ -69,6 +69,8 @@ export interface TableView {
   };
   revision: number;
   status: GameStatus;
+  phase: "lobby" | "running" | "paused" | "ended";
+  elapsed_seconds: number;
   llm: LlmView;
   you: string;
   state: GameState | PlayerStateView;
