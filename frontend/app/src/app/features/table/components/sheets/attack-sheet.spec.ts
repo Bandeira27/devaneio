@@ -37,7 +37,8 @@ describe('AttackSheet', () => {
     el.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
     fixture.detectChanges();
     expect(close).not.toHaveBeenCalled();
-    expect(el.textContent).toContain('Atacar Lobo com Punhos. Gasta a sua ação.');
+    expect(el.textContent).toContain('Atacar Lobo com Punhos.');
+    expect(el.textContent).toContain('Gasta a sua ação.');
     (el.querySelector('.dv-sheet__foot button') as HTMLButtonElement).click(); // Voltar
     fixture.detectChanges();
     expect(el.querySelector('form')).not.toBeNull();

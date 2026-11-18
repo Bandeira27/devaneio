@@ -43,8 +43,9 @@ export interface AttackSheetData {
       <p cdkFocusInitial tabindex="-1" #confirm>
         Atacar <strong>{{ targetName() }}</strong> com <strong>{{ weaponName() }}</strong>{{
           modifierName() ? ' (' + modifierName() + ')' : ''
-        }}. Gasta a sua ação.
+        }}.
       </p>
+      <p class="dv-note">Gasta a sua ação.</p>
       <div class="dv-sheet__foot">
         <button dvButton type="button" (click)="confirming.set(false)">Voltar</button>
         <button dvButton="primary" type="button" cdkFocusInitial (click)="ref.close(command())">

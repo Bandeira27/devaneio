@@ -31,9 +31,10 @@ export interface GoSheetData {
   template: `
     <dv-sheet-head title="Ir" />
     @if (picked(); as exit) {
-      <p class="dv-stack" cdkFocusInitial tabindex="-1" #confirm>
-        Mover o grupo para <strong>{{ exit.name }}</strong>. Gasta a sua ação.
+      <p cdkFocusInitial tabindex="-1" #confirm>
+        Mover o grupo para <strong>{{ exit.name }}</strong>.
       </p>
+      <p class="dv-note">Gasta a sua ação.</p>
       <div class="dv-sheet__foot">
         <button dvButton type="button" (click)="picked.set(null)">Voltar</button>
         <button
