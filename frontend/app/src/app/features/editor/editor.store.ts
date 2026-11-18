@@ -11,6 +11,8 @@ import type {
 } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
+import { CampaignCatalog } from '@core/catalog/campaign-catalog';
+import { CreatedCampaign } from '@core/catalog/created-campaign';
 import {
   addBeat,
   addFact,
@@ -53,6 +55,8 @@ const key = (kind: ItemKind, id: string): string => `${kind}:${id}`;
 @Injectable()
 export class EditorStore {
   private readonly api = inject(ApiClient);
+  private readonly catalog = inject(CampaignCatalog);
+  private readonly created = inject(CreatedCampaign);
   private readonly router = inject(Router);
   private readonly sheet = inject(Sheet);
   private readonly delay = inject(VALIDATE_DELAY);
@@ -459,14 +463,19 @@ export class EditorStore {
           : await firstValueFrom(this.api.editorUpdate(savedId, campaign));
       this.savedId.set(result.id);
       this.writable.set(result.writable);
+      void this.catalog.load(); // o catálogo de campanhas (título, novidade) acompanha o que foi gravado
       this.savedText.set(JSON.stringify(campaign));
       this.justSaved.set(this.campaign() === campaign); // se o autor editou durante a gravação, ainda há o que gravar
       if (savedId === null) {
-        const section = this.router.url.split('?')[0]?.split('/').slice(3) ?? []; // o que vem depois de /editor/<id>
+        const section = this.router.url.split('?')[0]?.split('/').slice(4) ?? []; // o que vem depois de /c/<id>/roteiro
         this.navigatingAfterSave = true;
+        this.created.announce(result.id); // a tela segue a mesma: só o endereço troca `nova` pelo id
         try {
-          await this.router.navigate(['/editor', result.id, ...section], { replaceUrl: true });
+          await this.router.navigate(['/c', result.id, 'roteiro', ...section], {
+            replaceUrl: true,
+          });
         } finally {
+          this.created.clear();
           this.navigatingAfterSave = false;
         }
       }

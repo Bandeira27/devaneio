@@ -1,11 +1,11 @@
 @switch (store.state()) {
   @case ('loading') {
-    <h1 class="dv-visually-hidden">Editor de campanhas</h1>
+    <h1 class="dv-visually-hidden">Roteiro</h1>
     <dv-state kind="loading" cover>Abrindo a campanha…</dv-state>
   }
   @case ('failed') {
     <div class="dv-page">
-      <h1 class="dv-visually-hidden">Editor de campanhas</h1>
+      <h1 class="dv-visually-hidden">Roteiro</h1>
       @if (store.unavailable()) {
         <dv-state kind="unavailable">
           O editor está desligado neste servidor. Quem roda o servidor liga com a opção --editor, em
@@ -19,29 +19,18 @@
           </button>
         </dv-state>
       }
-      <a dvButton routerLink="/editor">Voltar às campanhas</a>
+      <a dvButton routerLink="/">Voltar às campanhas</a>
     </div>
   }
   @case ('ready') {
     @if (store.campaign(); as c) {
       <div class="editor">
         <header class="editor__bar">
-          <h1 class="dv-title">{{ store.isNew() ? 'Nova campanha' : 'Editar: ' + c.title }}</h1>
-          <a dvButton routerLink="/editor">Voltar às campanhas</a>
-        </header>
-
-        <nav class="editor__nav" aria-label="Seções da campanha">
-          @for (section of sections; track section.path) {
-            <a
-              dvButton
-              [routerLink]="section.path === '' ? ['./'] : ['./', section.path]"
-              routerLinkActive="editor__current"
-              ariaCurrentWhenActive="page"
-              [routerLinkActiveOptions]="{ exact: true }"
-              >{{ section.label }}</a
-            >
+          <h1 class="dv-title">{{ store.isNew() ? 'Nova campanha' : 'Roteiro' }}</h1>
+          @if (!store.isNew()) {
+            <p class="dv-note">{{ c.title }}</p>
           }
-        </nav>
+        </header>
 
         @if (!store.isNew() && !store.writable()) {
           <dv-notice kind="warn">

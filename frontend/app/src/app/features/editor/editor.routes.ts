@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import type { CanDeactivateFn } from '@angular/router';
-import { EditorListPage } from './pages/list-page/list-page';
 import { EditorPage } from './pages/edit-page/edit-page';
 import { BeatsSection } from './sections/beats-section';
 import { FactionsSection } from './sections/factions-section';
@@ -13,10 +12,14 @@ import { PreviewSection } from './sections/preview-section';
 /** Sair da edição com alterações não gravadas pede confirmação. */
 const leave: CanDeactivateFn<EditorPage> = (page) => page.canLeave();
 
+/**
+ * O roteiro de uma campanha, dentro do quadro com a barra lateral (`layout/campaign-shell`): as seções são páginas filhas
+ * e o menu delas é a própria barra. O id da campanha (ou `nova`) vem da rota de fora, `/c/:campaignId/roteiro`.
+ */
 export const EDITOR_ROUTES: Routes = [
-  { path: '', pathMatch: 'full', component: EditorListPage },
   {
-    path: ':campaignId',
+    path: '',
+    title: 'Roteiro',
     component: EditorPage,
     canDeactivate: [leave],
     children: [

@@ -6,7 +6,7 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvNotice } from '@shared/ui/notice/notice';
@@ -14,25 +14,15 @@ import { DvState } from '@shared/ui/state/state';
 import { focusElement } from '@shared/ui/focus';
 import { EditorStore } from '../../editor.store';
 
-/** As seções do editor, na ordem do menu. */
-export const SECTIONS = [
-  { path: '', label: 'Visão geral' },
-  { path: 'locais', label: 'Locais' },
-  { path: 'npcs', label: 'NPCs' },
-  { path: 'faccoes', label: 'Facções' },
-  { path: 'marcos', label: 'Marcos' },
-  { path: 'fatos', label: 'Fatos' },
-  { path: 'previa', label: 'Prévia' },
-] as const;
-
 /**
- * A tela de edição de uma campanha: o menu das seções, a situação da conferência (o servidor confere a cada edição e
+ * O roteiro de uma campanha (a tela de edição): a situação da conferência (o servidor confere a cada edição e
  * os erros e avisos vêm em português), e a barra de gravar. Gravar fica bloqueado com o motivo escrito enquanto houver
- * erro; uma campanha que já tem mesa só se grava como cópia. Tem o próprio `EditorStore`, que as seções injetam.
+ * erro; uma campanha que já tem mesa só se grava como cópia. As seções (locais, NPCs, facções...) são páginas filhas e o menu delas é a barra lateral da campanha. Tem o próprio
+ * `EditorStore`, que as seções injetam.
  */
 @Component({
   selector: 'dv-editor-page',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, DvBadge, DvButton, DvNotice, DvState],
+  imports: [RouterLink, RouterOutlet, DvBadge, DvButton, DvNotice, DvState],
   providers: [EditorStore],
   templateUrl: './edit-page.html',
   styleUrl: './edit-page.css',
@@ -46,7 +36,6 @@ export class EditorPage implements OnInit {
   readonly copia = input('');
 
   protected readonly store = inject(EditorStore);
-  protected readonly sections = SECTIONS;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   ngOnInit(): void {

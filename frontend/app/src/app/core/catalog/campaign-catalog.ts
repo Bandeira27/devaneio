@@ -23,6 +23,8 @@ export class CampaignCatalog {
   /** O servidor tem o editor de campanhas ligado? Sem ele, nada oferece o roteiro. */
   readonly editorAvailable = signal(false);
   readonly ready = computed(() => this.state() === 'ready');
+  /** Há uma pergunta ao servidor em andamento (a lista pode estar prestes a mudar). */
+  readonly busy = signal(false);
 
   /** A campanha com esse id, ou `null` se o servidor não a conhece (ainda não gravada, ou apagada). */
   find(id: string): CampaignSummary | null {
@@ -43,6 +45,7 @@ export class CampaignCatalog {
   }
 
   private async fetch(): Promise<void> {
+    this.busy.set(true);
     void this.probeEditor();
     if (this.state() !== 'ready') {
       this.state.set('loading');
@@ -54,6 +57,8 @@ export class CampaignCatalog {
     } catch (error) {
       this.loadError.set(messageOf(error));
       this.state.set('failed');
+    } finally {
+      this.busy.set(false);
     }
   }
 

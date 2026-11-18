@@ -10,6 +10,8 @@ const LIST = [
   { id: 'c', title: 'C', writable: true },
   { id: 'com-mesa', title: 'Com mesa', writable: false },
 ];
+/** As campanhas do servidor, como o quadro da campanha as lê (o editor tem as suas, em `LIST`). */
+const CAMPAIGNS = LIST.map(({ id, title }) => ({ id, title, premise: 'Uma premissa.' }));
 const sleep = () => new Promise((resolve) => setTimeout(resolve, 5));
 
 /** Abre o editor e responde às cargas, uma de cada vez, como o servidor faria. */
@@ -20,6 +22,11 @@ async function open(
   TestBed.overrideProvider(VALIDATE_DELAY, { useValue: 0 });
   const app = await setup(url);
   const { http, settle } = app;
+  // O quadro da campanha pergunta primeiro quais são as campanhas e se o editor está ligado...
+  http.expectOne('/campaigns').flush(CAMPAIGNS);
+  http.expectOne('/editor/campaigns').flush(options.list ?? LIST);
+  await settle();
+  // ... e só então abre o roteiro, que carrega os sistemas e as campanhas do editor.
   http.expectOne('/editor/systems').flush(SYSTEMS);
   http.expectOne('/editor/campaigns').flush(options.list ?? LIST);
   await settle();
@@ -54,34 +61,10 @@ async function open(
   return { ...app, answer, validations, text, button };
 }
 
-describe('Editor de campanhas: lista', () => {
-  it('mostra as campanhas, marca a que tem mesa e oferece editar, copiar e uma nova', async () => {
-    const app = await setup('/editor');
-    app.http.expectOne('/editor/campaigns').flush(LIST);
-    await app.settle();
-    expect(app.root().textContent).toContain('Com mesa');
-    expect(app.root().textContent).toContain('Tem mesa: só se copia');
-    const links = Array.from(app.root().querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(links).toContain('/editor/nova');
-    expect(links).toContain('/editor/c');
-    expect(links).toContain('/editor/nova?copia=com-mesa');
-    expect(app.root().querySelector('a[aria-label="Ver Com mesa"]')).not.toBeNull();
-  });
-
-  it('sem --editor no servidor (404) diz que o editor está desligado', async () => {
-    const app = await setup('/editor');
-    app.http
-      .expectOne('/editor/campaigns')
-      .flush({ error: { code: 'not_found', message: 'x' } }, { status: 404, statusText: 'x' });
-    await app.settle();
-    expect(app.root().textContent).toContain('O editor está desligado');
-    expect(app.root().querySelector('a[href="/editor/nova"]')).toBeNull();
-  });
-});
-
 describe('Editor de campanhas: edição', () => {
   it('uma campanha nova abre em branco e é criada com o corpo da campanha', async () => {
-    const { http, root, settle, button, answer, router, validations } = await open('/editor/nova');
+    const { http, root, settle, button, answer, router, validations } =
+      await open('/c/nova/roteiro');
     expect(root().querySelector('h1')?.textContent).toContain('Nova campanha');
     expect(validations[0]?.id).toBe('nova-campanha');
     const create = button('Criar campanha') as HTMLButtonElement;
@@ -94,11 +77,11 @@ describe('Editor de campanhas: edição', () => {
     request.flush({ id: 'nova-campanha', title: 'Nova campanha', writable: true });
     await settle();
     await answer();
-    expect(router.url).toBe('/editor/nova-campanha');
+    expect(router.url).toBe('/c/nova-campanha/roteiro');
   });
 
   it('uma cópia traz a campanha com id e título novos', async () => {
-    const { validations } = await open('/editor/nova?copia=c', {
+    const { validations } = await open('/c/nova/roteiro?copia=c', {
       campaign: { ...hostCampaign, id: 'c', title: 'Original' },
     });
     expect(validations[0]?.id).toBe('c-copia');
@@ -114,7 +97,7 @@ describe('Editor de campanhas: edição', () => {
       ],
       findings: [{ level: 'aviso', text: 'marco depende da queda de um NPC' }],
     };
-    const { root, text, button } = await open('/editor/nova', { report });
+    const { root, text, button } = await open('/c/nova/roteiro', { report });
     expect(text()).toContain('2 erros');
     expect(text()).toContain("local 'x' conecta a 'y', que não existe");
     expect(text()).toContain('Avisos de autoria');
@@ -128,7 +111,7 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('editar o título confere de novo, e o novo texto vai no corpo', async () => {
-    const { root, type, answer, validations } = await open('/editor/nova');
+    const { root, type, answer, validations } = await open('/c/nova/roteiro');
     await type('dv-overview-section input[type="text"]', 'Minha aventura');
     await answer();
     expect(validations.at(-1)?.title).toBe('Minha aventura');
@@ -136,8 +119,8 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('um local novo ganha o id do nome e as referências acompanham', async () => {
-    const { root, click, type, answer, validations } = await open('/editor/nova');
-    await click('a[href="/editor/nova/locais"]');
+    const { root, click, type, answer, validations } = await open('/c/nova/roteiro');
+    await click('a[href="/c/nova/roteiro/locais"]');
     await click('dv-locations-section .add');
     const name = root().querySelectorAll<HTMLInputElement>(
       'dv-locations-section input[type="text"]',
@@ -151,7 +134,7 @@ describe('Editor de campanhas: edição', () => {
 
   it('campanha que já tem mesa mostra o aviso e bloqueia gravar; salvar como cópia a torna nova', async () => {
     const { text, button, root, settle, http, answer, validations } = await open(
-      '/editor/com-mesa',
+      '/c/com-mesa/roteiro',
       {
         campaign: { ...hostCampaign, id: 'com-mesa', title: 'Com mesa' },
       },
@@ -168,7 +151,7 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('sair com alterações não gravadas pede confirmação, e "Voltar" fica onde está', async () => {
-    const { type, harness, router } = await open('/editor/nova');
+    const { type, harness, router } = await open('/c/nova/roteiro');
     await type('dv-overview-section input[type="text"]', 'Mudei');
     const leaving = router.navigateByUrl('/');
     // A navegação espera a resposta do guarda: `settle` (whenStable) esperaria junto, então só cedemos o turno.
@@ -186,11 +169,11 @@ describe('Editor de campanhas: edição', () => {
     ).find((b) => b.textContent?.includes('Voltar'));
     back?.click();
     expect(await leaving).toBe(false);
-    expect(router.url).toBe('/editor/nova');
+    expect(router.url).toBe('/c/nova/roteiro');
   });
 
   it('falha ao conferir não é erro da campanha: diz que não conseguiu e dá "Conferir de novo"', async () => {
-    const { text, button, answer, root } = await open('/editor/nova', { report: 'fail' });
+    const { text, button, answer, root } = await open('/c/nova/roteiro', { report: 'fail' });
     expect(text()).toContain('Não consegui conferir a campanha agora');
     expect(text()).not.toContain('erros');
     expect(root().querySelector('.editor__problems')).toBeNull();
@@ -202,7 +185,7 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('uma resposta velha da conferência não libera gravar enquanto a nova não chega', async () => {
-    const { http, type, button, settle, text } = await open('/editor/nova');
+    const { http, type, button, settle, text } = await open('/c/nova/roteiro');
     await type('dv-overview-section input[type="text"]', 'A');
     await sleep();
     const first = http.expectOne('/editor/validate'); // em voo
@@ -227,23 +210,23 @@ describe('Editor de campanhas: edição', () => {
       errors: [{ path: 'locations.0.name', message: "falta preencher 'name'" }],
       findings: [],
     };
-    const { root } = await open('/editor/nova', { report });
+    const { root } = await open('/c/nova/roteiro', { report });
     expect(root().querySelector('.editor__problems')?.textContent).toContain('Locais › Início:');
   });
 
   it('gravar a partir de uma seção volta para a mesma seção', async () => {
-    const { http, click, button, settle, answer, router } = await open('/editor/nova');
-    await click('a[href="/editor/nova/locais"]');
+    const { http, click, button, settle, answer, router } = await open('/c/nova/roteiro');
+    await click('a[href="/c/nova/roteiro/locais"]');
     (button('Criar campanha') as HTMLButtonElement).click();
     await settle();
     http.expectOne('/editor/campaigns').flush({ id: 'nova-campanha', title: 'N', writable: true });
     await settle();
     await answer();
-    expect(router.url).toBe('/editor/nova-campanha/locais');
+    expect(router.url).toBe('/c/nova-campanha/roteiro/locais');
   });
 
   it('editar enquanto grava deixa "Alterações não gravadas" (o que veio depois ainda não foi gravado)', async () => {
-    const { http, button, settle, root, answer, harness } = await open('/editor/nova');
+    const { http, button, settle, root, answer, harness } = await open('/c/nova/roteiro');
     (button('Criar campanha') as HTMLButtonElement).click();
     await settle();
     const post = http.expectOne('/editor/campaigns');
@@ -262,7 +245,7 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('"Salvar como cópia" com falha de rede mostra o erro e não vira cópia', async () => {
-    const { http, button, settle, root } = await open('/editor/com-mesa', {
+    const { http, button, settle, root } = await open('/c/com-mesa/roteiro', {
       campaign: { ...hostCampaign, id: 'com-mesa', title: 'Com mesa' },
     });
     (button('Salvar como cópia') as HTMLButtonElement).click();
@@ -275,14 +258,14 @@ describe('Editor de campanhas: edição', () => {
       );
     await settle();
     expect(root().textContent).toContain('O servidor falhou');
-    expect(root().querySelector('h1')?.textContent).toContain('Editar:');
+    expect(root().querySelector('h1')?.textContent).toContain('Roteiro');
   });
 
   it('um identificador que já é de outro item é recusado e o campo volta ao valor de antes', async () => {
-    const { root, click, settle } = await open('/editor/c', {
+    const { root, click, settle } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
     });
-    await click('a[href="/editor/c/locais"]');
+    await click('a[href="/c/c/roteiro/locais"]');
     (root().querySelectorAll('dv-locations-section summary')[1] as HTMLElement).click();
     await settle();
     const id = root().querySelectorAll<HTMLInputElement>(
@@ -297,10 +280,10 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('remover um local pede confirmação e o tira da campanha conferida', async () => {
-    const { root, click, settle, answer, validations } = await open('/editor/c', {
+    const { root, click, settle, answer, validations } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
     });
-    await click('a[href="/editor/c/locais"]');
+    await click('a[href="/c/c/roteiro/locais"]');
     const before = validations.at(-1)?.locations.length ?? 0;
     (
       root().querySelector(
@@ -319,22 +302,22 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('o menu tem Marcos e Fatos, e a seção de marcos lista os da campanha com requisitos', async () => {
-    const { root, click, text } = await open('/editor/c', {
+    const { root, click, text } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
     });
-    expect(root().querySelector('a[href="/editor/c/marcos"]')?.textContent).toContain('Marcos');
-    expect(root().querySelector('a[href="/editor/c/fatos"]')?.textContent).toContain('Fatos');
-    await click('a[href="/editor/c/marcos"]');
+    expect(root().querySelector('a[href="/c/c/roteiro/marcos"]')?.textContent).toContain('Marcos');
+    expect(root().querySelector('a[href="/c/c/roteiro/fatos"]')?.textContent).toContain('Fatos');
+    await click('a[href="/c/c/roteiro/marcos"]');
     expect(text()).toContain('Chegada');
     expect(text()).toContain('O altar');
     expect(text()).toContain('Só começa depois de concluir');
   });
 
   it('acrescentar uma condição a um marco entra na campanha conferida, apontando para um item que existe', async () => {
-    const { root, click, settle, answer, validations } = await open('/editor/c', {
+    const { root, click, settle, answer, validations } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
     });
-    await click('a[href="/editor/c/marcos"]');
+    await click('a[href="/c/c/roteiro/marcos"]');
     (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
@@ -351,7 +334,7 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('trocar o tipo da condição recomeça no primeiro item, e o de turno usa um número', async () => {
-    const { root, click, settle, answer, validations } = await open('/editor/c', {
+    const { root, click, settle, answer, validations } = await open('/c/c/roteiro', {
       campaign: {
         ...hostCampaign,
         id: 'c',
@@ -362,7 +345,7 @@ describe('Editor de campanhas: edição', () => {
         ),
       },
     });
-    await click('a[href="/editor/c/marcos"]');
+    await click('a[href="/c/c/roteiro/marcos"]');
     (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
@@ -387,11 +370,11 @@ describe('Editor de campanhas: edição', () => {
         { level: 'aviso', text: "marco 'chegada', complete_when: depende da queda de 'ferreiro'" },
       ],
     };
-    const { root, click, settle } = await open('/editor/c', {
+    const { root, click, settle } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
       report,
     });
-    await click('a[href="/editor/c/marcos"]');
+    await click('a[href="/c/c/roteiro/marcos"]');
     (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
@@ -401,10 +384,10 @@ describe('Editor de campanhas: edição', () => {
   });
 
   it('um fato novo ganha id do texto e o assunto lista os itens com o tipo', async () => {
-    const { root, click, type, answer, validations, settle } = await open('/editor/c', {
+    const { root, click, type, answer, validations, settle } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
     });
-    await click('a[href="/editor/c/fatos"]');
+    await click('a[href="/c/c/roteiro/fatos"]');
     await click('dv-facts-section .add');
     await new Promise((resolve) => setTimeout(resolve)); // o item novo abre por um efeito
     await settle();
@@ -429,7 +412,7 @@ describe('Editor de campanhas: edição', () => {
       ],
       findings: [],
     };
-    const { root, click, settle } = await open('/editor/c', {
+    const { root, click, settle } = await open('/c/c/roteiro', {
       campaign: {
         ...hostCampaign,
         id: 'c',
@@ -437,14 +420,14 @@ describe('Editor de campanhas: edição', () => {
       },
       report,
     });
-    await click('a[href="/editor/c/marcos"]');
+    await click('a[href="/c/c/roteiro/marcos"]');
     (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
     expect(root().querySelector('dv-beats-section dv-item-problems')?.textContent).toContain(
       "local 'x' não existe",
     );
-    await click('a[href="/editor/c/fatos"]');
+    await click('a[href="/c/c/roteiro/fatos"]');
     (root().querySelectorAll('dv-facts-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
@@ -470,8 +453,8 @@ describe('Editor de campanhas: edição', () => {
           : b,
       ),
     };
-    const { root, click, settle, answer, validations } = await open('/editor/c', { campaign });
-    await click('a[href="/editor/c/marcos"]');
+    const { root, click, settle, answer, validations } = await open('/c/c/roteiro', { campaign });
+    await click('a[href="/c/c/roteiro/marcos"]');
     (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
@@ -503,8 +486,8 @@ describe('Editor de campanhas: edição', () => {
         i === 0 ? { ...b, activate_when: [{ kind: 'npc_down' as const, npc_id: '' }] } : b,
       ),
     };
-    const { root, click, settle } = await open('/editor/c', { campaign });
-    await click('a[href="/editor/c/marcos"]');
+    const { root, click, settle } = await open('/c/c/roteiro', { campaign });
+    await click('a[href="/c/c/roteiro/marcos"]');
     (root().querySelectorAll('dv-beats-section summary')[0] as HTMLElement).click();
     await new Promise((resolve) => setTimeout(resolve));
     await settle();
@@ -536,7 +519,7 @@ describe('Editor de campanhas: edição', () => {
     };
 
     async function openPreview(preview: object = PREVIEW) {
-      const app = await open('/editor/c/previa', { campaign: { ...hostCampaign, id: 'c' } });
+      const app = await open('/c/c/roteiro/previa', { campaign: { ...hostCampaign, id: 'c' } });
       await sleep();
       app.http.expectOne('/editor/preview').flush(preview);
       await app.settle();
@@ -576,7 +559,7 @@ describe('Editor de campanhas: edição', () => {
         errors: [{ path: '', message: 'algo está errado' }],
         findings: [],
       };
-      const { http, text } = await open('/editor/c/previa', {
+      const { http, text } = await open('/c/c/roteiro/previa', {
         campaign: { ...hostCampaign, id: 'c' },
         report,
       });
@@ -587,10 +570,10 @@ describe('Editor de campanhas: edição', () => {
 
     it('depois de uma edição a prévia fica marcada como antiga e "Atualizar" pede outra', async () => {
       const { root, http, click, type, answer, settle, button, text } = await openPreview();
-      await click('a[href="/editor/c"]');
+      await click('a[href="/c/c/roteiro"]');
       await type('dv-overview-section input[type="text"]', 'Outro título');
       await answer();
-      await click('a[href="/editor/c/previa"]');
+      await click('a[href="/c/c/roteiro/previa"]');
       expect(text()).toContain('Esta prévia é de antes das últimas alterações');
       (button('Atualizar prévia') as HTMLButtonElement).click();
       await settle();
@@ -603,15 +586,15 @@ describe('Editor de campanhas: edição', () => {
     });
 
     it('editar enquanto a prévia é pedida deixa a prévia marcada como antiga quando ela chega', async () => {
-      const { http, root, harness, settle, answer } = await open('/editor/c', {
+      const { http, root, harness, settle, answer } = await open('/c/c/roteiro', {
         campaign: { ...hostCampaign, id: 'c' },
       });
       // Com a prévia no ar, `settle` esperaria por ela: navega e edita direto, só rodando a detecção.
-      (root().querySelector('a[href="/editor/c/previa"]') as HTMLElement).click();
+      (root().querySelector('a[href="/c/c/roteiro/previa"]') as HTMLElement).click();
       await sleep();
       harness.detectChanges();
       const pending = http.expectOne('/editor/preview');
-      (root().querySelector('a[href="/editor/c"]') as HTMLElement).click();
+      (root().querySelector('a[href="/c/c/roteiro"]') as HTMLElement).click();
       await sleep();
       harness.detectChanges();
       const title = root().querySelector(
@@ -623,15 +606,15 @@ describe('Editor de campanhas: edição', () => {
       pending.flush(PREVIEW);
       await settle();
       await answer();
-      (root().querySelector('a[href="/editor/c/previa"]') as HTMLElement).click();
+      (root().querySelector('a[href="/c/c/roteiro/previa"]') as HTMLElement).click();
       await settle();
       expect(root().textContent).toContain('Esta prévia é de antes das últimas alterações');
     });
 
     it('voltar à aba da prévia não pede de novo (a prévia já está na memória)', async () => {
       const { http, click, settle, text } = await openPreview();
-      await click('a[href="/editor/c"]');
-      await click('a[href="/editor/c/previa"]');
+      await click('a[href="/c/c/roteiro"]');
+      await click('a[href="/c/c/roteiro/previa"]');
       await settle();
       http.expectNone('/editor/preview');
       expect(text()).toContain('A Sombra do Vale');
@@ -649,7 +632,7 @@ describe('Editor de campanhas: edição', () => {
     });
 
     it('falha ao pedir a prévia mostra o erro com "Tentar de novo"', async () => {
-      const { http, settle, text, button } = await open('/editor/c/previa', {
+      const { http, settle, text, button } = await open('/c/c/roteiro/previa', {
         campaign: { ...hostCampaign, id: 'c' },
       });
       await sleep();

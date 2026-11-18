@@ -1,0 +1,70 @@
+@if (!resolved()) {
+  <h1 class="dv-visually-hidden">Campanha</h1>
+  <dv-state kind="loading" cover>Abrindo a campanha…</dv-state>
+} @else if (missing()) {
+  <div class="dv-page">
+    <h1 class="dv-visually-hidden">Campanha</h1>
+    @if (catalog.state() === 'failed') {
+      <dv-state kind="error">
+        {{ catalog.loadError() }}
+        <button dvStateAction dvButton type="button" (click)="catalog.load()">
+          Tentar de novo
+        </button>
+      </dv-state>
+    } @else {
+      <dv-state>Não encontrei esta campanha neste servidor.</dv-state>
+    }
+    <a dvButton routerLink="/">Voltar às campanhas</a>
+  </div>
+} @else {
+  <div class="campaign">
+    <aside class="campaign__side">
+      <a class="campaign__back" routerLink="/"> <dv-icon name="back" size="sm" />Campanhas </a>
+      <div class="campaign__head">
+        <dv-emblem [campaignId]="campaignId()" />
+        <p class="campaign__title">{{ title() }}</p>
+        <button
+          dvButton
+          type="button"
+          class="campaign__toggle"
+          aria-controls="campanha-menu"
+          [attr.aria-expanded]="menuOpen()"
+          (click)="toggleMenu()"
+        >
+          <dv-icon name="menu" size="sm" />Menu
+        </button>
+      </div>
+      <nav
+        id="campanha-menu"
+        class="campaign__nav"
+        [class.campaign__nav--open]="menuOpen()"
+        aria-label="Partes da campanha"
+      >
+        @for (group of groups(); track group.title) {
+          <div class="campaign__group">
+            @if (group.title) {
+              <p class="campaign__group-title">{{ group.title }}</p>
+            }
+            <ul class="campaign__list">
+              @for (item of group.items; track item.label) {
+                <li>
+                  <a
+                    class="campaign__link"
+                    [routerLink]="['/c', campaignId(), ...item.path]"
+                    routerLinkActive="campaign__link--active"
+                    ariaCurrentWhenActive="page"
+                    [routerLinkActiveOptions]="{ exact: item.exact }"
+                    (click)="closeMenu()"
+                  >
+                    <dv-icon [name]="item.icon" size="sm" />{{ item.label }}
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </nav>
+    </aside>
+    <div class="campaign__main"><router-outlet /></div>
+  </div>
+}

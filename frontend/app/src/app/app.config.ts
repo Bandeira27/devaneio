@@ -8,11 +8,12 @@ import {
   withComponentInputBinding,
   withHashLocation,
   withPreloading,
+  withRouterConfig,
   withViewTransitions,
 } from '@angular/router';
 import { apiInterceptor } from '@core/api/api.interceptor';
 import { PageTitle } from './layout/shell/page-title';
-import { routes } from './app.routes';
+import { ROUTER_CONFIG, routes } from './app.routes';
 import { ParamsAwareReuse } from './route-reuse';
 
 /**
@@ -26,6 +27,8 @@ export const appConfig: ApplicationConfig = {
       routes,
       withHashLocation(),
       withComponentInputBinding(),
+      // As páginas de dentro de uma campanha leem o `campaignId` da rota de fora (`/c/:campaignId/...`).
+      withRouterConfig(ROUTER_CONFIG),
       // As telas são poucas e pequenas: baixa todas em segundo plano, e a troca de tela quase nunca espera o código.
       // Só baixa: nenhum módulo de feature pode chamar a rede ao ser carregado (a rede é de `ngOnInit` e das stores).
       withPreloading(PreloadAllModules),

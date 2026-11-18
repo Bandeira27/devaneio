@@ -1,0 +1,34 @@
+:host {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  border: var(--dv-border-width) solid currentcolor;
+  border-radius: var(--dv-radius-round);
+  background: var(--dv-surface-1);
+}
+
+:host(.emblem--md) {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+:host(.emblem--lg) {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+:host(.emblem--accent) {
+  color: var(--dv-accent);
+}
+
+:host(.emblem--info) {
+  color: var(--dv-info);
+}
+
+:host(.emblem--ok) {
+  color: var(--dv-ok);
+}
+
+:host(.emblem--warn) {
+  color: var(--dv-warn);
+}
