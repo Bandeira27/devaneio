@@ -1,9 +1,14 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
+import {
+  Router,
+  provideRouter,
+  withComponentInputBinding,
+  withRouterConfig,
+} from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { routes } from '../app.routes';
+import { ROUTER_CONFIG, routes } from '../app.routes';
 import { apiInterceptor } from '../core/api/api.interceptor';
 import { SESSION_STORAGE, SessionStore } from '../core/session/session-store';
 
@@ -21,7 +26,7 @@ export class MemoryStorage {
 export async function setup(url: string) {
   TestBed.configureTestingModule({
     providers: [
-      provideRouter(routes, withComponentInputBinding()),
+      provideRouter(routes, withComponentInputBinding(), withRouterConfig(ROUTER_CONFIG)),
       provideHttpClient(withInterceptors([apiInterceptor])),
       provideHttpClientTesting(),
       { provide: SESSION_STORAGE, useValue: new MemoryStorage() },

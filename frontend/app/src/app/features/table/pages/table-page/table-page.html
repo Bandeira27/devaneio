@@ -21,14 +21,17 @@
     <div class="table">
       <a class="dv-skip" href="#acoes" (click)="skipToActions($event)">Pular para as ações</a>
       <header class="table__bar">
+        <a class="dv-back table__back" [routerLink]="store.backLink()">
+          <dv-icon name="back" size="sm" />Campanha
+        </a>
         <h1 class="dv-title">{{ store.title() }}</h1>
         <dv-connection-badge [status]="store.liveStatus()" />
         @if (store.isHost()) {
           <a dvButton class="table__invite" [routerLink]="['/mesa', tableId(), 'convite']">
-            <dv-icon name="say" size="sm" />Convidar
+            <dv-icon name="mail" size="sm" />Convidar
           </a>
           <a dvButton class="table__host" [routerLink]="['/mesa', tableId(), 'anfitriao']">
-            <dv-icon name="sheet" size="sm" />Anfitrião
+            <dv-icon name="panel" size="sm" />Anfitrião
           </a>
         }
       </header>
@@ -36,24 +39,32 @@
       @if (connectionNotice(); as notice) {
         <dv-notice kind="error">
           {{ notice }}
-          <a routerLink="/">Voltar ao início</a>
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
         </dv-notice>
       }
       @if (store.status() === 'won') {
         <dv-notice kind="ok">
           Vitória! A partida terminou.
-          <a routerLink="/">Voltar ao início</a>
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
         </dv-notice>
       } @else if (store.status() === 'lost') {
         <dv-notice kind="error">
           Derrota. A partida terminou.
-          <a routerLink="/">Voltar ao início</a>
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
         </dv-notice>
       }
 
       <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
       <div class="table__layout">
-        <div class="table__side">
+        @if (store.scene(); as place) {
+          <p #situation class="table__situation" aria-hidden="true">
+            <span class="table__situation-place">{{ place.name }}</span>
+            @if (store.turnStatus()) {
+              <span class="dv-note">Turno {{ store.turn() }} · {{ store.turnStatus() }}</span>
+            }
+          </p>
+        }
+        <div #side class="table__side">
           @if (store.turnStatus()) {
             <p class="table__turn" role="status">
               <span class="dv-note">Turno {{ store.turn() }}</span>
@@ -83,9 +94,9 @@
         </div>
 
         <section #story class="table__feed" aria-label="A história" tabindex="-1">
+          <h2 class="dv-visually-hidden">A história</h2>
           <dv-feed-list
             [loaded]="store.liveStatus() !== 'connecting'"
-            (unseen)="unseen.set($event)"
             [items]="store.feedItems()"
           />
           @if (store.llmNotice()) {
@@ -106,19 +117,6 @@
         }
 
         <div #dock class="table__dock">
-          @if (unseen() > 0) {
-            <button
-              dvButton
-              type="button"
-              class="table__new"
-              animate.enter="dv-enter"
-              animate.leave="dv-leave"
-              (click)="toEnd()"
-            >
-              <dv-icon name="go" size="sm" class="table__down" />
-              {{ unseen() === 1 ? '1 nova' : unseen() + ' novas' }}
-            </button>
-          }
           <dv-action-dock />
         </div>
       </div>

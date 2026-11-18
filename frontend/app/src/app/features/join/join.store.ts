@@ -90,6 +90,7 @@ export class JoinStore {
         playerId: joined.player_id,
         role: 'player',
         title: joined.table.campaign.title,
+        campaignId: joined.table.campaign.id,
         savedAt: Date.now(),
       });
       await this.router.navigate(['/mesa', tableId, 'personagem']);

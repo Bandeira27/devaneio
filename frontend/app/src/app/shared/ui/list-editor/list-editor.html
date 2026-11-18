@@ -36,8 +36,9 @@
                 Descer
               </button>
               <button
-                dvButton
+                dvButton="danger"
                 type="button"
+                class="tools__remove"
                 [attr.aria-label]="'Remover ' + nameOf()(item, i) + ' (' + position(i) + ')'"
                 (click)="removed(i)"
               >
@@ -51,5 +52,5 @@
   </ul>
 }
 <button #addButton dvButton type="button" class="add" (click)="add.emit()">
-  <dv-icon name="go" size="sm" />Acrescentar {{ noun() }}
+  <dv-icon name="add" size="sm" />Acrescentar {{ noun() }}
 </button>

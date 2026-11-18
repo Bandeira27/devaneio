@@ -9,7 +9,7 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import tseslint from 'typescript-eslint';
 
 /** Features existentes: um teste (tools/eslint-rules.spec.ts) falha se uma pasta nova não estiver aqui. */
-export const FEATURES = ['home', 'invite', 'join', 'character', 'table', 'editor'];
+export const FEATURES = ['home', 'campaign', 'invite', 'join', 'character', 'table', 'editor'];
 
 const MESSAGE = {
   cdk: 'O CDK só entra por shared/ui (componentes dv-*): as features usam dv-*.',

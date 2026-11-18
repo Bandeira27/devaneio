@@ -53,6 +53,7 @@ export class TableStore implements OnDestroy {
   readonly campaign = this.snapshot.campaign;
   readonly reply = this.actions.reply;
   readonly actionBusy = this.actions.busy;
+  readonly saying = this.actions.saying;
   readonly actionError = this.actions.error;
   readonly thinking = this.actions.thinking;
 
@@ -66,6 +67,11 @@ export class TableStore implements OnDestroy {
   readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   readonly canSay = computed(() => this.table()?.llm.enabled === true);
   readonly title = computed(() => this.table()?.campaign.title ?? '');
+  /** Para onde "voltar" leva: as mesas da campanha desta mesa, ou o início se ainda não se sabe qual é. */
+  readonly backLink = computed<string[]>(() => {
+    const id = this.table()?.campaign.id;
+    return id ? ['/c', id, 'mesas'] : ['/'];
+  });
   readonly party = computed<Character[]>(() => Object.values(this.table()?.state.characters ?? {}));
   readonly character = computed(() => characterOf(this.table()));
   readonly scene = computed(() => sceneFor(this.table(), this.campaign()));
@@ -126,6 +132,7 @@ export class TableStore implements OnDestroy {
       if (this.destroyed) {
         return; // saiu da página no meio da carga: não abre um laço que ninguém vai parar
       }
+      this.session.tag(tableId, table.campaign.id); // mesas guardadas antes de o app saber a campanha ganham o id
       this.table.set(table);
       this.rules.set(rules);
       this.campaign.set(campaign);

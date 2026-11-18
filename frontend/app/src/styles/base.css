@@ -8,6 +8,8 @@ html {
   color-scheme: dark;
   /* A barra de ações fixa não cobre o que ganha foco nem o fim da rolagem. */
   scroll-padding-bottom: var(--dv-dock-height);
+  /* O mesmo para a linha de situação presa no topo da mesa, no celular. */
+  scroll-padding-top: var(--dv-situation-height);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

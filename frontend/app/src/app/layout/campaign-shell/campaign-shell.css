@@ -1,0 +1,125 @@
+/*
+ * Celular (padrão): uma coluna. A barra lateral é só o cabeçalho (voltar, emblema, título e o botão "Menu"); os itens
+ * ficam recolhidos e se abrem no lugar. Tela larga (56rem): duas colunas; a barra é uma coluna fixa à esquerda, presa no
+ * topo da janela, e os itens ficam sempre à vista.
+ */
+.campaign {
+  display: grid;
+  gap: var(--dv-space-4);
+  max-width: var(--dv-measure-wide);
+  margin-inline: auto;
+}
+
+.campaign__side {
+  display: grid;
+  gap: var(--dv-space-3);
+  align-content: start;
+}
+
+.campaign__main {
+  min-width: 0;
+}
+
+.campaign__head {
+  display: flex;
+  align-items: center;
+  gap: var(--dv-space-3);
+}
+
+.campaign__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-section);
+  overflow-wrap: anywhere;
+}
+
+.campaign__nav {
+  display: none;
+  gap: var(--dv-space-4);
+}
+
+.campaign__nav--open {
+  display: grid;
+  animation: dv-enter var(--dv-duration-base) var(--dv-ease-decelerate) both;
+}
+
+.campaign__group {
+  display: grid;
+  gap: var(--dv-space-1);
+}
+
+.campaign__group-title {
+  margin: 0;
+  padding-inline: var(--dv-space-3);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+  color: var(--dv-text-muted);
+}
+
+.campaign__list {
+  display: grid;
+  gap: var(--dv-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* O item atual leva uma marca na borda (não só a cor: `aria-current` também diz) que aparece com uma transição. */
+.campaign__link {
+  display: flex;
+  align-items: center;
+  gap: var(--dv-space-3);
+  min-height: var(--dv-touch);
+  padding-inline: var(--dv-space-3);
+  border-left: var(--dv-border-width-strong) solid transparent;
+  border-radius: var(--dv-radius);
+  color: var(--dv-text-muted);
+  text-decoration: none;
+  transition:
+    background-color var(--dv-duration-fast) var(--dv-ease-standard),
+    border-color var(--dv-duration-base) var(--dv-ease-standard),
+    color var(--dv-duration-fast) var(--dv-ease-standard);
+}
+
+@media (hover: hover) {
+  .campaign__link:hover:not(.campaign__link--active) {
+    background: var(--dv-surface-hover);
+    color: var(--dv-text);
+  }
+}
+
+.campaign__link:active {
+  background: var(--dv-surface-pressed);
+}
+
+.campaign__link--active {
+  border-left-color: var(--dv-accent);
+  background: var(--dv-surface-1);
+  color: var(--dv-text);
+}
+
+@media (min-width: 56rem) {
+  .campaign {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: var(--dv-space-8);
+    align-items: start;
+  }
+
+  .campaign__side {
+    position: sticky;
+    top: var(--dv-space-4);
+  }
+
+  .campaign__toggle {
+    display: none;
+  }
+
+  .campaign__nav {
+    display: grid;
+    animation: none;
+  }
+}

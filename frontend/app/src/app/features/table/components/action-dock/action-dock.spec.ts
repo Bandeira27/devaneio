@@ -106,9 +106,8 @@ describe('Ações da mesa', () => {
     const app = await open();
     await app.press('Ir');
     expect(app.sheet()?.textContent).toContain('Floresta');
-    await app.inSheet('.dv-stack button'); // escolher o destino não envia: pede a confirmação
-    app.http.expectNone(`/tables/${TABLE_ID}/commands`);
-    expect(app.sheet()?.textContent).toContain('Mover o grupo para Floresta');
+    expect(app.sheet()?.textContent).toContain('Para onde ir?');
+    app.http.expectNone(`/tables/${TABLE_ID}/commands`); // abrir a folha não envia nada
     expect(app.sheet()?.textContent).toContain('Gasta a sua ação');
     await app.inSheet('.dv-sheet__foot .dv-button--primary');
     const request = app.commandRequest();
@@ -138,12 +137,8 @@ describe('Ações da mesa', () => {
     await app.press('Atacar');
     expect(app.sheet()?.textContent).toContain('ferreiro');
     expect(app.sheet()?.textContent).toContain('Punhos');
-    (app.sheet()?.querySelector('form') as HTMLFormElement).dispatchEvent(
-      new Event('submit', { cancelable: true }),
-    );
-    await app.settle();
-    app.http.expectNone(`/tables/${TABLE_ID}/commands`);
-    expect(app.sheet()?.textContent).toContain('Atacar ferreiro com Punhos');
+    app.http.expectNone(`/tables/${TABLE_ID}/commands`); // abrir a folha não ataca
+    expect(app.sheet()?.textContent).toContain('Atacar ferreiro');
     await app.inSheet('.dv-sheet__foot .dv-button--primary');
     const request = app.commandRequest();
     expect((request.request.body as { line: string }).line).toBe('atacar punhos ferreiro');
@@ -318,8 +313,10 @@ describe('Ações da mesa', () => {
     const request = app.http.expectOne(`/tables/${TABLE_ID}/say`);
     expect(request.request.body).toEqual({ text: 'Olho o altar.', revision: 3 });
     expect(app.root().querySelector('dv-action-dock')?.textContent).toContain('pensando');
+    expect(app.root().querySelector('.dock__said')?.textContent).toContain('Você: “Olho o altar.”'); // o eco do que disse
     request.flush({ ...commandResult(), say: 'O altar range.', commands: [] });
     await answerReread(app);
     expect(app.root().querySelector('dv-action-dock')?.textContent).toContain('O altar range.');
+    expect(app.root().querySelector('.dock__said')).toBeNull(); // o eco some quando o mestre responde
   });
 });

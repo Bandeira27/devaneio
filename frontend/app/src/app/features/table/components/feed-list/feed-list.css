@@ -32,7 +32,9 @@
 
 .feed__event--new,
 .feed__talk--new {
+  /* Os itens de um mesmo lote entram em fila: `--step` é a posição (0, 1, 2...) e a pausa é o token. */
   animation: reveal var(--dv-duration-narrative) var(--dv-ease-decelerate) both;
+  animation-delay: calc(var(--step, 0) * var(--dv-reveal-step));
 }
 
 .feed__narration,

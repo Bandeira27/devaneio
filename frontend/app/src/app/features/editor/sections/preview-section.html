@@ -78,31 +78,31 @@
             }
           }
         </p>
-        <p class="dv-note">
-          A partir de 80% do limite o copiloto passa a receber menos eventos recentes e textos
-          cortados; acima dele, recusa a pergunta.
-          @if (level() !== 'ok') {
-            Encurte as descrições e as notas muito longas (em Locais, NPCs, Marcos e Fatos).
-          }
-        </p>
+        @if (level() !== 'ok') {
+          <p class="dv-note">
+            A partir de 80% do limite o copiloto passa a receber menos eventos recentes e textos
+            cortados; acima dele, recusa a pergunta. Encurte as descrições e as notas muito longas
+            (em Locais, NPCs, Marcos e Fatos).
+          </p>
+        }
       </section>
 
       <section class="block" aria-labelledby="previa-ia">
         <h3 id="previa-ia" class="block__title">O mestre de IA recebe</h3>
         <p class="dv-note">
-          Por padrão, só o que é público: nenhum fato oculto nem nota privada. É isto que vai ao
-          servidor da IA a cada ação dos jogadores.
+          Por padrão, só o que é público: nenhum fato oculto nem nota privada. É isto que a IA
+          recebe a cada ação dos jogadores.
         </p>
-        <dv-disclosure label="Ver o que o mestre de IA recebe">
+        <dv-disclosure label="Ver o que a IA recebe">
           <pre class="code" tabindex="0" role="region" aria-label="O que o mestre de IA recebe">{{
             preview.llm
           }}</pre>
         </dv-disclosure>
-        <p class="dv-note">
-          Se o anfitrião ligar no servidor a opção --segredos-no-llm, o mestre recebe também as
-          notas privadas dos NPCs presentes, e a fala dele pode repeti-las para todos.
-        </p>
-        <dv-disclosure label="Ver o que o mestre de IA receberia se os segredos fossem enviados">
+        <dv-disclosure label="Para quem roda o servidor: enviar também os segredos">
+          <p class="dv-note">
+            Se o anfitrião ligar no servidor a opção --segredos-no-llm, o mestre recebe também as
+            notas privadas dos NPCs presentes, e a fala dele pode repeti-las para todos.
+          </p>
           <pre
             class="code"
             tabindex="0"

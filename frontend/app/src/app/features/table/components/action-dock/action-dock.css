@@ -17,37 +17,36 @@
   overflow-y: auto;
 }
 
-/* Celular: ícone sobre o rótulo, uma linha só, para a barra fixa ocupar pouco. */
-.dock__buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
-  gap: var(--dv-space-1);
+/*
+ * Os botões têm o tamanho do conteúdo (ícone e rótulo lado a lado) e dividem a linha: no celular crescem por igual para
+ * a linha não ficar com buracos; na tela larga ficam do tamanho que têm. As ações do turno são o centro; Ficha e
+ * Comando são de apoio: não crescem e usam o texto em tinta. `display: contents` põe os dois grupos na mesma linha.
+ */
+.dock__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2);
 }
 
-.dock__buttons .dv-button {
-  flex-direction: column;
-  gap: 0;
-  padding: var(--dv-space-1);
-  font-size: var(--dv-text-note);
+.dock__main,
+.dock__minor {
+  display: contents;
+}
+
+.dock__row .dv-button {
+  flex: 1 1 auto;
+}
+
+.dock__minor .dv-button {
+  flex: 0 0 auto;
+  padding-inline: var(--dv-space-3);
+  color: var(--dv-text-muted);
 }
 
 @media (min-width: 64rem) {
-  .dock__buttons {
-    grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
-    gap: var(--dv-space-2);
+  .dock__row .dv-button {
+    flex: 0 1 auto;
   }
-
-  .dock__buttons .dv-button {
-    flex-direction: row;
-    gap: var(--dv-space-2);
-    padding: 0 var(--dv-space-4);
-    font-size: var(--dv-text-ui);
-  }
-}
-
-/* As ações do turno são o centro; Ficha e Comando são de apoio: mais discretas (texto em tinta). */
-.dock__minor .dv-button {
-  color: var(--dv-text-muted);
 }
 
 /* Na tela muito larga a ficha já está no painel ao lado: o botão sobra. */
@@ -58,29 +57,22 @@
 }
 
 /*
- * Altura baixa (celular em paisagem, ou zoom alto): as ações do turno e as de apoio dividem a mesma linha e os avisos
- * ficam curtos, para a barra fixa não tomar a tela. O ponto de quebra é fixo porque CSS não aceita token em `@media`.
+ * Altura baixa (celular em paisagem, ou zoom alto): os avisos ficam curtos, para a barra fixa não tomar a tela. O ponto
+ * de quebra é fixo porque CSS não aceita token em `@media`.
  */
 @media (max-height: 30rem) {
-  .dock {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
-  }
-
-  .dock > * {
-    flex: 1 1 100%;
-  }
-
-  .dock > .dock__main {
-    flex: 3 1 0;
-  }
-
-  .dock > .dock__minor {
-    flex: 1 1 0;
-  }
-
   .dock dv-notice {
     max-height: 4rem;
   }
+}
+
+/* O que a pessoa disse ao mestre, enquanto ele pensa: no máximo duas linhas, para a barra fixa não crescer. */
+.dock__said {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }

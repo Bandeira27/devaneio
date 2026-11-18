@@ -8,6 +8,10 @@ describe('isEntry', () => {
     expect(isEntry({ ...valid, role: 'host', invite: 'abc' })).toBe(true);
   });
 
+  it('aceita a campanha da mesa, que as entradas antigas não têm', () => {
+    expect(isEntry({ ...valid, campaignId: 'sombra-do-vale' })).toBe(true);
+  });
+
   it.each([
     ['não é objeto', 'texto'],
     ['é nulo', null],
@@ -17,6 +21,8 @@ describe('isEntry', () => {
     ['papel desconhecido', { ...valid, role: 'admin' }],
     ['título enorme', { ...valid, title: 'a'.repeat(201) }],
     ['convite que não é texto', { ...valid, invite: 5 }],
+    ['campanha fora do formato', { ...valid, campaignId: '../x' }],
+    ['campanha que não é texto', { ...valid, campaignId: 7 }],
     ['data que não é número finito', { ...valid, savedAt: Number.NaN }],
   ])('recusa quando %s', (_motivo, value) => {
     expect(isEntry(value)).toBe(false);

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvCopyField } from '@shared/ui/copy-field/copy-field';
@@ -33,6 +41,16 @@ export class InvitePage implements OnInit {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(InviteStore);
+  /** As opções avançadas abrem sozinhas com o aviso de endereço local (ou um erro) e nunca fecham sozinhas: quem digita o IP não perde o campo. */
+  protected readonly advancedOpen = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (this.store.localWarning() || this.store.addressError() !== '') {
+        this.advancedOpen.set(true);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.store.tableId.set(this.tableId());

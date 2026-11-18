@@ -16,6 +16,8 @@ export class TableActions {
   /** Verdadeiro só enquanto o mestre de IA pensa (texto livre); um comando comum não chama o LLM. */
   readonly thinking = signal(false);
   readonly error = signal('');
+  /** O texto livre que está indo ao mestre, para a tela ecoar o que a pessoa disse enquanto ele pensa. */
+  readonly saying = signal('');
 
   constructor(
     private readonly api: ApiClient,
@@ -37,6 +39,7 @@ export class TableActions {
   say(text: string): Promise<boolean> {
     return this.act(async () => {
       this.thinking.set(true);
+      this.saying.set(text);
       const result = await this.send((revision) =>
         firstValueFrom(this.api.say(this.tableId(), { text, revision })),
       );
@@ -68,6 +71,7 @@ export class TableActions {
       return false;
     } finally {
       this.thinking.set(false);
+      this.saying.set('');
       this.busy.set(false);
     }
   }

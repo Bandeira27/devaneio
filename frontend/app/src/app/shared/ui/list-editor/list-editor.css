@@ -32,3 +32,8 @@
   flex-wrap: wrap;
   gap: var(--dv-space-2);
 }
+
+/* Remover não mora junto de Subir e Descer: vai para o outro lado, longe de um toque errado. */
+.tools__remove {
+  margin-inline-start: auto;
+}

@@ -20,8 +20,11 @@
     border-color var(--dv-duration-fast) var(--dv-ease-standard);
 }
 
-.dv-button:hover:not(:disabled):not([aria-disabled='true']) {
-  background: var(--dv-surface-hover);
+/* O hover só existe onde há ponteiro: em toque ele ficaria "preso" no botão tocado. */
+@media (hover: hover) {
+  .dv-button:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--dv-surface-hover);
+  }
 }
 
 .dv-button:active:not(:disabled):not([aria-disabled='true']) {
@@ -36,12 +39,22 @@
   color: var(--dv-on-accent);
 }
 
-.dv-button--primary:hover:not(:disabled):not([aria-disabled='true']) {
-  background: var(--dv-accent-hover);
+@media (hover: hover) {
+  .dv-button--primary:hover:not(:disabled):not([aria-disabled='true']) {
+    border-color: var(--dv-accent-hover);
+    background: var(--dv-accent-hover);
+  }
 }
 
 .dv-button--primary:active:not(:disabled):not([aria-disabled='true']) {
+  border-color: var(--dv-accent-pressed);
   background: var(--dv-accent-pressed);
+}
+
+/* Perigo: contorno e texto na cor de erro, sem preenchimento. */
+.dv-button--danger {
+  border-color: var(--dv-danger);
+  color: var(--dv-danger);
 }
 
 /* Em envio: o botão fica como "bloqueado" (aria-disabled, o foco não se perde) e um ponto pulsa até terminar. */
@@ -55,7 +68,7 @@
   height: var(--dv-size-dot);
   border-radius: var(--dv-radius-round);
   background: currentcolor;
-  animation: dv-pulse var(--dv-duration-narrative) var(--dv-ease-standard)
+  animation: dv-pulse var(--dv-duration-pending) var(--dv-ease-standard)
     var(--dv-iterations-pending);
 }
 
@@ -80,11 +93,34 @@
   border-radius: var(--dv-radius);
   background: var(--dv-surface-1);
   color: var(--dv-text);
-  font: inherit;
+  /* Tamanho próprio, não herdado: dentro de um bloco de notas (13 px) o campo seguiria pequeno (e o iOS dá zoom < 16 px). */
+  font-family: var(--dv-font-ui);
+  font-size: var(--dv-text-ui);
+  transition:
+    background-color var(--dv-duration-fast) var(--dv-ease-standard),
+    border-color var(--dv-duration-fast) var(--dv-ease-standard);
 }
 
-/* Inválido: contorno mais grosso e na cor de erro (a mensagem de texto continua sendo a informação). */
+@media (hover: hover) {
+  .dv-input:hover:not(:disabled):not([aria-invalid='true']) {
+    background: var(--dv-surface-hover);
+  }
+}
+
+.dv-input:disabled {
+  border-color: var(--dv-border-disabled);
+  color: var(--dv-text-disabled);
+  cursor: not-allowed;
+}
+
+/*
+ * Inválido: contorno mais grosso e na cor de erro (a mensagem de texto continua sendo a informação). O acolchoamento
+ * perde o que a borda ganhou, para o texto não pular.
+ */
 .dv-input[aria-invalid='true'] {
+  padding-inline: calc(
+    var(--dv-space-3) - (var(--dv-border-width-strong) - var(--dv-border-width))
+  );
   border: var(--dv-border-width-strong) solid var(--dv-danger);
 }
 

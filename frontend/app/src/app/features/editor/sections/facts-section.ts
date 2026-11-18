@@ -3,9 +3,7 @@ import type { FactDef } from '@contract/api_responses';
 import { replaceAt } from '@shared/game/campaign-edit';
 import { DvListEditor } from '@shared/ui/list-editor/list-editor';
 import { DvSelect, type SelectOption } from '@shared/ui/select/select';
-import { Sheet } from '@shared/ui/sheet/sheet';
 import { ConditionsEditor } from '../components/conditions-editor';
-import { confirmRemove } from '../components/confirm-remove';
 import { ItemProblems } from '../components/item-problems';
 import { NameIdFields } from '../components/name-id-fields';
 import { EditorStore } from '../editor.store';
@@ -25,7 +23,6 @@ const SHORT = 40;
 })
 export class FactsSection {
   protected readonly store = inject(EditorStore);
-  private readonly sheet = inject(Sheet);
   protected readonly nameOf = (fact: FactDef): string =>
     fact.text.length > SHORT ? `${fact.text.slice(0, SHORT)}…` : fact.text || fact.id;
   /** Os itens de que um fato pode falar, com o tipo no rótulo. */
@@ -53,18 +50,15 @@ export class FactsSection {
     this.store.replaceIn('facts', index, { ...fact, ...patch });
   }
 
-  protected async remove(index: number): Promise<void> {
+  protected remove(index: number): void {
     const fact = this.store.campaign()?.facts[index];
     if (fact === undefined) {
       return;
     }
-    const ok = await confirmRemove(
-      this.sheet,
-      'Remover o fato',
-      `Remover "${this.nameOf(fact)}"? Ele deixa de existir na campanha.`,
+    this.store.remove(
+      'fact',
+      fact.id,
+      `Fato "${this.nameOf(fact)}" removido. Ele deixa de existir na campanha.`,
     );
-    if (ok) {
-      this.store.remove('fact', fact.id);
-    }
   }
 }

@@ -1,16 +1,16 @@
+/* Duas colunas para todas as linhas: os valores alinham, e o texto longo quebra em vez de estourar. */
 dl {
   display: grid;
-  gap: var(--dv-space-1);
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--dv-space-1) var(--dv-space-3);
   margin: 0;
 }
 
 .row {
-  display: flex;
-  gap: var(--dv-space-3);
+  display: contents;
 }
 
 dt {
-  min-width: 4.5rem;
   font-family: var(--dv-font-note);
   font-size: var(--dv-text-note);
   color: var(--dv-text-muted);
@@ -18,4 +18,5 @@ dt {
 
 dd {
   margin: 0;
+  overflow-wrap: anywhere;
 }

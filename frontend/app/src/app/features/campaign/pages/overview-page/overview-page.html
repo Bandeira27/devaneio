@@ -1,0 +1,28 @@
+@if (store.campaign(); as campaign) {
+  <div class="overview dv-stack">
+    <header class="overview__head dv-stack">
+      <h1 class="dv-display">{{ campaign.title }}</h1>
+      <p class="overview__premise">{{ campaign.premise }}</p>
+    </header>
+    <dv-ornament />
+
+    <section class="overview__play dv-card dv-stack" aria-labelledby="titulo-jogar">
+      <h2 class="dv-section" id="titulo-jogar">Jogar</h2>
+      @if (latest(); as table) {
+        <p class="dv-note">
+          Sua mesa mais recente: {{ table.role === 'host' ? 'anfitrião' : 'jogador' }} ·
+          {{ when(table.savedAt) }}
+        </p>
+        <div class="overview__actions">
+          <a dvButton="primary" [routerLink]="['/mesa', table.tableId]">Continuar a mesa</a>
+          <a dvButton [routerLink]="['/c', campaign.id, 'mesas']">Ver as mesas</a>
+        </div>
+      } @else {
+        <p>Você ainda não tem mesa nesta campanha, neste aparelho.</p>
+        <div class="overview__actions">
+          <a dvButton="primary" [routerLink]="['/c', campaign.id, 'mesas']">Criar uma mesa</a>
+        </div>
+      }
+    </section>
+  </div>
+}

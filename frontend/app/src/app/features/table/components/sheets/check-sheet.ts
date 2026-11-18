@@ -4,6 +4,7 @@ import { modifierOptions } from '@shared/game/modifiers';
 import { check } from '@shared/game/commands';
 import { humanizeFormula } from '@shared/game/rules';
 import { DvButton } from '@shared/ui/button/button';
+import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvChoice, type ChoiceOption } from '@shared/ui/choice/choice';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
@@ -19,15 +20,19 @@ export interface CheckSheetData {
  */
 @Component({
   selector: 'dv-check-sheet',
-  imports: [DvSheetHead, DvButton, DvChoice],
+  imports: [DvSheetHead, DvButton, DvChoice, DvDisclosure],
   template: `
     <dv-sheet-head title="Testar" />
     <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
-      <dv-choice legend="Habilidade" [options]="skills()" [(value)]="skill" />
-      <dv-choice legend="Dificuldade" [options]="difficulties()" [(value)]="difficulty" />
-      @if (data.rules.modifiers.length > 0) {
-        <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
-      }
+      <dv-choice legend="Habilidade" [options]="skills()" [(value)]="skill" grid />
+      <dv-disclosure [label]="'Ajustar: ' + summary()">
+        <div class="dv-stack">
+          <dv-choice legend="Dificuldade" [options]="difficulties()" [(value)]="difficulty" grid />
+          @if (data.rules.modifiers.length > 0) {
+            <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
+          }
+        </div>
+      </dv-disclosure>
       <div class="dv-sheet__foot">
         <button dvButton="primary" type="submit">Testar</button>
       </div>
@@ -45,6 +50,13 @@ export class CheckSheet {
       ?.id ?? '',
   );
   protected readonly modifier = signal('');
+  /** O que está valendo, em poucas palavras, no resumo do "Ajustar" (o caminho comum é não mexer). */
+  protected readonly summary = computed(() => {
+    const difficulty =
+      this.data.rules.difficulties.find((d) => d.id === this.difficulty())?.name ?? '';
+    const modifier = this.data.rules.modifiers.find((m) => m.id === this.modifier())?.name;
+    return modifier ? `${difficulty}, ${modifier}` : `${difficulty}, sem modificador`;
+  });
 
   protected readonly skills = computed<ChoiceOption[]>(() =>
     this.data.rules.skills.map((s) => ({

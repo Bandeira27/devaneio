@@ -1,7 +1,16 @@
 :host {
   display: inline-flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--dv-space-1);
+}
+
+/* O número exato, ao lado dos pontos (com vida alta os pontos truncam); o texto alternativo já o diz. */
+.pips__count {
+  margin-left: var(--dv-space-1);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text-muted);
 }
 
 .pip {

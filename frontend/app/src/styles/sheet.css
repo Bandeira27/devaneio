@@ -51,17 +51,30 @@
 
 .dv-sheet__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--dv-space-3);
   margin-bottom: var(--dv-space-4);
 }
 
-/* Rodapé da folha: a ação primária à direita, a secundária (voltar) antes dela. */
+/* Fechar é discreto: sem contorno em repouso (a ação principal está no rodapé); o contorno volta ao apontar e ao focar. */
+.dv-sheet__close {
+  border-color: transparent;
+  color: var(--dv-text-muted);
+}
+
+@media (hover: hover) {
+  .dv-sheet__close:hover {
+    border-color: var(--dv-border-control);
+    color: var(--dv-text);
+  }
+}
+
+/* Rodapé da folha: a ação secundária (voltar) na ponta esquerda e a primária na direita; sozinho, o botão vai à direita. */
 .dv-sheet__foot {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   gap: var(--dv-space-2);
   margin-top: var(--dv-space-4);
@@ -70,6 +83,10 @@
   bottom: 0;
   padding-block: var(--dv-space-2);
   background: var(--dv-surface-1);
+}
+
+.dv-sheet__foot > :only-child {
+  margin-inline-start: auto;
 }
 
 /* Na tela larga a folha vira um diálogo no meio (continuidade com a folha: pergunta 3 da rule 12). O deslocamento é

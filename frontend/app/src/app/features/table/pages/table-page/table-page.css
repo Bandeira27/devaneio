@@ -1,12 +1,13 @@
 /*
  * A ordem do HTML é a ordem de leitura e de foco: situação, cena e grupo, a história e, por último, as ações.
  *
- * Celular (padrão): uma coluna; a barra de ações fica fixa no pé da tela.
- * Tela larga (64rem): duas colunas; a lateral (situação, cena e grupo) fica à esquerda e rola com a página, e as ações
- * ficam presas no topo da coluna da esquerda, sempre à vista, com a história corrida ao lado. A página rola: não há
- * rolagem aninhada.
- * Tela muito larga (90rem): três painéis. Cena e grupo à esquerda, a história no meio e, à direita, a ficha de quem
- * joga com as ações presas logo abaixo.
+ * Celular (padrão): uma coluna; a barra de ações fica fixa no pé da tela e uma linha de situação (cena e turno) fica
+ * presa no topo, para a história longa não fazer o jogador perder onde está.
+ * Tela larga (64rem): duas colunas; a lateral (situação, cena e grupo) fica presa no topo da janela e as ações presas
+ * no pé dela, as duas à esquerda e sempre à vista enquanto a história corre ao lado. A página rola: não há rolagem
+ * aninhada (só a lateral rola por dentro se não couber na janela).
+ * Tela muito larga (90rem): três painéis. Cena e grupo à esquerda (presos no topo), a história no meio e, à direita, a
+ * ficha de quem joga com as ações presas logo abaixo.
  */
 .table {
   display: grid;
@@ -26,9 +27,33 @@
   flex: 1 1 auto;
 }
 
+/* O voltar ocupa a linha só dele e o título vem logo abaixo. */
+.table__back {
+  flex: 1 0 100%;
+}
+
 .table__layout {
   display: grid;
   gap: var(--dv-space-4);
+}
+
+/* Só no celular: a situação (cena e turno) presa no topo. Repete o que a lateral diz, então fica fora do leitor de tela. */
+.table__situation {
+  position: sticky;
+  top: 0;
+  z-index: var(--dv-z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-1) var(--dv-space-3);
+  margin: 0;
+  padding-block: var(--dv-space-2);
+  border-bottom: var(--dv-border-width) dotted var(--dv-line);
+  background: var(--dv-surface-0);
+}
+
+.table__situation-place {
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
 }
 
 .table__side {
@@ -78,17 +103,6 @@
   font-size: var(--dv-text-narration);
 }
 
-.table__new {
-  justify-self: center;
-  min-height: var(--dv-touch);
-  background: var(--dv-surface-3);
-  box-shadow: var(--dv-shadow-float);
-}
-
-.table__down {
-  transform: rotate(90deg);
-}
-
 .table__llm {
   display: block;
 }
@@ -98,18 +112,31 @@
     max-width: var(--dv-measure-wide);
   }
 
+  /*
+   * A lateral é uma peça só: a cena e o grupo em cima, a barra de ações logo abaixo, as duas presas juntas enquanto a
+   * história corre. Os dois blocos dividem a mesma célula (a coluna inteira) e cada um fica preso no seu lugar: a cena
+   * no topo da janela, a barra colada no fim da cena (suas alturas vêm de `publishRailHeights`). Se a cena não couber na
+   * janela com a barra embaixo, é ela que rola por dentro: a barra nunca a invade.
+   */
   .table__layout {
     grid-template-columns: var(--dv-rail-width) minmax(0, var(--dv-measure-feed));
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      'side feed'
-      'dock feed';
+    grid-template-rows: auto;
+    grid-template-areas: 'rail feed';
     gap: var(--dv-space-4) var(--dv-space-6);
     align-items: start;
   }
 
+  .table__situation {
+    display: none; /* a lateral já está à vista */
+  }
+
   .table__side {
-    grid-area: side;
+    grid-area: rail;
+    position: sticky;
+    top: var(--dv-space-4);
+    max-height: calc(100dvh - 3 * var(--dv-space-4) - var(--dv-rail-dock-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .table__feed {
@@ -117,9 +144,13 @@
   }
 
   .table__dock {
-    grid-area: dock;
-    top: var(--dv-space-4);
+    grid-area: rail;
+    top: calc(
+      2 * var(--dv-space-4) +
+        min(var(--dv-rail-side-height), 100dvh - 3 * var(--dv-space-4) - var(--dv-rail-dock-height))
+    );
     bottom: auto;
+    margin-top: calc(var(--dv-rail-side-height) + var(--dv-space-4));
     margin-inline: 0;
     padding: var(--dv-space-4) 0 0;
     border-top: var(--dv-border-width) dotted var(--dv-line);
@@ -135,10 +166,20 @@
     grid-template-areas:
       'side feed mine'
       'side feed dock';
+    grid-template-rows: auto 1fr;
   }
 
+  /* As ações vão para a direita, sob a ficha: a lateral ganha a altura toda. */
   .table__side {
+    grid-area: side;
     grid-row: 1 / span 2;
+    max-height: calc(100dvh - 2 * var(--dv-space-4));
+  }
+
+  .table__dock {
+    grid-area: dock;
+    top: var(--dv-space-4);
+    margin-top: 0;
   }
 
   .table__mine {

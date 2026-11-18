@@ -36,6 +36,6 @@
   height: var(--dv-size-dot);
   border-radius: var(--dv-radius-round);
   background: currentcolor;
-  animation: dv-pulse var(--dv-duration-narrative) var(--dv-ease-standard)
+  animation: dv-pulse var(--dv-duration-pending) var(--dv-ease-standard)
     var(--dv-iterations-pending);
 }

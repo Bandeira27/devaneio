@@ -21,7 +21,12 @@
     </dv-notice>
   }
   @if (store.blockedReason()) {
-    <p id="dock-reason" class="dock__reason dv-note">{{ store.blockedReason() }}</p>
+    <p id="dock-reason" class="dock__reason dv-note" [class.dv-visually-hidden]="reasonSaidAbove()">
+      {{ store.blockedReason() }}
+    </p>
+  }
+  @if (actReason() && !store.blockedReason()) {
+    <p id="dock-act-reason" class="dock__reason dv-note">{{ actReason() }}</p>
   }
   @if (store.actionBusy()) {
     <p class="dock__reason" role="status" animate.enter="dv-enter" animate.leave="dv-leave">
@@ -29,62 +34,71 @@
         {{ store.thinking() ? 'O mestre está pensando…' : 'Enviando…' }}
       </dv-badge>
     </p>
+    @if (store.saying()) {
+      <p class="dock__said dv-note">Você: “{{ store.saying() }}”</p>
+    }
   }
-  <div class="dock__buttons dock__main">
-    <button
-      dvButton
-      type="button"
-      [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
-      [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
-      (click)="go()"
-    >
-      <dv-icon name="go" size="sm" />Ir
-    </button>
-    <button
-      [dvButton]="store.canSay() ? '' : 'primary'"
-      type="button"
-      [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
-      [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
-      (click)="check()"
-    >
-      <dv-icon name="check" size="sm" />Testar
-    </button>
-    <button
-      dvButton
-      type="button"
-      [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
-      [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
-      (click)="attack()"
-    >
-      <dv-icon name="attack" size="sm" />Atacar
-    </button>
-    @if (store.canSay()) {
+  <div class="dock__row">
+    <div class="dock__main">
       <button
-        dvButton="primary"
+        dvButton
+        type="button"
+        [dvBlocked]="!!store.blockedReason() || !!goReason() || store.actionBusy()"
+        [attr.aria-describedby]="
+          store.blockedReason() ? 'dock-reason' : goReason() ? 'dock-act-reason' : null
+        "
+        (click)="go()"
+      >
+        <dv-icon name="go" size="sm" />Ir
+      </button>
+      <button
+        [dvButton]="store.canSay() ? '' : 'primary'"
         type="button"
         [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
         [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
-        (click)="say()"
+        (click)="check()"
       >
-        <dv-icon name="say" size="sm" />Falar
+        <dv-icon name="check" size="sm" />Testar
       </button>
-    }
-  </div>
-  <div class="dock__buttons dock__minor">
-    <button
-      dvButton
-      type="button"
-      class="dock__sheet"
-      [dvBlocked]="!store.character()"
-      [attr.aria-describedby]="store.character() ? null : 'no-character'"
-      (click)="sheetOfCharacter()"
-    >
-      <dv-icon name="sheet" size="sm" />Ficha
-    </button>
-    @if (store.isHost()) {
-      <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="command()">
-        <dv-icon name="command" size="sm" />Comando
+      <button
+        dvButton
+        type="button"
+        [dvBlocked]="!!store.blockedReason() || !!attackReason() || store.actionBusy()"
+        [attr.aria-describedby]="
+          store.blockedReason() ? 'dock-reason' : attackReason() ? 'dock-act-reason' : null
+        "
+        (click)="attack()"
+      >
+        <dv-icon name="attack" size="sm" />Atacar
       </button>
-    }
+      @if (store.canSay()) {
+        <button
+          dvButton="primary"
+          type="button"
+          [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
+          [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
+          (click)="say()"
+        >
+          <dv-icon name="say" size="sm" />Falar
+        </button>
+      }
+    </div>
+    <div class="dock__minor">
+      <button
+        dvButton
+        type="button"
+        class="dock__sheet"
+        [dvBlocked]="!store.character()"
+        [attr.aria-describedby]="store.character() ? null : 'no-character'"
+        (click)="sheetOfCharacter()"
+      >
+        <dv-icon name="sheet" size="sm" />Ficha
+      </button>
+      @if (store.isHost()) {
+        <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="command()">
+          <dv-icon name="command" size="sm" />Comando
+        </button>
+      }
+    </div>
   </div>
 </section>

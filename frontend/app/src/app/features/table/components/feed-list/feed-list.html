@@ -20,7 +20,9 @@
       @case ('event') {
         <article
           class="feed__event"
+          [attr.data-key]="item.key"
           [class.feed__event--new]="isNew(item.key)"
+          [style.--step]="skipped() ? 0 : (steps().get(item.key) ?? 0)"
           [style.--fade]="item.fade"
         >
           <p class="feed__narration">
@@ -39,7 +41,9 @@
       @case ('talk') {
         <blockquote
           class="feed__talk"
+          [attr.data-key]="item.key"
           [class.feed__talk--new]="isNew(item.key)"
+          [style.--step]="skipped() ? 0 : (steps().get(item.key) ?? 0)"
           [style.--fade]="item.fade"
         >
           <span class="feed__speaker">Mestre</span>
@@ -48,7 +52,11 @@
       }
     }
   } @empty {
-    <dv-state>Nada aconteceu ainda. A história começa quando alguém agir.</dv-state>
+    @if (loaded()) {
+      <dv-state>Nada aconteceu ainda. A história começa quando alguém agir.</dv-state>
+    } @else {
+      <dv-state kind="loading">Lendo a história…</dv-state>
+    }
   }
   <div #end class="feed__end"></div>
 </div>

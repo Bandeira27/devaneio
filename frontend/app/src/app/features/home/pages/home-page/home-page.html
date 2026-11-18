@@ -1,145 +1,103 @@
-<div class="dv-stage">
-  <div class="dv-stage__context">
-    <h1 class="dv-display">Uma mesa de RPG com um mestre que tece a história</h1>
+<div class="home dv-page">
+  <header class="home__head dv-stack">
+    <h1 class="dv-display">Suas campanhas</h1>
     <p class="dv-lede">
-      Crie uma mesa para o seu grupo ou entre numa que já começou. O mestre de IA narra, e as regras
-      resolvem o que dá certo.
+      Escolha uma campanha para jogar com o seu grupo. O mestre de IA narra, e as regras resolvem o
+      que dá certo.
     </p>
-    @if (store.premise()) {
-      <section class="home__premise-block" aria-label="Sobre a campanha">
-        <p class="home__eyebrow">A campanha</p>
-        <p class="home__premise">{{ store.premise() }}</p>
-      </section>
-    }
-    <dv-ornament />
+  </header>
 
-    @if (store.saved().length > 0 || store.forgotten()) {
-      <section class="home__saved dv-stack" aria-labelledby="titulo-guardadas">
-        <h2 class="dv-section" id="titulo-guardadas">Suas mesas</h2>
-        <ul class="saved">
-          @for (table of store.saved(); track table.tableId; let first = $first) {
-            <li class="saved__item dv-card dv-card--page" [attr.data-table-id]="table.tableId">
-              <div class="saved__info">
-                <span class="saved__title">{{ table.title }}</span>
-                <span class="dv-note">
-                  {{ table.role === 'host' ? 'anfitrião' : 'jogador' }} · {{ when(table.savedAt) }}
+  @if (store.latest(); as table) {
+    <section class="home__resume dv-card dv-card--page" aria-labelledby="titulo-continuar">
+      <div class="home__resume-info">
+        <h2 class="dv-section" id="titulo-continuar">Continuar de onde parou</h2>
+        <span class="dv-note">
+          {{ table.title }} · {{ table.role === 'host' ? 'anfitrião' : 'jogador' }} ·
+          {{ when(table.savedAt) }}
+        </span>
+      </div>
+      <a
+        dvButton="primary"
+        [routerLink]="['/mesa', table.tableId]"
+        [attr.aria-label]="'Continuar a mesa ' + table.title"
+        >Continuar</a
+      >
+    </section>
+  }
+
+  @switch (store.state()) {
+    @case ('loading') {
+      <dv-state kind="loading">Procurando as campanhas…</dv-state>
+    }
+    @case ('failed') {
+      <dv-state kind="error">
+        {{ store.loadError() }}
+        <button dvStateAction dvButton type="button" (click)="store.load()">Tentar de novo</button>
+      </dv-state>
+    }
+    @case ('ready') {
+      @if (store.cards().length === 0 && !store.editorAvailable()) {
+        <dv-state>
+          Ainda não há campanhas para jogar aqui.
+          <button dvStateAction dvButton type="button" (click)="store.load()">
+            Tentar de novo
+          </button>
+        </dv-state>
+      } @else {
+        <ul class="cards">
+          @for (card of store.cards(); track card.id; let i = $index) {
+            <li class="cards__item" [style.--i]="i">
+              <a class="card" [routerLink]="['/c', card.id]">
+                <dv-emblem [campaignId]="card.id" size="lg" />
+                <span class="card__body">
+                  <span class="card__title">{{ card.title }}</span>
+                  <span class="card__premise">{{ card.premise }}</span>
+                  @if (card.tables > 0) {
+                    <dv-badge tone="info" icon="table">
+                      {{ card.tables === 1 ? '1 mesa' : card.tables + ' mesas' }}
+                    </dv-badge>
+                  }
                 </span>
-              </div>
-              <div class="saved__actions">
-                <a
-                  class="saved__link"
-                  [dvButton]="first ? 'primary' : ''"
-                  [routerLink]="['/mesa', table.tableId]"
-                  [attr.aria-label]="(first ? 'Continuar a mesa ' : 'Abrir a mesa ') + table.title"
-                  >{{ first ? 'Continuar' : 'Abrir' }}</a
-                >
-                <button
-                  dvButton
-                  type="button"
-                  class="saved__forget"
-                  (click)="forget(table.tableId)"
-                  [attr.aria-label]="'Esquecer a mesa ' + table.title"
-                >
-                  Esquecer
-                </button>
-              </div>
+                <dv-icon class="card__go" name="go" />
+              </a>
+            </li>
+          }
+          @if (store.editorAvailable()) {
+            <li class="cards__item" [style.--i]="store.cards().length">
+              <a class="card card--new" [routerLink]="['/c', 'nova', 'roteiro']">
+                <span class="card__plus"><dv-icon name="add" /></span>
+                <span class="card__body">
+                  <span class="card__title">Nova campanha</span>
+                  <span class="card__premise">Escreva um roteiro do zero.</span>
+                </span>
+              </a>
             </li>
           }
         </ul>
-        @if (store.forgotten(); as gone) {
-          <dv-notice animate.enter="dv-enter" animate.leave="dv-leave">
-            Mesa “{{ gone.title }}” esquecida neste aparelho.
-            <button dvButton type="button" class="home__undo" (click)="restore()">Desfazer</button>
-          </dv-notice>
-        }
-      </section>
-    }
-  </div>
-
-  <div class="dv-stage__task">
-    <section class="dv-card dv-stack" aria-labelledby="titulo-criar">
-      <h2 class="dv-section" id="titulo-criar">Criar uma mesa</h2>
-      @switch (store.state()) {
-        @case ('loading') {
-          <dv-state kind="loading">Procurando as campanhas…</dv-state>
-        }
-        @case ('failed') {
-          <dv-state kind="error">
-            {{ store.loadError() }}
-            <button dvStateAction dvButton type="button" (click)="store.load()">
-              Tentar de novo
-            </button>
-          </dv-state>
-        }
-        @case ('ready') {
-          @if (store.campaigns().length === 0) {
-            <dv-state>
-              Ainda não há campanhas para jogar aqui.
-              <button dvStateAction dvButton type="button" (click)="store.load()">
-                Tentar de novo
-              </button>
-            </dv-state>
-          } @else {
-            <form class="dv-stack" (submit)="$event.preventDefault(); store.create()">
-              <dv-field label="Campanha">
-                <select
-                  dvInput
-                  [value]="store.campaignId()"
-                  (change)="store.campaignId.set(fieldValue($event))"
-                >
-                  @for (campaign of store.campaigns(); track campaign.id) {
-                    <option [value]="campaign.id">{{ campaign.title }}</option>
-                  }
-                </select>
-              </dv-field>
-              <dv-field label="Seu nome" [error]="store.nameError()">
-                <input
-                  dvInput
-                  type="text"
-                  autocomplete="nickname"
-                  maxlength="40"
-                  [value]="store.hostName()"
-                  (input)="store.setHostName(fieldValue($event))"
-                />
-              </dv-field>
-              @if (store.createError()) {
-                <dv-notice kind="error">{{ store.createError() }}</dv-notice>
-              }
-              <button
-                [dvButton]="store.saved().length > 0 ? '' : 'primary'"
-                type="submit"
-                [dvLoading]="store.creating()"
-              >
-                Criar mesa
-              </button>
-            </form>
-          }
-        }
       }
-    </section>
-
-    <section class="dv-card" aria-label="Entrar com um convite">
-      <dv-disclosure label="Tenho um convite" [open]="store.inviteError() !== ''">
-        <form class="dv-stack" (submit)="$event.preventDefault(); store.openInvite()">
-          <dv-field
-            label="Link do convite"
-            hint="Cole o link que o anfitrião mandou."
-            [error]="store.inviteError()"
-          >
-            <input
-              dvInput
-              type="text"
-              autocomplete="off"
-              [value]="store.inviteText()"
-              (input)="store.setInviteText(fieldValue($event))"
-            />
-          </dv-field>
-          <button dvButton type="submit">Entrar</button>
-        </form>
-      </dv-disclosure>
-    </section>
-    @if (store.editorAvailable()) {
-      <a dvButton routerLink="/editor">Editor de campanhas</a>
     }
-  </div>
+  }
+
+  <dv-ornament />
+
+  <section class="dv-card" aria-label="Entrar com um convite">
+    <dv-disclosure label="Tenho um convite" [open]="store.inviteError() !== ''">
+      <form class="dv-stack" (submit)="$event.preventDefault(); store.openInvite()">
+        <dv-field
+          label="Link do convite"
+          hint="Cole o link que o anfitrião mandou."
+          [error]="store.inviteError()"
+        >
+          <input
+            dvInput
+            type="text"
+            autocomplete="off"
+            [value]="store.inviteText()"
+            (input)="store.setInviteText(fieldValue($event))"
+          />
+        </dv-field>
+        <button dvButton type="submit">Entrar</button>
+      </form>
+    </dv-disclosure>
+  </section>
 </div>

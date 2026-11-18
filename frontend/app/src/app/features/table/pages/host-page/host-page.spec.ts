@@ -54,15 +54,17 @@ describe('Painel do anfitrião', () => {
     expect(headings).toEqual([
       'Copiloto',
       'Ferramentas do turno',
-      'Marcos',
-      'Fatos',
       'NPCs',
       'Locais',
+      'Marcos',
+      'Fatos',
     ]);
     expect(text()).toContain('turno 4');
-    expect(root().querySelector('a[href$="/mesa/' + TABLE_ID + '"]')?.textContent).toContain(
-      'Voltar à mesa',
-    );
+    // O caminho de volta é um só, à esquerda do título: a mesa (a campanha se alcança por lá).
+    const back = root().querySelector('a[href$="/mesa/' + TABLE_ID + '"]');
+    expect(back?.textContent).toContain('Mesa');
+    expect(back?.classList.contains('dv-back')).toBe(true);
+    expect(root().querySelectorAll('a[href$="/mesa/' + TABLE_ID + '"]').length).toBe(1);
   });
 
   it('quem não é anfitrião volta para a mesa', async () => {
@@ -217,13 +219,45 @@ describe('Painel do anfitrião', () => {
     expect(http.expectOne(`/tables/${TABLE_ID}/commands`).request.body.line).toBe('fim');
   });
 
+  it('ir à mesa e voltar ao painel não recarrega nada: o estado é o mesmo do quadro', async () => {
+    const { router, http, settle, text } = await open();
+    await router.navigateByUrl(`/mesa/${TABLE_ID}`);
+    await settle();
+    http.expectNone(`/tables/${TABLE_ID}`);
+    http.expectNone(`/tables/${TABLE_ID}/rules`);
+    await router.navigateByUrl(`/mesa/${TABLE_ID}/anfitriao`);
+    await settle();
+    http.expectNone(`/tables/${TABLE_ID}`);
+    expect(text()).toContain('Painel do anfitrião');
+  });
+
+  it('no celular as partes do painel se escolhem (Agora, Trama, Mundo); uma de cada vez', async () => {
+    const { root, click } = await open();
+    const off = () =>
+      Array.from(root().querySelectorAll('.host__part')).map((el) =>
+        el.classList.contains('host__part--off'),
+      );
+    // As partes, na ordem da página: Agora e Mundo na coluna da esquerda, Trama na da direita.
+    expect(off()).toEqual([false, true, true]); // abre em "Agora"
+    const tabs = Array.from(root().querySelectorAll<HTMLButtonElement>('.host__tab'));
+    expect(tabs.map((t) => t.textContent?.trim())).toEqual(['Agora', 'Trama', 'Mundo']);
+    expect(tabs[0]?.getAttribute('aria-pressed')).toBe('true');
+    await click('.host__tab:nth-child(2)');
+    expect(off()).toEqual([true, true, false]);
+    expect(root().querySelector('.host__tab:nth-child(2)')?.getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
   it('cada botão repetido tem nome próprio (o marco ou o fato a que se refere)', async () => {
     const { root } = await open();
     const names = Array.from(
       root().querySelectorAll('dv-beats-panel button, dv-facts-panel button'),
     ).map((b) => b.getAttribute('aria-label'));
-    expect(names).toContain('Ativar Chegada');
-    expect(names).toContain('Concluir Chegada');
+    expect(names).toContain('Ativar O altar'); // pendente: só Ativar
+    expect(names).toContain('Concluir Chegada'); // ativo: Concluir e Falhar
+    expect(names).toContain('Falhar Chegada');
+    expect(names).not.toContain('Ativar Chegada'); // o que não serve no estado não aparece
     expect(names.some((n) => n?.startsWith('Revelar: A chave está no poco'))).toBe(true);
     expect(new Set(names).size).toBe(names.length);
   });

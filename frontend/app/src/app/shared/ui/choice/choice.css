@@ -18,6 +18,16 @@ legend {
   color: var(--dv-text-muted);
 }
 
+@media (min-width: 22rem) {
+  .fieldset--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fieldset--grid legend {
+    grid-column: 1 / -1;
+  }
+}
+
 .option {
   position: relative;
   display: flex;
@@ -34,11 +44,20 @@ legend {
     border-color var(--dv-duration-fast) var(--dv-ease-standard);
 }
 
-.option:hover {
-  background: var(--dv-surface-hover);
+@media (hover: hover) {
+  .option:hover:not(.option--selected) {
+    background: var(--dv-surface-hover);
+  }
 }
 
+.option:active:not(.option--selected) {
+  background: var(--dv-surface-pressed);
+}
+
+/* A borda mais grossa da selecionada tira o que ganhou do acolchoamento: o conteúdo não pula. */
 .option--selected {
+  padding: calc(var(--dv-space-2) - (var(--dv-border-width-strong) - var(--dv-border-width)))
+    calc(var(--dv-space-3) - (var(--dv-border-width-strong) - var(--dv-border-width)));
   border-width: var(--dv-border-width-strong);
   border-color: var(--dv-accent);
   background: var(--dv-surface-2);

@@ -11,6 +11,8 @@ import type {
 } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
+import { CampaignCatalog } from '@core/catalog/campaign-catalog';
+import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
 import {
   addBeat,
   addFact,
@@ -31,13 +33,21 @@ import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 
+/** De que seção do roteiro é cada parte da campanha (o resto, como título e premissa, é a visão geral). */
+const SECTION_OF: Record<string, string[]> = {
+  locations: ['locais'],
+  npcs: ['npcs'],
+  factions: ['faccoes'],
+  beats: ['marcos'],
+  facts: ['fatos'],
+};
+
 /** Quanto se espera (ms) depois da última edição para conferir a campanha no servidor. */
 export const VALIDATE_DELAY = new InjectionToken<number>('VALIDATE_DELAY', {
   providedIn: 'root',
   factory: () => 500,
 });
-/** O id da rota de uma campanha que ainda não foi gravada. */
-export const NEW_CAMPAIGN = 'nova';
+export { NEW_CAMPAIGN };
 
 /** As listas de itens da campanha que o editor mexe. */
 type ListName = 'locations' | 'npcs' | 'factions' | 'beats' | 'facts';
@@ -53,6 +63,8 @@ const key = (kind: ItemKind, id: string): string => `${kind}:${id}`;
 @Injectable()
 export class EditorStore {
   private readonly api = inject(ApiClient);
+  private readonly catalog = inject(CampaignCatalog);
+  private readonly created = inject(CreatedCampaign);
   private readonly router = inject(Router);
   private readonly sheet = inject(Sheet);
   private readonly delay = inject(VALIDATE_DELAY);
@@ -68,6 +80,12 @@ export class EditorStore {
   readonly rules = signal<RulesView | null>(null);
   readonly report = signal<ValidationReport | null>(null);
   readonly validating = signal(false);
+  /** A última remoção, para o aviso com "Desfazer" (some na próxima edição). */
+  readonly removed = signal<{
+    message: string;
+    before: Campaign;
+    autoBefore: ReadonlySet<string>;
+  } | null>(null);
   readonly saving = signal(false);
   readonly saveError = signal('');
   readonly justSaved = signal(false);
@@ -103,7 +121,12 @@ export class EditorStore {
     const campaign = this.campaign();
     return campaign !== null && JSON.stringify(campaign) !== this.savedText();
   });
-  readonly errors = computed(() => this.report()?.errors ?? []);
+  /**
+   * Uma campanha nova em branco, ainda sem nenhuma edição: o servidor já aponta o que falta, mas isso não é "erro" do
+   * autor, que ainda nem começou. Os erros só aparecem depois da primeira edição.
+   */
+  readonly pristine = signal(false);
+  readonly errors = computed(() => (this.pristine() ? [] : (this.report()?.errors ?? [])));
   readonly findings = computed(() => this.report()?.findings ?? []);
   /** Por que não dá para salvar agora (texto), ou `''` se dá. */
   readonly saveBlock = computed(() => {
@@ -118,6 +141,9 @@ export class EditorStore {
     }
     if (this.validating() || this.report() === null) {
       return 'Conferindo a campanha…';
+    }
+    if (this.pristine() && (this.report()?.errors.length ?? 0) > 0) {
+      return 'Preencha a campanha para poder gravá-la.';
     }
     if (this.errors().length > 0) {
       return `Corrija ${this.errors().length === 1 ? 'o erro' : 'os ' + this.errors().length + ' erros'} antes de salvar.`;
@@ -164,6 +190,7 @@ export class EditorStore {
     if (copyOf === '') {
       this.start(emptyCampaign('nova-campanha', 'Nova campanha'), null, true);
       this.autoCampaignId.set(true);
+      this.pristine.set(true);
       return;
     }
     const source = await firstValueFrom(this.api.editorCampaign(copyOf));
@@ -212,6 +239,8 @@ export class EditorStore {
     }
     const next = change(current);
     this.campaign.set(next);
+    this.pristine.set(false);
+    this.removed.set(null); // qualquer edição encerra o desfazer da remoção anterior (quem remove o põe de volta depois)
     this.justSaved.set(false);
     if (next.rules_id !== current.rules_id) {
       void this.loadRules().catch(() => this.rules.set(null));
@@ -258,9 +287,28 @@ export class EditorStore {
     this.update(() => next);
   }
 
-  remove(kind: ItemKind, id: string): void {
+  /**
+   * Remove um item e guarda a campanha de antes para **desfazer** (em vez de perguntar antes): `message` diz o que foi
+   * removido e o que some junto. O desfazer vale até a próxima edição; depois dela, o aviso some.
+   */
+  remove(kind: ItemKind, id: string, message: string): void {
+    const before = this.campaign();
+    const autoBefore = this.auto();
     this.setAuto(key(kind, id), false);
     this.update((c) => removeItem(c, kind, id));
+    if (before !== null) {
+      this.removed.set({ message, before, autoBefore });
+    }
+  }
+
+  /** Volta a campanha ao que era antes da última remoção. */
+  undoRemove(): void {
+    const removed = this.removed();
+    if (removed === null) {
+      return;
+    }
+    this.update(() => removed.before);
+    this.auto.set(removed.autoBefore); // o id volta a acompanhar o nome, como antes
   }
 
   /** Muda o nome de um item; enquanto o id dele ainda é o gerado, o id acompanha o nome (e as referências também). */
@@ -412,6 +460,8 @@ export class EditorStore {
     const campaign = this.campaign();
     return this.errors().map((e) => ({
       where: campaign === null ? '' : whereIs(campaign, e.path),
+      /** A seção do roteiro onde o erro mora (o caminho depois de `roteiro`), para a linha levar até ela. */
+      section: SECTION_OF[e.path.split('.')[0] ?? ''] ?? [],
       message: e.message,
     }));
   });
@@ -459,14 +509,19 @@ export class EditorStore {
           : await firstValueFrom(this.api.editorUpdate(savedId, campaign));
       this.savedId.set(result.id);
       this.writable.set(result.writable);
+      void this.catalog.load(); // o catálogo de campanhas (título, novidade) acompanha o que foi gravado
       this.savedText.set(JSON.stringify(campaign));
       this.justSaved.set(this.campaign() === campaign); // se o autor editou durante a gravação, ainda há o que gravar
       if (savedId === null) {
-        const section = this.router.url.split('?')[0]?.split('/').slice(3) ?? []; // o que vem depois de /editor/<id>
+        const section = this.router.url.split('?')[0]?.split('/').slice(4) ?? []; // o que vem depois de /c/<id>/roteiro
         this.navigatingAfterSave = true;
+        this.created.announce(result.id); // a tela segue a mesma: só o endereço troca `nova` pelo id
         try {
-          await this.router.navigate(['/editor', result.id, ...section], { replaceUrl: true });
+          await this.router.navigate(['/c', result.id, 'roteiro', ...section], {
+            replaceUrl: true,
+          });
         } finally {
+          this.created.clear();
           this.navigatingAfterSave = false;
         }
       }

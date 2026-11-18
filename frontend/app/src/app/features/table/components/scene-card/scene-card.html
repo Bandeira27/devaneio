@@ -1,11 +1,14 @@
 <section class="dv-card dv-card--page scene" aria-label="Cena">
   <h2 class="dv-section">{{ scene().name }}</h2>
-  <dv-key-value [items]="facts()" />
-  <div class="scene__exits">
-    <p class="scene__label">Saídas</p>
-    @if (scene().exits.length === 0) {
-      <p class="scene__none">nenhuma</p>
-    } @else {
+  @if (scene().description) {
+    <p class="dv-lede">{{ scene().description }}</p>
+  }
+  @if (facts().length > 0) {
+    <dv-key-value [items]="facts()" />
+  }
+  @if (scene().exits.length > 0) {
+    <div class="scene__exits">
+      <p class="scene__label">Saídas</p>
       <ul class="scene__list">
         @for (exit of scene().exits; track exit.id) {
           <li>
@@ -22,9 +25,6 @@
           </li>
         }
       </ul>
-    }
-  </div>
-  @if (scene().description) {
-    <p class="dv-lede">{{ scene().description }}</p>
+    </div>
   }
 </section>

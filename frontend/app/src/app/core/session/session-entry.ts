@@ -10,6 +10,11 @@ export interface StoredTable {
   role: StoredRole;
   /** Título da campanha, para a lista de mesas guardadas. */
   title: string;
+  /**
+   * O id da campanha da mesa, para agrupar as mesas por campanha. Falta nas mesas guardadas antes dele existir: elas
+   * casam pelo título até serem abertas de novo (a mesa carregada o grava).
+   */
+  campaignId?: string;
   /** Só do anfitrião: o código de convite, para mostrar o link de novo. */
   invite?: string;
   savedAt: number;
@@ -17,6 +22,7 @@ export interface StoredTable {
 
 export const TABLE_ID = /^[a-f0-9]{16}$/;
 const PLAYER_ID = /^p\d{1,3}$/;
+const CAMPAIGN_ID = /^[a-z0-9][a-z0-9_-]*$/;
 
 /** Confere, campo a campo, que um valor lido do armazenamento tem o formato de uma `StoredTable`. */
 export function isEntry(value: unknown): value is StoredTable {
@@ -33,6 +39,8 @@ export function isEntry(value: unknown): value is StoredTable {
     (v['role'] === 'host' || v['role'] === 'player') &&
     typeof v['title'] === 'string' &&
     v['title'].length <= 200 &&
+    (v['campaignId'] === undefined ||
+      (typeof v['campaignId'] === 'string' && CAMPAIGN_ID.test(v['campaignId']))) &&
     (v['invite'] === undefined || (typeof v['invite'] === 'string' && v['invite'].length <= 100)) &&
     typeof v['savedAt'] === 'number' &&
     Number.isFinite(v['savedAt'])

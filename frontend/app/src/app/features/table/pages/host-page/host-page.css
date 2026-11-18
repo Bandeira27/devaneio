@@ -21,6 +21,52 @@
   flex: 1 1 auto;
 }
 
+.host__back {
+  flex: 1 0 100%;
+}
+
+/* O resultado de uma ação (erro ou resposta) acompanha a rolagem: o anfitrião o vê onde quer que tenha tocado. */
+.host__feedback {
+  position: sticky;
+  top: var(--dv-space-2);
+  z-index: var(--dv-z-sticky);
+  display: grid;
+  gap: var(--dv-space-2);
+}
+
+/* Uma resposta longa não cobre a tela: o aviso tem altura limitada e rola por dentro (como na barra de ações). */
+.host__feedback dv-notice {
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
+/* Só no celular: as partes do painel (Agora, Trama, Mundo) se escolhem aqui; na tela larga todas aparecem e os botões somem. */
+.host__tabs {
+  display: flex;
+  gap: var(--dv-space-2);
+}
+
+.host__tab {
+  flex: 1;
+}
+
+.host__tab[aria-pressed='true'] {
+  border-width: var(--dv-border-width-strong);
+  border-color: var(--dv-accent);
+  background: var(--dv-surface-2);
+}
+
+.host__part {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+@media (max-width: 63.99rem) {
+  .host__part--off {
+    display: none;
+  }
+}
+
 .host__layout,
 .host__column {
   display: grid;
@@ -29,6 +75,10 @@
 }
 
 @media (min-width: 64rem) {
+  .host__tabs {
+    display: none;
+  }
+
   .host {
     max-width: var(--dv-measure-wide);
   }

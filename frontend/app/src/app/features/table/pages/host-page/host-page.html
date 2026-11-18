@@ -22,42 +22,66 @@
     @if (store.isHost()) {
       <div class="host">
         <header class="host__bar">
+          <a class="dv-back host__back" [routerLink]="['/mesa', tableId()]">
+            <dv-icon name="back" size="sm" />Mesa
+          </a>
           <h1 class="dv-title">Painel do anfitrião</h1>
-          <a dvButton [routerLink]="['/mesa', tableId()]">Voltar à mesa</a>
         </header>
         <p class="dv-note">{{ store.title() }} · turno {{ store.turn() }}</p>
 
-        @if (store.actionError()) {
-          <dv-notice
-            kind="error"
-            dismissible
-            (dismissed)="store.dismissFeedback()"
-            animate.enter="dv-enter"
-            animate.leave="dv-leave"
-          >
-            {{ store.actionError() }}
-          </dv-notice>
-        }
-        @if (store.reply()) {
-          <dv-notice
-            dismissible
-            (dismissed)="store.dismissFeedback()"
-            animate.enter="dv-enter"
-            animate.leave="dv-leave"
-          >
-            {{ store.reply() }}
-          </dv-notice>
-        }
+        <div class="host__feedback">
+          @if (store.actionError()) {
+            <dv-notice
+              kind="error"
+              dismissible
+              (dismissed)="dismiss()"
+              animate.enter="dv-enter"
+              animate.leave="dv-leave"
+            >
+              {{ store.actionError() }}
+            </dv-notice>
+          }
+          @if (store.reply()) {
+            <dv-notice
+              dismissible
+              (dismissed)="dismiss()"
+              animate.enter="dv-enter"
+              animate.leave="dv-leave"
+            >
+              {{ store.reply() }}
+            </dv-notice>
+          }
+        </div>
+
+        <div class="host__tabs" role="group" aria-label="Partes do painel">
+          @for (item of sections; track item.id) {
+            <button
+              dvButton
+              type="button"
+              class="host__tab"
+              [attr.aria-pressed]="section() === item.id"
+              (click)="section.set(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
 
         <div class="host__layout">
           <div class="host__column">
-            <dv-copilot-panel />
-            <dv-turn-tools />
+            <div class="host__part" [class.host__part--off]="section() !== 'agora'">
+              <dv-copilot-panel />
+              <dv-turn-tools />
+            </div>
+            <div class="host__part" [class.host__part--off]="section() !== 'mundo'">
+              <dv-world-panel />
+            </div>
           </div>
           <div class="host__column">
-            <dv-beats-panel />
-            <dv-facts-panel />
-            <dv-world-panel />
+            <div class="host__part" [class.host__part--off]="section() !== 'trama'">
+              <dv-beats-panel />
+              <dv-facts-panel />
+            </div>
           </div>
         </div>
       </div>

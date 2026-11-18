@@ -116,32 +116,6 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(root().querySelector('[role="log"]')?.getAttribute('aria-live')).toBe('polite');
   });
 
-  it('quem leu mais acima vê "novas" quando chega algo, e o toque leva ao fim', async () => {
-    const { root, events, settle } = await open();
-    events('0').flush(eventsView(3, [event(1, 1)]));
-    await settle();
-    Object.defineProperty(document.documentElement, 'scrollHeight', {
-      value: 5000,
-      configurable: true,
-    });
-    const scrollIntoView = vi.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
-    try {
-      events('20').flush(eventsView(4, [event(2, 1)]));
-      await settle();
-      const pill = root().querySelector('.table__new') as HTMLButtonElement;
-      expect(pill.textContent).toContain('1 nova');
-      pill.click();
-      await settle();
-      await Promise.resolve();
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end' });
-      expect(root().querySelector('.table__new')).toBeNull();
-    } finally {
-      Reflect.deleteProperty(document.documentElement, 'scrollHeight');
-      Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
-    }
-  });
-
   it('a ficha do painel nasce aberta, o rótulo diz o que abre e o recolher sobrevive a um novo render', async () => {
     const { root, events, http, settle } = await open();
     events('0').flush(eventsView(3));
@@ -182,7 +156,7 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(scene.textContent).not.toContain('Ver a cena');
   });
 
-  it('tocar numa saída da cena abre a confirmação de Ir já no destino tocado; nada é enviado antes de confirmar', async () => {
+  it('tocar numa saída da cena abre a folha de Ir com o destino tocado marcado; nada é enviado antes de confirmar', async () => {
     const campaign = {
       locations: [
         {
@@ -205,14 +179,9 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     exits[1]?.click(); // a segunda saída
     await settle();
     const sheet = document.querySelector('.dv-sheet') as HTMLElement;
-    expect(sheet.querySelector('strong')?.textContent).toBe('Pântano'); // abriu no destino tocado, não na lista
+    const go = sheet.querySelector('.dv-sheet__foot .dv-button--primary') as HTMLButtonElement;
+    expect(go.textContent?.trim()).toBe('Ir para Pântano'); // abriu com o destino tocado marcado
     http.expectNone(`/tables/${TABLE_ID}/commands`);
-    const back = Array.from(sheet.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === 'Voltar',
-    ) as HTMLButtonElement;
-    back.click();
-    await settle();
-    expect(sheet.textContent).toContain('Floresta'); // "Voltar" leva à lista de destinos
     (sheet.querySelector('[aria-label="Fechar"]') as HTMLButtonElement).click(); // sem escolher
     await settle();
     expect(document.querySelector('.dv-sheet')).toBeNull();
@@ -569,7 +538,8 @@ describe('Mesa', () => {
     const notice = root().querySelector('dv-notice') as HTMLElement;
     expect(notice.textContent).toContain(word);
     expect(notice.textContent).toContain('A partida terminou.');
-    expect(notice.querySelector('a[href="/"]')?.textContent).toContain('Voltar ao início');
+    const back = notice.querySelector('a[href="/c/sombra-do-vale/mesas"]');
+    expect(back?.textContent).toContain('Ver as mesas');
   });
 
   it('sem conexão mostra o estado em texto e volta ao vivo', async () => {
@@ -589,7 +559,7 @@ describe('Mesa', () => {
     await vi.waitFor(() => expect(session.get(TABLE_ID)).toBeNull());
     await settle();
     expect(root().textContent).toContain('Sua sessão nesta mesa não vale mais.');
-    expect(root().querySelector('dv-notice a[href="/"]')).not.toBeNull();
+    expect(root().querySelector('dv-notice a[href="/c/sombra-do-vale/mesas"]')).not.toBeNull();
   });
 
   it('mesa que sumiu (404) avisa', async () => {

@@ -5,7 +5,6 @@ import {
   Injector,
   afterNextRender,
   computed,
-  OnInit,
   effect,
   inject,
   input,
@@ -21,7 +20,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { connectionBlockOf } from '../../table.derived';
-import { publishDockHeight } from './dock-height';
+import { publishDockHeight, publishRailHeights, publishSituationHeight } from './dock-height';
 import { ActionDock } from '../../components/action-dock/action-dock';
 import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
@@ -47,12 +46,11 @@ import { TableStore } from '../../table.store';
     PartyStrip,
     SceneCard,
   ],
-  providers: [TableStore],
   templateUrl: './table-page.html',
   styleUrl: './table-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TablePage implements OnInit {
+export class TablePage {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(TableStore);
@@ -67,6 +65,8 @@ export class TablePage implements OnInit {
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
   private readonly actions = viewChild(ActionDock);
   private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
+  private readonly side = viewChild<ElementRef<HTMLElement>>('side');
+  private readonly situation = viewChild<ElementRef<HTMLElement>>('situation');
   /** O aviso de conexão perdida (o mesmo texto que bloqueia as ações), ou `''`. */
   protected readonly connectionNotice = computed(() => {
     const status = this.store.liveStatus();
@@ -74,11 +74,11 @@ export class TablePage implements OnInit {
   });
   /** A ficha do painel da mesa larga está aberta? Só vale na sessão: ao reabrir a mesa ela volta aberta. */
   protected readonly mineOpen = signal(true);
-  /** Quantos itens do feed chegaram enquanto se lia mais acima. */
-  protected readonly unseen = signal(0);
 
   constructor() {
     publishDockHeight(this.dock);
+    publishSituationHeight(this.situation);
+    publishRailHeights(this.side, this.dock);
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
       this.store.state();
@@ -111,24 +111,10 @@ export class TablePage implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.store.tableId.set(this.tableId());
-    void this.store.load();
-  }
-
   private refocusHeading(): void {
     const heading = this.host.nativeElement.querySelector('h1');
     if (heading && isFocusFree()) {
       focusElement(heading);
-    }
-  }
-
-  /** Leva a tela ao fim da história e tira o aviso de novidades. */
-  protected toEnd(): void {
-    this.feed()?.scrollToEnd();
-    const story = this.story()?.nativeElement;
-    if (story) {
-      focusElement(story); // o botão some: o foco fica na história
     }
   }
 

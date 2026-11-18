@@ -3,14 +3,15 @@ import {
   Component,
   ElementRef,
   Injector,
-  OnInit,
   afterNextRender,
   effect,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
+import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
@@ -31,6 +32,7 @@ import { TableStore } from '../../table.store';
   imports: [
     RouterLink,
     DvButton,
+    DvIcon,
     DvNotice,
     DvState,
     BeatsPanel,
@@ -39,18 +41,33 @@ import { TableStore } from '../../table.store';
     TurnTools,
     WorldPanel,
   ],
-  providers: [TableStore],
   templateUrl: './host-page.html',
   styleUrl: './host-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HostPage implements OnInit {
+export class HostPage {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(TableStore);
   private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+
+  /** As partes do painel: no celular uma de cada vez (a coluna única ficava longa); na tela larga aparecem todas. */
+  protected readonly sections = [
+    { id: 'agora', label: 'Agora' },
+    { id: 'trama', label: 'Trama' },
+    { id: 'mundo', label: 'Mundo' },
+  ] as const;
+  protected readonly section = signal<'agora' | 'trama' | 'mundo'>('agora');
+
+  /** Dispensa o aviso e leva o foco ao título (o botão de dispensar some junto com o aviso). */
+  protected dismiss(): void {
+    this.store.dismissFeedback();
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>('h1')?.focus(), {
+      injector: this.injector,
+    });
+  }
 
   constructor() {
     effect(() => {
@@ -71,10 +88,5 @@ export class HostPage implements OnInit {
         { injector: this.injector },
       );
     });
-  }
-
-  ngOnInit(): void {
-    this.store.tableId.set(this.tableId());
-    void this.store.load();
   }
 }

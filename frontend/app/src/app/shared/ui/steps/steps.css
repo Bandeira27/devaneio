@@ -25,6 +25,9 @@ li {
   height: 1.5rem;
   border: var(--dv-border-width) dotted var(--dv-border-control);
   border-radius: var(--dv-radius-round);
+  transition:
+    background-color var(--dv-duration-base) var(--dv-ease-standard),
+    border-color var(--dv-duration-base) var(--dv-ease-standard);
 }
 
 .current {
@@ -33,7 +36,9 @@ li {
 
 .current .number {
   border-style: solid;
-  border-color: var(--dv-ink);
+  border-color: var(--dv-accent);
+  background: var(--dv-accent);
+  color: var(--dv-on-accent);
 }
 
 .done .number {

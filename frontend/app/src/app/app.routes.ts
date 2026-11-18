@@ -1,5 +1,9 @@
 import { Routes } from '@angular/router';
+import { CampaignShell } from '@layout/campaign-shell/campaign-shell';
 import { Shell } from '@layout/shell/shell';
+
+/** A configuração do roteador que as rotas pedem: as páginas de uma campanha leem o `campaignId` da rota de fora. */
+export const ROUTER_CONFIG = { paramsInheritanceStrategy: 'always' } as const;
 
 // Cada feature entra aqui, carregada sob demanda. Os parâmetros da rota chegam como `input()` nas páginas.
 export const routes: Routes = [
@@ -12,6 +16,22 @@ export const routes: Routes = [
         pathMatch: 'full',
         title: 'Início',
         loadChildren: () => import('@features/home/home.routes').then((m) => m.HOME_ROUTES),
+      },
+      {
+        path: 'c/:campaignId',
+        component: CampaignShell,
+        children: [
+          {
+            path: 'roteiro',
+            loadChildren: () =>
+              import('@features/editor/editor.routes').then((m) => m.EDITOR_ROUTES),
+          },
+          {
+            path: '',
+            loadChildren: () =>
+              import('@features/campaign/campaign.routes').then((m) => m.CAMPAIGN_ROUTES),
+          },
+        ],
       },
       {
         path: 'entrar/:tableId/:invite',
@@ -39,11 +59,10 @@ export const routes: Routes = [
         title: 'Mesa',
         loadChildren: () => import('@features/table/table.routes').then((m) => m.TABLE_ROUTES),
       },
-      {
-        path: 'editor',
-        title: 'Editor de campanhas',
-        loadChildren: () => import('@features/editor/editor.routes').then((m) => m.EDITOR_ROUTES),
-      },
+      // O editor agora é o "roteiro" da campanha: os endereços antigos levam para lá.
+      { path: 'editor/:campaignId/:section', redirectTo: 'c/:campaignId/roteiro/:section' },
+      { path: 'editor/:campaignId', redirectTo: 'c/:campaignId/roteiro' },
+      { path: 'editor', redirectTo: '' },
       { path: '**', redirectTo: '' },
     ],
   },

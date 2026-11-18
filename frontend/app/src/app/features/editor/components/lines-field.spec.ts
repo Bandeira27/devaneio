@@ -48,6 +48,6 @@ describe('LinesField', () => {
     await fixture.whenStable();
     const error = (fixture.nativeElement as HTMLElement).querySelector('.field__error');
     expect(error?.getAttribute('role')).toBeNull();
-    expect(error?.textContent).toBe('Algo errado.');
+    expect(error?.textContent?.trim()).toBe('Algo errado.');
   });
 });

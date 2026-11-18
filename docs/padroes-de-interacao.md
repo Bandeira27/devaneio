@@ -93,13 +93,19 @@ Uma condição se escolhe, não se escreve: o tipo vem de uma lista fechada em f
 
 ## Ação irreversível ou que gasta a vez
 
-Pede confirmação **dentro do mesmo fluxo**, em uma frase que diz o efeito ("Mover o grupo para X. Gasta a sua ação."),
-com "Voltar" e "Confirmar". O foco vai ao texto, não ao "Confirmar". Ação que se desfaz sem custo (esquecer uma mesa
-guardada) não pergunta: oferece **Desfazer** por alguns segundos.
+Pede confirmação **dentro do mesmo fluxo**, em uma frase completa que diz o efeito ("Mover o grupo para X.") e, em nota
+própria embaixo, o custo ("Gasta a sua ação."): nunca as duas coladas numa linha só. Com "Voltar" e "Confirmar". O foco
+vai ao texto, não ao "Confirmar". Ação que se desfaz sem custo (esquecer uma mesa guardada, remover um item do editor)
+não pergunta: oferece **Desfazer** por alguns segundos.
+
+**Ir não tem segundo passo.** A folha tem um passo só: as saídas como opções (a tocada na cena, ou a primeira, já
+marcada) e, no rodapé, o botão que diz para onde o grupo vai ("Ir para Floresta Cinzenta"). O botão do rodapé já é a
+confirmação: não se escolhe e depois se confirma.
 
 ## Folhas e diálogos
 
-Cabeçalho (título + fechar por ícone), corpo, rodapé com a ação primária. No celular sobe do pé; na tela larga é um
+Cabeçalho (título + fechar por ícone, discreto), corpo, rodapé com **a secundária (Voltar, Cancelar) à esquerda e a
+primária à direita** (`space-between`; um botão sozinho vai à direita). No celular sobe do pé; na tela larga é um
 diálogo centralizado. Esc, toque no fundo e o botão de fechar saem sem escolher. O foco vai ao primeiro campo e volta
 a quem abriu. Muitas opções: o rodapé fica fixo e o corpo rola.
 
@@ -119,3 +125,24 @@ reserva (e a explicação de `command_refused`, que diz por que a regra recusou)
 
 Ids, códigos de atributo, fórmulas cruas e a saída de texto do CLI não aparecem. Fórmula vira "2d6 + Força";
 dificuldade aparece pelo nome, com o número no detalhe.
+
+## Navegar entre campanhas
+
+A tela inicial é a **lista de campanhas em cards** (emblema, título, premissa em até 3 linhas, quantas mesas há neste
+aparelho); tocar no card abre a campanha. Dentro dela, uma **barra lateral** leva às partes: Visão geral, Mesas e, só com o
+servidor em `--editor`, o Roteiro (Geral, Locais, NPCs, Facções, Marcos, Fatos, Prévia). Na tela larga (56rem) a barra é
+uma coluna fixa; no celular fica recolhida atrás do botão "Menu", que abre os itens no lugar e diz o estado
+(`aria-expanded`). O item da página atual leva `aria-current="page"` e uma marca na borda (não só a cor). A mesa em jogo
+fica em tela cheia, sem barra, e volta à campanha por "← Campanha". Os endereços antigos (`/editor`, `/editor/<id>`)
+levam ao roteiro da campanha.
+
+## A história chega em fila
+
+O que o servidor devolve de uma ação (a nota do golpe, o desfecho, a narração) entra no feed **um item de cada vez**: o
+primeiro espera um passo (a resposta não surge junto do toque, como o mestre pensando) e cada um espera os anteriores
+serem lidos (de 1 a 3 passos de `--dv-reveal-step`, conforme o tamanho do texto), com o mesmo fade da tinta nova. Um
+lote que chega com a fila ainda andando espera ela acabar. Uma carga grande (recarga) e o movimento reduzido entram de
+uma vez. Um toque no feed pula a espera. Nada disso bloqueia os botões. Não há texto aparecendo letra a letra.
+
+**A tela acompanha a fila.** Quando algo novo chega, a tela é levada a cada item no momento em que ele aparece, mesmo de
+quem estava no topo, e termina na última ação. Não há mais o aviso "N novas": o usuário não é deixado para trás.

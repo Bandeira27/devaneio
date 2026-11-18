@@ -12,6 +12,21 @@ summary {
   font-size: var(--dv-text-note);
   color: var(--dv-text-muted);
   cursor: pointer;
+  /* O fundo do hover/toque sobra um pouco para os lados, sem tirar o texto do alinhamento. */
+  margin-inline: calc(-1 * var(--dv-space-2));
+  padding-inline: var(--dv-space-2);
+  border-radius: var(--dv-radius);
+  transition: background-color var(--dv-duration-fast) var(--dv-ease-standard);
+}
+
+@media (hover: hover) {
+  summary:hover {
+    background: var(--dv-surface-hover);
+  }
+}
+
+summary:active {
+  background: var(--dv-surface-pressed);
 }
 
 .body {

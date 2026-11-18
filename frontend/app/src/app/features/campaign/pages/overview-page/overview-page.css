@@ -1,0 +1,12 @@
+.overview__premise {
+  margin: 0;
+  font-family: var(--dv-font-narration);
+  font-size: var(--dv-text-narration);
+  line-height: var(--dv-leading-narration);
+}
+
+.overview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2);
+}

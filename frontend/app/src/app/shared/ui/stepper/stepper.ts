@@ -3,7 +3,10 @@ import { DvButton } from '../button/button';
 
 let nextId = 0;
 
-/** Valor inteiro com − e + dentro de um mínimo e um máximo (os atributos do personagem). */
+/**
+ * Valor inteiro com − e + dentro de um mínimo e um máximo (os atributos do personagem). No limite o botão fica
+ * bloqueado (`aria-disabled`, o foco não se perde) e o limite é dito por `aria-describedby`.
+ */
 @Component({
   selector: 'dv-stepper',
   imports: [DvButton],
@@ -12,7 +15,10 @@ let nextId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvStepper {
-  protected readonly labelId = `dv-stepper-${nextId++}`;
+  private readonly uid = nextId++;
+  protected readonly labelId = `dv-stepper-${this.uid}`;
+  protected readonly minId = `dv-stepper-${this.uid}-min`;
+  protected readonly maxId = `dv-stepper-${this.uid}-max`;
   readonly label = input.required<string>();
   readonly min = input.required<number>();
   readonly max = input.required<number>();
