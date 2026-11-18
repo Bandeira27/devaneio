@@ -20,6 +20,7 @@
       @case ('event') {
         <article
           class="feed__event"
+          [attr.data-key]="item.key"
           [class.feed__event--new]="isNew(item.key)"
           [style.--step]="skipped() ? 0 : (steps().get(item.key) ?? 0)"
           [style.--fade]="item.fade"
@@ -40,6 +41,7 @@
       @case ('talk') {
         <blockquote
           class="feed__talk"
+          [attr.data-key]="item.key"
           [class.feed__talk--new]="isNew(item.key)"
           [style.--step]="skipped() ? 0 : (steps().get(item.key) ?? 0)"
           [style.--fade]="item.fade"

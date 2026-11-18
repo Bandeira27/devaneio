@@ -4,9 +4,9 @@
   "state": {
     "state_version": 1,
     "campaign_id": "sombra-do-vale",
-    "turn": 4,
+    "turn": 8,
     "rng_seed": 3990413686144143,
-    "rng_draws": 14,
+    "rng_draws": 18,
     "current_location_id": "ruinas",
     "characters": {
       "jonataan": {
@@ -38,8 +38,8 @@
         "location_id": "vila"
       },
       "sacerdote": {
-        "alive": true,
-        "hp": 6,
+        "alive": false,
+        "hp": 0,
         "max_hp": 12,
         "attributes": {
           "FOR": 3,
@@ -56,7 +56,9 @@
       "pista": "active",
       "confronto": "pending"
     },
-    "revealed_facts": {},
+    "revealed_facts": {
+      "sacerdote-segredo": 4
+    },
     "events": [
       {
         "turn": 0,
@@ -374,6 +376,166 @@
         "kind": "turn_end",
         "text": "Fim do turno 3",
         "data": {}
+      },
+      {
+        "turn": 4,
+        "kind": "check",
+        "text": "Jonataan testa Lutar (2d6 + FOR) contra Normal 9: 2d6 [4, 1] → total 10, sucesso",
+        "data": {
+          "actor_kind": "character",
+          "actor_id": "jonataan",
+          "npc_locations": {},
+          "skill_id": "lutar",
+          "difficulty_id": "normal",
+          "modifier_id": null,
+          "rolls": [
+            {
+              "dice": "2d6",
+              "values": [
+                4,
+                1
+              ]
+            }
+          ],
+          "total": 10,
+          "difficulty": 9,
+          "margin": 1,
+          "outcome": "success",
+          "attack": true
+        }
+      },
+      {
+        "turn": 4,
+        "kind": "damage",
+        "text": "Jonataan ataca Irmão Vael com Punhos (1 + FOR): → 6 de dano, hp 6 → 0, fora de combate",
+        "data": {
+          "target_kind": "npc",
+          "target_id": "sacerdote",
+          "amount": 6,
+          "hp_before": 6,
+          "hp_after": 0,
+          "incapacitated": true,
+          "npc_locations": {
+            "sacerdote": "ruinas"
+          },
+          "attacker_kind": "character",
+          "attacker_id": "jonataan",
+          "weapon_id": "punhos",
+          "rolls": []
+        }
+      },
+      {
+        "turn": 4,
+        "kind": "reveal",
+        "text": "Revelado: Irmão Vael é o líder do culto.",
+        "data": {
+          "fact_id": "sacerdote-segredo"
+        }
+      },
+      {
+        "turn": 4,
+        "kind": "director",
+        "text": "Diretor: tensão 0.12; nada a fazer.",
+        "data": {
+          "tension": 0.12,
+          "actions": []
+        }
+      },
+      {
+        "turn": 4,
+        "kind": "turn_end",
+        "text": "Fim do turno 4",
+        "data": {}
+      },
+      {
+        "turn": 5,
+        "kind": "move",
+        "text": "O grupo vai de Ruínas do Templo para Floresta Cinzenta.",
+        "data": {
+          "from_location_id": "ruinas",
+          "to_location_id": "floresta"
+        }
+      },
+      {
+        "turn": 5,
+        "kind": "director",
+        "text": "Diretor: tensão 0.12; nada a fazer.",
+        "data": {
+          "tension": 0.12,
+          "actions": []
+        }
+      },
+      {
+        "turn": 5,
+        "kind": "turn_end",
+        "text": "Fim do turno 5",
+        "data": {}
+      },
+      {
+        "turn": 6,
+        "kind": "move",
+        "text": "O grupo vai de Floresta Cinzenta para Ruínas do Templo.",
+        "data": {
+          "from_location_id": "floresta",
+          "to_location_id": "ruinas"
+        }
+      },
+      {
+        "turn": 6,
+        "kind": "director",
+        "text": "Diretor: tensão 0.12; nada a fazer.",
+        "data": {
+          "tension": 0.12,
+          "actions": []
+        }
+      },
+      {
+        "turn": 6,
+        "kind": "turn_end",
+        "text": "Fim do turno 6",
+        "data": {}
+      },
+      {
+        "turn": 7,
+        "kind": "check",
+        "text": "Jonataan testa Resistir (2d6 + FOR) contra Normal 9: 2d6 [4, 1] → total 10, sucesso",
+        "data": {
+          "actor_kind": "character",
+          "actor_id": "jonataan",
+          "npc_locations": {},
+          "skill_id": "resistir",
+          "difficulty_id": "normal",
+          "modifier_id": null,
+          "rolls": [
+            {
+              "dice": "2d6",
+              "values": [
+                4,
+                1
+              ]
+            }
+          ],
+          "total": 10,
+          "difficulty": 9,
+          "margin": 1,
+          "outcome": "success",
+          "attack": false
+        }
+      },
+      {
+        "turn": 7,
+        "kind": "director",
+        "text": "Diretor: tensão 0.12; nada a fazer.",
+        "data": {
+          "tension": 0.12,
+          "actions": []
+        }
+      },
+      {
+        "turn": 7,
+        "kind": "turn_end",
+        "text": "Fim do turno 7",
+        "data": {}
       }
     ]
   },
@@ -390,7 +552,7 @@
       }
     },
     "acted": {
-      "jonataan": 3
+      "jonataan": 7
     }
   },
   "content": {

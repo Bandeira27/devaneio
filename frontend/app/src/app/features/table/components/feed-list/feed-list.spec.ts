@@ -1,23 +1,7 @@
-import { Component, signal, viewChild } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { FeedItem } from '@shared/game/feed';
 import { FeedList } from './feed-list';
-
-/** Põe a janela bem longe do fim da página; devolve o que desfaz. */
-function installFarFromEnd(): () => void {
-  const original = Object.getOwnPropertyDescriptor(document.documentElement, 'scrollHeight');
-  Object.defineProperty(document.documentElement, 'scrollHeight', {
-    configurable: true,
-    value: 5000,
-  });
-  return () => {
-    if (original) {
-      Object.defineProperty(document.documentElement, 'scrollHeight', original);
-    } else {
-      Reflect.deleteProperty(document.documentElement, 'scrollHeight');
-    }
-  };
-}
 
 function event(index: number): FeedItem {
   return {
@@ -40,7 +24,6 @@ function event(index: number): FeedItem {
 class Host {
   readonly items = signal<FeedItem[]>([event(0)]);
   readonly loaded = signal(false);
-  readonly feed = viewChild.required(FeedList);
 }
 
 describe('FeedList: a fila dos itens novos', () => {
@@ -68,7 +51,7 @@ describe('FeedList: a fila dos itens novos', () => {
     await fixture.whenStable();
     host.items.set([event(0), event(1), event(2), event(3)]);
     await fixture.whenStable();
-    expect(steps()).toEqual(['0', '1', '2']);
+    expect(steps()).toEqual(['1', '2', '3']);
   });
 
   it('um lote grande entra todo de uma vez', async () => {
@@ -86,29 +69,29 @@ describe('FeedList: a fila dos itens novos', () => {
     await fixture.whenStable();
     host.items.set([event(0), event(1), event(2)]);
     await fixture.whenStable();
-    expect(steps()).toEqual(['0', '1']);
+    expect(steps()).toEqual(['1', '2']);
     (root.querySelector('dv-feed-list') as HTMLElement).click();
     await fixture.whenStable();
     expect(steps()).toEqual(['0', '0']);
     host.items.set([event(0), event(1), event(2), event(3)]);
     await fixture.whenStable();
-    expect(steps()).toEqual(['0', '1', '0']); // o lote novo (um item) volta a esperar a sua vez; os antigos já tocaram
+    expect(steps()).toEqual(['1', '2', '1']); // o lote novo (um item) volta a esperar a sua vez; os antigos já tocaram
   });
 });
 
-describe('FeedList: seguir o fim depois da ação própria', () => {
-  let restore: () => void;
+describe('FeedList: acompanhar a fila', () => {
   let scrolled: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    restore = installFarFromEnd();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     scrolled = vi.fn();
     Element.prototype.scrollIntoView =
       scrolled as unknown as typeof Element.prototype.scrollIntoView;
   });
 
   afterEach(() => {
-    restore();
+    vi.useRealTimers();
+    Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
   });
 
   async function loaded() {
@@ -116,27 +99,41 @@ describe('FeedList: seguir o fim depois da ação própria', () => {
     await fixture.whenStable();
     fixture.componentInstance.loaded.set(true);
     await fixture.whenStable();
-    await Promise.resolve(); // o rolar do primeiro item roda em microtarefa
+    await Promise.resolve();
     scrolled.mockClear();
-    return { fixture, host: fixture.componentInstance };
+    return { fixture, host: fixture.componentInstance, root: fixture.nativeElement as HTMLElement };
   }
 
-  it('longe do fim, o que chega de outros não leva a tela ao fim', async () => {
+  it('o que chega leva a tela até o item novo, mesmo de quem está no topo', async () => {
     const { fixture, host } = await loaded();
     host.items.set([event(0), event(1)]);
     await fixture.whenStable();
-    await Promise.resolve();
-    expect(scrolled).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(scrolled).toHaveBeenCalled();
+    const element = scrolled.mock.contexts.at(-1) as HTMLElement;
+    expect(element.getAttribute('data-key')).toBe('e1');
   });
 
-  it('depois de `follow`, o resultado que chega leva a tela ao fim mesmo longe dele', async () => {
+  it('cada item da fila recebe a tela quando começa a aparecer, na ordem', async () => {
     const { fixture, host } = await loaded();
-    host.feed().follow();
-    await Promise.resolve();
-    scrolled.mockClear();
-    host.items.set([event(0), event(1)]);
+    host.items.set([event(0), event(1), event(2)]);
     await fixture.whenStable();
+    vi.runAllTimers();
+    const keys = scrolled.mock.contexts.map((el) => (el as HTMLElement).getAttribute('data-key'));
+    expect(keys).toEqual(['e1', 'e2']);
+  });
+
+  it('um toque pula a espera e leva a tela ao fim', async () => {
+    const { fixture, host, root } = await loaded();
+    host.items.set([event(0), event(1), event(2)]);
+    await fixture.whenStable();
+    scrolled.mockClear();
+    (root.querySelector('dv-feed-list') as HTMLElement).click();
     await Promise.resolve();
-    expect(scrolled).toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(scrolled).toHaveBeenCalledWith({ block: 'end' });
+    expect(scrolled.mock.contexts.some((el) => (el as HTMLElement).getAttribute('data-key'))).toBe(
+      false,
+    ); // nada mais é agendado
   });
 });

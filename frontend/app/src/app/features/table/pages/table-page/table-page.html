@@ -97,22 +97,8 @@
           <h2 class="dv-visually-hidden">A história</h2>
           <dv-feed-list
             [loaded]="store.liveStatus() !== 'connecting'"
-            (unseen)="unseen.set($event)"
             [items]="store.feedItems()"
           />
-          @if (unseen() > 0) {
-            <button
-              dvButton
-              type="button"
-              class="table__new"
-              animate.enter="dv-enter"
-              animate.leave="dv-leave"
-              (click)="toEnd()"
-            >
-              <dv-icon name="go" size="sm" class="table__down" />
-              {{ unseen() === 1 ? '1 nova' : unseen() + ' novas' }}
-            </button>
-          }
           @if (store.llmNotice()) {
             <dv-disclosure class="table__llm" label="Sobre o mestre de IA desta mesa">
               <p>{{ store.llmNotice() }}</p>

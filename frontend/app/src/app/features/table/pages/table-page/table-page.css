@@ -103,21 +103,6 @@
   font-size: var(--dv-text-narration);
 }
 
-.table__new {
-  /* Preso no pé da coluna da história (acima da barra de ações do celular), junto do que ele leva a ver. */
-  position: sticky;
-  bottom: calc(var(--dv-dock-height, 0rem) + var(--dv-space-4));
-  z-index: var(--dv-z-sticky);
-  justify-self: center;
-  min-height: var(--dv-touch);
-  background: var(--dv-surface-3);
-  box-shadow: var(--dv-shadow-float);
-}
-
-.table__down {
-  transform: rotate(90deg);
-}
-
 .table__llm {
   display: block;
 }

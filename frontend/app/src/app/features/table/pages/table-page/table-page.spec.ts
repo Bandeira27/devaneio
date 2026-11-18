@@ -116,32 +116,6 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(root().querySelector('[role="log"]')?.getAttribute('aria-live')).toBe('polite');
   });
 
-  it('quem leu mais acima vê "novas" quando chega algo, e o toque leva ao fim', async () => {
-    const { root, events, settle } = await open();
-    events('0').flush(eventsView(3, [event(1, 1)]));
-    await settle();
-    Object.defineProperty(document.documentElement, 'scrollHeight', {
-      value: 5000,
-      configurable: true,
-    });
-    const scrollIntoView = vi.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
-    try {
-      events('20').flush(eventsView(4, [event(2, 1)]));
-      await settle();
-      const pill = root().querySelector('.table__new') as HTMLButtonElement;
-      expect(pill.textContent).toContain('1 nova');
-      pill.click();
-      await settle();
-      await Promise.resolve();
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end' });
-      expect(root().querySelector('.table__new')).toBeNull();
-    } finally {
-      Reflect.deleteProperty(document.documentElement, 'scrollHeight');
-      Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
-    }
-  });
-
   it('a ficha do painel nasce aberta, o rótulo diz o que abre e o recolher sobrevive a um novo render', async () => {
     const { root, events, http, settle } = await open();
     events('0').flush(eventsView(3));

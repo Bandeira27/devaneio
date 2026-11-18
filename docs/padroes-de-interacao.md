@@ -138,7 +138,11 @@ levam ao roteiro da campanha.
 
 ## A história chega em fila
 
-O que o servidor devolve de uma ação (a nota do golpe, o desfecho, a narração) entra no feed **um item de cada vez**, cada um
-esperando os anteriores serem lidos (de 1 a 3 passos de `--dv-reveal-step`, conforme o tamanho do texto), com o mesmo fade da tinta nova. Um lote grande (recarga) e o movimento
-reduzido entram de uma vez; um toque no feed pula a espera; nada disso bloqueia os botões. A ação do próprio jogador leva a
-tela ao resultado mesmo se ele relia acima. Não há texto aparecendo letra a letra.
+O que o servidor devolve de uma ação (a nota do golpe, o desfecho, a narração) entra no feed **um item de cada vez**: o
+primeiro espera um passo (a resposta não surge junto do toque, como o mestre pensando) e cada um espera os anteriores
+serem lidos (de 1 a 3 passos de `--dv-reveal-step`, conforme o tamanho do texto), com o mesmo fade da tinta nova. Um
+lote que chega com a fila ainda andando espera ela acabar. Uma carga grande (recarga) e o movimento reduzido entram de
+uma vez. Um toque no feed pula a espera. Nada disso bloqueia os botões. Não há texto aparecendo letra a letra.
+
+**A tela acompanha a fila.** Quando algo novo chega, a tela é levada a cada item no momento em que ele aparece, mesmo de
+quem estava no topo, e termina na última ação. Não há mais o aviso "N novas": o usuário não é deixado para trás.

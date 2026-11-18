@@ -74,22 +74,11 @@ export class TablePage {
   });
   /** A ficha do painel da mesa larga está aberta? Só vale na sessão: ao reabrir a mesa ela volta aberta. */
   protected readonly mineOpen = signal(true);
-  /** Quantos itens do feed chegaram enquanto se lia mais acima. */
-  protected readonly unseen = signal(0);
 
   constructor() {
     publishDockHeight(this.dock);
     publishSituationHeight(this.situation);
     publishRailHeights(this.side, this.dock);
-    let wasBusy = false;
-    effect(() => {
-      // Uma ação própria que terminou leva a história ao fim: quem a relia acima vê a consequência do que fez.
-      const busy = this.store.actionBusy();
-      if (wasBusy && !busy && !this.store.actionError()) {
-        this.feed()?.follow();
-      }
-      wasBusy = busy;
-    });
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
       this.store.state();
@@ -126,15 +115,6 @@ export class TablePage {
     const heading = this.host.nativeElement.querySelector('h1');
     if (heading && isFocusFree()) {
       focusElement(heading);
-    }
-  }
-
-  /** Leva a tela ao fim da história e tira o aviso de novidades. */
-  protected toEnd(): void {
-    this.feed()?.scrollToEnd();
-    const story = this.story()?.nativeElement;
-    if (story) {
-      focusElement(story); // o botão some: o foco fica na história
     }
   }
 
