@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CampaignCatalog } from '@core/catalog/campaign-catalog';
+import { NEW_CAMPAIGN } from '@core/catalog/created-campaign';
 import { DvButton } from '@shared/ui/button/button';
 import { DvEmblem } from '@shared/ui/emblem/emblem';
 import { DvIcon, type IconName } from '@shared/ui/icon/icon';
@@ -43,9 +44,6 @@ const SCRIPT: NavItem[] = [
   { label: 'Fatos', icon: 'info', path: ['roteiro', 'fatos'], exact: false },
   { label: 'Prévia', icon: 'eye', path: ['roteiro', 'previa'], exact: false },
 ];
-
-/** O id da rota de uma campanha que ainda não foi gravada (o editor trata o mesmo id). */
-const NEW_CAMPAIGN = 'nova';
 
 /**
  * O quadro de uma campanha: a barra lateral para navegar entre as partes dela (visão geral, mesas e, com o editor

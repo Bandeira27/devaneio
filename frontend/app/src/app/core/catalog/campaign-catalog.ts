@@ -16,6 +16,7 @@ export type CatalogState = 'loading' | 'ready' | 'failed';
 export class CampaignCatalog {
   private readonly api = inject(ApiClient);
   private pending: Promise<void> | null = null;
+  private queued: Promise<void> | null = null;
 
   readonly campaigns = signal<CampaignSummary[]>([]);
   readonly state = signal<CatalogState>('loading');
@@ -36,12 +37,27 @@ export class CampaignCatalog {
     return this.state() === 'ready' ? Promise.resolve() : this.load();
   }
 
-  /** Pergunta ao servidor; chamadas ao mesmo tempo dividem a mesma pergunta. */
+  /**
+   * Pergunta ao servidor. Se já há uma pergunta em andamento, ela pode ter sido feita antes do que o chamador acabou de
+   * gravar: então vem uma nova logo depois dela, e as chamadas que chegam nesse meio-tempo dividem essa segunda.
+   */
   load(): Promise<void> {
-    this.pending ??= this.fetch().finally(() => {
-      this.pending = null;
+    if (this.pending === null) {
+      this.pending = this.fetch();
+    } else {
+      this.queued ??= this.pending.then(() => {
+        this.queued = null;
+        return this.fetch();
+      });
+      this.pending = this.queued;
+    }
+    const mine = this.pending;
+    void mine.finally(() => {
+      if (this.pending === mine) {
+        this.pending = null;
+      }
     });
-    return this.pending;
+    return mine;
   }
 
   private async fetch(): Promise<void> {

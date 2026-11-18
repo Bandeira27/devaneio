@@ -1,9 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, BaseRouteReuseStrategy } from '@angular/router';
-import { CreatedCampaign } from '@core/catalog/created-campaign';
-
-/** O id da rota de uma campanha que ainda não foi gravada. */
-const NEW_CAMPAIGN = 'nova';
+import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
 
 /**
  * Reaproveita o componente de uma rota só quando os parâmetros também são os mesmos. O padrão do Angular o reaproveita

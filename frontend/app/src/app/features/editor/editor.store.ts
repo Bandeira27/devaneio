@@ -12,7 +12,7 @@ import type {
 import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
 import { CampaignCatalog } from '@core/catalog/campaign-catalog';
-import { CreatedCampaign } from '@core/catalog/created-campaign';
+import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
 import {
   addBeat,
   addFact,
@@ -38,8 +38,7 @@ export const VALIDATE_DELAY = new InjectionToken<number>('VALIDATE_DELAY', {
   providedIn: 'root',
   factory: () => 500,
 });
-/** O id da rota de uma campanha que ainda não foi gravada. */
-export const NEW_CAMPAIGN = 'nova';
+export { NEW_CAMPAIGN };
 
 /** As listas de itens da campanha que o editor mexe. */
 type ListName = 'locations' | 'npcs' | 'factions' | 'beats' | 'facts';
@@ -73,7 +72,11 @@ export class EditorStore {
   readonly report = signal<ValidationReport | null>(null);
   readonly validating = signal(false);
   /** A última remoção, para o aviso com "Desfazer" (some na próxima edição). */
-  readonly removed = signal<{ message: string; before: Campaign } | null>(null);
+  readonly removed = signal<{
+    message: string;
+    before: Campaign;
+    autoBefore: ReadonlySet<string>;
+  } | null>(null);
   readonly saving = signal(false);
   readonly saveError = signal('');
   readonly justSaved = signal(false);
@@ -281,10 +284,11 @@ export class EditorStore {
    */
   remove(kind: ItemKind, id: string, message: string): void {
     const before = this.campaign();
+    const autoBefore = this.auto();
     this.setAuto(key(kind, id), false);
     this.update((c) => removeItem(c, kind, id));
     if (before !== null) {
-      this.removed.set({ message, before });
+      this.removed.set({ message, before, autoBefore });
     }
   }
 
@@ -294,9 +298,8 @@ export class EditorStore {
     if (removed === null) {
       return;
     }
-    this.removed.set(null);
     this.update(() => removed.before);
-    this.removed.set(null);
+    this.auto.set(removed.autoBefore); // o id volta a acompanhar o nome, como antes
   }
 
   /** Muda o nome de um item; enquanto o id dele ainda é o gerado, o id acompanha o nome (e as referências também). */
