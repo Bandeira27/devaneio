@@ -103,9 +103,7 @@ describe('Personagem', () => {
     const { root, click, type } = await open();
     const preview = () => root().querySelector('.character__preview') as HTMLElement;
     expect(preview().textContent).toContain('Bia');
-    expect(preview().textContent).toContain('Total de pontos: 4');
     await click('[aria-label="Aumentar Força"]');
-    expect(preview().textContent).toContain('Total de pontos: 5');
     await type('input[type="text"]', 'Dara');
     expect(preview().querySelector('h2')?.textContent).toBe('Dara');
     expect(root().querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Jogar');
@@ -121,9 +119,8 @@ describe('Personagem', () => {
       'Personagem',
     );
     const form = root().querySelector('form') as HTMLElement;
-    expect(form.querySelector('dv-disclosure')?.textContent).toContain(
-      'O que o mestre de IA recebe',
-    );
+    const last = Array.from(form.querySelectorAll('dv-disclosure')).at(-1); // o formulário agora tem também "Ajustar atributos"
+    expect(last?.textContent).toContain('O que o mestre de IA recebe');
   });
 
   it('"Restaurar padrão" só vale depois de mexer nos atributos', async () => {

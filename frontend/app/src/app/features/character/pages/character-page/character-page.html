@@ -3,7 +3,8 @@
     <dv-steps [steps]="store.isHost() ? hostSteps : guestSteps" [current]="1" />
     <h1 class="dv-display">Seu personagem</h1>
     <p class="dv-lede">
-      Dê um nome a quem você vai ser e distribua os atributos. O mestre cuida do resto.
+      Dê um nome a quem você vai ser. Se quiser, ajuste os atributos; o padrão já serve e o mestre
+      cuida do resto.
       @if (store.isHost()) {
         Como anfitrião você também pode jogar.
       }
@@ -13,7 +14,6 @@
       <section class="dv-card dv-card--page character__preview" aria-label="Resumo da ficha">
         <h2 class="dv-section">{{ store.name() || 'Sem nome ainda' }}</h2>
         <dv-key-value [items]="store.preview()" />
-        <p class="dv-note">Total de pontos: {{ store.total() }}</p>
       </section>
     }
   </div>
@@ -47,30 +47,32 @@
             />
           </dv-field>
           @if (store.rules(); as rules) {
-            <div class="character__attributes" role="group" aria-label="Atributos">
-              @for (attribute of rules.attributes; track attribute.id) {
-                <dv-stepper
-                  [label]="attribute.name"
-                  [hint]="attribute.description"
-                  [min]="attribute.min"
-                  [max]="attribute.max"
-                  [value]="store.effective()[attribute.id] ?? attribute.default"
-                  (valueChange)="store.setAttribute(attribute.id, $event)"
-                />
-              }
-            </div>
-            <button
-              dvButton
-              type="button"
-              [dvBlocked]="!store.changed()"
-              [attr.aria-describedby]="store.changed() ? null : 'restore-reason'"
-              (click)="store.useDefaults()"
-            >
-              Restaurar padrão
-            </button>
-            <span id="restore-reason" class="dv-visually-hidden"
-              >Os atributos já estão no padrão.</span
-            >
+            <dv-disclosure label="Ajustar atributos" [open]="store.changed()">
+              <div class="character__attributes" role="group" aria-label="Atributos">
+                @for (attribute of rules.attributes; track attribute.id) {
+                  <dv-stepper
+                    [label]="attribute.name"
+                    [hint]="attribute.description"
+                    [min]="attribute.min"
+                    [max]="attribute.max"
+                    [value]="store.effective()[attribute.id] ?? attribute.default"
+                    (valueChange)="store.setAttribute(attribute.id, $event)"
+                  />
+                }
+              </div>
+              <button
+                dvButton
+                type="button"
+                [dvBlocked]="!store.changed()"
+                [attr.aria-describedby]="store.changed() ? null : 'restore-reason'"
+                (click)="store.useDefaults()"
+              >
+                Restaurar padrão
+              </button>
+              <span id="restore-reason" class="dv-visually-hidden"
+                >Os atributos já estão no padrão.</span
+              >
+            </dv-disclosure>
           }
           @if (store.error()) {
             <dv-notice kind="error">{{ store.error() }}</dv-notice>
