@@ -4,6 +4,7 @@ import { modifierOptions } from '@shared/game/modifiers';
 import { attack } from '@shared/game/commands';
 import type { AttackTarget } from '@shared/game/rules';
 import { DvButton } from '@shared/ui/button/button';
+import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvChoice, type ChoiceOption } from '@shared/ui/choice/choice';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
@@ -21,7 +22,7 @@ export interface AttackSheetData {
  */
 @Component({
   selector: 'dv-attack-sheet',
-  imports: [DvSheetHead, DvButton, DvChoice],
+  imports: [DvSheetHead, DvButton, DvChoice, DvDisclosure],
   template: `
     <dv-sheet-head title="Atacar" />
     @if (data.targets.length === 0) {
@@ -36,9 +37,15 @@ export interface AttackSheetData {
         (submit)="$event.preventDefault(); ref.close(command())"
       >
         <dv-choice legend="Alvo" [options]="targets()" [(value)]="target" />
-        <dv-choice legend="Arma" [options]="weapons()" [(value)]="weapon" />
+        @if (data.weapons.length > 1) {
+          <dv-choice legend="Arma" [options]="weapons()" [(value)]="weapon" />
+        } @else {
+          <p class="dv-note">Com {{ weaponNameOne() }}. Dano {{ data.weapons[0]?.damage }}.</p>
+        }
         @if (data.modifiers.length > 0) {
-          <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
+          <dv-disclosure [label]="'Ajustar: ' + (modifierLabel() || 'sem modificador')">
+            <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
+          </dv-disclosure>
         }
         <p class="dv-note">Gasta a sua ação.</p>
         <div class="dv-sheet__foot">
@@ -73,6 +80,10 @@ export class AttackSheet {
   protected readonly modifiers = computed(() => modifierOptions(this.data.modifiers));
   protected readonly targetName = computed(
     () => this.data.targets.find((t) => t.id === this.target())?.name ?? '',
+  );
+  protected readonly weaponNameOne = computed(() => this.data.weapons[0]?.name ?? '');
+  protected readonly modifierLabel = computed(
+    () => this.data.modifiers.find((m) => m.id === this.modifier())?.name ?? '',
   );
   protected readonly command = computed(() =>
     attack(this.weapon(), this.target(), this.modifier()),
