@@ -33,6 +33,15 @@ import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 
+/** De que seção do roteiro é cada parte da campanha (o resto, como título e premissa, é a visão geral). */
+const SECTION_OF: Record<string, string[]> = {
+  locations: ['locais'],
+  npcs: ['npcs'],
+  factions: ['faccoes'],
+  beats: ['marcos'],
+  facts: ['fatos'],
+};
+
 /** Quanto se espera (ms) depois da última edição para conferir a campanha no servidor. */
 export const VALIDATE_DELAY = new InjectionToken<number>('VALIDATE_DELAY', {
   providedIn: 'root',
@@ -451,6 +460,8 @@ export class EditorStore {
     const campaign = this.campaign();
     return this.errors().map((e) => ({
       where: campaign === null ? '' : whereIs(campaign, e.path),
+      /** A seção do roteiro onde o erro mora (o caminho depois de `roteiro`), para a linha levar até ela. */
+      section: SECTION_OF[e.path.split('.')[0] ?? ''] ?? [],
       message: e.message,
     }));
   });

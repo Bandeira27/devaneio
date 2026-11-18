@@ -219,6 +219,10 @@ describe('Editor de campanhas: edição', () => {
     await type('dv-overview-section input[type="text"]', 'Minha aventura');
     await answer();
     expect(root().querySelector('.editor__problems')?.textContent).toContain('Locais › Início:');
+    // a linha leva até a seção onde o erro mora
+    expect(root().querySelector('.editor__problems a')?.getAttribute('href')).toBe(
+      '/c/nova/roteiro/locais',
+    );
   });
 
   it('gravar a partir de uma seção volta para a mesma seção', async () => {

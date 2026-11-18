@@ -59,7 +59,9 @@
               @for (line of store.errorLines(); track $index) {
                 <li>
                   @if (line.where) {
-                    <strong>{{ line.where }}:</strong>
+                    <a [routerLink]="['/c', campaignId(), 'roteiro', ...line.section]"
+                      ><strong>{{ line.where }}:</strong></a
+                    >
                   }
                   {{ line.message }}
                 </li>
