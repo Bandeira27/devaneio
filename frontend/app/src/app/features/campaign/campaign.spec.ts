@@ -186,3 +186,15 @@ describe('Campanha: mesas', () => {
     expect(app.root().querySelector('.saved__item')).not.toBeNull();
   });
 });
+
+describe('Endereços antigos do editor', () => {
+  it('/editor/<id>/<seção> leva à mesma seção do roteiro da campanha', async () => {
+    const app = await setup('/editor/sombra-do-vale/locais');
+    expect(app.router.url).toBe('/c/sombra-do-vale/roteiro/locais');
+  });
+
+  it('/editor leva à lista de campanhas', async () => {
+    const app = await setup('/editor');
+    expect(app.router.url).toBe('/');
+  });
+});

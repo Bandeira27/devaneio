@@ -13,6 +13,6 @@ export const Conjunto: StoryObj = story(
     <dv-icon name="info" /><dv-icon name="danger" /><dv-icon name="close" /><dv-icon name="add" />
     <dv-icon name="book" /><dv-icon name="table" /><dv-icon name="map" /><dv-icon name="person" />
     <dv-icon name="flag" /><dv-icon name="scroll" /><dv-icon name="eye" /><dv-icon name="menu" />
-    <dv-icon name="back" />
+    <dv-icon name="back" /><dv-icon name="mail" /><dv-icon name="panel" />
   </div>`,
 );

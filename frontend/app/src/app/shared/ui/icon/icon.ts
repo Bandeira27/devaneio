@@ -22,7 +22,9 @@ export type IconName =
   | 'scroll'
   | 'eye'
   | 'menu'
-  | 'back';
+  | 'back'
+  | 'mail'
+  | 'panel';
 
 /** Traços de cada ícone, num quadro de 24 por 24 (só contorno, `currentcolor`). */
 const PATHS: Record<IconName, string> = {
@@ -49,6 +51,8 @@ const PATHS: Record<IconName, string> = {
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
   menu: 'M4 7h16M4 12h16M4 17h16',
   back: 'M19 12H5M11 6l-6 6 6 6',
+  mail: 'M4 6h16v12H4zM4 7l8 6 8-6',
+  panel: 'M4 5h16v4H4zM4 13h7v6H4zM15 13h5v6h-5',
 };
 
 /**

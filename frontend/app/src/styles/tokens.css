@@ -110,6 +110,7 @@
   /* O contêiner do app em tela larga: lateral + respiro + feed da mesa. É a medida exata das colunas; o cabeçalho, a home e a entrada se alinham a ela. */
   --dv-measure-wide: calc(var(--dv-rail-width) + var(--dv-space-6) + var(--dv-measure-feed));
   --dv-dock-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da barra de ações fixa */
+  --dv-situation-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da linha de situação presa no topo (celular) */
   --dv-sheet-max-height: 85dvh;
 
   /* Camadas (o CDK usa 1000 no overlay) */

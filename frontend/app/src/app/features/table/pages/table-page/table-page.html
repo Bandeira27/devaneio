@@ -28,10 +28,10 @@
         <dv-connection-badge [status]="store.liveStatus()" />
         @if (store.isHost()) {
           <a dvButton class="table__invite" [routerLink]="['/mesa', tableId(), 'convite']">
-            <dv-icon name="say" size="sm" />Convidar
+            <dv-icon name="mail" size="sm" />Convidar
           </a>
           <a dvButton class="table__host" [routerLink]="['/mesa', tableId(), 'anfitriao']">
-            <dv-icon name="sheet" size="sm" />Anfitrião
+            <dv-icon name="panel" size="sm" />Anfitrião
           </a>
         }
       </header>
@@ -57,7 +57,7 @@
       <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
       <div class="table__layout">
         @if (store.scene(); as place) {
-          <p class="table__situation" aria-hidden="true">
+          <p #situation class="table__situation" aria-hidden="true">
             <span class="table__situation-place">{{ place.name }}</span>
             @if (store.turnStatus()) {
               <span class="dv-note">Turno {{ store.turn() }} · {{ store.turnStatus() }}</span>

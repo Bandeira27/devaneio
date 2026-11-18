@@ -15,7 +15,7 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
     <form class="dv-stack" (submit)="$event.preventDefault(); send()">
       <dv-field
         label="Comando"
-        hint="Por exemplo: olhar, ficha, ir floresta, testar lutar normal."
+        hint="Escreva uma ação do jogo. Por exemplo: olhar ou ficha."
         [error]="error()"
       >
         <input

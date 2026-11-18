@@ -60,6 +60,7 @@ export const routes: Routes = [
         loadChildren: () => import('@features/table/table.routes').then((m) => m.TABLE_ROUTES),
       },
       // O editor agora é o "roteiro" da campanha: os endereços antigos levam para lá.
+      { path: 'editor/:campaignId/:section', redirectTo: 'c/:campaignId/roteiro/:section' },
       { path: 'editor/:campaignId', redirectTo: 'c/:campaignId/roteiro' },
       { path: 'editor', redirectTo: '' },
       { path: '**', redirectTo: '' },
