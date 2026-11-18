@@ -23,6 +23,9 @@
   @if (store.blockedReason()) {
     <p id="dock-reason" class="dock__reason dv-note">{{ store.blockedReason() }}</p>
   }
+  @if (actReason() && !store.blockedReason()) {
+    <p id="dock-act-reason" class="dock__reason dv-note">{{ actReason() }}</p>
+  }
   @if (store.actionBusy()) {
     <p class="dock__reason" role="status" animate.enter="dv-enter" animate.leave="dv-leave">
       <dv-badge tone="info" [pending]="true">
@@ -35,8 +38,10 @@
       <button
         dvButton
         type="button"
-        [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
-        [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
+        [dvBlocked]="!!store.blockedReason() || !!goReason() || store.actionBusy()"
+        [attr.aria-describedby]="
+          store.blockedReason() ? 'dock-reason' : goReason() ? 'dock-act-reason' : null
+        "
         (click)="go()"
       >
         <dv-icon name="go" size="sm" />Ir
@@ -53,8 +58,10 @@
       <button
         dvButton
         type="button"
-        [dvBlocked]="!!store.blockedReason() || store.actionBusy()"
-        [attr.aria-describedby]="store.blockedReason() ? 'dock-reason' : null"
+        [dvBlocked]="!!store.blockedReason() || !!attackReason() || store.actionBusy()"
+        [attr.aria-describedby]="
+          store.blockedReason() ? 'dock-reason' : attackReason() ? 'dock-act-reason' : null
+        "
         (click)="attack()"
       >
         <dv-icon name="attack" size="sm" />Atacar

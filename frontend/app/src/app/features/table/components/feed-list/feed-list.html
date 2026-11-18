@@ -50,7 +50,11 @@
       }
     }
   } @empty {
-    <dv-state>Nada aconteceu ainda. A história começa quando alguém agir.</dv-state>
+    @if (loaded()) {
+      <dv-state>Nada aconteceu ainda. A história começa quando alguém agir.</dv-state>
+    } @else {
+      <dv-state kind="loading">Lendo a história…</dv-state>
+    }
   }
   <div #end class="feed__end"></div>
 </div>
