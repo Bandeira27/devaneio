@@ -74,14 +74,14 @@
               <dv-copilot-panel />
               <dv-turn-tools />
             </div>
+            <div class="host__part" [class.host__part--off]="section() !== 'mundo'">
+              <dv-world-panel />
+            </div>
           </div>
           <div class="host__column">
             <div class="host__part" [class.host__part--off]="section() !== 'trama'">
               <dv-beats-panel />
               <dv-facts-panel />
-            </div>
-            <div class="host__part" [class.host__part--off]="section() !== 'mundo'">
-              <dv-world-panel />
             </div>
           </div>
         </div>

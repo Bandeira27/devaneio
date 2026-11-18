@@ -138,7 +138,7 @@ levam ao roteiro da campanha.
 
 ## A história chega em fila
 
-O que o servidor devolve de uma ação (a nota do golpe, o desfecho, a narração) entra no feed **um item de cada vez, com
-uma pausa curta** (`--dv-reveal-step`), cada um com o mesmo fade da tinta nova. Um lote grande (recarga) e o movimento
+O que o servidor devolve de uma ação (a nota do golpe, o desfecho, a narração) entra no feed **um item de cada vez**, cada um
+esperando os anteriores serem lidos (de 1 a 3 passos de `--dv-reveal-step`, conforme o tamanho do texto), com o mesmo fade da tinta nova. Um lote grande (recarga) e o movimento
 reduzido entram de uma vez; um toque no feed pula a espera; nada disso bloqueia os botões. A ação do próprio jogador leva a
 tela ao resultado mesmo se ele relia acima. Não há texto aparecendo letra a letra.

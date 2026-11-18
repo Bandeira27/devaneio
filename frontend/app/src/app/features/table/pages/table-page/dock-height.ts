@@ -52,3 +52,41 @@ export function publishSituationHeight(bar: Signal<ElementRef<HTMLElement> | und
     });
   });
 }
+
+/**
+ * Mede a cena e o grupo (`side`) e a barra de ações (`dock`) da lateral da mesa na tela larga e publica as alturas em
+ * `--dv-rail-side-height` e `--dv-rail-dock-height`. As duas peças ficam presas juntas: a barra de ações cola logo abaixo
+ * da cena (por margem e por `top`), e a cena só rola por dentro se não couber na janela com a barra embaixo dela.
+ */
+export function publishRailHeights(
+  side: Signal<ElementRef<HTMLElement> | undefined>,
+  dock: Signal<ElementRef<HTMLElement> | undefined>,
+): void {
+  effect((onCleanup) => {
+    const sideElement = side()?.nativeElement;
+    const dockElement = dock()?.nativeElement;
+    if (!sideElement || !dockElement || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const root = document.documentElement;
+    const publish = (): void => {
+      root.style.setProperty(
+        '--dv-rail-side-height',
+        isWide() ? `${sideElement.offsetHeight}px` : '0px',
+      );
+      root.style.setProperty(
+        '--dv-rail-dock-height',
+        isWide() ? `${dockElement.offsetHeight}px` : '0px',
+      );
+    };
+    const observer = new ResizeObserver(publish);
+    observer.observe(sideElement);
+    observer.observe(dockElement);
+    publish();
+    onCleanup(() => {
+      observer.disconnect();
+      root.style.removeProperty('--dv-rail-side-height');
+      root.style.removeProperty('--dv-rail-dock-height');
+    });
+  });
+}

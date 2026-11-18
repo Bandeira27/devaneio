@@ -97,7 +97,7 @@ export class FeedList {
     if (fresh.length === 0) {
       return;
     }
-    const positions = revealSteps(fresh.map((item) => item.type));
+    const positions = revealSteps(fresh);
     const next = new Map(this.steps());
     fresh.forEach((item, index) => {
       this.queued.add(item.key);

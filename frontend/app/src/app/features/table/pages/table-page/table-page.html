@@ -64,7 +64,7 @@
             }
           </p>
         }
-        <div class="table__side">
+        <div #side class="table__side">
           @if (store.turnStatus()) {
             <p class="table__turn" role="status">
               <span class="dv-note">Turno {{ store.turn() }}</span>

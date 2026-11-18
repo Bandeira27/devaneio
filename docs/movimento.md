@@ -23,7 +23,7 @@ interação mais intuitiva. Sem resposta, não existe. Nunca atrasa a operação
 | `--dv-ease-accelerate`    | `(0.3, 0, 1, 1)`      | o que sai                                 |
 | `--dv-ease-emphasized`    | `(0.05, 0.7, 0.1, 1)` | folha e diálogo                           |
 | `--dv-stagger`            | 60 ms                 | escalonamento (no máximo 3 itens)         |
-| `--dv-reveal-step`        | 600 ms                | pausa entre os itens novos do feed        |
+| `--dv-reveal-step`        | 1000 ms               | tempo de ler ~80 caracteres: um passo da fila |
 | `--dv-duration-pending`   | 480 ms                | pulso de "pendente" (botão, selo, estado) |
 | `--dv-motion-distance`    | 0,25 rem              | deslocamento de entrada                   |
 
@@ -31,24 +31,24 @@ Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o es
 
 ## Catálogo
 
-| Movimento                            | Onde                                                 | Pergunta | Duração e curva                                                                                           |
-| ------------------------------------ | ---------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------- |
-| Pressionar                           | botões                                               | 2, 5     | `instant`, `standard`                                                                                     |
-| Estado de campo e controle           | foco, erro, `hover`                                  | 1        | `fast`, `standard`                                                                                        |
-| Entrada e saída de aviso e pendência | avisos, "enviando…"                                  | 1, 2, 3  | `base` ao entrar, `fast` ao sair                                                                          |
-| Folha e diálogo                      | ações                                                | 3, 5     | `slow`, `emphasized` (sai mais rápido)                                                                    |
-| Expandir e recolher                  | avisos e opções (convite, ficha, aviso do mestre)    | 1, 3     | `base` (sem animar `height`)                                                                              |
-| **Tinta nova**                       | evento ou fala que chegou **depois** do carregamento | 1, 3, 4  | `narrative`, `decelerate`                                                                                 |
-| Envelhecimento                       | opacidade por idade                                  | 4        | `slow` ao mudar o turno                                                                                   |
-| Mudança de hp                        | pontos de vida                                       | 1, 2     | `base`                                                                                                    |
-| Cópia feita                          | campo de cópia                                       | 2        | `fast`                                                                                                    |
-| Aviso "N novas"                      | feed da mesa                                         | 2, 5     | `base` ao entrar, `fast` ao sair                                                                          |
-| Troca de rota                        | páginas                                              | 1, 3     | `fast` sai, `base` entra (`withViewTransitions`): só a página "vira", o cabeçalho fica parado             |
-| Folha de transição                   | troca de tela que demora                             | 1, 2     | `base` ao entrar, `fast` ao sair; só depois de 150 ms de espera, e some no instante em que a tela chega   |
-| Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça (`pending`), só enquanto pendente                                                        |
-| Itens do feed em fila                | o que chega depois de uma ação                       | 1, 3     | o mesmo `narrative`, um item por `--dv-reveal-step`; lote grande, movimento reduzido e toque entram junto |
-| Cards de campanha                    | tela inicial                                         | 3, 4     | `base`, `decelerate`, escalonado em até 3 (`--dv-stagger`); apontar muda só contorno e cor                |
-| Item atual da barra lateral          | barra da campanha                                    | 1, 3     | a marca na borda aparece com `base`, `standard`                                                           |
+| Movimento                            | Onde                                                 | Pergunta | Duração e curva                                                                                                                                                             |
+| ------------------------------------ | ---------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pressionar                           | botões                                               | 2, 5     | `instant`, `standard`                                                                                                                                                       |
+| Estado de campo e controle           | foco, erro, `hover`                                  | 1        | `fast`, `standard`                                                                                                                                                          |
+| Entrada e saída de aviso e pendência | avisos, "enviando…"                                  | 1, 2, 3  | `base` ao entrar, `fast` ao sair                                                                                                                                            |
+| Folha e diálogo                      | ações                                                | 3, 5     | `slow`, `emphasized` (sai mais rápido)                                                                                                                                      |
+| Expandir e recolher                  | avisos e opções (convite, ficha, aviso do mestre)    | 1, 3     | `base` (sem animar `height`)                                                                                                                                                |
+| **Tinta nova**                       | evento ou fala que chegou **depois** do carregamento | 1, 3, 4  | `narrative`, `decelerate`                                                                                                                                                   |
+| Envelhecimento                       | opacidade por idade                                  | 4        | `slow` ao mudar o turno                                                                                                                                                     |
+| Mudança de hp                        | pontos de vida                                       | 1, 2     | `base`                                                                                                                                                                      |
+| Cópia feita                          | campo de cópia                                       | 2        | `fast`                                                                                                                                                                      |
+| Aviso "N novas"                      | feed da mesa                                         | 2, 5     | `base` ao entrar, `fast` ao sair                                                                                                                                            |
+| Troca de rota                        | páginas                                              | 1, 3     | `fast` sai, `base` entra (`withViewTransitions`): só a página "vira", o cabeçalho fica parado                                                                               |
+| Folha de transição                   | troca de tela que demora                             | 1, 2     | `base` ao entrar, `fast` ao sair; só depois de 150 ms de espera, e some no instante em que a tela chega                                                                     |
+| Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça (`pending`), só enquanto pendente                                                                                                                          |
+| Itens do feed em fila                | o que chega depois de uma ação                       | 1, 3     | o mesmo `narrative`; cada item espera os anteriores serem lidos (1 a 3 `--dv-reveal-step` por item, conforme o texto); lote grande, movimento reduzido e toque entram junto |
+| Cards de campanha                    | tela inicial                                         | 3, 4     | `base`, `decelerate`, escalonado em até 3 (`--dv-stagger`); apontar muda só contorno e cor                                                                                  |
+| Item atual da barra lateral          | barra da campanha                                    | 1, 3     | a marca na borda aparece com `base`, `standard`                                                                                                                             |
 
 Estado atual do app: pressionar e estados de botão, entrada e saída de avisos e pendências (`dv-enter`/`dv-leave`), folha (`dv-sheet-in`/`-out`, com fundo no mesmo ritmo), mudança de hp, cópia, pendência (`dv-pulse`), troca de rota com a página virando e a folha de transição e a tinta nova (`reveal` do feed, só no que chegou depois do carregamento) existem. Os tokens ainda sem uso estão numa lista de espera no `design-lint.spec.ts`, que só pode encolher.
 

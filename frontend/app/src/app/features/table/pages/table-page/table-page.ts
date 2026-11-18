@@ -20,7 +20,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { connectionBlockOf } from '../../table.derived';
-import { publishDockHeight, publishSituationHeight } from './dock-height';
+import { publishDockHeight, publishRailHeights, publishSituationHeight } from './dock-height';
 import { ActionDock } from '../../components/action-dock/action-dock';
 import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
@@ -65,6 +65,7 @@ export class TablePage {
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
   private readonly actions = viewChild(ActionDock);
   private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
+  private readonly side = viewChild<ElementRef<HTMLElement>>('side');
   private readonly situation = viewChild<ElementRef<HTMLElement>>('situation');
   /** O aviso de conexão perdida (o mesmo texto que bloqueia as ações), ou `''`. */
   protected readonly connectionNotice = computed(() => {
@@ -79,6 +80,7 @@ export class TablePage {
   constructor() {
     publishDockHeight(this.dock);
     publishSituationHeight(this.situation);
+    publishRailHeights(this.side, this.dock);
     let wasBusy = false;
     effect(() => {
       // Uma ação própria que terminou leva a história ao fim: quem a relia acima vê a consequência do que fez.

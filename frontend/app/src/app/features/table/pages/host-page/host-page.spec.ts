@@ -54,10 +54,10 @@ describe('Painel do anfitrião', () => {
     expect(headings).toEqual([
       'Copiloto',
       'Ferramentas do turno',
-      'Marcos',
-      'Fatos',
       'NPCs',
       'Locais',
+      'Marcos',
+      'Fatos',
     ]);
     expect(text()).toContain('turno 4');
     expect(root().querySelector('a[href$="/mesa/' + TABLE_ID + '"]')?.textContent).toContain(
@@ -235,12 +235,13 @@ describe('Painel do anfitrião', () => {
       Array.from(root().querySelectorAll('.host__part')).map((el) =>
         el.classList.contains('host__part--off'),
       );
+    // As partes, na ordem da página: Agora e Mundo na coluna da esquerda, Trama na da direita.
     expect(off()).toEqual([false, true, true]); // abre em "Agora"
     const tabs = Array.from(root().querySelectorAll<HTMLButtonElement>('.host__tab'));
     expect(tabs.map((t) => t.textContent?.trim())).toEqual(['Agora', 'Trama', 'Mundo']);
     expect(tabs[0]?.getAttribute('aria-pressed')).toBe('true');
     await click('.host__tab:nth-child(2)');
-    expect(off()).toEqual([true, false, true]);
+    expect(off()).toEqual([true, true, false]);
     expect(root().querySelector('.host__tab:nth-child(2)')?.getAttribute('aria-pressed')).toBe(
       'true',
     );
