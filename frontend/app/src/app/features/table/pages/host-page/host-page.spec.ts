@@ -229,6 +229,23 @@ describe('Painel do anfitrião', () => {
     expect(text()).toContain('Painel do anfitrião');
   });
 
+  it('no celular as partes do painel se escolhem (Agora, Trama, Mundo); uma de cada vez', async () => {
+    const { root, click } = await open();
+    const off = () =>
+      Array.from(root().querySelectorAll('.host__part')).map((el) =>
+        el.classList.contains('host__part--off'),
+      );
+    expect(off()).toEqual([false, true, true]); // abre em "Agora"
+    const tabs = Array.from(root().querySelectorAll<HTMLButtonElement>('.host__tab'));
+    expect(tabs.map((t) => t.textContent?.trim())).toEqual(['Agora', 'Trama', 'Mundo']);
+    expect(tabs[0]?.getAttribute('aria-pressed')).toBe('true');
+    await click('.host__tab:nth-child(2)');
+    expect(off()).toEqual([true, false, true]);
+    expect(root().querySelector('.host__tab:nth-child(2)')?.getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
   it('cada botão repetido tem nome próprio (o marco ou o fato a que se refere)', async () => {
     const { root } = await open();
     const names = Array.from(

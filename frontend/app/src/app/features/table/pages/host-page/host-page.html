@@ -54,15 +54,35 @@
           }
         </div>
 
+        <div class="host__tabs" role="group" aria-label="Partes do painel">
+          @for (item of sections; track item.id) {
+            <button
+              dvButton
+              type="button"
+              class="host__tab"
+              [attr.aria-pressed]="section() === item.id"
+              (click)="section.set(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
+
         <div class="host__layout">
           <div class="host__column">
-            <dv-copilot-panel />
-            <dv-turn-tools />
+            <div class="host__part" [class.host__part--off]="section() !== 'agora'">
+              <dv-copilot-panel />
+              <dv-turn-tools />
+            </div>
           </div>
           <div class="host__column">
-            <dv-beats-panel />
-            <dv-facts-panel />
-            <dv-world-panel />
+            <div class="host__part" [class.host__part--off]="section() !== 'trama'">
+              <dv-beats-panel />
+              <dv-facts-panel />
+            </div>
+            <div class="host__part" [class.host__part--off]="section() !== 'mundo'">
+              <dv-world-panel />
+            </div>
           </div>
         </div>
       </div>

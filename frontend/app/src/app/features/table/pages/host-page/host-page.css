@@ -40,6 +40,33 @@
   overflow-y: auto;
 }
 
+/* Só no celular: as partes do painel (Agora, Trama, Mundo) se escolhem aqui; na tela larga todas aparecem e os botões somem. */
+.host__tabs {
+  display: flex;
+  gap: var(--dv-space-2);
+}
+
+.host__tab {
+  flex: 1;
+}
+
+.host__tab[aria-pressed='true'] {
+  border-width: var(--dv-border-width-strong);
+  border-color: var(--dv-accent);
+  background: var(--dv-surface-2);
+}
+
+.host__part {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+@media (max-width: 63.99rem) {
+  .host__part--off {
+    display: none;
+  }
+}
+
 .host__layout,
 .host__column {
   display: grid;
@@ -48,6 +75,10 @@
 }
 
 @media (min-width: 64rem) {
+  .host__tabs {
+    display: none;
+  }
+
   .host {
     max-width: var(--dv-measure-wide);
   }

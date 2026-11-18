@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
@@ -51,6 +52,14 @@ export class HostPage {
   private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+
+  /** As partes do painel: no celular uma de cada vez (a coluna única ficava longa); na tela larga aparecem todas. */
+  protected readonly sections = [
+    { id: 'agora', label: 'Agora' },
+    { id: 'trama', label: 'Trama' },
+    { id: 'mundo', label: 'Mundo' },
+  ] as const;
+  protected readonly section = signal<'agora' | 'trama' | 'mundo'>('agora');
 
   /** Dispensa o aviso e leva o foco ao título (o botão de dispensar some junto com o aviso). */
   protected dismiss(): void {
