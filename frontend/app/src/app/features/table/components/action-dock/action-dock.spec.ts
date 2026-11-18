@@ -137,12 +137,8 @@ describe('Ações da mesa', () => {
     await app.press('Atacar');
     expect(app.sheet()?.textContent).toContain('ferreiro');
     expect(app.sheet()?.textContent).toContain('Punhos');
-    (app.sheet()?.querySelector('form') as HTMLFormElement).dispatchEvent(
-      new Event('submit', { cancelable: true }),
-    );
-    await app.settle();
-    app.http.expectNone(`/tables/${TABLE_ID}/commands`);
-    expect(app.sheet()?.textContent).toContain('Atacar ferreiro com Punhos');
+    app.http.expectNone(`/tables/${TABLE_ID}/commands`); // abrir a folha não ataca
+    expect(app.sheet()?.textContent).toContain('Atacar ferreiro');
     await app.inSheet('.dv-sheet__foot .dv-button--primary');
     const request = app.commandRequest();
     expect((request.request.body as { line: string }).line).toBe('atacar punhos ferreiro');

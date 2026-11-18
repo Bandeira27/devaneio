@@ -32,19 +32,20 @@ describe('AttackSheet', () => {
     expect(el.textContent).toContain('5/8 de vida · hostil');
   });
 
-  it('atacar pede confirmação e só então devolve o comando; "Voltar" desfaz', () => {
-    const { el, close, fixture } = mount(DATA);
-    el.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
-    fixture.detectChanges();
-    expect(close).not.toHaveBeenCalled();
-    expect(el.textContent).toContain('Atacar Lobo com Punhos.');
+  it('o botão do rodapé diz quem será atacado, avisa o custo e devolve o comando', () => {
+    const { el, close } = mount(DATA);
     expect(el.textContent).toContain('Gasta a sua ação.');
-    (el.querySelector('.dv-sheet__foot button') as HTMLButtonElement).click(); // Voltar
-    fixture.detectChanges();
-    expect(el.querySelector('form')).not.toBeNull();
-    el.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
-    fixture.detectChanges();
-    (el.querySelector('.dv-button--primary') as HTMLButtonElement).click();
+    const attack = el.querySelector('.dv-sheet__foot .dv-button--primary') as HTMLButtonElement;
+    expect(attack.textContent?.trim()).toBe('Atacar Lobo');
+    attack.click();
     expect(close).toHaveBeenCalledWith('atacar punhos lobo');
+  });
+
+  it('Cancelar fecha sem atacar', () => {
+    const { el, close } = mount(DATA);
+    (
+      el.querySelector('.dv-sheet__foot .dv-button:not(.dv-button--primary)') as HTMLButtonElement
+    ).click();
+    expect(close).toHaveBeenCalledWith();
   });
 });

@@ -1,15 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Injector,
-  afterNextRender,
-  computed,
-  effect,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { ModifierInfo, WeaponInfo } from '@contract/api_responses';
 import { modifierOptions } from '@shared/game/modifiers';
 import { attack } from '@shared/game/commands';
@@ -27,8 +16,8 @@ export interface AttackSheetData {
 }
 
 /**
- * Folha de atacar: escolhe alvo (o primeiro hostil já vem marcado) e arma, e confirma ali mesmo, porque atacar gasta
- * a ação. Devolve a linha de comando.
+ * Folha de atacar, em um passo: alvo (o primeiro hostil já vem marcado), arma e modificador, e o botão do rodapé diz
+ * quem será atacado; atacar gasta a ação, e a nota avisa. Devolve a linha de comando.
  */
 @Component({
   selector: 'dv-attack-sheet',
@@ -39,33 +28,22 @@ export interface AttackSheetData {
       <p class="dv-note">Não há ninguém aqui para atacar.</p>
     } @else if (data.weapons.length === 0) {
       <p class="dv-note">Você não tem nenhuma arma.</p>
-    } @else if (confirming()) {
-      <p cdkFocusInitial tabindex="-1" #confirm>
-        Atacar <strong>{{ targetName() }}</strong> com <strong>{{ weaponName() }}</strong>{{
-          modifierName() ? ' (' + modifierName() + ')' : ''
-        }}.
-      </p>
-      <p class="dv-note">Gasta a sua ação.</p>
-      <div class="dv-sheet__foot">
-        <button dvButton type="button" (click)="confirming.set(false)">Voltar</button>
-        <button dvButton="primary" type="button" cdkFocusInitial (click)="ref.close(command())">
-          Confirmar
-        </button>
-      </div>
     } @else {
       <form
         class="dv-stack"
         #form
         tabindex="-1"
-        (submit)="$event.preventDefault(); confirming.set(true)"
+        (submit)="$event.preventDefault(); ref.close(command())"
       >
         <dv-choice legend="Alvo" [options]="targets()" [(value)]="target" />
         <dv-choice legend="Arma" [options]="weapons()" [(value)]="weapon" />
         @if (data.modifiers.length > 0) {
           <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
         }
+        <p class="dv-note">Gasta a sua ação.</p>
         <div class="dv-sheet__foot">
-          <button dvButton="primary" type="submit">Atacar</button>
+          <button dvButton type="button" (click)="ref.close()">Cancelar</button>
+          <button dvButton="primary" type="submit">Atacar {{ targetName() }}</button>
         </div>
       </form>
     }
@@ -81,20 +59,6 @@ export class AttackSheet {
   );
   protected readonly weapon = signal(this.data.weapons[0]?.id ?? '');
   protected readonly modifier = signal('');
-  protected readonly confirming = signal(false);
-  private readonly injector = inject(Injector);
-  private readonly confirm = viewChild<ElementRef<HTMLElement>>('confirm');
-  private readonly form = viewChild<ElementRef<HTMLElement>>('form');
-
-  constructor() {
-    // Ao trocar de etapa o botão clicado some: o foco vai para o texto da confirmação ou, ao voltar, para o formulário.
-    effect(() => {
-      const confirming = this.confirming();
-      afterNextRender(() => (confirming ? this.confirm() : this.form())?.nativeElement.focus(), {
-        injector: this.injector,
-      });
-    });
-  }
 
   protected readonly targets = computed<ChoiceOption[]>(() =>
     this.data.targets.map((t) => ({

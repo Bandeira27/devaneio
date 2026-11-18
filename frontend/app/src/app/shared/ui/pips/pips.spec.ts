@@ -22,6 +22,13 @@ describe('DvPips', () => {
     expect([count(el, 'full'), count(el, 'empty')]).toEqual([8, 2]);
   });
 
+  it('mostra o número exato ao lado dos pontos, escondido do leitor de tela (que já ouve o texto alternativo)', async () => {
+    const { el } = await render();
+    const number = el.querySelector('.pips__count') as HTMLElement;
+    expect(number.textContent?.trim()).toBe('8/10');
+    expect(number.getAttribute('aria-hidden')).toBe('true');
+  });
+
   it('tem texto alternativo com os números, e os pontos ficam escondidos do leitor de tela', async () => {
     const { el } = await render();
     expect(el.getAttribute('role')).toBe('img');
