@@ -5,7 +5,6 @@ import {
   Injector,
   afterNextRender,
   computed,
-  OnInit,
   effect,
   inject,
   input,
@@ -47,12 +46,11 @@ import { TableStore } from '../../table.store';
     PartyStrip,
     SceneCard,
   ],
-  providers: [TableStore],
   templateUrl: './table-page.html',
   styleUrl: './table-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TablePage implements OnInit {
+export class TablePage {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(TableStore);
@@ -118,11 +116,6 @@ export class TablePage implements OnInit {
         this.documentTitle.setTitle(`${campaign} · Devaneio`);
       }
     });
-  }
-
-  ngOnInit(): void {
-    this.store.tableId.set(this.tableId());
-    void this.store.load();
   }
 
   private refocusHeading(): void {

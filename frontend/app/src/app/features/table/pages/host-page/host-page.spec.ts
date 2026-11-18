@@ -217,6 +217,18 @@ describe('Painel do anfitrião', () => {
     expect(http.expectOne(`/tables/${TABLE_ID}/commands`).request.body.line).toBe('fim');
   });
 
+  it('ir à mesa e voltar ao painel não recarrega nada: o estado é o mesmo do quadro', async () => {
+    const { router, http, settle, text } = await open();
+    await router.navigateByUrl(`/mesa/${TABLE_ID}`);
+    await settle();
+    http.expectNone(`/tables/${TABLE_ID}`);
+    http.expectNone(`/tables/${TABLE_ID}/rules`);
+    await router.navigateByUrl(`/mesa/${TABLE_ID}/anfitriao`);
+    await settle();
+    http.expectNone(`/tables/${TABLE_ID}`);
+    expect(text()).toContain('Painel do anfitrião');
+  });
+
   it('cada botão repetido tem nome próprio (o marco ou o fato a que se refere)', async () => {
     const { root } = await open();
     const names = Array.from(

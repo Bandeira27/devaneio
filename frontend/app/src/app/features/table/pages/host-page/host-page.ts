@@ -3,7 +3,6 @@ import {
   Component,
   ElementRef,
   Injector,
-  OnInit,
   afterNextRender,
   effect,
   inject,
@@ -41,12 +40,11 @@ import { TableStore } from '../../table.store';
     TurnTools,
     WorldPanel,
   ],
-  providers: [TableStore],
   templateUrl: './host-page.html',
   styleUrl: './host-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HostPage implements OnInit {
+export class HostPage {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(TableStore);
@@ -73,10 +71,5 @@ export class HostPage implements OnInit {
         { injector: this.injector },
       );
     });
-  }
-
-  ngOnInit(): void {
-    this.store.tableId.set(this.tableId());
-    void this.store.load();
   }
 }
