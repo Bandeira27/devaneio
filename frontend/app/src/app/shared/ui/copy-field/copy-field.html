@@ -9,17 +9,23 @@
     [value]="text()"
     (focus)="select()"
   />
-  <button dvButton type="button" (click)="copy()">Copiar</button>
+  <button dvButton type="button" class="copy__button" (click)="copy()">
+    @if (state() === 'copied') {
+      <dv-icon name="ok" size="sm" />Copiado
+    } @else {
+      Copiar
+    }
+  </button>
 </div>
 <p class="copy__status" role="status">
   @switch (state()) {
     @case ('copied') {
-      <span class="copy__tone copy__tone--ok" animate.enter="dv-enter">
+      <span class="copy__tone copy__tone--ok" animate.enter="dv-enter" animate.leave="dv-leave">
         <dv-icon name="ok" size="sm" />Copiado.
       </span>
     }
     @case ('manual') {
-      <span class="copy__tone copy__tone--warn" animate.enter="dv-enter">
+      <span class="copy__tone copy__tone--warn" animate.enter="dv-enter" animate.leave="dv-leave">
         <dv-icon name="warn" size="sm" />Não consegui copiar sozinho: o texto está selecionado,
         copie à mão.
       </span>

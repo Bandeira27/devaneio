@@ -29,7 +29,7 @@ const ICON: Record<NoticeKind, IconName> = {
  * `status` (esperam a vez). O leitor de tela ouve o tom antes do texto, menos na informação simples.
  *
  * `dismissible` põe um botão de dispensar; `dismissed` avisa quem o mostra para tirá-lo (o erro persiste até alguém
- * dispensá-lo ou a situação mudar). Entra com a animação de entrada, quando o pai usa `animate.enter="dv-enter"`.
+ * dispensá-lo ou a situação mudar). Entra com a animação de entrada (`dv-enter`); para sair com `dv-leave`, o pai usa `animate.leave="dv-leave"`. O erro tem contorno sólido e mais grosso: é o único aviso que trava o fluxo.
  */
 @Component({
   selector: 'dv-notice',
@@ -39,6 +39,7 @@ const ICON: Record<NoticeKind, IconName> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class]': "'notice notice--' + kind()",
+    '[class.dv-enter]': 'true', // todo aviso entra com a animação de entrada, sem cada tela precisar lembrar
     '[attr.role]': "kind() === 'error' ? 'alert' : 'status'",
   },
 })

@@ -62,7 +62,7 @@ describe('DvField', () => {
     await settle();
     const error = root.querySelector('.field__error');
     expect(error?.getAttribute('role')).toBe('alert');
-    expect(error?.textContent).toBe('Dê um nome.');
+    expect(error?.textContent?.trim()).toBe('Dê um nome.');
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')?.split(' ')).toContain(error?.id);
   });

@@ -17,6 +17,11 @@
 .copy__input {
   flex: 1;
   min-width: 0;
+  background: var(--dv-surface-0); /* só se lê e se copia: não tem cara de campo para digitar */
+}
+
+.copy__button {
+  min-width: 7rem; /* "Copiar" e "Copiado" ocupam o mesmo lugar */
 }
 
 .copy__status {
