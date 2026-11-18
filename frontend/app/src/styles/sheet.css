@@ -15,7 +15,9 @@
   transition-duration: var(--dv-duration-fast);
 }
 
-.dv-sheet {
+/* O CDK injeta o CSS do overlay depois deste arquivo: com só `.dv-sheet`, `.cdk-overlay-pane` (display:flex,
+   max-height:100%) venceria o empate e a folha ocuparia a tela inteira. Por isso o seletor leva as duas classes. */
+.cdk-overlay-pane.dv-sheet {
   display: block;
   width: min(100vw, var(--dv-measure-sheet));
   max-height: var(--dv-sheet-max-height);
@@ -91,7 +93,7 @@
 
 /* Na tela larga a folha vira um diálogo no meio (continuidade com a folha: pergunta 3 da rule 12). O deslocamento é
    o token de movimento, que some com movimento reduzido. */
-.dv-sheet--dialog {
+.cdk-overlay-pane.dv-sheet--dialog {
   width: min(100vw - 2 * var(--dv-space-4), var(--dv-measure-dialog));
   border-bottom: var(--dv-border-width) dotted var(--dv-line);
   border-radius: var(--dv-radius-lg);
