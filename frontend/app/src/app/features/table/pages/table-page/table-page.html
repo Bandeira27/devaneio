@@ -53,6 +53,14 @@
 
       <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
       <div class="table__layout">
+        @if (store.scene(); as place) {
+          <p class="table__situation" aria-hidden="true">
+            <span class="table__situation-place">{{ place.name }}</span>
+            @if (store.turnStatus()) {
+              <span class="dv-note">Turno {{ store.turn() }} · {{ store.turnStatus() }}</span>
+            }
+          </p>
+        }
         <div class="table__side">
           @if (store.turnStatus()) {
             <p class="table__turn" role="status">
