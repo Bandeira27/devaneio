@@ -6,9 +6,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvListEditor } from '@shared/ui/list-editor/list-editor';
 import type { SelectOption } from '@shared/ui/select/select';
-import { Sheet } from '@shared/ui/sheet/sheet';
 import { CheckList } from '../components/check-list';
-import { confirmRemove } from '../components/confirm-remove';
 import { LinesField } from '../components/lines-field';
 import { NameIdFields } from '../components/name-id-fields';
 import { EditorStore } from '../editor.store';
@@ -22,7 +20,6 @@ import { EditorStore } from '../editor.store';
 })
 export class LocationsSection {
   protected readonly store = inject(EditorStore);
-  private readonly sheet = inject(Sheet);
   protected readonly fieldValue = fieldValue;
   protected readonly nameOf = (location: Location): string => location.name || location.id;
 
@@ -44,18 +41,15 @@ export class LocationsSection {
       .map((l) => ({ value: l.id, label: l.name || l.id }));
   }
 
-  protected async remove(index: number): Promise<void> {
+  protected remove(index: number): void {
     const location = this.store.campaign()?.locations[index];
     if (location === undefined) {
       return;
     }
-    const ok = await confirmRemove(
-      this.sheet,
-      'Remover o local',
-      `Remover "${location.name || location.id}"? As ligações para ele somem e os NPCs que estavam nele ficam sem local.`,
+    this.store.remove(
+      'location',
+      location.id,
+      `Local "${location.name || location.id}" removido. As ligações para ele somem e os NPCs que estavam nele ficam sem local.`,
     );
-    if (ok) {
-      this.store.remove('location', location.id);
-    }
   }
 }

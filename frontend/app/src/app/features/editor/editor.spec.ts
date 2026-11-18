@@ -280,8 +280,8 @@ describe('Editor de campanhas: edição', () => {
     expect(id.value).toBe(before);
   });
 
-  it('remover um local pede confirmação e o tira da campanha conferida', async () => {
-    const { root, click, settle, answer, validations } = await open('/c/c/roteiro', {
+  it('remover um local o tira da campanha conferida, avisa o que some junto e dá para desfazer', async () => {
+    const { root, click, settle, answer, validations, text } = await open('/c/c/roteiro', {
       campaign: { ...hostCampaign, id: 'c' },
     });
     await click('a[href="/c/c/roteiro/locais"]');
@@ -290,16 +290,36 @@ describe('Editor de campanhas: edição', () => {
       root().querySelector(
         'dv-locations-section button[aria-label^="Remover"]',
       ) as HTMLButtonElement
-    ).click();
-    await settle();
-    expect(document.body.textContent).toContain('Remover o local');
-    const confirm = Array.from(
-      document.querySelectorAll<HTMLButtonElement>('.dv-sheet__foot button'),
-    ).find((b) => b.textContent?.includes('Remover'));
-    confirm?.click();
+    ).click(); // sem pergunta: remove e oferece desfazer
     await settle();
     await answer();
     expect(validations.at(-1)?.locations.length).toBe(before - 1);
+    expect(text()).toContain('removido. As ligações para ele somem');
+    const undo = Array.from(root().querySelectorAll<HTMLButtonElement>('dv-notice button')).find(
+      (b) => b.textContent?.trim() === 'Desfazer',
+    );
+    undo?.click();
+    await settle();
+    await answer();
+    expect(validations.at(-1)?.locations.length).toBe(before);
+    expect(text()).not.toContain('removido. As ligações');
+  });
+
+  it('uma edição depois de remover encerra o desfazer', async () => {
+    const { root, click, settle, type, text } = await open('/c/c/roteiro', {
+      campaign: { ...hostCampaign, id: 'c' },
+    });
+    await click('a[href="/c/c/roteiro/locais"]');
+    (
+      root().querySelector(
+        'dv-locations-section button[aria-label^="Remover"]',
+      ) as HTMLButtonElement
+    ).click();
+    await settle();
+    expect(text()).toContain('removido.');
+    await click('a[href="/c/c/roteiro"]');
+    await type('dv-overview-section input[type="text"]', 'Outro título');
+    expect(text()).not.toContain('removido.');
   });
 
   it('o menu tem Marcos e Fatos, e a seção de marcos lista os da campanha com requisitos', async () => {

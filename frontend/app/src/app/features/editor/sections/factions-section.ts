@@ -5,8 +5,6 @@ import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvListEditor } from '@shared/ui/list-editor/list-editor';
-import { Sheet } from '@shared/ui/sheet/sheet';
-import { confirmRemove } from '../components/confirm-remove';
 import { LinesField } from '../components/lines-field';
 import { NameIdFields } from '../components/name-id-fields';
 import { EditorStore } from '../editor.store';
@@ -20,7 +18,6 @@ import { EditorStore } from '../editor.store';
 })
 export class FactionsSection {
   protected readonly store = inject(EditorStore);
-  private readonly sheet = inject(Sheet);
   protected readonly fieldValue = fieldValue;
   protected readonly nameOf = (faction: Faction): string => faction.name || faction.id;
 
@@ -35,18 +32,15 @@ export class FactionsSection {
     this.store.replaceIn('factions', index, { ...faction, ...patch });
   }
 
-  protected async remove(index: number): Promise<void> {
+  protected remove(index: number): void {
     const faction = this.store.campaign()?.factions[index];
     if (faction === undefined) {
       return;
     }
-    const ok = await confirmRemove(
-      this.sheet,
-      'Remover a facção',
-      `Remover "${faction.name || faction.id}"? Os NPCs que pertenciam a ela ficam sem facção.`,
+    this.store.remove(
+      'faction',
+      faction.id,
+      `Facção "${faction.name || faction.id}" removido. Os NPCs que pertenciam a ela ficam sem facção.`,
     );
-    if (ok) {
-      this.store.remove('faction', faction.id);
-    }
   }
 }

@@ -81,6 +81,12 @@
         <router-outlet />
 
         <div class="editor__save">
+          @if (store.removed(); as gone) {
+            <dv-notice animate.leave="dv-leave">
+              {{ gone.message }}
+              <button dvButton type="button" (click)="store.undoRemove()">Desfazer</button>
+            </dv-notice>
+          }
           @if (store.saveError()) {
             <dv-notice kind="error" dismissible (dismissed)="store.saveError.set('')">
               {{ store.saveError() }}

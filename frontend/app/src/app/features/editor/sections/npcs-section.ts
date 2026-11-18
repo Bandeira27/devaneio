@@ -6,9 +6,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvListEditor } from '@shared/ui/list-editor/list-editor';
 import { DvSelect, type SelectOption } from '@shared/ui/select/select';
-import { Sheet } from '@shared/ui/sheet/sheet';
 import { DvStepper } from '@shared/ui/stepper/stepper';
-import { confirmRemove } from '../components/confirm-remove';
 import { LinesField } from '../components/lines-field';
 import { NameIdFields } from '../components/name-id-fields';
 import { EditorStore } from '../editor.store';
@@ -24,7 +22,6 @@ const NONE: SelectOption = { value: '', label: '(nenhum)' };
 })
 export class NpcsSection {
   protected readonly store = inject(EditorStore);
-  private readonly sheet = inject(Sheet);
   protected readonly fieldValue = fieldValue;
   protected readonly nameOf = (npc: Npc): string => npc.name || npc.id;
   protected readonly locations = computed<SelectOption[]>(() => [
@@ -54,18 +51,15 @@ export class NpcsSection {
     this.store.replaceIn('npcs', index, { ...npc, ...patch });
   }
 
-  protected async remove(index: number): Promise<void> {
+  protected remove(index: number): void {
     const npc = this.store.campaign()?.npcs[index];
     if (npc === undefined) {
       return;
     }
-    const ok = await confirmRemove(
-      this.sheet,
-      'Remover o NPC',
-      `Remover "${npc.name || npc.id}"? Os fatos que falavam dele ficam sem assunto.`,
+    this.store.remove(
+      'npc',
+      npc.id,
+      `NPC "${npc.name || npc.id}" removido. Os fatos que falavam dele ficam sem assunto.`,
     );
-    if (ok) {
-      this.store.remove('npc', npc.id);
-    }
   }
 }

@@ -72,6 +72,8 @@ export class EditorStore {
   readonly rules = signal<RulesView | null>(null);
   readonly report = signal<ValidationReport | null>(null);
   readonly validating = signal(false);
+  /** A última remoção, para o aviso com "Desfazer" (some na próxima edição). */
+  readonly removed = signal<{ message: string; before: Campaign } | null>(null);
   readonly saving = signal(false);
   readonly saveError = signal('');
   readonly justSaved = signal(false);
@@ -216,6 +218,7 @@ export class EditorStore {
     }
     const next = change(current);
     this.campaign.set(next);
+    this.removed.set(null); // qualquer edição encerra o desfazer da remoção anterior (quem remove o põe de volta depois)
     this.justSaved.set(false);
     if (next.rules_id !== current.rules_id) {
       void this.loadRules().catch(() => this.rules.set(null));
@@ -262,9 +265,28 @@ export class EditorStore {
     this.update(() => next);
   }
 
-  remove(kind: ItemKind, id: string): void {
+  /**
+   * Remove um item e guarda a campanha de antes para **desfazer** (em vez de perguntar antes): `message` diz o que foi
+   * removido e o que some junto. O desfazer vale até a próxima edição; depois dela, o aviso some.
+   */
+  remove(kind: ItemKind, id: string, message: string): void {
+    const before = this.campaign();
     this.setAuto(key(kind, id), false);
     this.update((c) => removeItem(c, kind, id));
+    if (before !== null) {
+      this.removed.set({ message, before });
+    }
+  }
+
+  /** Volta a campanha ao que era antes da última remoção. */
+  undoRemove(): void {
+    const removed = this.removed();
+    if (removed === null) {
+      return;
+    }
+    this.removed.set(null);
+    this.update(() => removed.before);
+    this.removed.set(null);
   }
 
   /** Muda o nome de um item; enquanto o id dele ainda é o gerado, o id acompanha o nome (e as referências também). */
