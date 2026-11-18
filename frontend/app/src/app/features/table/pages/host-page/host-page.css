@@ -34,6 +34,12 @@
   gap: var(--dv-space-2);
 }
 
+/* Uma resposta longa não cobre a tela: o aviso tem altura limitada e rola por dentro (como na barra de ações). */
+.host__feedback dv-notice {
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
 .host__layout,
 .host__column {
   display: grid;

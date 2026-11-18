@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnInit,
   computed,
   inject,
@@ -65,6 +66,7 @@ export class CampaignShell implements OnInit {
   readonly campaignId = input.required<string>();
 
   protected readonly catalog = inject(CampaignCatalog);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly menuOpen = signal(false);
   /** A busca da campanha terminou (achando ou não). */
   protected readonly resolved = signal(false);
@@ -104,7 +106,18 @@ export class CampaignShell implements OnInit {
     this.menuOpen.update((open) => !open);
   }
 
+  /**
+   * Fecha o menu. Se o foco estava num item dele (que some ao recolher), volta ao botão "Menu": clicar no item da página
+   * em que já se está não navega e não leva o foco a lugar nenhum.
+   */
   protected closeMenu(): void {
+    const toggle = this.host.nativeElement.querySelector<HTMLElement>('.campaign__toggle');
+    const focusInNav = this.host.nativeElement
+      .querySelector('.campaign__nav')
+      ?.contains(document.activeElement);
     this.menuOpen.set(false);
+    if (focusInNav && toggle && toggle.offsetParent !== null) {
+      toggle.focus();
+    }
   }
 }

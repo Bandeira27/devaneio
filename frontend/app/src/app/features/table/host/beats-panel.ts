@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  inject,
+} from '@angular/core';
 import type { BeatStatus } from '@contract/api_responses';
 import { beat, type BeatAction } from '@shared/game/commands';
 import { beatStatusText } from '@shared/game/host';
@@ -32,6 +38,7 @@ const TONES: Record<BeatStatus, { tone: BadgeTone; icon: IconName | null }> = {
 export class BeatsPanel {
   protected readonly store = inject(TableStore);
   private readonly sheet = inject(Sheet);
+  private readonly injector = inject(Injector);
   protected readonly tones = TONES;
   protected readonly statusText = beatStatusText;
 
@@ -52,5 +59,9 @@ export class BeatsPanel {
       }
     }
     await this.store.run(beat(action, id));
+    // O botão tocado some quando o marco muda de estado: o foco vai ao próprio marco, não ao topo da página.
+    afterNextRender(() => document.getElementById(`marco-${id}`)?.focus(), {
+      injector: this.injector,
+    });
   }
 }

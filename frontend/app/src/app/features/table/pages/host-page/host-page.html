@@ -35,7 +35,7 @@
             <dv-notice
               kind="error"
               dismissible
-              (dismissed)="store.dismissFeedback()"
+              (dismissed)="dismiss()"
               animate.enter="dv-enter"
               animate.leave="dv-leave"
             >
@@ -45,7 +45,7 @@
           @if (store.reply()) {
             <dv-notice
               dismissible
-              (dismissed)="store.dismissFeedback()"
+              (dismissed)="dismiss()"
               animate.enter="dv-enter"
               animate.leave="dv-leave"
             >

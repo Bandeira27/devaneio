@@ -74,12 +74,6 @@ export class AttackSheet {
   protected readonly targetName = computed(
     () => this.data.targets.find((t) => t.id === this.target())?.name ?? '',
   );
-  protected readonly modifierName = computed(
-    () => this.data.modifiers.find((m) => m.id === this.modifier())?.name ?? '',
-  );
-  protected readonly weaponName = computed(
-    () => this.data.weapons.find((w) => w.id === this.weapon())?.name ?? '',
-  );
   protected readonly command = computed(() =>
     attack(this.weapon(), this.target(), this.modifier()),
   );

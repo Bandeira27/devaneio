@@ -6,7 +6,7 @@
     }
     <ul class="list">
       @for (b of host.beats; track b.id) {
-        <li class="item">
+        <li class="item" [id]="'marco-' + b.id" tabindex="-1">
           <div class="item__head">
             <span class="item__name">{{ b.title }}</span>
             <dv-badge [tone]="tones[b.status].tone" [icon]="tones[b.status].icon">{{

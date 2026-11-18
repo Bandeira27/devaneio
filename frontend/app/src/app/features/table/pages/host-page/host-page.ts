@@ -52,6 +52,14 @@ export class HostPage {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
+  /** Dispensa o aviso e leva o foco ao título (o botão de dispensar some junto com o aviso). */
+  protected dismiss(): void {
+    this.store.dismissFeedback();
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>('h1')?.focus(), {
+      injector: this.injector,
+    });
+  }
+
   constructor() {
     effect(() => {
       if (this.store.state() === 'ready' && !this.store.isHost()) {
