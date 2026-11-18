@@ -26,7 +26,15 @@
         </a>
         <h1 class="dv-title">{{ store.title() }}</h1>
         <dv-connection-badge [status]="store.liveStatus()" />
-        @if (store.isHost()) {
+        @if (store.phase() !== 'lobby') {
+          <dv-play-clock
+            class="table__clock"
+            [phase]="store.phase()"
+            [seconds]="store.playClock().seconds"
+            [receivedAt]="store.playClock().receivedAt"
+          />
+        }
+        @if (store.isHost() && store.phase() !== 'lobby') {
           <a dvButton class="table__invite" [routerLink]="['/mesa', tableId(), 'convite']">
             <dv-icon name="mail" size="sm" />Convidar
           </a>
@@ -54,72 +62,92 @@
         </dv-notice>
       }
 
-      <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
-      <div class="table__layout">
-        @if (store.scene(); as place) {
-          <p #situation class="table__situation" aria-hidden="true">
-            <span class="table__situation-place">{{ place.name }}</span>
-            @if (store.turnStatus()) {
-              <span class="dv-note">Turno {{ store.turn() }} · {{ store.turnStatus() }}</span>
-            }
-          </p>
-        }
-        <div #side class="table__side">
-          @if (store.turnStatus()) {
-            <p class="table__turn" role="status">
-              <span class="dv-note">Turno {{ store.turn() }}</span>
-              <span class="table__turn-status">{{ store.turnStatus() }}</span>
+      @if (store.phase() === 'paused') {
+        <dv-notice kind="warn">
+          Partida pausada pelo anfitrião.
+          @if (store.isHost()) {
+            Você ainda pode agir; os jogadores esperam. Retome no painel do anfitrião.
+          } @else {
+            Dá para ler a história, mas não agir até ele retomar.
+          }
+        </dv-notice>
+      } @else if (store.phase() === 'ended') {
+        <dv-notice>
+          Partida encerrada pelo anfitrião. A história continua aqui para ler.
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
+        </dv-notice>
+      }
+
+      @if (store.phase() === 'lobby') {
+        <dv-lobby [tableId]="tableId()" />
+      } @else {
+        <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
+        <div class="table__layout">
+          @if (store.scene(); as place) {
+            <p #situation class="table__situation" aria-hidden="true">
+              <span class="table__situation-place">{{ place.name }}</span>
+              @if (store.turnStatus()) {
+                <span class="dv-note">Turno {{ store.turn() }} · {{ store.turnStatus() }}</span>
+              }
             </p>
           }
-          @if (store.scene(); as scene) {
-            <dv-scene-card
-              [scene]="scene"
-              [canGo]="!store.blockedReason() && !store.actionBusy()"
-              [blockedReasonId]="store.blockedReason() ? 'dock-reason' : null"
-              (exitChosen)="actions()?.go($event)"
+          <div #side class="table__side">
+            @if (store.turnStatus()) {
+              <p class="table__turn" role="status">
+                <span class="dv-note">Turno {{ store.turn() }}</span>
+                <span class="table__turn-status">{{ store.turnStatus() }}</span>
+              </p>
+            }
+            @if (store.scene(); as scene) {
+              <dv-scene-card
+                [scene]="scene"
+                [canGo]="!store.blockedReason() && !store.actionBusy()"
+                [blockedReasonId]="store.blockedReason() ? 'dock-reason' : null"
+                (exitChosen)="actions()?.go($event)"
+              />
+            }
+            <dv-party-strip
+              [characters]="store.party()"
+              [mine]="store.character()?.id ?? null"
+              [acted]="store.table()?.acted ?? {}"
+              [turn]="store.turn()"
             />
-          }
-          <dv-party-strip
-            [characters]="store.party()"
-            [mine]="store.character()?.id ?? null"
-            [acted]="store.table()?.acted ?? {}"
-            [turn]="store.turn()"
-          />
-          @if (!store.character()) {
-            <dv-notice id="no-character">
-              Você ainda não tem personagem nesta mesa.
-              <a [routerLink]="['/mesa', tableId(), 'personagem']">Criar personagem</a>
-            </dv-notice>
-          }
-        </div>
+            @if (!store.character()) {
+              <dv-notice id="no-character">
+                Você ainda não tem personagem nesta mesa.
+                <a [routerLink]="['/mesa', tableId(), 'personagem']">Criar personagem</a>
+              </dv-notice>
+            }
+          </div>
 
-        <section #story class="table__feed" aria-label="A história" tabindex="-1">
-          <h2 class="dv-visually-hidden">A história</h2>
-          <dv-feed-list
-            [loaded]="store.liveStatus() !== 'connecting'"
-            [items]="store.feedItems()"
-          />
-          @if (store.llmNotice()) {
-            <dv-disclosure class="table__llm" label="Sobre o mestre de IA desta mesa">
-              <p>{{ store.llmNotice() }}</p>
-            </dv-disclosure>
-          }
-        </section>
-
-        @if (store.character(); as mine) {
-          @if (store.rules(); as rules) {
-            <section class="table__mine dv-card dv-card--page" aria-label="Minha ficha">
-              <dv-disclosure [label]="'Ficha de ' + mine.name" [(open)]="mineOpen">
-                <dv-character-card [character]="mine" [rules]="rules" />
+          <section #story class="table__feed" aria-label="A história" tabindex="-1">
+            <h2 class="dv-visually-hidden">A história</h2>
+            <dv-feed-list
+              [loaded]="store.liveStatus() !== 'connecting'"
+              [items]="store.feedItems()"
+            />
+            @if (store.llmNotice()) {
+              <dv-disclosure class="table__llm" label="Sobre o mestre de IA desta mesa">
+                <p>{{ store.llmNotice() }}</p>
               </dv-disclosure>
-            </section>
-          }
-        }
+            }
+          </section>
 
-        <div #dock class="table__dock">
-          <dv-action-dock />
+          @if (store.character(); as mine) {
+            @if (store.rules(); as rules) {
+              <section class="table__mine dv-card dv-card--page" aria-label="Minha ficha">
+                <dv-disclosure [label]="'Ficha de ' + mine.name" [(open)]="mineOpen">
+                  <dv-character-card [character]="mine" [rules]="rules" />
+                </dv-disclosure>
+              </section>
+            }
+          }
+
+          <div #dock class="table__dock">
+            <dv-action-dock />
+          </div>
         </div>
-      </div>
+      }
     </div>
   }
 }

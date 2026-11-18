@@ -39,7 +39,15 @@ export class ActionDock {
   protected readonly reasonSaidAbove = computed(() => {
     const live = this.store.liveStatus();
     const status = this.store.status();
-    return live === 'expired' || live === 'gone' || status === 'won' || status === 'lost';
+    const phase = this.store.phase();
+    return (
+      live === 'expired' ||
+      live === 'gone' ||
+      status === 'won' ||
+      status === 'lost' ||
+      phase === 'paused' ||
+      phase === 'ended'
+    );
   });
 
   /** Por que Ir não serve agora (a cena já é conhecida e não tem saída), ou `''`. */

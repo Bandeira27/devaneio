@@ -163,6 +163,11 @@ export class TableStore implements OnDestroy {
     this.actions.dismiss();
   }
 
+  /** Relê a mesa agora (a sala de espera faz isso de tempos em tempos: entrar na mesa não gera evento). */
+  refresh(): Promise<void> {
+    return this.snapshot.refresh();
+  }
+
   /** Inicia, pausa, retoma ou encerra a partida (anfitrião); devolve se o servidor aceitou. */
   async lifecycle(action: LifecycleRequest['action']): Promise<boolean> {
     if (this.lifecycleBusy()) {

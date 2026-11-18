@@ -18,6 +18,7 @@ import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { BeatsPanel } from '../../host/beats-panel';
 import { CopilotPanel } from '../../host/copilot-panel';
 import { FactsPanel } from '../../host/facts-panel';
+import { LifecycleTools } from '../../host/lifecycle-tools';
 import { TurnTools } from '../../host/turn-tools';
 import { WorldPanel } from '../../host/world-panel';
 import { TableStore } from '../../table.store';
@@ -38,6 +39,7 @@ import { TableStore } from '../../table.store';
     BeatsPanel,
     CopilotPanel,
     FactsPanel,
+    LifecycleTools,
     TurnTools,
     WorldPanel,
   ],

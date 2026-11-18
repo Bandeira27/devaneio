@@ -52,6 +52,7 @@ describe('Painel do anfitrião', () => {
     expect(root().querySelector('h1')?.textContent).toContain('Painel do anfitrião');
     const headings = Array.from(root().querySelectorAll('h2')).map((h) => h.textContent?.trim());
     expect(headings).toEqual([
+      'Partida',
       'Copiloto',
       'Ferramentas do turno',
       'NPCs',

@@ -1,4 +1,5 @@
 import {
+  describeInvite,
   inviteLink,
   isInviteCode,
   isLocalOrigin,
@@ -89,5 +90,36 @@ describe('convite', () => {
     ])('recusa %s', (_name, text) => {
       expect(normalizeOrigin(text)).toBeNull();
     });
+  });
+});
+
+describe('describeInvite', () => {
+  const code = 'Ab-_9xYz1234ABcd';
+  const table = '0123456789abcdef';
+
+  it('monta o link com o endereço, o código e o id da mesa', () => {
+    const invite = describeInvite('192.168.0.5:8765', table, code);
+    expect(invite).toEqual({
+      link: `http://192.168.0.5:8765/#/entrar/${table}/${code}`,
+      error: '',
+      localWarning: false,
+    });
+  });
+
+  it('avisa quando o endereço é só deste aparelho', () => {
+    expect(describeInvite('http://localhost:8765', table, code).localWarning).toBe(true);
+  });
+
+  it('endereço vazio ou inválido dá o erro e nenhum link', () => {
+    for (const text of ['', '   ', 'ftp://x']) {
+      const invite = describeInvite(text, table, code);
+      expect(invite.link).toBe('');
+      expect(invite.error).toContain('192.168.0.5:8765');
+    }
+  });
+
+  it('sem o código guardado não há link (outro aparelho)', () => {
+    const invite = describeInvite('192.168.0.5:8765', table, null);
+    expect(invite).toEqual({ link: '', error: '', localWarning: false });
   });
 });

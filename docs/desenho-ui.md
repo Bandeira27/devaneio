@@ -39,6 +39,14 @@ leem o `campaignId` da rota de fora (`paramsInheritanceStrategy: 'always'`). Cad
 campanha (`StoredTable.campaignId`; as antigas casam pelo título); o catálogo de campanhas e a pergunta "o editor está
 ligado?" vivem num serviço só (`core/catalog`). O desenho de interação está em [`padroes-de-interacao.md`](padroes-de-interacao.md).
 
+## Fases da mesa
+
+A mesa tem uma **fase** (`TableView.phase`: `lobby`, `running`, `paused`, `ended`; ver [`api-http.md`](api-http.md#fases-da-mesa)).
+A `TablePage` mostra a **sala de espera** (`features/table/components/lobby`) na fase `lobby` e o jogo nas outras; a mudança
+de fase é uma ação do `TableStore` (`lifecycle`) e vira evento no log, então o fluxo ao vivo relê a mesa sozinho. A fase
+entra nos bloqueios de ação (`actBlock`, em `shared/game/rules.ts`). Criar uma mesa leva a `/mesa/:id` (a sala), e o
+personagem do anfitrião se cria por lá.
+
 ## Estética: Desbotado
 
 Uma memória desbotada, "meio velha, meio incerta de existir", como a palavra devaneio. Fumaça e sépia, IM Fell English na
