@@ -21,6 +21,7 @@
         <article
           class="feed__event"
           [class.feed__event--new]="isNew(item.key)"
+          [style.--step]="skipped() ? 0 : (steps().get(item.key) ?? 0)"
           [style.--fade]="item.fade"
         >
           <p class="feed__narration">
@@ -40,6 +41,7 @@
         <blockquote
           class="feed__talk"
           [class.feed__talk--new]="isNew(item.key)"
+          [style.--step]="skipped() ? 0 : (steps().get(item.key) ?? 0)"
           [style.--fade]="item.fade"
         >
           <span class="feed__speaker">Mestre</span>

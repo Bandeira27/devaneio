@@ -133,6 +133,7 @@
   --dv-ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
   --dv-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
   --dv-stagger: 60ms;
+  --dv-reveal-step: 600ms; /* pausa entre os itens novos do feed (um golpe, uma resposta): um de cada vez */
   --dv-iterations-pending: infinite; /* indicador de pendência: com movimento reduzido roda uma vez */
   --dv-motion-distance: 0.25rem;
 }
@@ -156,6 +157,7 @@
     --dv-duration-slow: 1ms;
     --dv-duration-narrative: 1ms;
     --dv-stagger: 0ms;
+    --dv-reveal-step: 0ms;
     --dv-iterations-pending: 1;
     --dv-motion-distance: 0;
   }
