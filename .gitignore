@@ -32,3 +32,6 @@ partida*.json
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+
+# Partidas salvas pelo servidor (--dados): estado de jogo, não conteúdo do projeto
+mesas/
