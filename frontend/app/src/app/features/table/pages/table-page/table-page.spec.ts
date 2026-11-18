@@ -182,7 +182,7 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     expect(scene.textContent).not.toContain('Ver a cena');
   });
 
-  it('tocar numa saída da cena abre a confirmação de Ir já no destino tocado; nada é enviado antes de confirmar', async () => {
+  it('tocar numa saída da cena abre a folha de Ir com o destino tocado marcado; nada é enviado antes de confirmar', async () => {
     const campaign = {
       locations: [
         {
@@ -205,14 +205,9 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     exits[1]?.click(); // a segunda saída
     await settle();
     const sheet = document.querySelector('.dv-sheet') as HTMLElement;
-    expect(sheet.querySelector('strong')?.textContent).toBe('Pântano'); // abriu no destino tocado, não na lista
+    const go = sheet.querySelector('.dv-sheet__foot .dv-button--primary') as HTMLButtonElement;
+    expect(go.textContent?.trim()).toBe('Ir para Pântano'); // abriu com o destino tocado marcado
     http.expectNone(`/tables/${TABLE_ID}/commands`);
-    const back = Array.from(sheet.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === 'Voltar',
-    ) as HTMLButtonElement;
-    back.click();
-    await settle();
-    expect(sheet.textContent).toContain('Floresta'); // "Voltar" leva à lista de destinos
     (sheet.querySelector('[aria-label="Fechar"]') as HTMLButtonElement).click(); // sem escolher
     await settle();
     expect(document.querySelector('.dv-sheet')).toBeNull();

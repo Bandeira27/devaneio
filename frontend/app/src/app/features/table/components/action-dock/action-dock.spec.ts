@@ -106,9 +106,8 @@ describe('Ações da mesa', () => {
     const app = await open();
     await app.press('Ir');
     expect(app.sheet()?.textContent).toContain('Floresta');
-    await app.inSheet('.dv-stack button'); // escolher o destino não envia: pede a confirmação
-    app.http.expectNone(`/tables/${TABLE_ID}/commands`);
-    expect(app.sheet()?.textContent).toContain('Mover o grupo para Floresta');
+    expect(app.sheet()?.textContent).toContain('Para onde ir?');
+    app.http.expectNone(`/tables/${TABLE_ID}/commands`); // abrir a folha não envia nada
     expect(app.sheet()?.textContent).toContain('Gasta a sua ação');
     await app.inSheet('.dv-sheet__foot .dv-button--primary');
     const request = app.commandRequest();
