@@ -34,6 +34,9 @@
         {{ store.thinking() ? 'O mestre está pensando…' : 'Enviando…' }}
       </dv-badge>
     </p>
+    @if (store.saying()) {
+      <p class="dock__said dv-note">Você: “{{ store.saying() }}”</p>
+    }
   }
   <div class="dock__row">
     <div class="dock__main">

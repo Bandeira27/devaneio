@@ -313,8 +313,10 @@ describe('Ações da mesa', () => {
     const request = app.http.expectOne(`/tables/${TABLE_ID}/say`);
     expect(request.request.body).toEqual({ text: 'Olho o altar.', revision: 3 });
     expect(app.root().querySelector('dv-action-dock')?.textContent).toContain('pensando');
+    expect(app.root().querySelector('.dock__said')?.textContent).toContain('Você: “Olho o altar.”'); // o eco do que disse
     request.flush({ ...commandResult(), say: 'O altar range.', commands: [] });
     await answerReread(app);
     expect(app.root().querySelector('dv-action-dock')?.textContent).toContain('O altar range.');
+    expect(app.root().querySelector('.dock__said')).toBeNull(); // o eco some quando o mestre responde
   });
 });

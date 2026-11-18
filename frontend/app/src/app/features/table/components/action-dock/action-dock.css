@@ -65,3 +65,14 @@
     max-height: 4rem;
   }
 }
+
+/* O que a pessoa disse ao mestre, enquanto ele pensa: no máximo duas linhas, para a barra fixa não crescer. */
+.dock__said {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}

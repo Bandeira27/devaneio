@@ -53,6 +53,7 @@ export class TableStore implements OnDestroy {
   readonly campaign = this.snapshot.campaign;
   readonly reply = this.actions.reply;
   readonly actionBusy = this.actions.busy;
+  readonly saying = this.actions.saying;
   readonly actionError = this.actions.error;
   readonly thinking = this.actions.thinking;
 
