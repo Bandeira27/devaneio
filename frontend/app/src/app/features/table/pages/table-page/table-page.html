@@ -94,6 +94,7 @@
         </div>
 
         <section #story class="table__feed" aria-label="A história" tabindex="-1">
+          <h2 class="dv-visually-hidden">A história</h2>
           <dv-feed-list
             [loaded]="store.liveStatus() !== 'connecting'"
             (unseen)="unseen.set($event)"

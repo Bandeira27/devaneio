@@ -26,7 +26,10 @@ export class SceneCard {
   readonly blockedReasonId = input<string | null>(null);
   /** O id da saída que a pessoa tocou. */
   readonly exitChosen = output<string>();
-  protected readonly facts = computed<KeyValueItem[]>(() => [
-    { label: 'Aqui', value: names(this.scene().npcs, 'ninguém') },
-  ]);
+  /** Quem está na cena; sem ninguém, a linha nem aparece (em vez de "ninguém" solto). */
+  protected readonly facts = computed<KeyValueItem[]>(() =>
+    this.scene().npcs.length === 0
+      ? []
+      : [{ label: 'Presentes', value: names(this.scene().npcs, '') }],
+  );
 }
