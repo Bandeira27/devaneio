@@ -109,7 +109,12 @@ export class EditorStore {
     const campaign = this.campaign();
     return campaign !== null && JSON.stringify(campaign) !== this.savedText();
   });
-  readonly errors = computed(() => this.report()?.errors ?? []);
+  /**
+   * Uma campanha nova em branco, ainda sem nenhuma edição: o servidor já aponta o que falta, mas isso não é "erro" do
+   * autor, que ainda nem começou. Os erros só aparecem depois da primeira edição.
+   */
+  readonly pristine = signal(false);
+  readonly errors = computed(() => (this.pristine() ? [] : (this.report()?.errors ?? [])));
   readonly findings = computed(() => this.report()?.findings ?? []);
   /** Por que não dá para salvar agora (texto), ou `''` se dá. */
   readonly saveBlock = computed(() => {
@@ -124,6 +129,9 @@ export class EditorStore {
     }
     if (this.validating() || this.report() === null) {
       return 'Conferindo a campanha…';
+    }
+    if (this.pristine() && (this.report()?.errors.length ?? 0) > 0) {
+      return 'Preencha a campanha para poder gravá-la.';
     }
     if (this.errors().length > 0) {
       return `Corrija ${this.errors().length === 1 ? 'o erro' : 'os ' + this.errors().length + ' erros'} antes de salvar.`;
@@ -170,6 +178,7 @@ export class EditorStore {
     if (copyOf === '') {
       this.start(emptyCampaign('nova-campanha', 'Nova campanha'), null, true);
       this.autoCampaignId.set(true);
+      this.pristine.set(true);
       return;
     }
     const source = await firstValueFrom(this.api.editorCampaign(copyOf));
@@ -218,6 +227,7 @@ export class EditorStore {
     }
     const next = change(current);
     this.campaign.set(next);
+    this.pristine.set(false);
     this.removed.set(null); // qualquer edição encerra o desfazer da remoção anterior (quem remove o põe de volta depois)
     this.justSaved.set(false);
     if (next.rules_id !== current.rules_id) {

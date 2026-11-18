@@ -97,7 +97,12 @@ describe('Editor de campanhas: edição', () => {
       ],
       findings: [{ level: 'aviso', text: 'marco depende da queda de um NPC' }],
     };
-    const { root, text, button } = await open('/c/nova/roteiro', { report });
+    const { root, text, button, type, answer } = await open('/c/nova/roteiro', { report });
+    expect(text()).not.toContain('2 erros'); // numa campanha nova ainda intocada o que falta não é "erro"
+    expect(button('Criar campanha')?.getAttribute('aria-disabled')).toBe('true');
+    expect(text()).toContain('Preencha a campanha');
+    await type('dv-overview-section input[type="text"]', 'Minha aventura'); // a primeira edição mostra os erros
+    await answer();
     expect(text()).toContain('2 erros');
     expect(text()).toContain("local 'x' conecta a 'y', que não existe");
     expect(text()).toContain('Avisos de autoria');
@@ -210,7 +215,9 @@ describe('Editor de campanhas: edição', () => {
       errors: [{ path: 'locations.0.name', message: "falta preencher 'name'" }],
       findings: [],
     };
-    const { root } = await open('/c/nova/roteiro', { report });
+    const { root, type, answer } = await open('/c/nova/roteiro', { report });
+    await type('dv-overview-section input[type="text"]', 'Minha aventura');
+    await answer();
     expect(root().querySelector('.editor__problems')?.textContent).toContain('Locais › Início:');
   });
 
