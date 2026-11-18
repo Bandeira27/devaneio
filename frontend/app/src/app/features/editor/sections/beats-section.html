@@ -1,10 +1,6 @@
 <section class="dv-card dv-stack" aria-labelledby="marcos-titulo">
   <h2 id="marcos-titulo" class="dv-section">Marcos</h2>
-  <p class="dv-note">
-    Os passos da trama. Um marco começa quando seus requisitos estão concluídos e as condições de
-    começar valem, e termina quando as condições de terminar valem. Sem condições, só o anfitrião o
-    move.
-  </p>
+  <p class="dv-note">Os passos da trama. Sem condições, só o anfitrião move o marco.</p>
   @if (store.campaign(); as c) {
     <dv-list-editor
       noun="marco"
@@ -34,44 +30,55 @@
             (input)="patch(i, beat, { description: fieldValue($event) })"
           ></textarea>
         </dv-field>
-        @if (c.beats.length === 1) {
-          <p class="dv-note">
-            Com mais de um marco, você poderá exigir que um termine antes de outro.
-          </p>
-        }
-        @if (c.beats.length > 1) {
-          <dv-check-list
-            legend="Só começa depois de concluir"
-            hint="Sem nenhum marcado, este marco não exige nada."
-            [options]="others(c.beats, beat.id)"
-            [selected]="beat.requires"
-            (selectedChange)="patch(i, beat, { requires: [...$event] })"
+        <dv-disclosure
+          label="Quando começa"
+          [open]="beat.requires.length > 0 || beat.activate_when.length > 0"
+        >
+          <div class="dv-stack">
+            @if (c.beats.length === 1) {
+              <p class="dv-note">
+                Com mais de um marco, você poderá exigir que um termine antes de outro.
+              </p>
+            }
+            @if (c.beats.length > 1) {
+              <dv-check-list
+                legend="Só começa depois de concluir"
+                hint="Sem nenhum marcado, este marco não exige nada."
+                [options]="others(c.beats, beat.id)"
+                [selected]="beat.requires"
+                (selectedChange)="patch(i, beat, { requires: [...$event] })"
+              />
+            }
+            <dv-conditions-editor
+              label="Condições para começar"
+              hint="Começa assim que os requisitos estiverem concluídos."
+              [owner]="'marco ' + (beat.title || beat.id)"
+              [path]="'beats.' + i + '.activate_when'"
+              [ownBeatId]="beat.id"
+              [conditions]="beat.activate_when"
+              (conditionsChange)="patch(i, beat, { activate_when: [...$event] })"
+            />
+          </div>
+        </dv-disclosure>
+        <dv-disclosure label="Quando termina" [open]="beat.complete_when.length > 0">
+          <dv-conditions-editor
+            label="Condições para terminar"
+            hint="Só o anfitrião conclui o marco."
+            [owner]="'marco ' + (beat.title || beat.id)"
+            [path]="'beats.' + i + '.complete_when'"
+            [ownBeatId]="beat.id"
+            [conditions]="beat.complete_when"
+            (conditionsChange)="patch(i, beat, { complete_when: [...$event] })"
           />
-        }
-        <dv-conditions-editor
-          label="Condições para começar"
-          hint="Começa assim que os requisitos estiverem concluídos."
-          [owner]="'marco ' + (beat.title || beat.id)"
-          [path]="'beats.' + i + '.activate_when'"
-          [ownBeatId]="beat.id"
-          [conditions]="beat.activate_when"
-          (conditionsChange)="patch(i, beat, { activate_when: [...$event] })"
-        />
-        <dv-conditions-editor
-          label="Condições para terminar"
-          hint="Só o anfitrião conclui o marco."
-          [owner]="'marco ' + (beat.title || beat.id)"
-          [path]="'beats.' + i + '.complete_when'"
-          [ownBeatId]="beat.id"
-          [conditions]="beat.complete_when"
-          (conditionsChange)="patch(i, beat, { complete_when: [...$event] })"
-        />
-        <dv-lines-field
-          label="Notas privadas"
-          hint="Só o anfitrião vê. Uma por linha."
-          [lines]="beat.private_notes"
-          (linesChange)="patch(i, beat, { private_notes: [...$event] })"
-        />
+        </dv-disclosure>
+        <dv-disclosure label="Notas privadas" [open]="beat.private_notes.length > 0">
+          <dv-lines-field
+            label="Notas privadas"
+            hint="Só o anfitrião vê. Uma por linha."
+            [lines]="beat.private_notes"
+            (linesChange)="patch(i, beat, { private_notes: [...$event] })"
+          />
+        </dv-disclosure>
       </ng-template>
     </dv-list-editor>
   }

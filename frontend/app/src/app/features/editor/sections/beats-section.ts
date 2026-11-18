@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import type { Beat } from '@contract/api_responses';
 import { replaceAt } from '@shared/game/campaign-edit';
+import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
@@ -22,6 +23,7 @@ import { EditorStore } from '../editor.store';
   imports: [
     CheckList,
     ConditionsEditor,
+    DvDisclosure,
     DvField,
     DvInput,
     DvListEditor,
