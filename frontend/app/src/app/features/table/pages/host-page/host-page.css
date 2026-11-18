@@ -21,6 +21,10 @@
   flex: 1 1 auto;
 }
 
+.host__back {
+  flex: 1 0 100%;
+}
+
 .host__layout,
 .host__column {
   display: grid;

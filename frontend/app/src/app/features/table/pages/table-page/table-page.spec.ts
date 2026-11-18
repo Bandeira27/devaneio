@@ -564,7 +564,8 @@ describe('Mesa', () => {
     const notice = root().querySelector('dv-notice') as HTMLElement;
     expect(notice.textContent).toContain(word);
     expect(notice.textContent).toContain('A partida terminou.');
-    expect(notice.querySelector('a[href="/"]')?.textContent).toContain('Voltar ao início');
+    const back = notice.querySelector('a[href="/c/sombra-do-vale/mesas"]');
+    expect(back?.textContent).toContain('Ver as mesas');
   });
 
   it('sem conexão mostra o estado em texto e volta ao vivo', async () => {
@@ -584,7 +585,7 @@ describe('Mesa', () => {
     await vi.waitFor(() => expect(session.get(TABLE_ID)).toBeNull());
     await settle();
     expect(root().textContent).toContain('Sua sessão nesta mesa não vale mais.');
-    expect(root().querySelector('dv-notice a[href="/"]')).not.toBeNull();
+    expect(root().querySelector('dv-notice a[href="/c/sombra-do-vale/mesas"]')).not.toBeNull();
   });
 
   it('mesa que sumiu (404) avisa', async () => {

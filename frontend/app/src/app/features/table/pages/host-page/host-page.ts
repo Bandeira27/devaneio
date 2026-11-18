@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
+import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
@@ -31,6 +32,7 @@ import { TableStore } from '../../table.store';
   imports: [
     RouterLink,
     DvButton,
+    DvIcon,
     DvNotice,
     DvState,
     BeatsPanel,

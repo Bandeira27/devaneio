@@ -22,6 +22,9 @@
     @if (store.isHost()) {
       <div class="host">
         <header class="host__bar">
+          <a class="dv-back host__back" [routerLink]="store.backLink()">
+            <dv-icon name="back" size="sm" />Campanha
+          </a>
           <h1 class="dv-title">Painel do anfitrião</h1>
           <a dvButton [routerLink]="['/mesa', tableId()]">Voltar à mesa</a>
         </header>

@@ -44,3 +44,22 @@
     padding-top: var(--dv-space-6);
   }
 }
+
+/* O link de voltar de uma tela (a campanha, a lista): discreto, com o ícone de seta e o alvo de toque inteiro. */
+.dv-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dv-space-2);
+  min-height: var(--dv-touch);
+  color: var(--dv-text-muted);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  text-decoration: none;
+  transition: color var(--dv-duration-fast) var(--dv-ease-standard);
+}
+
+@media (hover: hover) {
+  .dv-back:hover {
+    color: var(--dv-text);
+  }
+}

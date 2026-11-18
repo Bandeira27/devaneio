@@ -66,6 +66,11 @@ export class TableStore implements OnDestroy {
   readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   readonly canSay = computed(() => this.table()?.llm.enabled === true);
   readonly title = computed(() => this.table()?.campaign.title ?? '');
+  /** Para onde "voltar" leva: as mesas da campanha desta mesa, ou o início se ainda não se sabe qual é. */
+  readonly backLink = computed<string[]>(() => {
+    const id = this.table()?.campaign.id;
+    return id ? ['/c', id, 'mesas'] : ['/'];
+  });
   readonly party = computed<Character[]>(() => Object.values(this.table()?.state.characters ?? {}));
   readonly character = computed(() => characterOf(this.table()));
   readonly scene = computed(() => sceneFor(this.table(), this.campaign()));

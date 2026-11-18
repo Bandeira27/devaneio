@@ -27,6 +27,11 @@
   flex: 1 1 auto;
 }
 
+/* O voltar ocupa a linha só dele e o título vem logo abaixo. */
+.table__back {
+  flex: 1 0 100%;
+}
+
 .table__layout {
   display: grid;
   gap: var(--dv-space-4);

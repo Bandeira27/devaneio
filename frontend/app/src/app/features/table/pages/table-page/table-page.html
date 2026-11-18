@@ -21,6 +21,9 @@
     <div class="table">
       <a class="dv-skip" href="#acoes" (click)="skipToActions($event)">Pular para as ações</a>
       <header class="table__bar">
+        <a class="dv-back table__back" [routerLink]="store.backLink()">
+          <dv-icon name="back" size="sm" />Campanha
+        </a>
         <h1 class="dv-title">{{ store.title() }}</h1>
         <dv-connection-badge [status]="store.liveStatus()" />
         @if (store.isHost()) {
@@ -36,18 +39,18 @@
       @if (connectionNotice(); as notice) {
         <dv-notice kind="error">
           {{ notice }}
-          <a routerLink="/">Voltar ao início</a>
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
         </dv-notice>
       }
       @if (store.status() === 'won') {
         <dv-notice kind="ok">
           Vitória! A partida terminou.
-          <a routerLink="/">Voltar ao início</a>
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
         </dv-notice>
       } @else if (store.status() === 'lost') {
         <dv-notice kind="error">
           Derrota. A partida terminou.
-          <a routerLink="/">Voltar ao início</a>
+          <a [routerLink]="store.backLink()">Ver as mesas</a>
         </dv-notice>
       }
 
