@@ -24,6 +24,29 @@
   }
 }
 
+/* A barra do anfitrião: desliza da borda direita ao entrar e volta para ela ao sair (`dv-host-aside`). */
+.dv-slide-in {
+  animation: dv-slide-in var(--dv-duration-slow) var(--dv-ease-emphasized) both;
+}
+
+.dv-slide-out {
+  animation: dv-slide-out var(--dv-duration-fast) var(--dv-ease-accelerate) both;
+}
+
+@keyframes dv-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes dv-slide-out {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
 @keyframes dv-pulse {
   50% {
     opacity: 0.35;

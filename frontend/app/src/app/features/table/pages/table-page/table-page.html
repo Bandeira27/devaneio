@@ -20,7 +20,11 @@
   @case ('ready') {
     <p class="dv-visually-hidden" role="status">{{ copilotAlert() }}</p>
     @if (session.open() && session.docked() && store.isHost()) {
-      <dv-host-aside (closed)="closeHost()" />
+      <dv-host-aside
+        (closed)="closeHost()"
+        animate.enter="dv-slide-in"
+        animate.leave="dv-slide-out"
+      />
     }
     <div class="table" [class.table--host]="session.open() && session.docked()">
       <a class="dv-skip" href="#acoes" (click)="skipToActions($event)">Pular para as ações</a>
