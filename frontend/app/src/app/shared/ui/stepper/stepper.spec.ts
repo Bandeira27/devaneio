@@ -57,17 +57,20 @@ describe('DvStepper', () => {
     expect(host.value()).toBe(3);
   });
 
-  it('não passa do máximo: o + desabilita', async () => {
-    const { host, more, settle } = await render(5);
-    expect(more.disabled).toBe(true);
+  it('não passa do máximo: o + bloqueia, mantém o foco e diz o limite', async () => {
+    const { host, more, settle, root } = await render(5);
+    expect(more.getAttribute('aria-disabled')).toBe('true');
+    expect(more.disabled).toBe(false); // continua focável
+    const limit = root.querySelector(`#${more.getAttribute('aria-describedby')}`);
+    expect(limit?.textContent).toBe('Máximo: 5');
     more.click();
     await settle();
     expect(host.value()).toBe(5);
   });
 
-  it('não passa do mínimo: o − desabilita', async () => {
+  it('não passa do mínimo: o − bloqueia', async () => {
     const { host, less, settle } = await render(1);
-    expect(less.disabled).toBe(true);
+    expect(less.getAttribute('aria-disabled')).toBe('true');
     less.click();
     await settle();
     expect(host.value()).toBe(1);

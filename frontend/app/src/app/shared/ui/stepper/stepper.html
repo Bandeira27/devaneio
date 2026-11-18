@@ -9,7 +9,8 @@
     dvButton
     type="button"
     class="stepper__button"
-    [disabled]="!canDecrease()"
+    [dvBlocked]="!canDecrease()"
+    [attr.aria-describedby]="canDecrease() ? null : minId"
     [attr.aria-label]="'Diminuir ' + label()"
     (click)="step(-1)"
   >
@@ -20,10 +21,13 @@
     dvButton
     type="button"
     class="stepper__button"
-    [disabled]="!canIncrease()"
+    [dvBlocked]="!canIncrease()"
+    [attr.aria-describedby]="canIncrease() ? null : maxId"
     [attr.aria-label]="'Aumentar ' + label()"
     (click)="step(1)"
   >
     +
   </button>
 </div>
+<span class="dv-visually-hidden" [id]="minId">Mínimo: {{ min() }}</span>
+<span class="dv-visually-hidden" [id]="maxId">Máximo: {{ max() }}</span>
