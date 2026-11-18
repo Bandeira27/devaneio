@@ -5,8 +5,12 @@ import type {
   NpcInfo,
   NpcView,
   RulesView,
+  TableView,
   WeaponInfo,
 } from '@contract/api_responses';
+
+/** A fase da mesa: sala de espera, em andamento, pausada ou encerrada. */
+export type Phase = TableView['phase'];
 
 /** Valores iniciais do formulário de personagem: o padrão de cada atributo do sistema. */
 export function attributeDefaults(rules: RulesView): Record<string, number> {
@@ -36,9 +40,12 @@ export function usableWeapons(rules: RulesView, inventory: readonly string[]): W
 }
 
 /** Por que o personagem não pode gastar a ação principal agora. */
-export type ActBlock = 'no-character' | 'over' | 'acted' | 'fallen';
+export type ActBlock = 'lobby' | 'ended' | 'paused' | 'no-character' | 'over' | 'acted' | 'fallen';
 
 export const ACT_BLOCK_TEXT: Record<ActBlock, string> = {
+  lobby: 'A partida ainda não começou. Espere o anfitrião iniciar.',
+  ended: 'A partida foi encerrada pelo anfitrião.',
+  paused: 'A partida está pausada pelo anfitrião.',
   'no-character': 'Crie um personagem para agir.',
   over: 'A partida terminou.',
   acted: 'Seu personagem já agiu neste turno. Espere os outros.',
@@ -52,12 +59,25 @@ export interface ActContext {
   /** `TableView.acted`: personagem -> turno em que agiu. */
   acted: Readonly<Record<string, number>>;
   status: GameStatus;
+  /** A fase da mesa: sala de espera, em andamento, pausada ou encerrada (o anfitrião ainda age na pausa). */
+  phase: Phase;
+  /** Quem pergunta é o anfitrião? */
+  host: boolean;
   rules: RulesView;
 }
 
 /** Por que o personagem não pode gastar a ação principal agora, ou `null` se pode. */
 export function actBlock(context: ActContext): ActBlock | null {
-  const { character, turn, acted, status, rules } = context;
+  const { character, turn, acted, status, phase, host, rules } = context;
+  if (phase === 'lobby') {
+    return 'lobby';
+  }
+  if (phase === 'ended') {
+    return 'ended';
+  }
+  if (phase === 'paused' && !host) {
+    return 'paused';
+  }
   if (character === null) {
     return 'no-character';
   }

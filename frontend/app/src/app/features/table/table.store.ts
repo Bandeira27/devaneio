@@ -6,6 +6,7 @@ import type {
   TalkView,
   WeaponInfo,
 } from '@contract/api_responses';
+import type { LifecycleRequest } from '@contract/api_requests';
 import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '@core/api/api-client';
 import { isRetryable, messageOf } from '@core/api/api-failure';
@@ -63,6 +64,17 @@ export class TableStore implements OnDestroy {
 
   readonly turn = computed(() => this.table()?.state.turn ?? 0);
   readonly status = computed(() => this.table()?.status ?? 'active');
+  /** A fase da mesa; sem a mesa lida ainda, a que não trava nada. */
+  readonly phase = computed(() => this.table()?.phase ?? 'running');
+  /** O relógio de jogo como o servidor o contou na última leitura, e quando ela chegou. */
+  readonly playClock = computed(() => ({
+    seconds: this.table()?.elapsed_seconds ?? 0,
+    running: this.phase() === 'running',
+    receivedAt: this.snapshot.receivedAt(),
+  }));
+  /** Uma mudança de fase está a caminho. */
+  readonly lifecycleBusy = signal(false);
+  readonly lifecycleError = signal('');
   readonly isHost = computed(() => this.table()?.role === 'host');
   readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   readonly canSay = computed(() => this.table()?.llm.enabled === true);
@@ -149,6 +161,30 @@ export class TableStore implements OnDestroy {
   /** Tira da tela a resposta e o erro da última ação. */
   dismissFeedback(): void {
     this.actions.dismiss();
+  }
+
+  /** Inicia, pausa, retoma ou encerra a partida (anfitrião); devolve se o servidor aceitou. */
+  async lifecycle(action: LifecycleRequest['action']): Promise<boolean> {
+    if (this.lifecycleBusy()) {
+      return false;
+    }
+    this.lifecycleBusy.set(true);
+    this.lifecycleError.set('');
+    try {
+      const table = await firstValueFrom(
+        this.api.lifecycle(this.tableId(), { action, revision: this.snapshot.revision() }),
+      );
+      this.snapshot.table.set(table);
+      this.snapshot.receivedAt.set(Date.now());
+      void this.snapshot.refresh();
+      return true;
+    } catch (error) {
+      this.lifecycleError.set(messageOf(error));
+      void this.snapshot.refresh(); // a mesa pode ter andado (revisão velha): relê para a próxima tentativa
+      return false;
+    } finally {
+      this.lifecycleBusy.set(false);
+    }
   }
 
   /** Manda uma linha de comando; devolve se o servidor a aceitou. */

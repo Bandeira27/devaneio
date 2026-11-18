@@ -17,6 +17,7 @@ import * as copyField from '../shared/ui/copy-field/copy-field.stories';
 import * as field from '../shared/ui/field/field.stories';
 import * as icon from '../shared/ui/icon/icon.stories';
 import * as emblemS from '../shared/ui/emblem/emblem.stories';
+import * as playClockS from '../shared/ui/play-clock/play-clock.stories';
 import * as notice from '../shared/ui/notice/notice.stories';
 import * as pips from '../shared/ui/pips/pips.stories';
 import * as sheet from '../shared/ui/sheet/sheet.stories';
@@ -43,6 +44,7 @@ const FILES: Record<string, Record<string, unknown>> = {
   'shared/ui/field/field.stories.ts': field,
   'shared/ui/icon/icon.stories.ts': icon,
   'shared/ui/emblem/emblem.stories.ts': emblemS,
+  'shared/ui/play-clock/play-clock.stories.ts': playClockS,
   'shared/ui/notice/notice.stories.ts': notice,
   'shared/ui/pips/pips.stories.ts': pips,
   'shared/ui/sheet/sheet.stories.ts': sheet,

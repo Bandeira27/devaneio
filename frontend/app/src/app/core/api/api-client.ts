@@ -25,6 +25,7 @@ import type {
   CreateTableRequest,
   InvitePreviewRequest,
   JoinRequest,
+  LifecycleRequest,
   SayRequest,
 } from '@contract/api_requests';
 import { TABLE } from './api.interceptor';
@@ -85,6 +86,11 @@ export class ApiClient {
       request,
       this.as(tableId),
     );
+  }
+
+  /** Inicia, pausa, retoma ou encerra a partida (só o anfitrião); devolve a mesa como ele a vê. */
+  lifecycle(tableId: string, request: LifecycleRequest): Observable<TableView> {
+    return this.http.post<TableView>(`${this.base(tableId)}/lifecycle`, request, this.as(tableId));
   }
 
   say(tableId: string, request: SayRequest): Observable<SayResult> {
