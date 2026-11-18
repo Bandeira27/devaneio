@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import type { ItemKind } from '@shared/game/campaign-edit';
+import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
@@ -13,7 +22,7 @@ import { EditorStore } from '../editor.store';
  */
 @Component({
   selector: 'dv-name-id-fields',
-  imports: [DvField, DvInput],
+  imports: [DvDisclosure, DvField, DvInput],
   template: `
     <dv-field [label]="label()" [announce]="false" [error]="store.errorAt(path() + '.' + field())">
       @if (multiline()) {
@@ -27,22 +36,35 @@ import { EditorStore } from '../editor.store';
         <input dvInput type="text" [value]="name()" (input)="nameChange.emit(fieldValue($event))" />
       }
     </dv-field>
-    <dv-field
-      label="Identificador"
-      [announce]="false"
-      [hint]="
-        store.isAuto(kind(), id())
-          ? 'Acompanha ' + follows() + '. Escreva aqui para fixar outro.'
-          : 'Letras minúsculas sem acento, números, - e _.'
-      "
-      [error]="idError() || store.errorAt(path() + '.id')"
-    >
-      <input dvInput type="text" [value]="id()" (change)="commit($event)" />
-    </dv-field>
+    <dv-disclosure label="Avançado: identificador" [(open)]="advancedOpen">
+      <dv-field
+        label="Identificador"
+        [announce]="false"
+        [hint]="
+          store.isAuto(kind(), id())
+            ? 'Acompanha ' + follows() + '. Escreva aqui para fixar outro.'
+            : 'Letras minúsculas sem acento, números, - e _.'
+        "
+        [error]="idError() || store.errorAt(path() + '.id')"
+      >
+        <input dvInput type="text" [value]="id()" (change)="commit($event)" />
+      </dv-field>
+    </dv-disclosure>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NameIdFields {
+  /** O campo do identificador abre sozinho quando há erro nele e não fecha sozinho depois. */
+  protected readonly advancedOpen = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (this.idError() || this.store.errorAt(this.path() + '.id')) {
+        this.advancedOpen.set(true);
+      }
+    });
+  }
+
   readonly kind = input.required<ItemKind>();
   readonly id = input.required<string>();
   readonly name = input.required<string>();

@@ -268,9 +268,10 @@ describe('Editor de campanhas: edição', () => {
     await click('a[href="/c/c/roteiro/locais"]');
     (root().querySelectorAll('dv-locations-section summary')[1] as HTMLElement).click();
     await settle();
+    // O identificador fica em "Avançado" (recolhido), mas o campo está na página: o segundo item tem nome e id.
     const id = root().querySelectorAll<HTMLInputElement>(
-      'dv-locations-section details[open] input[type="text"]',
-    )[1] as HTMLInputElement;
+      'dv-locations-section input[type="text"]',
+    )[3] as HTMLInputElement;
     const before = id.value;
     id.value = hostCampaign.locations[0]?.id ?? '';
     id.dispatchEvent(new Event('change'));
