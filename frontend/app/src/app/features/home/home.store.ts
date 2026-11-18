@@ -91,6 +91,7 @@ export class HomeStore {
         playerId: created.table.you,
         role: 'host',
         title: created.table.campaign.title,
+        campaignId: created.table.campaign.id,
         invite: created.invite_code,
         savedAt: Date.now(),
       });

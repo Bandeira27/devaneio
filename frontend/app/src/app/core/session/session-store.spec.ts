@@ -146,6 +146,18 @@ describe('SessionStore', () => {
     ).toEqual([A]);
   });
 
+  it('anota a campanha de uma mesa guardada sem mexer na ordem nem nos outros dados', () => {
+    const sessions = store(new FakeStorage());
+    sessions.save(A, entry({ savedAt: 1 }));
+    sessions.save(B, entry({ savedAt: 2 }));
+    sessions.tag(A, 'sombra-do-vale');
+    expect(sessions.get(A)?.campaignId).toBe('sombra-do-vale');
+    expect(sessions.get(A)?.savedAt).toBe(1);
+    expect(sessions.list().map((t) => t.tableId)).toEqual([B, A]);
+    sessions.tag('c'.repeat(16), 'x'); // mesa que não está guardada: nada acontece
+    expect(sessions.list()).toHaveLength(2);
+  });
+
   it('não aceita id de mesa fora do formato que o servidor gera', () => {
     const sessions = store(new FakeStorage());
     sessions.save('../etc/passwd', entry());

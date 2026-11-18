@@ -44,6 +44,15 @@ export class SessionStore {
     this.commit(Object.fromEntries(keep));
   }
 
+  /** Anota de que campanha é a mesa (as mesas guardadas antes disso não sabiam); não muda mais nada nem a ordem da lista. */
+  tag(tableId: string, campaignId: string): void {
+    const entry = this.tables()[tableId];
+    if (entry === undefined || entry.campaignId === campaignId) {
+      return;
+    }
+    this.commit({ ...this.tables(), [tableId]: { ...entry, campaignId } });
+  }
+
   forget(tableId: string): void {
     this.commit(Object.fromEntries(Object.entries(this.tables()).filter(([id]) => id !== tableId)));
   }

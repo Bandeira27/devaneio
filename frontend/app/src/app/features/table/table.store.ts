@@ -126,6 +126,7 @@ export class TableStore implements OnDestroy {
       if (this.destroyed) {
         return; // saiu da página no meio da carga: não abre um laço que ninguém vai parar
       }
+      this.session.tag(tableId, table.campaign.id); // mesas guardadas antes de o app saber a campanha ganham o id
       this.table.set(table);
       this.rules.set(rules);
       this.campaign.set(campaign);

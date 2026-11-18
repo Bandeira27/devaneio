@@ -10,6 +10,9 @@ export const Conjunto: StoryObj = story(
   `<div style="display:flex;gap:1rem;flex-wrap:wrap">
     <dv-icon name="go" /><dv-icon name="check" /><dv-icon name="attack" /><dv-icon name="sheet" />
     <dv-icon name="say" /><dv-icon name="command" /><dv-icon name="ok" /><dv-icon name="warn" />
-    <dv-icon name="info" /><dv-icon name="danger" /><dv-icon name="close" />
+    <dv-icon name="info" /><dv-icon name="danger" /><dv-icon name="close" /><dv-icon name="add" />
+    <dv-icon name="book" /><dv-icon name="table" /><dv-icon name="map" /><dv-icon name="person" />
+    <dv-icon name="flag" /><dv-icon name="scroll" /><dv-icon name="eye" /><dv-icon name="menu" />
+    <dv-icon name="back" />
   </div>`,
 );
