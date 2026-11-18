@@ -32,6 +32,13 @@ const types = (items: FeedItem[]): string[] =>
   items.map((i) => (i.type === 'turn' ? `turno ${i.turn}` : i.key));
 
 describe('ageFade', () => {
+  it('a linha mecânica some quando só repete a prosa (início, pausa e fim da partida)', () => {
+    const text = 'O anfitrião pausou a partida.';
+    const lifecycle = event(0, 1, { kind: 'table_paused', text, prose: text });
+    const item = buildFeed([lifecycle], [], 1).find((i) => i.type === 'event');
+    expect(item).toMatchObject({ note: '', narration: text });
+  });
+
   it('vai de 0 (agora) a 1 (no piso), reescalado pelo piso', () => {
     expect(ageFade(0)).toBe(0);
     expect(ageFade(2)).toBe(0.57); // opacidade 0,8 de um piso de 0,65

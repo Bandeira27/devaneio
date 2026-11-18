@@ -1,6 +1,5 @@
 .lobby {
   max-width: var(--dv-measure-page);
-  margin-inline: auto;
 }
 
 .lobby__people {

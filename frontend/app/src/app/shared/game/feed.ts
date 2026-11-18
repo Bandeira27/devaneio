@@ -132,14 +132,16 @@ export function buildFeed(
     }
     lastEventTurn = event.turn;
     const outcome = event.outcome ?? null;
+    const narration = event.narration ?? event.prose;
     items.push({
       type: 'event',
       key: `event-${event.index}`,
       index: event.index,
       turn: event.turn,
       kind: event.kind,
-      narration: event.narration ?? event.prose,
-      note: event.text,
+      narration,
+      // A linha mecânica só aparece quando diz algo além da prosa (o início, a pausa e o fim da partida não têm outra).
+      note: event.text === narration ? '' : event.text,
       seal: outcome === null ? null : SEALS[outcome],
       fade: ageFade(currentTurn - event.turn),
     });
