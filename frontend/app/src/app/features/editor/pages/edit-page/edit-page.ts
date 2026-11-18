@@ -2,9 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  DestroyRef,
   OnInit,
+  effect,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { DvBadge } from '@shared/ui/badge/badge';
@@ -13,6 +16,9 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement } from '@shared/ui/focus';
 import { EditorStore } from '../../editor.store';
+
+/** Quanto a conferência espera (ms) antes de dizer "Conferindo…". */
+const SLOW_CHECK_MS = 300;
 
 /**
  * O roteiro de uma campanha (a tela de edição): a situação da conferência (o servidor confere a cada edição e
@@ -37,6 +43,25 @@ export class EditorPage implements OnInit {
 
   protected readonly store = inject(EditorStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /**
+   * A conferência está demorando (passou de `SLOW_CHECK_MS`): só então aparece "Conferindo…". Uma conferência rápida não
+   * troca o selo de "Sem erros" por outro e de volta a cada pausa na digitação; o último resultado fica à vista.
+   */
+  protected readonly checkingSlowly = signal(false);
+  private slowTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    effect(() => {
+      const validating = this.store.validating();
+      clearTimeout(this.slowTimer);
+      if (validating) {
+        this.slowTimer = setTimeout(() => this.checkingSlowly.set(true), SLOW_CHECK_MS);
+      } else {
+        this.checkingSlowly.set(false);
+      }
+    });
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.slowTimer));
+  }
 
   ngOnInit(): void {
     void this.store.load(this.campaignId(), this.copia());

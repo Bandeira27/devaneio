@@ -21,6 +21,8 @@
 
 .editor__status,
 .editor__result {
+  min-height: var(--dv-touch); /* o selo troca sem a barra mudar de altura */
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: var(--dv-space-2) var(--dv-space-4);
@@ -38,10 +40,26 @@
   z-index: var(--dv-z-sticky);
   display: grid;
   gap: var(--dv-space-2);
-  justify-items: start;
   padding: var(--dv-space-3) 0 max(var(--dv-space-3), env(safe-area-inset-bottom));
   border-top: var(--dv-border-width) dotted var(--dv-line);
   background: var(--dv-surface-0);
+}
+
+/* O que a barra diz (conferência, situação e o motivo de gravar estar bloqueado) fica junto, e a ação principal à direita. */
+.editor__save-info {
+  display: grid;
+  gap: var(--dv-space-1);
+}
+
+@media (min-width: 40rem) {
+  .editor__save {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .editor__save dv-notice {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (min-width: 64rem) {

@@ -52,26 +52,6 @@
           </dv-notice>
         }
 
-        <div class="editor__status">
-          @if (store.validating()) {
-            <dv-badge tone="info" [pending]="true">Conferindo…</dv-badge>
-          }
-          <span class="editor__result" aria-live="polite">
-            @if (!store.validating() && store.report()?.ok) {
-              <dv-badge tone="ok" icon="ok">Sem erros</dv-badge>
-            } @else if (!store.validating() && store.errors().length > 0) {
-              <dv-badge tone="danger" icon="danger">
-                {{ store.errors().length === 1 ? '1 erro' : store.errors().length + ' erros' }}
-              </dv-badge>
-            }
-            @if (store.dirty()) {
-              <dv-badge tone="warn" icon="warn">Alterações não gravadas</dv-badge>
-            } @else if (store.justSaved()) {
-              <dv-badge tone="ok" icon="ok">Gravada</dv-badge>
-            }
-          </span>
-        </div>
-
         @if (store.errors().length > 0) {
           <dv-notice kind="error">
             A campanha tem problemas que impedem de gravar:
@@ -106,9 +86,30 @@
               {{ store.saveError() }}
             </dv-notice>
           }
-          @if (store.saveBlock()) {
-            <p id="save-reason" class="dv-note">{{ store.saveBlock() }}</p>
-          }
+          <div class="editor__save-info">
+            <div class="editor__status">
+              @if (checkingSlowly()) {
+                <dv-badge tone="info" [pending]="true">Conferindo…</dv-badge>
+              }
+              <span class="editor__result" aria-live="polite">
+                @if (store.report()?.ok) {
+                  <dv-badge tone="ok" icon="ok">Sem erros</dv-badge>
+                } @else if (store.errors().length > 0) {
+                  <dv-badge tone="danger" icon="danger">
+                    {{ store.errors().length === 1 ? '1 erro' : store.errors().length + ' erros' }}
+                  </dv-badge>
+                }
+                @if (store.dirty()) {
+                  <dv-badge tone="warn" icon="warn">Alterações não gravadas</dv-badge>
+                } @else if (store.justSaved()) {
+                  <dv-badge tone="ok" icon="ok">Gravada</dv-badge>
+                }
+              </span>
+            </div>
+            @if (store.saveBlock()) {
+              <p id="save-reason" class="dv-note">{{ store.saveBlock() }}</p>
+            }
+          </div>
           <button
             dvButton="primary"
             type="button"
