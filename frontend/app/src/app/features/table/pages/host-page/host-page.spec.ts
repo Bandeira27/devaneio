@@ -60,9 +60,11 @@ describe('Painel do anfitrião', () => {
       'Fatos',
     ]);
     expect(text()).toContain('turno 4');
-    expect(root().querySelector('a[href$="/mesa/' + TABLE_ID + '"]')?.textContent).toContain(
-      'Voltar à mesa',
-    );
+    // O caminho de volta é um só, à esquerda do título: a mesa (a campanha se alcança por lá).
+    const back = root().querySelector('a[href$="/mesa/' + TABLE_ID + '"]');
+    expect(back?.textContent).toContain('Mesa');
+    expect(back?.classList.contains('dv-back')).toBe(true);
+    expect(root().querySelectorAll('a[href$="/mesa/' + TABLE_ID + '"]').length).toBe(1);
   });
 
   it('quem não é anfitrião volta para a mesa', async () => {

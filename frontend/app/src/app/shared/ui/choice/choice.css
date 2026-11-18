@@ -18,6 +18,16 @@ legend {
   color: var(--dv-text-muted);
 }
 
+@media (min-width: 22rem) {
+  .fieldset--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fieldset--grid legend {
+    grid-column: 1 / -1;
+  }
+}
+
 .option {
   position: relative;
   display: flex;

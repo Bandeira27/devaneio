@@ -4,10 +4,10 @@
   "state": {
     "state_version": 1,
     "campaign_id": "sombra-do-vale",
-    "turn": 8,
+    "turn": 10,
     "rng_seed": 3990413686144143,
-    "rng_draws": 18,
-    "current_location_id": "ruinas",
+    "rng_draws": 20,
+    "current_location_id": "floresta",
     "characters": {
       "jonataan": {
         "id": "jonataan",
@@ -536,6 +536,72 @@
         "kind": "turn_end",
         "text": "Fim do turno 7",
         "data": {}
+      },
+      {
+        "turn": 8,
+        "kind": "move",
+        "text": "O grupo vai de Ruínas do Templo para Floresta Cinzenta.",
+        "data": {
+          "from_location_id": "ruinas",
+          "to_location_id": "floresta"
+        }
+      },
+      {
+        "turn": 8,
+        "kind": "director",
+        "text": "Diretor: tensão 0.12; nada a fazer.",
+        "data": {
+          "tension": 0.12,
+          "actions": []
+        }
+      },
+      {
+        "turn": 8,
+        "kind": "turn_end",
+        "text": "Fim do turno 8",
+        "data": {}
+      },
+      {
+        "turn": 9,
+        "kind": "check",
+        "text": "Jonataan testa Atirar (2d6 + AGI) contra Normal 9: 2d6 [4, 4] → total 13, sucesso",
+        "data": {
+          "actor_kind": "character",
+          "actor_id": "jonataan",
+          "npc_locations": {},
+          "skill_id": "atirar",
+          "difficulty_id": "normal",
+          "modifier_id": null,
+          "rolls": [
+            {
+              "dice": "2d6",
+              "values": [
+                4,
+                4
+              ]
+            }
+          ],
+          "total": 13,
+          "difficulty": 9,
+          "margin": 4,
+          "outcome": "success",
+          "attack": false
+        }
+      },
+      {
+        "turn": 9,
+        "kind": "director",
+        "text": "Diretor: tensão 0.12; nada a fazer.",
+        "data": {
+          "tension": 0.12,
+          "actions": []
+        }
+      },
+      {
+        "turn": 9,
+        "kind": "turn_end",
+        "text": "Fim do turno 9",
+        "data": {}
       }
     ]
   },
@@ -552,7 +618,7 @@
       }
     },
     "acted": {
-      "jonataan": 7
+      "jonataan": 9
     }
   },
   "content": {

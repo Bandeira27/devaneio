@@ -24,10 +24,10 @@ export interface CheckSheetData {
   template: `
     <dv-sheet-head title="Testar" />
     <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
-      <dv-choice legend="Habilidade" [options]="skills()" [(value)]="skill" />
+      <dv-choice legend="Habilidade" [options]="skills()" [(value)]="skill" grid />
       <dv-disclosure [label]="'Ajustar: ' + summary()">
         <div class="dv-stack">
-          <dv-choice legend="Dificuldade" [options]="difficulties()" [(value)]="difficulty" />
+          <dv-choice legend="Dificuldade" [options]="difficulties()" [(value)]="difficulty" grid />
           @if (data.rules.modifiers.length > 0) {
             <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
           }
