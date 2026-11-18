@@ -79,6 +79,15 @@ export class TablePage implements OnInit {
 
   constructor() {
     publishDockHeight(this.dock);
+    let wasBusy = false;
+    effect(() => {
+      // Uma ação própria que terminou leva a história ao fim: quem a relia acima vê a consequência do que fez.
+      const busy = this.store.actionBusy();
+      if (wasBusy && !busy && !this.store.actionError()) {
+        this.feed()?.follow();
+      }
+      wasBusy = busy;
+    });
     effect(() => {
       // Cada estado tem o seu `h1`: quando o da abertura some (o foco estava nele), o foco passa ao da tela nova.
       this.store.state();

@@ -17,6 +17,8 @@ import { DvOrnament } from '@shared/ui/ornament/ornament';
 import { DvState } from '@shared/ui/state/state';
 
 const NEAR_BOTTOM_PX = 160;
+/** Por quanto tempo, depois de uma ação própria, o feed segue o fim. */
+const FOLLOW_MS = 4000;
 
 /**
  * O fluxo da mesa: narração em destaque, a linha mecânica logo abaixo, falas do mestre como citação e, entre os turnos,
@@ -51,6 +53,8 @@ export class FeedList {
   /** Um toque no feed pulou a espera da fila. */
   protected readonly skipped = signal(false);
   private readonly queued = new Set<string>();
+  /** Até quando o resultado da ação do próprio jogador ainda deve levar a tela ao fim (ver `follow`). */
+  private followUntil = 0;
 
   /** Só o que chegou depois do carregamento anima a "tinta nova": a carga inicial e a reconexão entram sem animar. */
   protected isNew(key: string): boolean {
@@ -76,7 +80,7 @@ export class FeedList {
       if (!grew) {
         return;
       }
-      if (first || this.nearBottom()) {
+      if (first || this.nearBottom() || Date.now() < this.followUntil) {
         this.scrollToEnd();
       } else {
         this.missed += added;
@@ -101,6 +105,16 @@ export class FeedList {
     });
     this.steps.set(next);
     this.skipped.set(false);
+  }
+
+  /**
+   * A ação do próprio jogador terminou: o que ela provocou deve aparecer à vista, mesmo para quem relia mais acima. Leva
+   * a tela ao fim já e nos próximos segundos (o resultado pode chegar depois da resposta, pelo fluxo ao vivo). O que
+   * chega de outros não passa por aqui: continua só contando "novas" para quem está lendo.
+   */
+  follow(): void {
+    this.followUntil = Date.now() + FOLLOW_MS;
+    this.scrollToEnd();
   }
 
   /** Leva a tela ao fim do feed (o que ainda não foi visto passa a ser visto). */
