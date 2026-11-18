@@ -11,6 +11,8 @@ import { ApiClient } from '@core/api/api-client';
 export class TableSnapshot {
   readonly table = signal<TableView | null>(null);
   readonly campaign = signal<Campaign | CampaignView | null>(null);
+  /** Quando a foto da mesa chegou (relógio do navegador, ms): o relógio de jogo anda a partir dela. */
+  readonly receivedAt = signal(0);
 
   private refreshing: Promise<void> | null = null;
   private again = false;
@@ -49,6 +51,7 @@ export class TableSnapshot {
             firstValueFrom(this.api.campaign(id)),
           ]);
           this.table.set(table);
+          this.receivedAt.set(Date.now());
           this.campaign.set(campaign);
         } catch {
           // O fluxo ao vivo já mostra a conexão; a próxima revisão tenta de novo.

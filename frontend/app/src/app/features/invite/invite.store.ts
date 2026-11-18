@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SessionStore } from '@core/session/session-store';
-import { inviteLink, isLocalOrigin, normalizeOrigin } from '@shared/game/invite';
+import { describeInvite } from '@shared/game/invite';
 
 /** O convite do anfitrião: o código guardado ao criar a mesa e o endereço que os outros aparelhos alcançam. */
 @Injectable()
@@ -12,17 +12,10 @@ export class InviteStore {
 
   readonly entry = computed(() => this.session.get(this.tableId()));
   readonly code = computed(() => this.entry()?.invite ?? null);
-  readonly origin = computed(() => normalizeOrigin(this.addressText()));
-  readonly addressError = computed(() =>
-    this.origin() === null ? 'Escreva um endereço como 192.168.0.5:8765.' : '',
+  private readonly invite = computed(() =>
+    describeInvite(this.addressText(), this.tableId(), this.code()),
   );
-  readonly localWarning = computed(() => {
-    const origin = this.origin();
-    return origin !== null && isLocalOrigin(origin);
-  });
-  readonly link = computed(() => {
-    const origin = this.origin();
-    const code = this.code();
-    return origin !== null && code !== null ? inviteLink(origin, this.tableId(), code) : '';
-  });
+  readonly addressError = computed(() => this.invite().error);
+  readonly localWarning = computed(() => this.invite().localWarning);
+  readonly link = computed(() => this.invite().link);
 }

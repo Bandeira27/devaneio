@@ -24,6 +24,8 @@ export function tableView(over: Partial<TableView> = {}): TableView {
     acted: {},
     revision: 3,
     status: 'active',
+    phase: 'running',
+    elapsed_seconds: 0,
     llm: { enabled: false, description: null, notice: null, secrets: false },
     you: 'p2',
     state: {

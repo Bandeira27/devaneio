@@ -43,6 +43,8 @@ export function blockedReasonOf(
     turn: table.state.turn,
     acted: table.acted,
     status: table.status,
+    phase: table.phase,
+    host: table.role === 'host',
     rules,
   });
   return block === null ? '' : ACT_BLOCK_TEXT[block];
@@ -99,10 +101,23 @@ export function turnStatusOf(
     return '';
   }
   const turn = table.state.turn;
-  const block = actBlock({ character, turn, acted: table.acted, status: table.status, rules });
+  const block = actBlock({
+    character,
+    turn,
+    acted: table.acted,
+    status: table.status,
+    phase: table.phase,
+    host: table.role === 'host',
+    rules,
+  });
   switch (block) {
     case null:
       return 'Sua vez de agir';
+    case 'lobby':
+      return 'Esperando o anfitrião iniciar';
+    case 'paused':
+      return 'Partida pausada';
+    case 'ended':
     case 'over':
       return 'Partida encerrada';
     case 'no-character':

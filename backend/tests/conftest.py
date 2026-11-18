@@ -1,9 +1,12 @@
 import copy
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from devaneio.engine import advance_beats, reveal_facts
+from devaneio.game import save_game
 from devaneio.rules import RuleSystem, builtin_rules_json
 from devaneio.schema import Campaign
 
@@ -39,3 +42,14 @@ def _no_llm_from_the_environment(monkeypatch):
     """Nenhum teste fala com um LLM real por causa das variáveis do usuário."""
     for name in ("BASE_URL", "MODEL", "API_KEY", "TIMEOUT"):
         monkeypatch.delenv(f"DEVANEIO_LLM_{name}", raising=False)
+
+
+def open_for_play(service, table_id):
+    """Põe a mesa em andamento como ela nascia antes da sala de espera: com a abertura e sem o evento de início."""
+    path = service.storage.path_for(table_id)
+    with service.storage.lock(table_id):
+        session = service.load_session(path)
+        state, _ = advance_beats(session.state, session.campaign)
+        state, _ = reveal_facts(state, session.campaign)
+        table = session.table.model_copy(update={"phase": "running"})
+        save_game(replace(session, state=state, table=table))

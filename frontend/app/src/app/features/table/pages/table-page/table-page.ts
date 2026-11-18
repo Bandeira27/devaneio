@@ -17,6 +17,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { DvPlayClock } from '@shared/ui/play-clock/play-clock';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { connectionBlockOf } from '../../table.derived';
@@ -25,6 +26,7 @@ import { ActionDock } from '../../components/action-dock/action-dock';
 import { CharacterCard } from '../../components/character-card/character-card';
 import { ConnectionBadge } from '../../components/connection-badge/connection-badge';
 import { FeedList } from '../../components/feed-list/feed-list';
+import { Lobby } from '../../components/lobby/lobby';
 import { PartyStrip } from '../../components/party-strip/party-strip';
 import { SceneCard } from '../../components/scene-card/scene-card';
 import { TableStore } from '../../table.store';
@@ -42,7 +44,9 @@ import { TableStore } from '../../table.store';
     DvState,
     ActionDock,
     ConnectionBadge,
+    DvPlayClock,
     FeedList,
+    Lobby,
     PartyStrip,
     SceneCard,
   ],

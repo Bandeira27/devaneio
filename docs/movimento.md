@@ -11,21 +11,21 @@ interação mais intuitiva. Sem resposta, não existe. Nunca atrasa a operação
 
 ## Tokens
 
-| Token                     | Valor                 | Uso                                       |
-| ------------------------- | --------------------- | ----------------------------------------- |
-| `--dv-duration-instant`   | 80 ms                 | pressionar                                |
-| `--dv-duration-fast`      | 140 ms                | estado de controle, saída                 |
-| `--dv-duration-base`      | 220 ms                | entrada, expandir/recolher                |
-| `--dv-duration-slow`      | 360 ms                | folha, mudança de contexto                |
-| `--dv-duration-narrative` | 600 ms                | só a tinta nova da narração               |
-| `--dv-ease-standard`      | `(0.2, 0, 0, 1)`      | estados                                   |
-| `--dv-ease-decelerate`    | `(0, 0, 0, 1)`        | o que entra                               |
-| `--dv-ease-accelerate`    | `(0.3, 0, 1, 1)`      | o que sai                                 |
-| `--dv-ease-emphasized`    | `(0.05, 0.7, 0.1, 1)` | folha e diálogo                           |
-| `--dv-stagger`            | 60 ms                 | escalonamento (no máximo 3 itens)         |
+| Token                     | Valor                 | Uso                                           |
+| ------------------------- | --------------------- | --------------------------------------------- |
+| `--dv-duration-instant`   | 80 ms                 | pressionar                                    |
+| `--dv-duration-fast`      | 140 ms                | estado de controle, saída                     |
+| `--dv-duration-base`      | 220 ms                | entrada, expandir/recolher                    |
+| `--dv-duration-slow`      | 360 ms                | folha, mudança de contexto                    |
+| `--dv-duration-narrative` | 600 ms                | só a tinta nova da narração                   |
+| `--dv-ease-standard`      | `(0.2, 0, 0, 1)`      | estados                                       |
+| `--dv-ease-decelerate`    | `(0, 0, 0, 1)`        | o que entra                                   |
+| `--dv-ease-accelerate`    | `(0.3, 0, 1, 1)`      | o que sai                                     |
+| `--dv-ease-emphasized`    | `(0.05, 0.7, 0.1, 1)` | folha e diálogo                               |
+| `--dv-stagger`            | 60 ms                 | escalonamento (no máximo 3 itens)             |
 | `--dv-reveal-step`        | 1000 ms               | tempo de ler ~80 caracteres: um passo da fila |
-| `--dv-duration-pending`   | 480 ms                | pulso de "pendente" (botão, selo, estado) |
-| `--dv-motion-distance`    | 0,25 rem              | deslocamento de entrada                   |
+| `--dv-duration-pending`   | 480 ms                | pulso de "pendente" (botão, selo, estado)     |
+| `--dv-motion-distance`    | 0,25 rem              | deslocamento de entrada                       |
 
 Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o escalonamento para 0 e a distância para 0.
 

@@ -72,6 +72,9 @@ class SayDesk:
             session = self._load(path)
             table, player_id, player = authenticate(session, token)
             who, text = speaker(session.state, player, request.text)
+            refusal = policy.phase_refusal(table.phase, player.role, policy.SAY_KIND)
+            if refusal is not None:
+                raise ApiFailure(409, *refusal)
             check_say(table, session.state, who, request.revision)
         reserve(storage, table_id, SAY, player_id, self._cooldown)
         try:

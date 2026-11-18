@@ -28,7 +28,7 @@
           <p class="feed__narration">
             {{ item.narration }}
           </p>
-          <p class="feed__note">
+          <p class="feed__note" [hidden]="!item.note && !item.seal">
             @if (item.seal; as seal) {
               <dv-badge class="feed__seal" [tone]="seal.tone" [icon]="seal.icon">{{
                 seal.label

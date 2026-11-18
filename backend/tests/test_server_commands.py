@@ -5,7 +5,7 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.engine import GameStatus
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest
@@ -62,6 +62,7 @@ def desk(tmp_path):
     created = service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
     )
+    open_for_play(service, created.table_id)
     return Desk(service, created)
 
 
@@ -478,6 +479,7 @@ def test_a_token_from_another_table_is_not_valid_here(desk):
     other = desk.service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Zé", seed=7)
     )
+    open_for_play(desk.service, other.table_id)
     request = CommandRequest(line="olhar", revision=0)
     with pytest.raises(ApiFailure, match="token inválido") as commands:
         desk.service.run_command(desk.id, other.host_token, request)

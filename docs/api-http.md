@@ -12,9 +12,30 @@ Referência da API que o servidor expõe para jogar em grupo. Para subir o servi
 | `POST /tables/{id}/say` `{text, revision}`            | Bearer             | texto livre: o LLM do anfitrião propõe ações e o servidor aplica; `SayResult` = `CommandResult` + `say` (fala do mestre, só para quem enviou) e `commands`. `409 llm_disabled` sem LLM                                                                         |
 | `POST /tables/{id}/copilot` `{text}`                  | Bearer (anfitrião) | pergunta ao copiloto do anfitrião (ver abaixo); resposta `{text}` só para ele. `403` para jogador, `409 llm_disabled` sem LLM, `409 copilot_busy`, `429 copilot_rate_limited`                                                                                  |
 | `GET /tables/{id}/events?since=N&since_talk=T&wait=S` | Bearer             | `EventsView {revision, events, talk, talk_seq}`: eventos de posição `N` em diante (cada um com `prose` da gramática, o `outcome` do selo e sem `data`) e falas com `seq` > `T`. Com `wait` (0 a 30 s) e nada novo, **espera** uma gravação da mesa (long-poll) |
-| `GET /tables/{id}`                                    | Bearer             | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `llm`, `state`                                                                                                                                                                         |
+| `POST /tables/{id}/lifecycle` `{action, revision}`    | Bearer (anfitrião) | muda a fase da mesa (`start`, `pause`, `resume`, `end`; ver "Fases") e devolve o `TableView` do anfitrião. `403` para jogador, `409 stale_revision`, `409 no_characters`, `409 invalid_transition`, `409 ended`                                                |
+| `GET /tables/{id}`                                    | Bearer             | `TableView`: mesa, jogadores, `revision` (número de eventos), `status`, `phase`, `elapsed_seconds`, `llm`, `state`                                                                                                                                             |
 | `GET /tables/{id}/rules`                              | Bearer             | `RulesView`: o catálogo do sistema de regras (atributos com limites, habilidades e armas com fórmula, dificuldades, modificadores, `combat`) para montar botões e o formulário de personagem                                                                   |
 | `GET /tables/{id}/campaign`                           | Bearer             | anfitrião: a `Campaign` inteira; jogador: `CampaignView` (só o que o `olhar` mostra)                                                                                                                                                                           |
+
+## Fases da mesa
+
+A mesa nasce na **sala de espera** (`phase: "lobby"`): convidados entram (`POST /players`) e criam personagem (`entrar`),
+mas a história não começou (nenhum evento, nenhum marco ativo; `revision` 0). O anfitrião **inicia** (`start`, exige ao
+menos um personagem): a abertura da história roda e a fase passa a `running`. Ele também **pausa** e **retoma**
+(`paused` ⇄ `running`) e **encerra** (`ended`, definitivo; também vale a partir da sala). Uma mesa gravada antes
+dessas fases abre em `running`.
+
+| Fase      | Jogador                                         | Anfitrião                                                   |
+| --------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| `lobby`   | ler e criar personagem (`entrar`)               | o mesmo; `409 not_started` para o resto                     |
+| `running` | tudo que já podia                               | tudo que já podia                                           |
+| `paused`  | só ler (`409 paused` para o resto)              | tudo, inclusive texto livre (a pausa trava só os jogadores) |
+| `ended`   | só ler (`409 ended`); entrar: `409 table_ended` | só ler                                                      |
+
+Cada mudança vira um evento no log (`table_started`, `table_paused`, `table_resumed`, `table_ended`), então ela muda a
+`revision` e acorda quem espera no long-poll. `elapsed_seconds` é quanto a partida **rodou** (a pausa não conta), no
+relógio do servidor; o cliente faz o relógio andar sozinho enquanto a fase é `running`. `phase` é um eixo à parte do
+`status` (`active|won|lost`), que é o desfecho da história.
 
 Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token, 404 mesa/campanha/rota,
 409 limite de mesas, 411/413/415 corpo, 500 genérico). O contrato da API está em `contract/api_requests.schema.json`

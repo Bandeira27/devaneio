@@ -1,0 +1,23 @@
+:host {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--dv-space-2);
+  font-family: var(--dv-font-note);
+  font-size: var(--dv-text-note);
+  color: var(--dv-text);
+}
+
+.clock__label {
+  color: var(--dv-text-muted);
+  letter-spacing: var(--dv-tracking-label);
+  text-transform: uppercase;
+}
+
+/* Dígitos de largura igual: o relógio não balança a cada segundo. */
+.clock__time {
+  font-variant-numeric: tabular-nums;
+}
+
+:host(.clock--idle) .clock__time {
+  color: var(--dv-text-muted);
+}

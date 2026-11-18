@@ -6,11 +6,11 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.engine import reveal_fact
 from devaneio.game import load_game, new_game, save_game
 from devaneio.llm import LlmConfig
-from devaneio.schema import Campaign, GameState
+from devaneio.schema import BeatStatus, Campaign, GameState
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
 from devaneio.server.models import (
     CampaignView,
@@ -45,9 +45,12 @@ def service(tmp_path):
 
 @pytest.fixture
 def created(service):
-    return service.create_table(
+    """Uma mesa em andamento (como as mesas nasciam antes da sala de espera)."""
+    created = service.create_table(
         CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
     )
+    open_for_play(service, created.table_id)
+    return created
 
 
 def test_catalog_lists_the_campaigns_of_the_folder(service):
@@ -82,7 +85,16 @@ def test_catalog_ignores_files_that_are_not_json(tmp_path):
     assert catalog.path("rascunho") is None
 
 
-def test_create_table_writes_the_save_with_the_table(service, created, tmp_path):
+@pytest.fixture
+def lobby(service):
+    """Uma mesa recém-criada, ainda na sala de espera."""
+    return service.create_table(
+        CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
+    )
+
+
+def test_create_table_writes_the_save_with_the_table(service, lobby, tmp_path):
+    created = lobby
     assert created.host_token.startswith("token-")
     assert created.invite_code == "convite-fixo"
     view = created.table
@@ -92,7 +104,11 @@ def test_create_table_writes_the_save_with_the_table(service, created, tmp_path)
         {"id": "p1", "name": "Ana", "role": "host", "character_ids": []}
     ]
     assert view.turn_policy == "one_action_per_character"
-    assert view.revision == 1  # marco inicial ativado
+    assert view.revision == 0  # a história ainda não começou: sem abertura nem marco ativo
+    assert view.phase == "lobby"
+    assert view.elapsed_seconds == 0
+    assert view.state.events == []
+    assert set(view.state.beats.values()) == {BeatStatus.PENDING}
     assert view.status.value == "active"
     assert view.llm.enabled is False
     assert view.state.rng_seed == 7
@@ -120,7 +136,8 @@ def test_create_table_unknown_campaign_and_limit(tmp_path):
     assert info.value.status == 409
 
 
-def test_get_table_requires_a_valid_token(service, created):
+def test_get_table_requires_a_valid_token(service, lobby):
+    created = lobby
     view = service.get_table(created.table_id, bearer(created.host_token))
     assert view.model_dump() == created.table.model_dump()
     for token, message in ((None, "token ausente"), ("token-errado", "token inválido")):

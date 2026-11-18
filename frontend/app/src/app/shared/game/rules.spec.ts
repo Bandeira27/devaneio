@@ -115,6 +115,8 @@ describe('quem pode agir', () => {
     turn: 3,
     acted: {},
     status: 'active',
+    phase: 'running',
+    host: false,
     rules: rules(),
   };
 
@@ -129,6 +131,16 @@ describe('quem pode agir', () => {
   it('partida encerrada trava (vitória e derrota)', () => {
     expect(actBlock({ ...base, status: 'won' })).toBe('over');
     expect(actBlock({ ...base, status: 'lost' })).toBe('over');
+  });
+
+  it('a fase trava antes de tudo: sala de espera, pausa (só os jogadores) e encerrada', () => {
+    expect(actBlock({ ...base, phase: 'lobby' })).toBe('lobby');
+    expect(actBlock({ ...base, phase: 'lobby', host: true })).toBe('lobby');
+    expect(actBlock({ ...base, phase: 'paused' })).toBe('paused');
+    expect(actBlock({ ...base, phase: 'paused', host: true })).toBeNull(); // o anfitrião continua
+    expect(actBlock({ ...base, phase: 'ended' })).toBe('ended');
+    expect(actBlock({ ...base, phase: 'ended', host: true })).toBe('ended');
+    expect(actBlock({ ...base, phase: 'lobby', character: null })).toBe('lobby');
   });
 
   it('já agiu neste turno, mas não nos anteriores', () => {

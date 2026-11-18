@@ -8,7 +8,7 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
+from conftest import CAMPAIGN_PATH, open_for_play
 from devaneio.engine import GameStatus
 from devaneio.llm import LlmConfig
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
@@ -17,6 +17,7 @@ from devaneio.server.models import (
     CommandRequest,
     CreateTableRequest,
     JoinRequest,
+    LifecycleRequest,
     SayRequest,
 )
 from devaneio.server.presentation import MAX_NARRATIONS, MAX_TALK
@@ -92,6 +93,7 @@ class Desk:
         created = service.create_table(
             CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
         )
+        open_for_play(service, created.table_id)
         self.id, self.host = created.table_id, created.host_token
 
     def player(self, name):
@@ -129,6 +131,34 @@ class Desk:
 @pytest.fixture
 def desk(service):
     return Desk(service)
+
+
+# --- fase da mesa -------------------------------------------------------------------
+
+
+def test_the_phase_gates_the_free_text_without_calling_the_llm(desk, script):
+    bia = desk.player("Bia")
+    desk.cmd(desk.host, 'entrar ana "Ana"')
+    table = desk.service.storage.path_for(desk.id)
+
+    def set_phase(phase):
+        # a fase pela API de verdade: o anfitrião muda, os jogadores sentem
+        action = {"paused": "pause", "ended": "end"}[phase]
+        revision = desk.revision(desk.host)
+        desk.service.set_phase(
+            desk.id, desk.host, LifecycleRequest(action=action, revision=revision)
+        )
+
+    # em andamento já foi aberto por `open_for_play`: o fluxo normal da fase "running" é o dos outros testes
+    assert table.exists()
+    set_phase("paused")
+    error = desk.refused(bia, "olho em volta")
+    assert (error.status, error.code) == (409, "paused")
+    assert script.proposer_calls() == []  # recusado antes de gastar o LLM
+    set_phase("ended")
+    error = desk.refused(desk.host, "olho em volta")
+    assert (error.status, error.code) == (409, "ended")
+    assert script.proposer_calls() == []
 
 
 # --- o caminho feliz ----------------------------------------------------------------

@@ -38,14 +38,16 @@ from .content import (
 )
 from .errors import GameError
 from .freeform import FreeformResult, LlmUnavailableError, run_freeform
+from .lifecycle import Action, LifecycleError, change_phase
 from .output import format_output, narrate_batch, status_banner
 from .preview import PreviewContexts, preview_contexts
 from .session import Session, connect_llm, load_game, new_game, save_game, saved_campaign_path
-from .table import Player, Role, TableMeta
+from .table import Phase, Player, Role, TableMeta
 
 __all__ = [
     "COMMANDS",
     "READ_ONLY",
+    "Action",
     "CampaignCheck",
     "ChatClient",
     "CommandError",
@@ -54,15 +56,18 @@ __all__ = [
     "FreeformResult",
     "GameError",
     "GameOverError",
+    "LifecycleError",
     "LlmConfig",
     "LlmError",
     "LlmUnavailableError",
+    "Phase",
     "Player",
     "PreviewContexts",
     "Role",
     "Session",
     "TableMeta",
     "ask_copilot",
+    "change_phase",
     "check_campaign_data",
     "check_content",
     "clean_text",

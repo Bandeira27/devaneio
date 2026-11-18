@@ -23,6 +23,10 @@
   gap: var(--dv-space-2) var(--dv-space-4);
 }
 
+.table__clock {
+  margin-inline-start: auto;
+}
+
 .table__bar .dv-title {
   flex: 1 1 auto;
 }

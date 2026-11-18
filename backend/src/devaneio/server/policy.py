@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from typing import Literal
 
-from devaneio.game import READ_ONLY, TableMeta
+from devaneio.game import READ_ONLY, Phase, Role, TableMeta
 from devaneio.schema import GameState
 
 Kind = Literal["read", "join", "action", "host"]
+# O que o texto livre ao mestre de IA é para a fase da mesa (ele gasta a ação principal, como `action`).
+SAY_KIND = "say"
 
 # Só o anfitrião: `marcos` e `fatos` listam o que ainda é segredo, e `log` inclui NPC escondido.
 HOST_ONLY = frozenset(
@@ -55,3 +57,21 @@ def everyone_acted(table: TableMeta, state: GameState) -> bool:
     """Todos os elegíveis já fizeram a ação principal neste turno (e há ao menos um)."""
     waiting = eligible(table, state)
     return bool(waiting) and all(table.acted.get(c) == state.turn for c in waiting)
+
+
+def phase_refusal(phase: Phase, role: Role, kind: str | None) -> tuple[str, str] | None:
+    """O que a fase da mesa recusa a quem pede: ``(código, mensagem)`` ou ``None`` se pode.
+
+    ``kind`` é o papel do comando (``classify``), ``SAY_KIND`` para o texto livre ou ``None`` para um comando que o
+    jogo não conhece (segue ao ``execute``, que o recusa). Na sala de espera só se lê e se cria personagem; na pausa os
+    jogadores só leem (o anfitrião continua); encerrada, só se lê.
+    """
+    if kind is None or kind == "read":
+        return None
+    if phase == "ended":
+        return "ended", "a partida foi encerrada"
+    if phase == "lobby" and kind != "join":
+        return "not_started", "a partida ainda não começou"
+    if phase == "paused" and role != "host":
+        return "paused", "a partida está pausada pelo anfitrião"
+    return None

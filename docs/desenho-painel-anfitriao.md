@@ -20,6 +20,14 @@ pendentes) e só ele dá `fim`, `ferir`, `curar`, `descansar`, `marco` e `revela
 - **Tudo é texto.** Notas privadas, descrições e a resposta do LLM aparecem como texto (nunca `innerHTML`); a resposta do
   copiloto fica só na memória da página, sem `localStorage`, sem URL e sem eco no mural.
 
+## A partida (sala de espera, pausa e fim)
+
+A mesa nasce numa **sala de espera**, e a história só começa quando o anfitrião clica em **Iniciar campanha** (precisa de
+ao menos um personagem; o botão diz o motivo enquanto estiver bloqueado). Na sala, convidados entram e criam
+personagem. No painel, o bloco **Partida** mostra o tempo de jogo e tem **Pausar** (trava os jogadores; o anfitrião
+continua) e **Retomar**, e **Encerrar** (definitivo: pede confirmação e diz que ninguém mais age). O tempo só corre
+enquanto a partida roda. As regras de cada fase estão em [`api-http.md`](api-http.md#fases-da-mesa).
+
 ## Blocos
 
 - **Copiloto.** Pergunta de até 500 caracteres numa linha só (o servidor recusa quebra de linha: o que for colado em várias linhas vira espaço), resposta síncrona. O foco vai à resposta quando ela chega e o aviso vivo diz só que chegou. Estados: LLM desligado (explica), pensando, e as

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from typing import Literal
 
+from pydantic import Field
+
 from devaneio.engine import GameStatus, npc_ids_at
-from devaneio.game import Role
+from devaneio.game import Phase, Role
 from devaneio.rules import RuleSystem
 from devaneio.schema import (
     BeatStatus,
@@ -115,6 +117,10 @@ class TableView(StrictModel):
     acted: dict[Id, int]
     revision: int
     status: GameStatus
+    # Sala de espera, em andamento, pausada ou encerrada (eixo à parte de ``status``, o desfecho da história).
+    phase: Phase
+    # Segundos que a partida já rodou (a pausa não conta); o cliente faz o relógio andar sozinho enquanto roda.
+    elapsed_seconds: int = Field(ge=0)
     llm: LlmView
     you: Id  # o ``player_id`` de quem pediu: o cliente não tem como saber qual PlayerView é o dele
     state: GameState | PlayerStateView

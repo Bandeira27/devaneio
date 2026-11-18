@@ -22,6 +22,7 @@ from .requests import (
     CreateTableRequest,
     InvitePreviewRequest,
     JoinRequest,
+    LifecycleRequest,
     SayRequest,
 )
 from .responses import (
@@ -57,6 +58,7 @@ class ApiRequests(StrictModel):
     join_table: JoinRequest
     invite_preview: InvitePreviewRequest
     command: CommandRequest
+    lifecycle: LifecycleRequest
     say: SayRequest
     copilot: CopilotRequest
     editor_validate: ValidateRequest

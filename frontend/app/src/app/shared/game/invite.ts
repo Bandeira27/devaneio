@@ -65,3 +65,27 @@ export function normalizeOrigin(text: string): string | null {
     return null;
   }
 }
+
+/** O convite como a tela o mostra: o link (se há código e o endereço serve), o erro do endereço e o aviso de endereço local. */
+export interface InviteAddress {
+  link: string;
+  error: string;
+  localWarning: boolean;
+}
+
+/**
+ * Monta o convite a partir do endereço que o anfitrião digitou e do código guardado: o link, o erro do endereço
+ * (texto vazio ou inválido) e se o endereço é só deste aparelho (os outros não o alcançam).
+ */
+export function describeInvite(
+  addressText: string,
+  tableId: string,
+  code: string | null,
+): InviteAddress {
+  const origin = normalizeOrigin(addressText);
+  return {
+    link: origin !== null && code !== null ? inviteLink(origin, tableId, code) : '',
+    error: origin === null ? 'Escreva um endereço como 192.168.0.5:8765.' : '',
+    localWarning: origin !== null && isLocalOrigin(origin),
+  };
+}
