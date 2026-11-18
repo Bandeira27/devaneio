@@ -222,8 +222,10 @@ describe('Painel do anfitrião', () => {
     const names = Array.from(
       root().querySelectorAll('dv-beats-panel button, dv-facts-panel button'),
     ).map((b) => b.getAttribute('aria-label'));
-    expect(names).toContain('Ativar Chegada');
-    expect(names).toContain('Concluir Chegada');
+    expect(names).toContain('Ativar O altar'); // pendente: só Ativar
+    expect(names).toContain('Concluir Chegada'); // ativo: Concluir e Falhar
+    expect(names).toContain('Falhar Chegada');
+    expect(names).not.toContain('Ativar Chegada'); // o que não serve no estado não aparece
     expect(names.some((n) => n?.startsWith('Revelar: A chave está no poco'))).toBe(true);
     expect(new Set(names).size).toBe(names.length);
   });

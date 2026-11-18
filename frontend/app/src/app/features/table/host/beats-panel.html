@@ -33,43 +33,43 @@
               </ul>
             </dv-disclosure>
           }
-          <div class="item__actions">
-            <button
-              dvButton
-              type="button"
-              [dvBlocked]="b.activateBlock !== '' || store.actionBusy()"
-              [attr.aria-describedby]="b.activateBlock ? 'ativar-' + b.id : null"
-              [attr.aria-label]="'Ativar ' + b.title"
-              (click)="run('ativar', b.id, b.title)"
-            >
-              Ativar
-            </button>
-            <button
-              dvButton
-              type="button"
-              [dvBlocked]="b.finishBlock !== '' || store.actionBusy()"
-              [attr.aria-describedby]="b.finishBlock ? 'concluir-' + b.id : null"
-              [attr.aria-label]="'Concluir ' + b.title"
-              (click)="run('concluir', b.id, b.title)"
-            >
-              Concluir
-            </button>
-            <button
-              dvButton
-              type="button"
-              [dvBlocked]="b.finishBlock !== '' || store.actionBusy()"
-              [attr.aria-describedby]="b.finishBlock ? 'concluir-' + b.id : null"
-              [attr.aria-label]="'Falhar ' + b.title"
-              (click)="run('falhar', b.id, b.title)"
-            >
-              Falhar
-            </button>
-          </div>
-          @if (b.activateBlock) {
-            <p class="dv-note" [id]="'ativar-' + b.id">{{ b.activateBlock }}</p>
-          }
-          @if (b.finishBlock) {
-            <p class="dv-note" [id]="'concluir-' + b.id">{{ b.finishBlock }}</p>
+          @if (b.status === 'pending') {
+            <div class="item__actions">
+              <button
+                dvButton
+                type="button"
+                [dvBlocked]="b.activateBlock !== '' || store.actionBusy()"
+                [attr.aria-describedby]="b.activateBlock ? 'ativar-' + b.id : null"
+                [attr.aria-label]="'Ativar ' + b.title"
+                (click)="run('ativar', b.id, b.title)"
+              >
+                Ativar
+              </button>
+            </div>
+            @if (b.activateBlock) {
+              <p class="dv-note" [id]="'ativar-' + b.id">{{ b.activateBlock }}</p>
+            }
+          } @else if (b.status === 'active') {
+            <div class="item__actions">
+              <button
+                dvButton
+                type="button"
+                [dvBlocked]="store.actionBusy()"
+                [attr.aria-label]="'Concluir ' + b.title"
+                (click)="run('concluir', b.id, b.title)"
+              >
+                Concluir
+              </button>
+              <button
+                dvButton="danger"
+                type="button"
+                [dvBlocked]="store.actionBusy()"
+                [attr.aria-label]="'Falhar ' + b.title"
+                (click)="run('falhar', b.id, b.title)"
+              >
+                Falhar
+              </button>
+            </div>
           }
         </li>
       }

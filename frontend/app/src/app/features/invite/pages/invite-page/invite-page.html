@@ -11,6 +11,11 @@
     <section class="dv-card dv-stack" aria-label="Link do convite">
       @if (store.link()) {
         <dv-copy-field label="Link do convite" [text]="store.link()" />
+      } @else {
+        <dv-notice kind="warn">
+          Não encontrei o código do convite desta mesa neste aparelho. Ele fica guardado só no
+          aparelho de quem criou a mesa: abra a mesa por lá para mandar o convite.
+        </dv-notice>
       }
       @if (store.localWarning()) {
         <dv-notice>
