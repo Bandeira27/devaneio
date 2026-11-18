@@ -2,23 +2,37 @@
 
 O anfitrião joga na mesma tela dos jogadores, mas só ele vê a campanha inteira (notas privadas, fatos ocultos, marcos
 pendentes) e só ele dá `fim`, `ferir`, `curar`, `descansar`, `marco` e `revelar`. Hoje isso é digitar no "Comando". O painel
-é a tela que mostra esse lado e transforma os comandos em botões. Não muda backend nem contrato: usa `GET .../campaign`
-(a `Campaign` inteira), o `GameState` inteiro de `TableView.state`, os comandos do anfitrião e
-`POST .../copilot` ([`desenho-copiloto.md`](desenho-copiloto.md)).
+mostra esse lado e transforma os comandos em botões. Ele é uma **barra lateral da própria mesa**: o anfitrião age sem
+tirar os olhos da história. Não muda backend nem contrato: usa `GET .../campaign` (a `Campaign` inteira), o `GameState`
+inteiro de `TableView.state`, os comandos do anfitrião e `POST .../copilot` ([`desenho-copiloto.md`](desenho-copiloto.md)).
 
 ## Decisões
 
-- **Rota própria**, `/#/mesa/:id/anfitriao`, com link "Anfitrião" no cabeçalho da mesa só para o anfitrião. O segredo não
-  divide a tela com a história que o grupo pode estar vendo. Quem não é anfitrião volta para a mesa (o servidor já
-  responde `403`; a guarda é conforto, não segurança).
-- **Vive em `features/table/host/`**: uma feature não importa outra, e o painel reaproveita o `TableStore` (foto da mesa,
-  regras, campanha, `run(line)`). A página provê o próprio `TableStore`, que morre com ela (um `providers` de rota não é
-  destruído ao sair, e o fluxo ao vivo ficaria rodando).
-- **Cinco blocos**: copiloto, ferramentas do turno, marcos, fatos, NPCs e locais.
+- **Barra lateral, não rota.** O painel abre à direita da mesa (`/#/mesa/:id`), por um botão "Anfitrião" no cabeçalho,
+  só para o anfitrião. A rota antiga `/#/mesa/:id/anfitriao` continua existindo só para não quebrar links: redireciona
+  para a mesa com a barra aberta. Quem não é anfitrião nunca vê o botão (o servidor já responde `403`; esconder é
+  conforto, não segurança).
+- **Duas formas, o mesmo conteúdo.** Em tela larga é uma barra ao lado do feed (região `complementary`, sem tirar o
+  foco da história). Em tela estreita é um **bottom sheet**, sobre a folha que o app já usa (CDK); aí é modal, com
+  foco preso, Esc fecha e o foco volta ao botão que abriu. O ponto de corte vem dos tokens de layout, não de um
+  número solto.
+- **Fechada por padrão.** O conteúdo é privado e a tela pode estar à vista do grupo (compartilhamento, projetor). A
+  barra só abre quando o anfitrião pede, e o estado aberto ou fechado vale só para a página, sem `localStorage` nem URL.
+  Fechar não apaga nada: o painel é uma visão do mesmo estado.
+- **Usa o `TableStore` da mesa.** A barra mora em `features/table/host/` (uma feature não importa outra) e lê o store que
+  a `TablePage` já tem: nenhum segundo fluxo ao vivo, nenhuma segunda leitura da campanha além da própria. A resposta do
+  copiloto e a pergunta em andamento ficam num estado da página, e não no componente do painel, porque no bottom sheet
+  fechar destrói o componente e a resposta não pode se perder.
+- **Cinco blocos, em seções.** Copiloto, ferramentas do turno, marcos, fatos, NPCs e locais, em seções recolhíveis (a
+  barra é estreita). O bloco **Partida** fica fixo no topo, sempre visível.
 - **Botões montam linhas de comando** (as mesmas de `shared/game/commands.ts`); quem decide é o motor. Nada novo no
   servidor.
 - **Tudo é texto.** Notas privadas, descrições e a resposta do LLM aparecem como texto (nunca `innerHTML`); a resposta do
   copiloto fica só na memória da página, sem `localStorage`, sem URL e sem eco no mural.
+- **A mesa continua sendo a tela.** Com a barra aberta, o dock de ações e o feed seguem funcionando; as confirmações de
+  Concluir, Falhar, Revelar, Descansar e Encerrar abrem como folha por cima de tudo, também em tela larga.
+- **Avisos vivos não dependem da barra aberta.** "A resposta do copiloto chegou" é anunciado mesmo com a barra fechada;
+  o botão "Anfitrião" mostra um indicador textual de que há resposta nova.
 
 ## A partida (sala de espera, pausa e fim)
 

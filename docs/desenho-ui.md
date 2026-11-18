@@ -2,7 +2,7 @@
 
 A API da mesa está completa e tipada, mas o único cliente era `curl` e os testes. Este documento fixa as decisões da
 UI antes do código. A entrega é em partes: o **backend da UI** (rota de regras, `TableView.you`, servir o front com CSP),
-o **app do jogador** (Angular), o painel do anfitrião com o copiloto e, depois, o editor de campanhas.
+o **app do jogador** (Angular), a barra lateral do anfitrião com o copiloto e, depois, o editor de campanhas.
 
 ## Estado do design
 
@@ -12,7 +12,7 @@ transição entre telas (a página vira, cabeçalho parado, folha de espera), fu
 marca, ornamento), entrada em dois painéis (contexto e tarefa) e mesa em até três painéis (cena e grupo, história, ficha
 e ações). Os textos de referência: [`design-system.md`](design-system.md),
 [`movimento.md`](movimento.md) e [`padroes-de-interacao.md`](padroes-de-interacao.md). A revisão de UI tem papel
-(`ui-reviewer`) e skill (`review-ui`). O selo de desfecho do teste (ícone, texto e tom na nota mecânica) já está no feed. O editor de campanhas está em [`desenho-editor.md`](desenho-editor.md); o painel do
+(`ui-reviewer`) e skill (`review-ui`). O selo de desfecho do teste (ícone, texto e tom na nota mecânica) já está no feed. O editor de campanhas está em [`desenho-editor.md`](desenho-editor.md); a barra lateral do
 anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md).
 
 ## Decisões
@@ -61,7 +61,7 @@ por superfície e contorno (ver [`design-system.md`](design-system.md)).
 - **Cores em OKLCH**, sem hex, com variações por cor relativa. O contraste é medido por teste (WCAG >= 4,5:1 nos pares
   essenciais): os valores da primeira ideia falhavam (tinta velha 4,1:1, rosa de poeira 3,9:1 sobre a fumaça) e
   foram ajustados.
-- No painel do anfitrião, fato oculto aparece como tinta borrada e "se revela" quando o motor o revela. O jogador
+- Na barra do anfitrião, fato oculto aparece como tinta borrada e "se revela" quando o motor o revela. O jogador
   nunca vê lacuna de fato oculto: isso revelaria que ele existe.
 
 ## Arquitetura do app
@@ -75,7 +75,7 @@ frontend/app/src/
   app/
     core/        singletons sem UI: api (HttpClient + interceptor de Bearer + ApiError), session, live (long-poll)
     shared/      ui/ (componentes dv-* sobre o CDK), game/ (lógica pura: commands, feed, rules, cena, nomes, convite...)
-    features/    home/  campaign/  join/  invite/  character/  table/  editor/   (home/ lista as campanhas em cards; campaign/ é a visão geral e as mesas de uma campanha; table/host/ é o painel do anfitrião; editor/ é o roteiro)
+    features/    home/  campaign/  join/  invite/  character/  table/  editor/   (home/ lista as campanhas em cards; campaign/ é a visão geral e as mesas de uma campanha; table/host/ é a barra lateral do anfitrião; editor/ é o roteiro)
     layout/      shell/ (cabeçalho e página)  campaign-shell/ (a barra lateral de uma campanha)
 ```
 
@@ -125,7 +125,7 @@ valida o app; o app é validado pelo `ng build`.
 Criar mesa, convite (link com endereço editável, que avisa quando for `localhost`), entrar mostrando o **aviso de
 privacidade do LLM**, criar personagem (nome e atributos do sistema), e a mesa: feed ao vivo e ações em botões (`Ir`,
 `Testar`, `Atacar`, `Ficha`, `Falar`, `Comando`). O anfitrião usa a mesma tela e cria o próprio personagem; os comandos só
-dele ficam para o painel do anfitrião.
+dele ficam para a barra lateral do anfitrião.
 
 ## Limites conhecidos
 

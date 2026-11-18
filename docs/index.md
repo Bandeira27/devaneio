@@ -23,7 +23,7 @@ as coisas são hoje, e os de **desenho** contam por que foram feitas assim.
 | Sistemas e narrações criados pelo usuário            | [`desenho-sistemas-do-usuario.md`](desenho-sistemas-do-usuario.md)         |
 | Copiloto do anfitrião                                | [`desenho-copiloto.md`](desenho-copiloto.md)                               |
 | Editor de campanhas (API, segurança, telas)          | [`desenho-editor.md`](desenho-editor.md)                                   |
-| Painel do anfitrião (copiloto, marcos, fatos, turno) | [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)               |
+| Barra lateral do anfitrião (copiloto, marcos, fatos, turno) | [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)               |
 | O app do jogador (visual, arquitetura, segurança)    | [`desenho-ui.md`](desenho-ui.md)                                           |
 | Visual, componentes e catálogo do app                | [`design-system.md`](design-system.md)                                     |
 | Movimento: o que anima e por quê                     | [`movimento.md`](movimento.md)                                             |

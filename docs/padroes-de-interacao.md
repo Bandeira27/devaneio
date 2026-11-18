@@ -154,7 +154,7 @@ personagem, o link do convite e o botão **Iniciar campanha**, bloqueado com o m
 quem foi convidado vê quem está aqui, o caminho para criar o personagem e "Esperando o anfitrião iniciar". A lista se
 relê sozinha de poucos em poucos segundos. A história (abertura, primeiro marco) só começa ao iniciar.
 
-No painel do anfitrião, o bloco **Partida** mostra o tempo de jogo e o que a fase permite: Pausar ou Retomar, e **Encerrar**
+Na barra do anfitrião, o bloco **Partida** (fixo no topo) mostra o tempo de jogo e o que a fase permite: Pausar ou Retomar, e **Encerrar**
 (folha de confirmação que diz que ninguém mais age e que não dá para reabrir). Na **pausa** os jogadores só leem (aviso no
 alto, dock bloqueado com o motivo) e o anfitrião continua; **encerrada**, todos só leem. O **tempo de jogo** (`dv-play-clock`,
 "Rodando 1:23:45") anda sozinho a cada segundo enquanto a partida roda e fica parado na pausa e no fim; o leitor de tela
