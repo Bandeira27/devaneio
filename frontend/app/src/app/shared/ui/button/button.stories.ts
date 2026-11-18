@@ -14,6 +14,11 @@ export const Primario: StoryObj = story(
   `<button dvButton="primary" type="button">Falar</button>`,
 );
 
+export const Perigo: StoryObj = story(
+  [DvButton],
+  `<button dvButton="danger" type="button">Remover</button>`,
+);
+
 export const Desabilitado: StoryObj = story(
   [DvButton],
   `<button dvButton type="button" disabled>Ir</button>`,

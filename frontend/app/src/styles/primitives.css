@@ -51,6 +51,12 @@
   background: var(--dv-accent-pressed);
 }
 
+/* Perigo: contorno e texto na cor de erro, sem preenchimento. */
+.dv-button--danger {
+  border-color: var(--dv-danger);
+  color: var(--dv-danger);
+}
+
 /* Em envio: o botão fica como "bloqueado" (aria-disabled, o foco não se perde) e um ponto pulsa até terminar. */
 .dv-button--loading {
   cursor: progress;

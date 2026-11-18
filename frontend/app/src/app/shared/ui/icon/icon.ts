@@ -12,7 +12,8 @@ export type IconName =
   | 'warn'
   | 'info'
   | 'danger'
-  | 'close';
+  | 'close'
+  | 'add';
 
 /** Traços de cada ícone, num quadro de 24 por 24 (só contorno, `currentcolor`). */
 const PATHS: Record<IconName, string> = {
@@ -28,6 +29,7 @@ const PATHS: Record<IconName, string> = {
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5M12 8h.01',
   danger: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9 9l6 6M15 9l-6 6',
   close: 'M6 6l12 12M18 6L6 18',
+  add: 'M12 5v14M5 12h14',
 };
 
 /**

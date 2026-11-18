@@ -9,7 +9,7 @@ import { SheetRef } from './sheet';
   imports: [DvButton, DvIcon],
   template: `
     <div class="dv-sheet__head">
-      <h2 class="dv-title">{{ title() }}</h2>
+      <h2 class="dv-section">{{ title() }}</h2>
       <button
         dvButton
         class="dv-sheet__close"
