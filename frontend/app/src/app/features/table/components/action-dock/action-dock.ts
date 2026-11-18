@@ -32,6 +32,16 @@ export class ActionDock {
   private readonly sheet = inject(Sheet);
   private readonly root = viewChild.required<ElementRef<HTMLElement>>('root');
 
+  /**
+   * O motivo do bloqueio já está dito, em destaque, num aviso no alto da mesa (conexão perdida, fim da partida): aqui
+   * ele só fica ligado aos botões (leitor de tela), sem repetir o texto à vista.
+   */
+  protected readonly reasonSaidAbove = computed(() => {
+    const live = this.store.liveStatus();
+    const status = this.store.status();
+    return live === 'expired' || live === 'gone' || status === 'won' || status === 'lost';
+  });
+
   /** Por que Ir não serve agora (a cena já é conhecida e não tem saída), ou `''`. */
   protected readonly goReason = computed(() =>
     this.store.scene()?.exits.length === 0 ? 'Não há saídas daqui.' : '',

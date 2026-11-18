@@ -21,7 +21,9 @@
     </dv-notice>
   }
   @if (store.blockedReason()) {
-    <p id="dock-reason" class="dock__reason dv-note">{{ store.blockedReason() }}</p>
+    <p id="dock-reason" class="dock__reason dv-note" [class.dv-visually-hidden]="reasonSaidAbove()">
+      {{ store.blockedReason() }}
+    </p>
   }
   @if (actReason() && !store.blockedReason()) {
     <p id="dock-act-reason" class="dock__reason dv-note">{{ actReason() }}</p>

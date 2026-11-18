@@ -30,27 +30,29 @@
         </header>
         <p class="dv-note">{{ store.title() }} · turno {{ store.turn() }}</p>
 
-        @if (store.actionError()) {
-          <dv-notice
-            kind="error"
-            dismissible
-            (dismissed)="store.dismissFeedback()"
-            animate.enter="dv-enter"
-            animate.leave="dv-leave"
-          >
-            {{ store.actionError() }}
-          </dv-notice>
-        }
-        @if (store.reply()) {
-          <dv-notice
-            dismissible
-            (dismissed)="store.dismissFeedback()"
-            animate.enter="dv-enter"
-            animate.leave="dv-leave"
-          >
-            {{ store.reply() }}
-          </dv-notice>
-        }
+        <div class="host__feedback">
+          @if (store.actionError()) {
+            <dv-notice
+              kind="error"
+              dismissible
+              (dismissed)="store.dismissFeedback()"
+              animate.enter="dv-enter"
+              animate.leave="dv-leave"
+            >
+              {{ store.actionError() }}
+            </dv-notice>
+          }
+          @if (store.reply()) {
+            <dv-notice
+              dismissible
+              (dismissed)="store.dismissFeedback()"
+              animate.enter="dv-enter"
+              animate.leave="dv-leave"
+            >
+              {{ store.reply() }}
+            </dv-notice>
+          }
+        </div>
 
         <div class="host__layout">
           <div class="host__column">

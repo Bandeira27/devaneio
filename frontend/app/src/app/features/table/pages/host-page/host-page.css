@@ -25,6 +25,15 @@
   flex: 1 0 100%;
 }
 
+/* O resultado de uma ação (erro ou resposta) acompanha a rolagem: o anfitrião o vê onde quer que tenha tocado. */
+.host__feedback {
+  position: sticky;
+  top: var(--dv-space-2);
+  z-index: var(--dv-z-sticky);
+  display: grid;
+  gap: var(--dv-space-2);
+}
+
 .host__layout,
 .host__column {
   display: grid;
