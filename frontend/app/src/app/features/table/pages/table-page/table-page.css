@@ -191,3 +191,43 @@
     display: grid;
   }
 }
+
+/*
+ * A barra do anfitrião (`HostAside`, a partir de 80rem) é presa à direita da janela, à frente da mesa. A mesa abre espaço
+ * com margem só na parte que a barra cobriria e, aberta a barra, volta às duas colunas (lateral e história): o painel da
+ * direita ocuparia o lugar dela. Abaixo de 80rem a barra é um bottom sheet (`HostSheet`) e nada aqui vale.
+ */
+@media (min-width: 80rem) {
+  .table--host {
+    padding-inline-end: max(
+      0rem,
+      calc(var(--dv-host-width) + var(--dv-space-4) - (100vw - var(--dv-measure-wide)) / 2)
+    );
+  }
+}
+
+@media (min-width: 90rem) {
+  .table--host .table__layout {
+    grid-template-columns: var(--dv-rail-width) minmax(0, var(--dv-measure-feed));
+    grid-template-rows: auto;
+    grid-template-areas: 'rail feed';
+  }
+
+  .table--host .table__side {
+    grid-area: rail;
+    max-height: calc(100dvh - 3 * var(--dv-space-4) - var(--dv-rail-dock-height));
+  }
+
+  .table--host .table__dock {
+    grid-area: rail;
+    top: calc(
+      2 * var(--dv-space-4) +
+        min(var(--dv-rail-side-height), 100dvh - 3 * var(--dv-space-4) - var(--dv-rail-dock-height))
+    );
+    margin-top: calc(var(--dv-rail-side-height) + var(--dv-space-4));
+  }
+
+  .table--host .table__mine {
+    display: none;
+  }
+}

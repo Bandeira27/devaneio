@@ -18,7 +18,11 @@
     </div>
   }
   @case ('ready') {
-    <div class="table">
+    <p class="dv-visually-hidden" role="status">{{ copilotAlert() }}</p>
+    @if (session.open() && session.docked() && store.isHost()) {
+      <dv-host-aside (closed)="closeHost()" />
+    }
+    <div class="table" [class.table--host]="session.open() && session.docked()">
       <a class="dv-skip" href="#acoes" (click)="skipToActions($event)">Pular para as ações</a>
       <header class="table__bar">
         <a class="dv-back table__back" [routerLink]="store.backLink()">
@@ -38,9 +42,19 @@
           <a dvButton class="table__invite" [routerLink]="['/mesa', tableId(), 'convite']">
             <dv-icon name="mail" size="sm" />Convidar
           </a>
-          <a dvButton class="table__host" [routerLink]="['/mesa', tableId(), 'anfitriao']">
+          <button
+            dvButton
+            type="button"
+            class="table__host"
+            aria-controls="painel-anfitriao"
+            [attr.aria-expanded]="session.open()"
+            (click)="toggleHost()"
+          >
             <dv-icon name="panel" size="sm" />Anfitrião
-          </a>
+            @if (!session.open() && session.copilot.answer()) {
+              <span class="dv-note">· resposta nova</span>
+            }
+          </button>
         }
       </header>
 

@@ -1,12 +1,6 @@
 import type { TableView } from '@contract/api_responses';
-import {
-  TABLE_ID,
-  hostCampaign,
-  hostState,
-  rulesView,
-  tableView,
-} from '../../../../testing/fixtures';
-import { setup } from '../../../../testing/setup';
+import { TABLE_ID, hostCampaign, hostState, rulesView, tableView } from '../../../testing/fixtures';
+import { setup } from '../../../testing/setup';
 
 const url = `/mesa/${TABLE_ID}/anfitriao`;
 
@@ -20,6 +14,7 @@ function hostTable(over: Partial<TableView> = {}): TableView {
   });
 }
 
+/** O painel abre como folha por cima da mesa (a rota antiga leva à mesa e pede a barra): `root` é a folha. */
 async function open(table: TableView = hostTable(), role: 'host' | 'player' = 'host') {
   const app = await setup(url);
   app.session.save(TABLE_ID, { token: 'tk', playerId: 'p1', role, title: 'x', savedAt: 1 });
@@ -33,8 +28,25 @@ async function open(table: TableView = hostTable(), role: 'host' | 'player' = 'h
       .forEach((r) => !r.cancelled && r.flush({ revision: 3, events: [], talk: [], talk_seq: 0 }));
   live();
   await app.settle();
-  const text = () => app.root().textContent ?? '';
-  return { ...app, text, live };
+  const root = (): HTMLElement => document.querySelector('dv-host-sheet') as HTMLElement;
+  const text = () => root()?.textContent ?? '';
+  const type = async (selector: string, value: string): Promise<void> => {
+    const input = root().querySelector(selector) as HTMLTextAreaElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    await app.settle();
+  };
+  const submit = async (): Promise<void> => {
+    (root().querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
+    await app.settle();
+  };
+  const click = async (selector: string): Promise<void> => {
+    (root().querySelector(selector) as HTMLElement).click();
+    await app.settle();
+  };
+  return { ...app, page: app.root, root, text, live, type, submit, click };
 }
 
 /** Clica no botão primário da folha de confirmação aberta. */
@@ -46,32 +58,29 @@ async function confirm(settle: () => Promise<void>, label: string): Promise<void
   await settle();
 }
 
-describe('Painel do anfitrião', () => {
-  it('mostra as seções, o turno e o caminho de volta à mesa', async () => {
-    const { root, text } = await open();
-    expect(root().querySelector('h1')?.textContent).toContain('Painel do anfitrião');
+describe('Barra do anfitrião (bottom sheet)', () => {
+  it('abre como folha sobre a mesa, com as seções e a partida no topo', async () => {
+    const { root, page, router } = await open();
+    expect(router.url).toBe(`/mesa/${TABLE_ID}`); // a rota antiga leva à própria mesa
+    expect(page().querySelector('h1')?.textContent).toContain('A Sombra do Vale'); // a mesa continua por baixo
     const headings = Array.from(root().querySelectorAll('h2')).map((h) => h.textContent?.trim());
     expect(headings).toEqual([
+      'Painel do anfitrião',
       'Partida',
       'Copiloto',
       'Ferramentas do turno',
-      'NPCs',
-      'Locais',
       'Marcos',
       'Fatos',
+      'NPCs',
+      'Locais',
     ]);
-    expect(text()).toContain('turno 4');
-    // O caminho de volta é um só, à esquerda do título: a mesa (a campanha se alcança por lá).
-    const back = root().querySelector('a[href$="/mesa/' + TABLE_ID + '"]');
-    expect(back?.textContent).toContain('Mesa');
-    expect(back?.classList.contains('dv-back')).toBe(true);
-    expect(root().querySelectorAll('a[href$="/mesa/' + TABLE_ID + '"]').length).toBe(1);
   });
 
   it('quem não é anfitrião volta para a mesa', async () => {
     const { router, settle } = await open(tableView({ role: 'player', you: 'p2' }), 'player');
     await settle();
     expect(router.url).toBe(`/mesa/${TABLE_ID}`);
+    expect(document.querySelector('dv-host-sheet')).toBeNull(); // jogador não tem painel
   });
 
   it('marcos mostram o status em texto e bloqueiam o botão que não vale com o motivo', async () => {
@@ -138,7 +147,7 @@ describe('Painel do anfitrião', () => {
     app.http.expectOne(`/tables/${TABLE_ID}/rules`).flush(rulesView());
     app.http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaign);
     await app.settle();
-    const root = app.root();
+    const root = document.querySelector('dv-host-sheet') as HTMLElement;
     expect(root.querySelector('dv-world-panel img')).toBeNull();
     expect(root.querySelector('dv-world-panel b')).toBeNull();
     expect(root.textContent).toContain('<img src=x onerror=alert(1)>');
@@ -220,32 +229,42 @@ describe('Painel do anfitrião', () => {
     expect(http.expectOne(`/tables/${TABLE_ID}/commands`).request.body.line).toBe('fim');
   });
 
-  it('ir à mesa e voltar ao painel não recarrega nada: o estado é o mesmo do quadro', async () => {
-    const { router, http, settle, text } = await open();
-    await router.navigateByUrl(`/mesa/${TABLE_ID}`);
+  it('fechar a folha não perde a resposta do copiloto: reabrir mostra a mesma', async () => {
+    const llm = { enabled: true, description: 'x', notice: null, secrets: false };
+    const { root, page, http, type, submit, settle, text } = await open(hostTable({ llm }));
+    await type('dv-copilot-panel textarea', 'E agora?');
+    await submit();
+    http.expectOne(`/tables/${TABLE_ID}/copilot`).flush({ text: 'Revele o poço.' });
     await settle();
-    http.expectNone(`/tables/${TABLE_ID}`);
-    http.expectNone(`/tables/${TABLE_ID}/rules`);
-    await router.navigateByUrl(`/mesa/${TABLE_ID}/anfitriao`);
+    expect(text()).toContain('Revele o poço.');
+    root().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.click();
     await settle();
-    http.expectNone(`/tables/${TABLE_ID}`);
-    expect(text()).toContain('Painel do anfitrião');
+    expect(document.querySelector('dv-host-sheet')).toBeNull();
+    // Fechada, a mesa avisa que há resposta nova (texto, não só cor) e o leitor de tela é avisado.
+    const toggle = page().querySelector<HTMLButtonElement>('.table__host');
+    expect(toggle?.textContent).toContain('resposta nova');
+    expect(page().querySelector('[role="status"].dv-visually-hidden')?.textContent).toContain(
+      'A resposta do copiloto chegou.',
+    );
+    toggle?.click();
+    await settle();
+    http.expectNone(`/tables/${TABLE_ID}`); // a mesma mesa: nada recarrega
+    expect(text()).toContain('Revele o poço.');
   });
 
   it('no celular as partes do painel se escolhem (Agora, Trama, Mundo); uma de cada vez', async () => {
     const { root, click } = await open();
     const off = () =>
-      Array.from(root().querySelectorAll('.host__part')).map((el) =>
-        el.classList.contains('host__part--off'),
+      Array.from(root().querySelectorAll('.drawer__part')).map((el) =>
+        el.classList.contains('drawer__part--off'),
       );
-    // As partes, na ordem da página: Agora e Mundo na coluna da esquerda, Trama na da direita.
     expect(off()).toEqual([false, true, true]); // abre em "Agora"
-    const tabs = Array.from(root().querySelectorAll<HTMLButtonElement>('.host__tab'));
+    const tabs = Array.from(root().querySelectorAll<HTMLButtonElement>('.drawer__tab'));
     expect(tabs.map((t) => t.textContent?.trim())).toEqual(['Agora', 'Trama', 'Mundo']);
     expect(tabs[0]?.getAttribute('aria-pressed')).toBe('true');
-    await click('.host__tab:nth-child(2)');
-    expect(off()).toEqual([true, true, false]);
-    expect(root().querySelector('.host__tab:nth-child(2)')?.getAttribute('aria-pressed')).toBe(
+    await click('.drawer__tab:nth-child(2)');
+    expect(off()).toEqual([true, false, true]);
+    expect(root().querySelector('.drawer__tab:nth-child(2)')?.getAttribute('aria-pressed')).toBe(
       'true',
     );
   });
@@ -301,7 +320,7 @@ describe('Painel do anfitrião', () => {
     expect(root().querySelector('dv-copilot-panel')).not.toBeNull();
   });
 
-  it('se a mesa não carrega, a saída leva de volta à mesa', async () => {
+  it('se a mesa não carrega, a rota antiga cai na mesa e nenhuma folha abre', async () => {
     const app = await setup(url);
     app.session.save(TABLE_ID, {
       token: 'tk',
@@ -316,8 +335,43 @@ describe('Painel do anfitrião', () => {
     app.http.expectOne(`/tables/${TABLE_ID}/rules`).flush(rulesView());
     app.http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(hostCampaign);
     await app.settle();
-    expect(app.root().querySelector(`a[href$="/mesa/${TABLE_ID}"]`)?.textContent).toContain(
-      'Voltar à mesa',
-    );
+    expect(app.router.url).toBe(`/mesa/${TABLE_ID}`);
+    expect(document.querySelector('dv-host-sheet')).toBeNull();
+  });
+
+  it('na tela larga a barra se encaixa ao lado, leva o foco e o devolve ao fechar', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    try {
+      const app = await setup(`/mesa/${TABLE_ID}`);
+      app.session.save(TABLE_ID, {
+        token: 'tk',
+        playerId: 'p1',
+        role: 'host',
+        title: 'x',
+        savedAt: 1,
+      });
+      app.http.expectOne(`/tables/${TABLE_ID}`).flush(hostTable());
+      app.http.expectOne(`/tables/${TABLE_ID}/rules`).flush(rulesView());
+      app.http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(hostCampaign);
+      await app.settle();
+      const toggle = () => app.root().querySelector<HTMLButtonElement>('.table__host');
+      expect(app.root().querySelector('dv-host-aside')).toBeNull(); // fechada por padrão
+      toggle()?.click();
+      await app.settle();
+      const aside = app.root().querySelector('dv-host-aside');
+      expect(aside).not.toBeNull(); // a classe de entrada sai sozinha: o jsdom não tem animação
+      expect(toggle()?.getAttribute('aria-expanded')).toBe('true');
+      expect(document.querySelector('dv-host-sheet')).toBeNull(); // sem folha: a barra está encaixada
+      expect(app.root().querySelector('.host-aside__title')?.getAttribute('tabindex')).toBe('-1'); // recebe o foco ao abrir
+      app
+        .root()
+        .querySelector<HTMLButtonElement>('dv-host-aside [aria-label="Fechar o painel"]')
+        ?.click();
+      await app.settle();
+      expect(app.root().querySelector('dv-host-aside')).toBeNull(); // sem animação no jsdom, sai na hora
+      expect(document.activeElement).toBe(toggle());
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

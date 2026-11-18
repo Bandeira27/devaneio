@@ -8,7 +8,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ApiClient } from '@core/api/api-client';
 import { MAX_LINE } from '@shared/game/commands';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
@@ -19,7 +18,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { focusElement } from '@shared/ui/focus';
 import { DvState } from '@shared/ui/state/state';
 import { TableStore } from '../table.store';
-import { CopilotActions } from './copilot.actions';
+import { HostSession } from './host-session';
 
 /**
  * O copiloto do anfitrião: uma pergunta de cada vez, sem memória, e a resposta só para ele (nunca vai ao feed nem ao
@@ -35,7 +34,7 @@ import { CopilotActions } from './copilot.actions';
 })
 export class CopilotPanel {
   protected readonly store = inject(TableStore);
-  protected readonly copilot = new CopilotActions(inject(ApiClient), () => this.store.tableId());
+  protected readonly copilot = inject(HostSession).copilot;
   protected readonly fieldValue = fieldValue;
   protected readonly max = MAX_LINE;
   protected readonly text = signal('');

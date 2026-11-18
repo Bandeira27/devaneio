@@ -17,6 +17,8 @@ export interface SheetOptions {
   /** Nome da folha para o leitor de tela. */
   label: string;
   data?: unknown;
+  /** De onde o componente da folha herda seus provedores (por exemplo, o store da página que a abriu). */
+  injector?: Injector;
 }
 
 /**
@@ -38,6 +40,7 @@ export class Sheet {
     const ref = this.dialog.open<R>(component, {
       ariaLabel: options.label,
       data: options.data,
+      injector: options.injector,
       panelClass: dialog ? ['dv-sheet', 'dv-sheet--dialog'] : 'dv-sheet',
       backdropClass: 'dv-sheet-backdrop',
       disableClose: true, // Esc e fundo passam por `leave`, abaixo, para animar a saída

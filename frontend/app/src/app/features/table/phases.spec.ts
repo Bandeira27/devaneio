@@ -75,11 +75,17 @@ async function open(
     .match((r) => r.url === `/tables/${TABLE_ID}/events`)
     .forEach((r) => !r.cancelled && r.flush({ revision: 3, events: [], talk: [], talk_seq: 0 }));
   await app.settle();
-  const text = () => app.root().textContent ?? '';
+  // O painel do anfitrião abre como folha sobre a mesa: texto e botões valem para a mesa e para ela.
+  const scopes = (): Element[] =>
+    [app.root(), document.querySelector('dv-host-sheet')].filter((el) => el !== null);
+  const text = () =>
+    scopes()
+      .map((el) => el.textContent ?? '')
+      .join(' ');
   const buttons = (label: string) =>
-    Array.from(app.root().querySelectorAll<HTMLButtonElement>('button')).filter((b) =>
-      b.textContent?.includes(label),
-    );
+    scopes()
+      .flatMap((el) => Array.from(el.querySelectorAll<HTMLButtonElement>('button')))
+      .filter((b) => b.textContent?.includes(label));
   return { ...app, text, buttons };
 }
 
@@ -212,7 +218,7 @@ describe('Pausa e fim', () => {
   });
 });
 
-describe('Controles da partida (painel do anfitrião)', () => {
+describe('Controles da partida (barra do anfitrião)', () => {
   const painel = `${mesa}/anfitriao`;
 
   it('em andamento: Pausar e Encerrar, com o relógio parado no valor lido', async () => {
@@ -220,9 +226,9 @@ describe('Controles da partida (painel do anfitrião)', () => {
     expect(app.buttons('Pausar').length).toBe(1);
     expect(app.buttons('Retomar')).toEqual([]);
     expect(app.buttons('Encerrar a partida').length).toBe(1);
-    expect(app.root().querySelector('dv-lifecycle-tools dv-play-clock')?.textContent).toContain(
-      'Rodando',
-    );
+    expect(
+      document.querySelector('dv-host-sheet dv-lifecycle-tools dv-play-clock')?.textContent,
+    ).toContain('Rodando');
   });
 
   it('Pausar manda a mudança de fase', async () => {
@@ -242,7 +248,9 @@ describe('Controles da partida (painel do anfitrião)', () => {
     const app = await open(painel, table('running', 'host', [BIA]));
     (app.buttons('Encerrar a partida')[0] as HTMLButtonElement).click();
     await app.settle();
-    const sheet = document.querySelector('.dv-sheet') as HTMLElement;
+    const sheet = Array.from(document.querySelectorAll<HTMLElement>('.dv-sheet')).at(
+      -1,
+    ) as HTMLElement;
     expect(sheet.textContent).toContain('não dá para reabri-la');
     (sheet.querySelector('[aria-label="Fechar"]') as HTMLButtonElement).click();
     await app.settle();

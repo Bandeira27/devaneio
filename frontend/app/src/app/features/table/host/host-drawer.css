@@ -1,0 +1,30 @@
+/* Uma coluna estreita: a partida no topo e uma parte de cada vez (Agora, Trama, Mundo). */
+:host {
+  display: block;
+}
+
+.drawer,
+.drawer__part {
+  display: grid;
+  gap: var(--dv-space-4);
+  align-content: start;
+}
+
+.drawer__tabs {
+  display: flex;
+  gap: var(--dv-space-2);
+}
+
+.drawer__tab {
+  flex: 1;
+}
+
+.drawer__tab[aria-pressed='true'] {
+  border-width: var(--dv-border-width-strong);
+  border-color: var(--dv-accent);
+  background: var(--dv-surface-2);
+}
+
+.drawer__part--off {
+  display: none;
+}

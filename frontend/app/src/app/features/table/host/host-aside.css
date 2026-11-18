@@ -1,0 +1,41 @@
+:host {
+  display: none;
+}
+
+/*
+ * Presa à direita da janela e à frente da mesa. O próprio elemento é o que fica fixo (e o que desliza ao entrar e sair:
+ * um `transform` num ancestral prenderia um filho fixo). Abaixo de 80rem a barra é um bottom sheet e isto não aparece.
+ */
+@media (min-width: 80rem) {
+  :host {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-end: 0;
+    z-index: var(--dv-z-sticky);
+    display: grid;
+    align-content: start;
+    gap: var(--dv-space-4);
+    width: var(--dv-host-width);
+    padding: var(--dv-space-4);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-inline-start: var(--dv-border-width) dotted var(--dv-line);
+    background: var(--dv-surface-1);
+  }
+}
+
+aside {
+  display: grid;
+  gap: var(--dv-space-4);
+}
+
+.host-aside__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-3);
+}
+
+.host-aside__title:focus {
+  outline: none; /* recebe o foco por código, ao abrir a barra */
+}

@@ -1,0 +1,29 @@
+<div class="drawer">
+  <dv-lifecycle-tools />
+
+  <div class="drawer__tabs" role="group" aria-label="Partes do painel">
+    @for (item of sections; track item.id) {
+      <button
+        dvButton
+        type="button"
+        class="drawer__tab"
+        [attr.aria-pressed]="section() === item.id"
+        (click)="section.set(item.id)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+
+  <div class="drawer__part" [class.drawer__part--off]="section() !== 'agora'">
+    <dv-copilot-panel />
+    <dv-turn-tools />
+  </div>
+  <div class="drawer__part" [class.drawer__part--off]="section() !== 'trama'">
+    <dv-beats-panel />
+    <dv-facts-panel />
+  </div>
+  <div class="drawer__part" [class.drawer__part--off]="section() !== 'mundo'">
+    <dv-world-panel />
+  </div>
+</div>

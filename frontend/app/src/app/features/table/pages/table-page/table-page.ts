@@ -19,6 +19,7 @@ import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvPlayClock } from '@shared/ui/play-clock/play-clock';
 import { DvState } from '@shared/ui/state/state';
+import { Sheet } from '@shared/ui/sheet/sheet';
 import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { connectionBlockOf } from '../../table.derived';
 import { publishDockHeight, publishRailHeights, publishSituationHeight } from './dock-height';
@@ -29,6 +30,9 @@ import { FeedList } from '../../components/feed-list/feed-list';
 import { Lobby } from '../../components/lobby/lobby';
 import { PartyStrip } from '../../components/party-strip/party-strip';
 import { SceneCard } from '../../components/scene-card/scene-card';
+import { HostAside } from '../../host/host-aside';
+import { HostSession, canDock } from '../../host/host-session';
+import { HostSheet } from '../../host/host-sheet';
 import { TableStore } from '../../table.store';
 
 /** Tela da mesa: cena, grupo, feed ao vivo e as ações. */
@@ -46,6 +50,7 @@ import { TableStore } from '../../table.store';
     ConnectionBadge,
     DvPlayClock,
     FeedList,
+    HostAside,
     Lobby,
     PartyStrip,
     SceneCard,
@@ -58,6 +63,8 @@ export class TablePage {
   readonly tableId = input.required<string>();
 
   protected readonly store = inject(TableStore);
+  protected readonly session = inject(HostSession);
+  private readonly sheet = inject(Sheet);
 
   private readonly documentTitle = inject(Title);
   private readonly feed = viewChild(FeedList);
@@ -76,10 +83,23 @@ export class TablePage {
     const status = this.store.liveStatus();
     return status === 'expired' || status === 'gone' ? connectionBlockOf(status) : '';
   });
+  /** Avisa o leitor de tela que a resposta do copiloto chegou quando a barra está fechada e ele não a ouviria. */
+  protected readonly copilotAlert = computed(() =>
+    !this.session.open() && this.session.copilot.answer() ? 'A resposta do copiloto chegou.' : '',
+  );
   /** A ficha do painel da mesa larga está aberta? Só vale na sessão: ao reabrir a mesa ela volta aberta. */
   protected readonly mineOpen = signal(true);
 
   constructor() {
+    effect(() => {
+      // A rota antiga do painel pede a barra aberta; só o anfitrião tem barra.
+      if (this.session.requested() && this.store.state() === 'ready') {
+        this.session.requested.set(false);
+        if (this.store.isHost()) {
+          this.showHost();
+        }
+      }
+    });
     publishDockHeight(this.dock);
     publishSituationHeight(this.situation);
     publishRailHeights(this.side, this.dock);
@@ -112,6 +132,44 @@ export class TablePage {
       if (campaign) {
         this.documentTitle.setTitle(`${campaign} · Devaneio`);
       }
+    });
+  }
+
+  /** Abre ou fecha a barra do anfitrião: ao lado da mesa na tela larga, um bottom sheet nas outras. */
+  protected toggleHost(): void {
+    if (this.session.open()) {
+      this.session.open.set(false);
+    } else {
+      this.showHost();
+    }
+  }
+
+  private showHost(): void {
+    if (this.session.open()) {
+      return;
+    }
+    const docked = canDock();
+    this.session.docked.set(docked);
+    if (docked) {
+      this.session.open.set(true);
+      this.focusAfterRender('.host-aside__title');
+      return;
+    }
+    this.session.open.set(true);
+    void this.sheet
+      .open(HostSheet, { label: 'Painel do anfitrião', injector: this.injector })
+      .then(() => this.session.open.set(false));
+  }
+
+  /** Fecha a barra encaixada e devolve o foco ao botão que a abriu. */
+  protected closeHost(): void {
+    this.session.open.set(false);
+    this.focusAfterRender('.table__host');
+  }
+
+  private focusAfterRender(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
     });
   }
 

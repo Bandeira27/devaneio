@@ -12,10 +12,12 @@ inteiro de `TableView.state`, os comandos do anfitrião e `POST .../copilot` ([`
   só para o anfitrião. A rota antiga `/#/mesa/:id/anfitriao` continua existindo só para não quebrar links: redireciona
   para a mesa com a barra aberta. Quem não é anfitrião nunca vê o botão (o servidor já responde `403`; esconder é
   conforto, não segurança).
-- **Duas formas, o mesmo conteúdo.** Em tela larga é uma barra ao lado do feed (região `complementary`, sem tirar o
-  foco da história). Em tela estreita é um **bottom sheet**, sobre a folha que o app já usa (CDK); aí é modal, com
-  foco preso, Esc fecha e o foco volta ao botão que abriu. O ponto de corte vem dos tokens de layout, não de um
-  número solto.
+- **Duas formas, o mesmo conteúdo.** A partir de 80rem é uma barra fixa à direita (`HostAside`, região `complementary`),
+  e a mesa abre espaço para ela e volta às duas colunas (lateral e história) enquanto ela está aberta. Abaixo disso é
+  um **bottom sheet** (`HostSheet`, sobre a folha que o app já usa, CDK), que de 64rem a 80rem aparece centralizado,
+  como as outras folhas: a mesa de três colunas não deixa espaço para uma barra ali. O sheet é modal, com foco preso,
+  Esc fecha e o foco volta ao botão que abriu. O ponto de 80rem se repete em CSS e em `canDock()`, porque CSS não
+  aceita token em `@media`.
 - **Fechada por padrão.** O conteúdo é privado e a tela pode estar à vista do grupo (compartilhamento, projetor). A
   barra só abre quando o anfitrião pede, e o estado aberto ou fechado vale só para a página, sem `localStorage` nem URL.
   Fechar não apaga nada: o painel é uma visão do mesmo estado.
