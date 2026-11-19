@@ -7,27 +7,29 @@
       grupo pela sala de espera.
     </p>
     <dv-ornament class="dv-stage__extra" />
-    <a class="dv-back" [routerLink]="['/c', campaignId(), 'mesas']">
-      <dv-icon name="back" size="sm" />Voltar às mesas
-    </a>
   </div>
 
-  <form class="dv-stage__task dv-card dv-stack" (submit)="$event.preventDefault(); store.create()">
-    <dv-field label="Seu nome" [error]="store.nameError()">
-      <input
-        dvInput
-        type="text"
-        autocomplete="nickname"
-        maxlength="40"
-        [value]="store.hostName()"
-        (input)="store.setHostName(fieldValue($event))"
-      />
-    </dv-field>
-    @if (store.createError()) {
-      <dv-notice kind="error">{{ store.createError() }}</dv-notice>
-    }
-    <button dvButton="primary" type="submit" [dvLoading]="store.creating()">
-      <dv-icon name="add" size="sm" />Criar mesa
-    </button>
-  </form>
+  <div class="dv-stage__task">
+    <form class="dv-card dv-stack" (submit)="$event.preventDefault(); store.create()">
+      <dv-field label="Seu nome" [error]="store.nameError()">
+        <input
+          dvInput
+          type="text"
+          autocomplete="nickname"
+          maxlength="40"
+          [value]="store.hostName()"
+          (input)="store.setHostName(fieldValue($event))"
+        />
+      </dv-field>
+      @if (store.createError()) {
+        <dv-notice kind="error">{{ store.createError() }}</dv-notice>
+      }
+      <button dvButton="primary" type="submit" [dvLoading]="store.creating()">
+        <dv-icon name="add" size="sm" />Criar mesa
+      </button>
+    </form>
+    <a dvButton [routerLink]="['/c', campaignId(), 'mesas']"
+      ><dv-icon name="back" size="sm" />Voltar às mesas</a
+    >
+  </div>
 </div>

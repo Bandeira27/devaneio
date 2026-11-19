@@ -206,14 +206,16 @@ describe('Campanha: mesas', () => {
     expect(app.session.get(TABLE_ID)?.campaignId).toBe('sombra-do-vale');
   });
 
-  it('criar mesa é o passo Mesa no palco, à frente do contexto, com saída para a lista', async () => {
+  it('criar mesa é o passo Mesa no palco, à frente do contexto, com a saída para a lista abaixo do formulário', async () => {
     const app = await setup('/c/sombra-do-vale/nova-mesa'); // fora do quadro da campanha: nada a perguntar além de criar
     const context = app.root().querySelector('.dv-stage__context');
     expect(context?.firstElementChild?.tagName.toLowerCase()).toBe('dv-steps');
     expect(context?.querySelector('[aria-current="step"]')?.textContent).toContain('Mesa');
-    expect(context?.querySelector('a[href="/c/sombra-do-vale/mesas"]')?.textContent).toContain(
-      'Voltar às mesas',
-    );
+    // a saída fica junto da ação que ela cancela (abaixo do formulário), não solta na coluna de contexto
+    expect(context?.querySelector('a[href="/c/sombra-do-vale/mesas"]')).toBeNull();
+    const task = app.root().querySelector('.dv-stage__task');
+    expect(task?.lastElementChild?.getAttribute('href')).toBe('/c/sombra-do-vale/mesas');
+    expect(task?.lastElementChild?.textContent).toContain('Voltar às mesas');
     expect(app.root().querySelector('nav[aria-label="Partes da campanha"]')).toBeNull(); // sem a barra lateral: o foco é o caminho
     expect(app.root().querySelector('.campaign__link--active')).toBeNull(); // e nada de "Mesas" marcado
   });
