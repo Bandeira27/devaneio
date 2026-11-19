@@ -1,0 +1,211 @@
+<div class="settings dv-page dv-stack" #page>
+  <header class="dv-stack">
+    <h1 class="dv-display" #heading>Configuração</h1>
+    <p class="dv-lede">
+      Ligue o mestre de IA: diga a que servidor de LLM o jogo deve falar. Vale na hora, sem
+      reiniciar o servidor.
+    </p>
+  </header>
+
+  @switch (store.state()) {
+    @case ('loading') {
+      <dv-state kind="loading">Lendo a configuração…</dv-state>
+    }
+    @case ('unavailable') {
+      <dv-state kind="unavailable">
+        A configuração só abre no computador onde o servidor roda, em localhost.
+        <a dvStateAction dvButton routerLink="/"
+          ><dv-icon name="back" size="sm" />Voltar ao início</a
+        >
+      </dv-state>
+    }
+    @case ('failed') {
+      <dv-state kind="error">
+        {{ store.loadError() }}
+        <button dvStateAction dvButton type="button" (click)="store.load()">
+          <dv-icon name="retry" size="sm" />Tentar de novo
+        </button>
+      </dv-state>
+    }
+    @case ('ready') {
+      @if (store.view()?.disabled) {
+        <dv-notice kind="warn">
+          O servidor foi iniciado com o mestre de IA desligado (a opção <code>--sem-llm</code>): o
+          que você guardar aqui só vale depois de reiniciá-lo sem ela.
+        </dv-notice>
+      } @else if (store.source() === 'environment') {
+        <dv-notice kind="info">
+          Hoje o mestre de IA vem da configuração do computador (variáveis de ambiente){{
+            store.view()?.description ? ': ' + store.view()?.description : ''
+          }}. O que você guardar aqui passa a valer no lugar dela.
+        </dv-notice>
+      } @else if (store.source() === 'none') {
+        <dv-notice kind="info">
+          Nenhum mestre de IA configurado: o jogo roda só com o motor de regras.
+        </dv-notice>
+      } @else if (store.view()?.description) {
+        <p class="dv-note">Em uso: {{ store.view()?.description }}.</p>
+      }
+
+      <section class="dv-card dv-stack" aria-labelledby="titulo-privacidade">
+        <h2 class="dv-section" id="titulo-privacidade">Para onde vão os dados</h2>
+        <p>
+          Com o mestre de IA ligado, o texto e o estado das mesas vão ao servidor que você escolher
+          abaixo, e todos os jogadores recebem esse aviso. Por padrão só o que é público vai:
+          segredos, fatos ocultos e notas privadas ficam de fora, a menos que o servidor seja
+          iniciado com <code>--segredos-no-llm</code>.
+        </p>
+        @if (store.remote()) {
+          <dv-notice kind="warn">
+            Este endereço não é deste computador: o texto e o estado das mesas saem daqui para ele.
+          </dv-notice>
+        }
+      </section>
+
+      @if (store.removed()) {
+        <dv-notice kind="ok">{{ store.removed() }}</dv-notice>
+      }
+
+      <form class="dv-card dv-stack" novalidate (submit)="$event.preventDefault(); save()">
+        <dv-field
+          label="Endereço do servidor"
+          hint="Ex.: http://localhost:11434/v1 (Ollama no seu computador). Serve qualquer servidor compatível com a API de chat da OpenAI."
+          [error]="store.urlError()"
+        >
+          <input
+            dvInput
+            type="text"
+            inputmode="url"
+            autocomplete="off"
+            spellcheck="false"
+            [value]="store.baseUrl()"
+            (input)="store.setBaseUrl(fieldValue($event))"
+          />
+        </dv-field>
+
+        <dv-field label="Modelo" [error]="store.modelError()">
+          <input
+            dvInput
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            [value]="store.model()"
+            (input)="store.setModel(fieldValue($event))"
+          />
+        </dv-field>
+
+        <dv-field
+          label="Tempo limite (segundos)"
+          hint="Quanto esperar a resposta antes de desistir. Modelos que raciocinam demoram: use 120 ou mais."
+          [error]="store.timeoutError()"
+        >
+          <input
+            dvInput
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [value]="store.timeout()"
+            (input)="store.setTimeoutSeconds(fieldValue($event))"
+          />
+        </dv-field>
+
+        <dv-field
+          label="Chave de acesso"
+          [hint]="
+            store.keySet()
+              ? 'Já há uma chave guardada. Deixe em branco para mantê-la; escreva outra para trocá-la.'
+              : 'Opcional: modelos locais costumam dispensar.'
+          "
+        >
+          <input
+            dvInput
+            type="password"
+            autocomplete="new-password"
+            spellcheck="false"
+            [value]="store.apiKey()"
+            (input)="store.setApiKey(fieldValue($event))"
+          />
+        </dv-field>
+
+        <p class="dv-note">
+          @if (store.keySet()) {
+            <dv-badge tone="ok" icon="check">Chave guardada</dv-badge>
+          } @else {
+            <dv-badge tone="neutral">Sem chave</dv-badge>
+          }
+          A chave fica só neste computador, num arquivo próprio, e nunca volta para esta tela.
+        </p>
+
+        @if (store.saveError()) {
+          <dv-notice kind="error">{{ store.saveError() }}</dv-notice>
+        }
+        @if (store.testing()) {
+          <dv-notice kind="info">Testando a conexão… isso pode levar até o tempo limite.</dv-notice>
+        } @else if (store.outcome(); as outcome) {
+          <dv-notice [kind]="outcome.ok ? 'ok' : 'error'">
+            {{ outcome.ok ? 'Configuração guardada. ' : '' }}{{ outcome.message }}
+          </dv-notice>
+        } @else if (store.saved() && !store.saveError()) {
+          <dv-notice kind="ok">Configuração guardada. Já vale para as mesas.</dv-notice>
+        }
+
+        <div class="actions">
+          <button
+            dvButton="primary"
+            type="submit"
+            [dvLoading]="store.saving() && !store.testing()"
+            [dvBlocked]="store.busy()"
+          >
+            <dv-icon name="save" size="sm" />Salvar
+          </button>
+          <button
+            dvButton
+            type="button"
+            [dvLoading]="store.testing()"
+            [dvBlocked]="store.busy()"
+            (click)="saveAndTest()"
+          >
+            <dv-icon name="play" size="sm" />Salvar e testar
+          </button>
+        </div>
+      </form>
+
+      @if (store.hasScreenConfig() || store.keySet()) {
+        <section class="dv-card dv-stack" aria-labelledby="titulo-remover">
+          <h2 class="dv-section" id="titulo-remover">Remover</h2>
+          @if (store.removeError()) {
+            <dv-notice kind="error">{{ store.removeError() }}</dv-notice>
+          }
+          <div class="actions">
+            @if (store.keySet()) {
+              <button
+                dvButton
+                type="button"
+                [dvLoading]="store.removing() === 'key'"
+                [dvBlocked]="store.busy()"
+                (click)="clearKey()"
+              >
+                <dv-icon name="trash" size="sm" />Apagar a chave
+              </button>
+            }
+            @if (store.hasScreenConfig()) {
+              <button
+                dvButton
+                type="button"
+                [dvLoading]="store.removing() === 'all'"
+                [dvBlocked]="store.busy()"
+                (click)="clearAll()"
+              >
+                <dv-icon name="trash" size="sm" />Remover a configuração
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      <dv-ornament />
+
+      <a dvButton routerLink="/"><dv-icon name="back" size="sm" />Voltar ao início</a>
+    }
+  }
+</div>

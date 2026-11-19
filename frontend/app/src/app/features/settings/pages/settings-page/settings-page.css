@@ -1,0 +1,10 @@
+/* A configuração é uma coluna de leitura: formulário, remover e a nota de privacidade, um abaixo do outro. */
+.settings {
+  max-width: var(--dv-measure-page);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-3);
+}

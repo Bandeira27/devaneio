@@ -40,6 +40,13 @@ export const routes: Routes = [
           },
         ],
       },
+      // A configuração do LLM é da máquina do servidor (como o roteiro): só abre neste computador.
+      {
+        path: 'configuracao',
+        title: 'Configuração',
+        loadChildren: () =>
+          import('@features/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
+      },
       {
         path: 'entrar/:tableId/:invite',
         title: 'Entrar na mesa',

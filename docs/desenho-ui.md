@@ -29,6 +29,7 @@ anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)
 - **Estado:** signals em serviços por feature. **Um tema**, com todas as cores em OKLCH num arquivo de tokens.
 - **Botões** para as ações, com chat opcional para digitar comandos; o texto livre pelo LLM segue como ação.
 - **Mesa primeiro, editor depois.** O editor só atende a máquina do servidor (localhost), sem flag.
+- **Configuração do mestre de IA** (`/configuracao`, ligada na tela inicial): guarda o LLM da máquina (endereço, modelo, tempo e chave) e, como o editor, só abre por `localhost`. Vale na hora; a chave só entra e nunca volta. Ver [`llm.md`](llm.md) e [`desenho-banco.md`](desenho-banco.md).
 
 ## Navegação por campanha
 

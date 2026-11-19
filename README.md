@@ -49,6 +49,7 @@ servidor (`./devaneio --help` lista todas).
 
 O navegador abre em `http://localhost:8765`, na lista de campanhas. O card **Nova campanha** abre o editor: locais, NPCs,
 facções, marcos e fatos, com os erros em português, avisos de autoria e uma prévia do que o jogador e a IA veem.
+Para ligar o mestre de IA, o botão **Configurar o mestre de IA** da tela inicial guarda o endereço, o modelo e a chave do LLM, e vale sem reiniciar (ver [`docs/llm.md`](docs/llm.md)).
 Campanha que já tem mesa não é sobrescrita: o editor lista as mesas que a travam (as do servidor, de qualquer navegador desta máquina) e oferece encerrá-las, assumir o lugar de anfitrião ou salvar uma cópia.
 
 O editor só atende **o computador que roda o servidor**, aberto por `localhost`. Os amigos que entram pela rede nunca o

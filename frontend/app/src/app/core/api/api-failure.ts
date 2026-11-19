@@ -71,6 +71,7 @@ const FRIENDLY: Readonly<Record<string, string>> = {
   name_taken: 'Já existe alguém com esse nome na mesa. Escolha outro.',
   payload_too_large: 'O texto é grande demais.',
   request_timeout: 'A conexão demorou demais. Tente de novo.',
+  busy: 'O servidor está ocupado. Tente de novo em instantes.',
   internal: 'O servidor falhou. Tente de novo em instantes.',
 };
 

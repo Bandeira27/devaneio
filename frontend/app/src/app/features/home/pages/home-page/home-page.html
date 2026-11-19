@@ -82,6 +82,12 @@
 
   <dv-ornament />
 
+  @if (store.editorAvailable()) {
+    <a dvButton routerLink="/configuracao"
+      ><dv-icon name="say" size="sm" />Configurar o mestre de IA</a
+    >
+  }
+
   <section class="dv-card" aria-label="Entrar com um convite">
     <dv-disclosure label="Tenho um convite" [open]="store.inviteError() !== ''">
       <form class="dv-stack" (submit)="$event.preventDefault(); store.openInvite()">

@@ -13,6 +13,8 @@ import type {
   EventsView,
   HostAccess,
   InvitePreview,
+  LlmSettingsView,
+  LlmTestResult,
   RulesView,
   PreviewView,
   SayResult,
@@ -29,6 +31,7 @@ import type {
   InvitePreviewRequest,
   JoinRequest,
   LifecycleRequest,
+  LlmSettingsUpdate,
   SayRequest,
 } from '@contract/api_requests';
 import { TABLE } from './api.interceptor';
@@ -171,6 +174,31 @@ export class ApiClient {
   /** O que o jogador e o LLM veem da campanha. */
   editorPreview(campaign: Campaign): Observable<PreviewView> {
     return this.http.post<PreviewView>('/editor/preview', { campaign });
+  }
+
+  /** A configuração do LLM desta máquina: de onde ele vem e se há chave. A chave nunca volta. */
+  editorLlmSettings(): Observable<LlmSettingsView> {
+    return this.http.get<LlmSettingsView>('/editor/settings/llm');
+  }
+
+  /** Guarda URL, modelo e tempo; a chave só muda se vier uma (ausente mantém a atual). */
+  editorSaveLlmSettings(request: LlmSettingsUpdate): Observable<LlmSettingsView> {
+    return this.http.put<LlmSettingsView>('/editor/settings/llm', request);
+  }
+
+  /** Apaga o que a tela guardou, chave inclusive: volta ao que vier do ambiente, se houver. */
+  editorClearLlmSettings(): Observable<LlmSettingsView> {
+    return this.http.delete<LlmSettingsView>('/editor/settings/llm');
+  }
+
+  /** Apaga só a chave guardada. */
+  editorClearLlmKey(): Observable<LlmSettingsView> {
+    return this.http.delete<LlmSettingsView>('/editor/settings/llm/key');
+  }
+
+  /** Uma chamada curta ao LLM em uso; a resposta é uma frase fixa. */
+  editorTestLlm(): Observable<LlmTestResult> {
+    return this.http.post<LlmTestResult>('/editor/settings/llm/test', null);
   }
 
   private base(tableId: string): string {
