@@ -95,6 +95,8 @@ class EditorTables:
         with self.storage.lock(table_id):
             try:
                 session = load_game(path, campaign_root=self.catalog.root)
+            except FileNotFoundError:  # apagada entre a checagem e o lock
+                raise _not_found() from None
             except (GameError, ValidationError, OSError):
                 raise ApiFailure(409, "table_unreadable", "não consegui ler essa mesa") from None
             table = session.table

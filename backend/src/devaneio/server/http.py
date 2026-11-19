@@ -179,12 +179,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def _refuse_body(self) -> None:
         """Rotas sem corpo: se vier um, não é lido e a conexão fecha, para os bytes não virarem outra requisição."""
-        if self.headers.get("Transfer-Encoding") or self.headers.get(
-            "Content-Length", "0"
-        ).strip() not in (
-            "",
-            "0",
+        lengths = self.headers.get_all("Content-Length") or []
+        if self.headers.get("Transfer-Encoding") or any(
+            v.strip() not in ("", "0") for v in lengths
         ):
+            self.close_connection = True
+        if len(lengths) > 1:  # repetido: a mesma recusa do ``_declared_length``
             self.close_connection = True
 
     def _editor_tables(self, match: re.Match[str]) -> tuple[int, Payload]:
