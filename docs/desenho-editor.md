@@ -83,9 +83,9 @@ O servidor é a fonte da verdade de quais mesas existem; o navegador só guarda 
 (`localStorage`, por origem). Antes, a Visão Geral confiava no navegador e o editor no servidor, e as duas telas se
 contradiziam (testar em dois navegadores deixava mesas que nenhum dos dois via, travando a campanha). Agora:
 
-- **Listar** lê só `campaign_path` e `table` de cada arquivo (`saved_table_summary`), sem carregar campanha nem regras.
-  Expõe id, fase, nome do anfitrião, número de jogadores e a data do arquivo; nunca hash, convite nem notas.
-- **Encerrar** apaga o arquivo sob o lock da mesa e acorda quem espera (`announce_change`); a volta do long-poll é `404`.
+- **Listar** é uma consulta ao banco (`Storage.summaries`) que traz só a mesa em grupo (`meta`) das mesas da campanha, sem o estado
+  nem carregar campanha ou regras. Expõe id, fase, nome do anfitrião, número de jogadores e a data da última gravação; nunca hash, convite nem notas.
+- **Encerrar** apaga a linha da mesa no banco sob o lock dela e acorda quem espera (`announce_change`); a volta do long-poll é `404`.
   A entrada em memória da mesa fica: quem espera compara a versão dela, e esquecê-la a faria voltar a zero.
 - **Assumir como anfitrião** troca o token e o convite do anfitrião (o servidor guarda só hash, então reemite).
   O token antigo deixa de valer, e os links de convite já enviados também. A resposta mostra os novos uma única vez.

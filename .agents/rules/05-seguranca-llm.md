@@ -22,8 +22,9 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
    `urllib` levam `# noqa: S310` com essa justificativa, e **só** lá. Timeout sempre definido.
 10. **Caminhos de arquivo vindos de dado não são confiáveis.** `SaveFile.campaign_path` é relativo ao arquivo da
     partida. No CLI local, `load_game` o resolve sem restringir `..` (um arquivo adulterado pode apontar para
-    outro JSON local, e a mensagem de validação pode citar trechos dele): risco baixo e aceito. Qualquer código
-    que sirva partidas a terceiros passa `campaign_root=` e a campanha precisa ficar dentro dessa pasta.
+    outro JSON local, e a mensagem de validação pode citar trechos dele): risco baixo e aceito. O servidor não
+    lê arquivo de partida: guarda o caminho **relativo à pasta de campanhas** no banco e o revalida a cada
+    abertura (`Catalog.inside`: nunca absoluto, nunca fora da pasta); a importação recusa o que sai dela.
     `save_game` escreve de forma atômica (temporário na mesma pasta + `os.replace`).
 11. **Privacidade**: com LLM ligado, o contexto da partida (inclusive segredos de NPCs presentes) vai ao servidor
     configurado, e o CLI avisa na abertura. Não aumentar o contexto enviado sem atualizar esse aviso e `docs/llm.md`.

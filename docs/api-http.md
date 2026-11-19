@@ -41,13 +41,12 @@ Erros vêm como `{"error": {"code", "message"}}` (400 corpo inválido, 401 token
 409 limite de mesas, 411/413/415 corpo, 500 genérico). O contrato da API está em `contract/api_requests.schema.json`
 (validation) e `contract/api_responses.schema.json` (serialization), de onde saem `frontend/src/contract/api_*.ts`.
 
-Cada mesa é um arquivo `<table_id>.json` em `--dados`, no mesmo formato do CLI mais o campo `table` (jogadores com
-hash do token, hash do convite, quem já agiu no turno). O anfitrião (mestre) vê o `GameState` e a `Campaign`
+Cada mesa é uma linha da tabela `tables` do banco do servidor (`<--dados>/devaneio.db`, ver [`desenho-banco.md`](desenho-banco.md)): o `GameState` e a mesa (jogadores com hash do token, hash do convite, quem já agiu no turno) como JSON, e a campanha pelo caminho relativo à pasta de campanhas. O anfitrião (mestre) vê o `GameState` e a `Campaign`
 inteiros; um jogador comum vê só o que o `olhar` do CLI mostra: `PlayerStateView` (sem `rng_seed`/`rng_draws`, que tornariam
 o próximo sorteio previsível, sem o log com `data`; com `revealed_facts`, só fatos já revelados; NPCs só os do local, só com vivo, hp e hostil; só os
 marcos que já começaram) e `CampaignView` (título, premissa, local com saídas, NPCs ali, marcos e fatos revelados). `TableView.role` diz qual dos
-dois ramos veio. Nomes de jogador são normalizados (NFKC) e recusam caracteres de controle ou invisíveis. O CLI abre esse arquivo e preserva a mesa, mas **não jogue
-a mesma partida no CLI com o servidor aberto**: não há bloqueio entre processos. `--host 0.0.0.0` expõe HTTP em
+dois ramos veio. Nomes de jogador são normalizados (NFKC) e recusam caracteres de controle ou invisíveis. O CLI segue com o arquivo de partida e não usa o banco; as partidas de mesa em JSON de antes do banco entram por `devaneio importar`
+(idempotente, preserva id, tokens e convite, **não toca nos arquivos originais**, recusa com o motivo o que não serve; precisa do servidor parado, que é quem segura o banco). Ao subir, o servidor só olha a pasta de dados e avisa quantos `<id>.json` ainda entrariam e **lista os que o importador recusaria, com o motivo** (até 10; o resto vira "e mais N"), sem gravar nem mover nada. `--host 0.0.0.0` expõe HTTP em
 claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a conexão ao recusar um corpo e não
 limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado (tela de Configuração ou ambiente do servidor),
 `table.llm.notice` avisa todos os jogadores de que o texto e o estado da partida vão a esse servidor.

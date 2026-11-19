@@ -1,7 +1,7 @@
 # O banco do servidor
 
-**Status: aprovado em 2026-11-19; a fatia 1 (base do banco e configuração do LLM) está implementada. As fatias 2 (mesas,
-partidas e tokens) e 3 (exportar, backup e histórico) seguem em aberto.**
+**Status: aprovado em 2026-11-19; as fatias 1 (base do banco e configuração do LLM) e 2 (mesas, partidas e tokens no banco)
+estão implementadas. A 3 (exportar, backup e histórico) segue em aberto.**
 
 O servidor guarda o que a aplicação gera e muda em **SQLite**, pelo **SQLAlchemy 2.0**. O que o autor escreve
 (campanhas, sistemas de regras, narrações) continua **JSON em arquivo**, e o CLI continua com o arquivo de partida.
@@ -95,9 +95,35 @@ preparar Postgres antecipadamente.
 (configuração do LLM), `server/models/settings.py` e as rotas `/editor/settings/llm` ([`api-http.md`](api-http.md)); o
 `TableService` consulta o LLM em uso a cada pedido, e `SayDesk` e `CopilotDesk` sempre existem.
 
-## Próximas fatias
+## Mesas no banco (fatia 2)
 
-- **2. Mesas, partidas e tokens no banco.** Tabelas `tables` e `players`, `Storage` por id de mesa, `campaign_path`
-  relativo à pasta de campanhas, importação idempotente das partidas JSON (`importar`), sem tocar nos arquivos originais.
+A tabela `tables` guarda uma mesa por linha: `id`, `campaign_path` (relativo à pasta de campanhas, com índice), `state`
+(o `GameState`, com os eventos dentro), `meta` (a `TableMeta`: jogadores, hashes de token e de convite, fase, tempo),
+`content` (as impressões digitais de regras e narração, opcional), `created_at` e `updated_at`.
+
+- **Sem tabela `players`.** O plano previa uma, para autenticar por hash sem carregar a partida; mas os jogadores já estão na
+  `meta`, e uma cópia em tabela seria uma segunda fonte do mesmo dado. Autenticar continua carregando a mesa. Reabrir se a
+  medida disser que isso pesa.
+- **`Storage` por id.** `exists`, `read`, `create`, `save`, `delete`, `summaries`, `campaigns_in_use`, `count`, `table_ids`.
+  Não há caminho de partida. `create` confere o limite de mesas e grava **na mesma transação**, então duas criações juntas não
+  passam do limite. `save` é um `UPDATE` e dá `404` se a mesa foi apagada no meio: gravar não a traz de volta.
+- **`TableRecords` (`server/records.py`)** liga o banco ao jogo: `load` monta a `Session` com `game.open_save`, e `save` e
+  `create` usam `game.build_save`. O caminho da campanha vira relativo à pasta de campanhas na gravação e é revalidado
+  (`Catalog.inside`: nunca absoluto, nunca fora da pasta) a cada abertura. Registro ilegível é erro interno, sem o dado.
+- **`game/` continua sem banco.** `Session` não tem mais o arquivo como parte obrigatória (`save_path` é opcional e só o
+  CLI o usa); `open_save` e `build_save` são puros, e `load_game`/`save_game` por arquivo são invólucros finos para o CLI.
+- **Ordem fixa.** O lock da mesa continua por fora; cada leitura e cada gravação é uma transação curta por dentro. O `say`
+  segue em três fases (lock, LLM sem lock, lock de novo conferindo a revisão), e nenhuma transação atravessa a chamada ao LLM.
+- **Mesa ilegível trava a campanha dela.** `campaigns_in_use` lista o caminho de toda mesa, legível ou não: sem ler, não dá para
+  saber que ninguém joga ali.
+- **Importar (`devaneio importar`).** Lê os `<id>.json` de antes do banco (da pasta de dados, ou das fontes dadas), valida cada
+  um como o servidor faria (`open_save`) e o grava com o mesmo id, tokens e convite e a data do arquivo como `updated_at`.
+  Idempotente (pula o que já existe), não altera os originais e recusa com o motivo, sem copiar conteúdo, o que não é mesa
+  (solo, JSON quebrado, nome que não é id), tem campanha fora da pasta ou não combina com a campanha e as regras.
+  Ao subir, o servidor faz a mesma conta sem gravar (`import_saves(..., apply=False)`) e avisa o que entraria e **lista o que seria
+  recusado, com o motivo**, para o aviso não pedir um `importar` que não resolve.
+
+## Próxima fatia
+
 - **3. Exportar, backup e histórico.** `exportar` (sem os hashes de token por padrão), `backup` (API de backup do SQLite,
   sem a chave) e a política de "apagar mesa".

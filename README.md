@@ -62,6 +62,10 @@ Quem hospeda roda o servidor e manda um link; os outros entram pelo navegador, s
 da seção anterior; se preferir escolher as pastas, use `--campanhas`, `--dados` e `--web`. Com o ambiente já
 instalado, `devaneio` (em `backend/.venv/bin`) faz o mesmo que `./devaneio`, sem preparar nada.
 
+As mesas ficam num banco SQLite na pasta de dados (`mesas/devaneio.db` por padrão), só do seu usuário. Se você já tinha mesas
+de antes do banco (arquivos `<id>.json` em `mesas/`), pare o servidor e rode `./devaneio importar`: ele traz cada uma com o mesmo
+convite e os mesmos tokens e não mexe nos arquivos originais. Ao subir, o servidor avisa se há arquivos esperando e lista os que não podem ser importados, com o motivo. O jogo solo no terminal segue com o arquivo de partida.
+
 Crie a mesa, escolha a campanha e copie o link do convite. Para os amigos entrarem pela mesma rede, suba com
 `./devaneio --host 0.0.0.0` e troque `localhost` no link pelo endereço do seu computador na rede (algo como `192.168.0.5:8765`).
 Você segue abrindo o seu navegador por `localhost` para editar. A mesa roda em HTTP simples, então é para rede de casa,

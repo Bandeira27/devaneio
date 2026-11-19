@@ -2,7 +2,7 @@
 
 As ações do motor, o diretor de narrativa e os detalhes dos comandos do CLI.
 
-O arquivo da partida é salvo (de forma atômica) após cada ação e é a fonte da verdade. `atacar` compõe em `game/commands/`
+No CLI, o arquivo da partida é salvo (de forma atômica) após cada ação e é a fonte da verdade; no servidor, a mesa mora no banco (ver [`desenho-banco.md`](desenho-banco.md)). `atacar` compõe em `game/commands/`
 um `resolve_check` (habilidade da arma contra a dificuldade de ataque do sistema) e, em acerto, um `deal_damage`. A arma precisa estar no inventário; a arma padrão do sistema (`combat.default_weapon`) está sempre disponível.
 
 A partida termina em **vitória** (todos os marcos concluídos) ou **derrota** (todo o grupo com hp 0). O desfecho é derivado do estado por `game_status`; o motor não se recusa a agir, e `game/commands/` trava as ações exceto consulta. `descansar` recupera hp pela fórmula `rest.heal`, só sem hostis vivos no local, e gasta o turno.

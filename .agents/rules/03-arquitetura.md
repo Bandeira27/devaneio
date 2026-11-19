@@ -4,7 +4,7 @@
 
 ```
 cli | server                   I/O (terminal; HTTP com a política da mesa) por cima de game; não se importam
-game                           orquestração: partida em disco, comandos, texto livre, saída, mesa
+game                           orquestração: partida (em memória e em arquivo, sem saber de banco), comandos, texto livre, saída, mesa
 engine | narration | llm       irmãos: não se importam entre si
 rules                          sistema de regras e expressões (dados interpretados)
 schema | rng                   modelos Pydantic e gerador reprodutível
@@ -28,7 +28,7 @@ O que cabe dentro de um arquivo (uma responsabilidade por módulo) está na [rul
 | composição de ações para um comando (`atacar` = check + dano) | `game/commands/actions.py` |
 | modelo persistido fora do contrato (`SaveFile`, `TableMeta`) | `game/` |
 | leitura e impressão no terminal | `cli/` |
-| rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; texto livre pelo LLM: `server/say.py`; narração e mural do LLM, só em memória e fora do estado e do arquivo: `server/presentation.py`; tokens, limites), modelo de requisição/resposta | `server/` |
+| rota HTTP, política da mesa (papéis: `server/policy.py`; execução de um comando: `server/turns.py`; texto livre pelo LLM: `server/say.py`; persistência das mesas no banco SQLite (SQLAlchemy só aqui: `server/storage.py`, `server/records.py`, `server/database.py`); narração e mural do LLM, só em memória e fora do estado e do banco: `server/presentation.py`; tokens, limites), modelo de requisição/resposta | `server/` |
 | campo ou modelo de dados | `schema/` ou `rules/schema.py`, depois regenerar o contrato |
 | fórmula, dificuldade, arma, habilidade | arquivo de regras (`rules/data/default.json`), não código |
 | texto de narração | pacote pt-br (`narration/data/pt-br.json`), regra `tipo.variante` |

@@ -105,7 +105,7 @@ erros na subida, para uma campanha com sistema ruim não falhar apenas ao criar 
 
 ## Partidas salvas
 
-O `SaveFile` ganha `content` opcional com o hash do sistema de regras e do pacote de narração já mesclados. Ao
+O `SaveFile` (e a coluna `content` da mesa no banco) ganha `content` opcional com o hash do sistema de regras e do pacote de narração já mesclados. Ao
 abrir, se algum mudou, a sessão traz um aviso em português dizendo qual. Não recusa e não migra: o conteúdo muda
 de propósito durante a autoria. Salvos antigos, sem `content`, abrem sem aviso.
 
