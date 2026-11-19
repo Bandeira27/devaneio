@@ -13,7 +13,6 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 from dataclasses import replace
-from pathlib import Path
 
 from devaneio.engine import game_status
 from devaneio.game import (
@@ -29,7 +28,6 @@ from devaneio.game import (
     narrate_batch,
     parse_line,
     run_freeform,
-    save_game,
 )
 
 from . import policy
@@ -55,7 +53,7 @@ class SayDesk:
         self,
         storage: Storage,
         llm: Callable[[], LlmConfig | None],
-        load: Callable[[Path], Session],
+        stores: tuple[Callable[[str], Session], Callable[[str, Session], None]],
         cooldown: float,
         secrets: bool,
     ) -> None:
@@ -63,13 +61,14 @@ class SayDesk:
         self._llm = llm  # consultado a cada chamada: a tela de configuração o troca sem reiniciar
         self._cooldown = cooldown  # segundos entre dois textos livres do mesmo jogador
         self._secrets = secrets  # os segredos dos NPCs vão ao LLM (a fala dele chega a todos)
-        self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
+        # Carrega a partida (erro interno se ela estiver ilegível) e a regrava; os dois sob o lock da mesa.
+        self._load, self._save = stores
 
-    def run(self, table_id: str, path: Path, token: str, request: SayRequest) -> SayResult:
+    def run(self, table_id: str, token: str, request: SayRequest) -> SayResult:
         """Aplica um texto livre: o LLM propõe ações, cada uma passa pela política da mesa, e a proposta inteira gasta uma ação."""
         storage = self._storage
         with storage.lock(table_id):  # fase 1
-            session = self._load(path)
+            session = self._load(table_id)
             table, player_id, player = authenticate(session, token)
             who, text = speaker(session.state, player, request.text)
             refusal = policy.phase_refusal(table.phase, player.role, policy.SAY_KIND)
@@ -78,14 +77,13 @@ class SayDesk:
             check_say(table, session.state, who, request.revision)
         reserve(storage, table_id, SAY, player_id, self._cooldown)
         try:
-            return self._with_llm(table_id, path, (session, table, player, who, text))
+            return self._with_llm(table_id, (session, table, player, who, text))
         finally:
             storage.leave_slot(table_id, SAY.kind)
 
     def _with_llm(
         self,
         table_id: str,
-        path: Path,
         sent: tuple[Session, TableMeta, Player, str, str],
     ) -> SayResult:
         session, table, player, who, text = sent
@@ -118,13 +116,13 @@ class SayDesk:
         narrations = self._narration(client, new_session, revision) if fresh_events else {}
 
         with self._storage.lock(table_id):  # fase 3
-            current = self._load(path)
+            current = self._load(table_id)
             if len(current.state.events) != revision or current.table != table:
                 raise ApiFailure(
                     409, "stale_revision", "a mesa mudou enquanto o mestre pensava: tente de novo"
                 )
             if fresh_events:
-                save_game(replace(new_session, table=new_table))
+                self._save(table_id, replace(new_session, table=new_table))
                 self._storage.presentation(table_id).store_narrations(narrations)
             if freeform.say:  # a fala vai a todos, com ou sem evento novo
                 self._storage.presentation(table_id).add_talk(

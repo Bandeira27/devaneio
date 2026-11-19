@@ -26,6 +26,23 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         )
         """,
     ),
+    (
+        # As mesas. `state` e `meta` são JSON (o GameState com os eventos dentro, e a TableMeta com os jogadores e os
+        # hashes de token e de convite); `content` guarda as impressões digitais de regras e narração. `campaign_path`
+        # é relativo à pasta de campanhas.
+        """
+        CREATE TABLE tables (
+            id TEXT NOT NULL PRIMARY KEY,
+            campaign_path TEXT NOT NULL,
+            state TEXT NOT NULL,
+            meta TEXT NOT NULL,
+            content TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        )
+        """,
+        "CREATE INDEX ix_tables_campaign_path ON tables (campaign_path)",
+    ),
 )
 LATEST = len(MIGRATIONS)
 

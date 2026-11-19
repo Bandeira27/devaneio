@@ -1,7 +1,7 @@
 """Serviço da mesa: cada operação da API, sem HTTP.
 
-Só o status das falhas lembra HTTP. Cada operação carrega a partida do arquivo dentro do lock
-da mesa, aplica a regra da mesa e grava. O arquivo é a fonte única da verdade
+Só o status das falhas lembra HTTP. Cada operação carrega a partida do banco dentro do lock
+da mesa, aplica a regra da mesa e grava. O banco é a fonte única da verdade
 (campanha e regras são relidas com a partida); em memória ficam só a coordenação (locks, versão,
 vagas de espera) e os parágrafos de narração do LLM, que são exibição descartável.
 """
@@ -13,24 +13,18 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from pathlib import Path
 from typing import NamedTuple
-
-from pydantic import ValidationError
 
 from devaneio.engine import game_status
 from devaneio.game import (
     CommandError,
-    GameError,
     GameOverError,
     LlmConfig,
     Player,
     Role,
     Session,
     TableMeta,
-    load_game,
-    new_game,
-    save_game,
+    start_game,
 )
 from devaneio.schema import Campaign
 
@@ -65,6 +59,7 @@ from .models import (
     TableView,
     summarize,
 )
+from .records import TableRecords
 from .say import SayDesk
 from .storage import Storage
 from .turns import apply, authenticate, events_view
@@ -132,8 +127,15 @@ class TableService:
         self._token_source = token_source
         self._invite_source = invite_source
         self._clock = clock
-        self._lifecycle = LifecycleDesk(storage, self.load_session, clock)
-        self._say = SayDesk(storage, self._llm_source, self.load_session, say_cooldown, llm_secrets)
+        self._records = TableRecords(storage, catalog)
+        self._lifecycle = LifecycleDesk(storage, self.load_session, self._records.save, clock)
+        self._say = SayDesk(
+            storage,
+            self._llm_source,
+            (self.load_session, self._records.save),
+            say_cooldown,
+            llm_secrets,
+        )
         self._copilot = CopilotDesk(storage, self._llm_source, self.load_session, copilot_cooldown)
 
     @property
@@ -154,17 +156,20 @@ class TableService:
             raise ApiFailure(
                 404, "campaign_not_found", f"campanha '{request.campaign_id}' não existe"
             )
-        if self.storage.count() >= self.storage.max_tables:
+        if (
+            self.storage.count() >= self.storage.max_tables
+        ):  # barra cedo e de graça; a gravação confere de novo
             raise ApiFailure(409, "table_limit", "este servidor já tem o máximo de mesas")
         token, invite = self._token_source(), self._invite_source()
         host = Player(name=request.host_name, role="host", token_hash=hash_secret(token))
         table = TableMeta(invite_hash=hash_secret(invite), players={HOST_ID: host}, phase="lobby")
-        table_id, save_path = self.storage.new_table_path()
+        table_id = self.storage.new_table_id()
         with self.storage.lock(table_id):
-            session = replace(
-                new_game(campaign_path, save_path, request.seed, start=False), table=table
-            )
-            save_game(session)
+            session = replace(start_game(campaign_path, request.seed, start=False), table=table)
+            if not self._records.create(
+                table_id, session
+            ):  # o limite e a gravação são uma transação só
+                raise ApiFailure(409, "table_limit", "este servidor já tem o máximo de mesas")
         return TableCreated(
             table_id=table_id,
             host_token=token,
@@ -179,11 +184,10 @@ class TableService:
         da campanha sai; o limite de jogadores não é consultado, para a prévia não virar oráculo
         de "mesa cheia" sem convite.
         """
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise _invalid_invite()
         with self.storage.lock(table_id):
-            session = self.load_session(path)
+            session = self.load_session(table_id)
         table = session.table
         if table is None or not _invite_matches(table, request.invite_code):
             raise _invalid_invite()
@@ -195,11 +199,10 @@ class TableService:
         Mesa inexistente e convite errado respondem igual (401), para o convite não servir
         de oráculo de existência; o limite de jogadores só vale depois.
         """
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise _invalid_invite()
         with self.storage.lock(table_id):
-            session = self.load_session(path)
+            session = self.load_session(table_id)
             table = session.table
             if table is None or not _invite_matches(table, request.invite_code):
                 raise _invalid_invite()
@@ -216,7 +219,7 @@ class TableService:
             player = Player(name=request.name, role="player", token_hash=hash_secret(token))
             table = table.model_copy(update={"players": {**table.players, player_id: player}})
             session = replace(session, table=table)
-            save_game(session)
+            self._records.save(table_id, session)
         return TableJoined(
             player_id=player_id,
             token=token,
@@ -240,11 +243,11 @@ class TableService:
 
         Com ``wait`` > 0 e sem ``since_talk``, o mural não conta como novidade: só falas
         posteriores a esta chamada acordam a espera (senão um cliente que não devolve
-        ``talk_seq`` giraria sem esperar, relendo o arquivo a cada volta).
+        ``talk_seq`` giraria sem esperar, relendo o banco a cada volta).
         """
         # Antes da carga: uma gravação entre as duas deixaria a visão velha com a versão nova.
         # Só com mesa existente, porque ``version`` cria entrada e o id ainda não foi validado.
-        seen = self.storage.version(table_id) if self.storage.path_for(table_id) else 0
+        seen = self.storage.version(table_id) if self.storage.exists(table_id) else 0
         cursor = Cursor(since, since_talk)
         view = self._events_view(table_id, token, cursor)
         if wait > 0 and since_talk == 0:
@@ -303,13 +306,12 @@ class TableService:
         principal por personagem por turno), executa no motor e grava. Tudo dentro do lock
         da mesa; se qualquer passo recusa, nada é gravado.
         """
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
-            session = self.load_session(path)
+            session = self.load_session(table_id)
             table, player_id, player = authenticate(session, token)
             try:
                 result, new_session, new_table = apply(session, table, player_id, player, request)
@@ -318,29 +320,27 @@ class TableService:
             except CommandError as exc:
                 raise ApiFailure(422, "command_refused", str(exc)) from None
             if new_session.state is not session.state or new_table is not table:
-                save_game(replace(new_session, table=new_table))
+                self._records.save(table_id, replace(new_session, table=new_table))
                 self.storage.announce_change(table_id)
         return result
 
     def say(self, table_id: str, token: str | None, request: SayRequest) -> SayResult:
         """Texto livre pelo LLM do anfitrião (ver ``say.SayDesk``)."""
         require_llm(self._llm_source)
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
-        return self._say.run(table_id, path, token, request)
+        return self._say.run(table_id, token, request)
 
     def copilot(self, table_id: str, token: str | None, request: CopilotRequest) -> CopilotAnswer:
         """Consulta ao copiloto do anfitrião (ver ``copilot.CopilotDesk``)."""
         require_llm(self._llm_source)
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
-        return self._copilot.run(table_id, path, token, request)
+        return self._copilot.run(table_id, token, request)
 
     def get_table(self, table_id: str, token: str | None) -> TableView:
         """A mesa como o papel de quem pergunta pode ver."""
@@ -349,12 +349,11 @@ class TableService:
 
     def set_phase(self, table_id: str, token: str | None, request: LifecycleRequest) -> TableView:
         """Inicia, pausa, retoma ou encerra a partida (só o anfitrião); devolve a mesa como ele a vê."""
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
-        session, table, player_id = self._lifecycle.run(table_id, path, token, request)
+        session, table, player_id = self._lifecycle.run(table_id, token, request)
         return self._view(table_id, session, table, "host", player_id)
 
     def get_campaign(self, table_id: str, token: str | None) -> Campaign | CampaignView:
@@ -381,32 +380,28 @@ class TableService:
     def _open(self, table_id: str, token: str | None) -> tuple[Session, TableMeta, str, Player]:
         """Carrega a mesa e autentica o jogador.
 
-        404 e 401 saem daqui; partida ilegível é erro interno (a mensagem citaria caminho e
-        trechos do arquivo). Limite conhecido: os hashes vivem no arquivo, então um token
+        404 e 401 saem daqui; partida ilegível é erro interno (a mensagem citaria
+        trechos do dado). Limite conhecido: os hashes vivem na mesa guardada, então um token
         errado custa uma carga da partida.
         """
-        path = self.storage.path_for(table_id)
-        if path is None:
+        if not self.storage.exists(table_id):
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         if token is None:
             raise ApiFailure(401, "unauthorized", "token ausente")
         with self.storage.lock(table_id):
-            session = self.load_session(path)
+            session = self.load_session(table_id)
         table, player_id, player = authenticate(session, token)
         return session, table, player_id, player
 
-    def load_session(self, path: Path) -> Session:
-        """Carrega a partida de uma mesa; arquivo ilegível é erro interno, sem citar caminho."""
-        try:
-            session = load_game(path, campaign_root=self.catalog.root)
-        except (GameError, ValidationError, OSError) as exc:
-            raise RuntimeError(f"partida ilegível: {path.name}") from exc
+    def load_session(self, table_id: str) -> Session:
+        """Carrega a partida de uma mesa; registro ilegível é erro interno, sem citar o dado."""
+        session = self._records.load(table_id)
         if not session.warnings:  # já salva com o conteúdo novo: um aviso futuro volta a valer
-            self._warned = {w for w in self._warned if w[0] != path.name}
+            self._warned = {w for w in self._warned if w[0] != table_id}
         for warning in session.warnings:
-            if (path.name, warning) not in self._warned:  # uma vez por mesa, até salvar
-                self._warned.add((path.name, warning))
-                print(f"mesa {path.stem}: {warning}", file=sys.stderr)
+            if (table_id, warning) not in self._warned:  # uma vez por mesa, até salvar
+                self._warned.add((table_id, warning))
+                print(f"mesa {table_id}: {warning}", file=sys.stderr)
         return session
 
     def _llm_view(self) -> LlmView:

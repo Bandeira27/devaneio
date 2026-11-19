@@ -7,9 +7,9 @@ from itertools import count
 import pytest
 from pydantic import ValidationError
 
-from conftest import CAMPAIGN_PATH, open_for_play
+from conftest import CAMPAIGN_PATH, make_storage, open_for_play, table_text
 from devaneio.llm import LlmConfig
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import CommandRequest, CopilotRequest, CreateTableRequest, JoinRequest
 from fakes import FakeLlmServer
 
@@ -67,7 +67,7 @@ def make_service(tmp_path, llm, clock, *, cooldown=0, with_llm=True):
     config = LlmConfig(base_url=llm.base_url, model="m-teste", api_key="chave-secreta")
     return TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        make_storage(tmp_path / "mesas", max_tables=4, clock=clock),
         llm=config if with_llm else None,
         say_cooldown=0,
         copilot_cooldown=cooldown,
@@ -96,7 +96,7 @@ class Desk:
         return info.value
 
     def raw(self):
-        return self.service.storage.path_for(self.id).read_text(encoding="utf-8")
+        return table_text(self.service, self.id)
 
 
 @pytest.fixture
@@ -262,7 +262,7 @@ def test_the_seat_is_returned_when_the_llm_server_is_unreachable(tmp_path, llm, 
     config = LlmConfig(base_url="http://127.0.0.1:9/v1", model="m")
     service = TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        make_storage(tmp_path / "mesas", max_tables=4, clock=clock),
         llm=config,
         copilot_cooldown=0,
         token_source=lambda: f"token-{next(TOKENS)}",
@@ -312,7 +312,7 @@ def test_the_default_interval_is_five_seconds(tmp_path, llm, clock):
     config = LlmConfig(base_url=llm.base_url, model="m-teste")
     service = TableService(  # sem copilot_cooldown: vale o padrão
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        make_storage(tmp_path / "mesas", max_tables=4, clock=clock),
         llm=config,
         token_source=lambda: f"token-{next(TOKENS)}",
         invite_source=lambda: "convite",

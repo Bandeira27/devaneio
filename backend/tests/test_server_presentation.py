@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
-from devaneio.server import Catalog, Storage, TableService
+from conftest import CAMPAIGN_PATH, make_storage, open_for_play
+from devaneio.server import Catalog, TableService
 from devaneio.server.models import CreateTableRequest, JoinRequest
 from devaneio.server.presentation import MAX_NARRATIONS, MAX_TALK, Presentation
 
@@ -37,9 +37,9 @@ def test_talk_is_numbered_in_order_filtered_by_seq_and_capped():
 
 def test_the_talk_numbers_start_from_the_wall_clock_so_a_restart_keeps_climbing(tmp_path):
     table = "0123456789abcdef"
-    before = Storage(tmp_path, max_tables=2, wall_clock=lambda: 1_700_000_000.0)
+    before = make_storage(tmp_path, max_tables=2, wall_clock=lambda: 1_700_000_000.0)
     first = before.presentation(table).add_talk(after=0, to="bia", text="antes")
-    after_restart = Storage(tmp_path, max_tables=2, wall_clock=lambda: 1_700_000_060.0)
+    after_restart = make_storage(tmp_path, max_tables=2, wall_clock=lambda: 1_700_000_060.0)
     later = after_restart.presentation(table).add_talk(after=0, to="bia", text="depois")
     assert first.seq == 1_700_000_000_000 + 1
     assert later.seq > first.seq  # quem leu `first` não perde `later`
@@ -47,7 +47,7 @@ def test_the_talk_numbers_start_from_the_wall_clock_so_a_restart_keeps_climbing(
 
 def test_the_storage_clock_is_the_one_the_long_poll_deadline_uses(tmp_path):
     now = [50.0]
-    storage = Storage(tmp_path, max_tables=2, clock=lambda: now[0])
+    storage = make_storage(tmp_path, max_tables=2, clock=lambda: now[0])
     assert storage.now() == 50.0
     now[0] = 80.0
     assert storage.now() == 80.0
@@ -60,7 +60,7 @@ def test_the_storage_clock_is_the_one_the_long_poll_deadline_uses(tmp_path):
 def service(tmp_path):
     return TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=2),
+        make_storage(tmp_path / "mesas", max_tables=2),
         token_source=iter(f"token-{n}" for n in range(1, 50)).__next__,
         invite_source=lambda: "convite",
     )
@@ -110,7 +110,7 @@ def test_wait_without_since_talk_wakes_for_a_new_talk_and_returns_only_that(serv
 
 
 def test_waiting_counts_the_pollers_of_a_table(tmp_path):
-    storage = Storage(tmp_path, max_tables=2)
+    storage = make_storage(tmp_path, max_tables=2)
     table = "0123456789abcdef"
     assert storage.waiting(table) == 0
     assert storage.enter_wait(table) is True

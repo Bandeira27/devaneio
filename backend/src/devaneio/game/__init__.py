@@ -42,13 +42,16 @@ from .lifecycle import Action, LifecycleError, change_phase
 from .output import format_output, narrate_batch, status_banner
 from .preview import PreviewContexts, preview_contexts
 from .session import (
+    ContentHashes,
+    SaveFile,
     Session,
+    build_save,
     connect_llm,
     load_game,
     new_game,
+    open_save,
     save_game,
-    saved_campaign_path,
-    saved_table_summary,
+    start_game,
 )
 from .table import Phase, Player, Role, TableMeta
 
@@ -59,6 +62,7 @@ __all__ = [
     "CampaignCheck",
     "ChatClient",
     "CommandError",
+    "ContentHashes",
     "CopilotContextTooLarge",
     "Finding",
     "FreeformResult",
@@ -72,9 +76,11 @@ __all__ = [
     "Player",
     "PreviewContexts",
     "Role",
+    "SaveFile",
     "Session",
     "TableMeta",
     "ask_copilot",
+    "build_save",
     "change_phase",
     "check_campaign_data",
     "check_content",
@@ -91,13 +97,13 @@ __all__ = [
     "load_rules_for",
     "narrate_batch",
     "new_game",
+    "open_save",
     "parse_line",
     "preview_contexts",
     "rules_ids",
     "run_freeform",
     "save_game",
-    "saved_campaign_path",
-    "saved_table_summary",
     "split_actor",
+    "start_game",
     "status_banner",
 ]

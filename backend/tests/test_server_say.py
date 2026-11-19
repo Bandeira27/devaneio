@@ -8,10 +8,10 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
+from conftest import CAMPAIGN_PATH, make_storage, open_for_play, table_text
 from devaneio.engine import GameStatus
 from devaneio.llm import LlmConfig
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.http import make_server
 from devaneio.server.models import (
     CommandRequest,
@@ -79,7 +79,7 @@ def service(tmp_path, llm):
     config = LlmConfig(base_url=llm.base_url, model="m-teste", api_key="chave-secreta")
     return TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=10),
+        make_storage(tmp_path / "mesas", max_tables=10),
         llm=config,
         say_cooldown=0,  # o intervalo tem testes próprios, com relógio falso
         token_source=lambda: f"token-{next(TOKENS)}",
@@ -119,7 +119,7 @@ class Desk:
         return info.value
 
     def raw(self):
-        return self.service.storage.path_for(self.id).read_text(encoding="utf-8")
+        return table_text(self.service, self.id)
 
     def events(self, token, since=0):
         return self.service.get_events(self.id, token, since).events
@@ -139,7 +139,6 @@ def desk(service):
 def test_the_phase_gates_the_free_text_without_calling_the_llm(desk, script):
     bia = desk.player("Bia")
     desk.cmd(desk.host, 'entrar ana "Ana"')
-    table = desk.service.storage.path_for(desk.id)
 
     def set_phase(phase):
         # a fase pela API de verdade: o anfitrião muda, os jogadores sentem
@@ -150,7 +149,7 @@ def test_the_phase_gates_the_free_text_without_calling_the_llm(desk, script):
         )
 
     # em andamento já foi aberto por `open_for_play`: o fluxo normal da fase "running" é o dos outros testes
-    assert table.exists()
+    assert desk.service.storage.exists(desk.id)
     set_phase("paused")
     error = desk.refused(bia, "olho em volta")
     assert (error.status, error.code) == (409, "paused")
@@ -363,7 +362,9 @@ def test_a_finished_game_refuses_before_the_llm(desk, script):
 
 
 def test_without_llm_the_table_says_so(tmp_path):
-    service = TableService(Catalog(CAMPAIGN_PATH.parent), Storage(tmp_path / "m", max_tables=2))
+    service = TableService(
+        Catalog(CAMPAIGN_PATH.parent), make_storage(tmp_path / "m", max_tables=2)
+    )
     desk = Desk(service)
     error = desk.refused(desk.host, "olá")
     assert (error.status, error.code) == (409, "llm_disabled")
@@ -690,7 +691,7 @@ def slow(tmp_path, llm, clock):
     config = LlmConfig(base_url=llm.base_url, model="m-teste")
     service = TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=4, clock=clock),
+        make_storage(tmp_path / "mesas", max_tables=4, clock=clock),
         llm=config,
         say_cooldown=30,
         token_source=lambda: f"token-{next(TOKENS)}",
@@ -860,7 +861,7 @@ def test_the_host_can_opt_in_to_sending_the_secrets(tmp_path, llm, script):
     config = LlmConfig(base_url=llm.base_url, model="m-teste")
     service = TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=2),
+        make_storage(tmp_path / "mesas", max_tables=2),
         llm=config,
         say_cooldown=0,
         llm_secrets=True,

@@ -2,7 +2,8 @@
 
 import pytest
 
-from devaneio.server import ApiFailure, Storage
+from conftest import make_storage
+from devaneio.server import ApiFailure
 from devaneio.server.llm_gate import COPILOT, SAY, reserve
 
 
@@ -23,7 +24,7 @@ TABLE = "0123456789abcdef"
 
 @pytest.fixture
 def storage(tmp_path, clock):
-    return Storage(tmp_path / "mesas", max_tables=2, clock=clock)
+    return make_storage(tmp_path / "mesas", max_tables=2, clock=clock)
 
 
 def refusal(storage, slot, key, cooldown):

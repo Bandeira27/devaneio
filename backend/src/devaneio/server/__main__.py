@@ -30,6 +30,7 @@ from .migrations import migrate
 from .settings_store import SettingsStore
 from .static import StaticError, StaticSite
 from .storage import Storage
+from .transfer import import_saves
 
 
 def seconds(raw: str) -> float:
@@ -93,8 +94,89 @@ def browser_url(host: str, port: int) -> str:
     return f"http://[{host}]:{port}" if ip.version == 6 else f"http://{host}:{port}"
 
 
+MAX_LISTED = 10  # quantos arquivos recusados o aviso da subida lista; o resto vira "e mais N"
+
+
+def warn_about_old_saves(storage: Storage, catalog: Catalog, data_dir: Path) -> None:
+    """Avisa, ao subir, das partidas em JSON da pasta de dados que ainda não estão no banco, e das que não podem entrar.
+
+    Só olha (``apply=False``): nada é gravado nem movido. Os recusados saem com o motivo, para o aviso não ficar
+    pedindo um ``importar`` que não resolve e o dono saber o que fazer com cada arquivo.
+    """
+    found = import_saves(storage, catalog, [data_dir], apply=False)
+    if found.imported:
+        print(
+            f"aviso: {len(found.imported)} partida(s) em JSON na pasta de dados ainda não estão no banco: "
+            "rode 'devaneio importar' (com o servidor parado) para trazê-las.",
+            file=sys.stderr,
+        )
+    if found.refused:
+        print(
+            f"aviso: {len(found.refused)} arquivo(s) .json na pasta de dados não podem ser importados "
+            "(o 'devaneio importar' também os recusa; mova-os para outra pasta para este aviso parar):",
+            file=sys.stderr,
+        )
+        for name, reason in found.refused[:MAX_LISTED]:
+            print(f"  {name}: {reason}", file=sys.stderr)
+        if len(found.refused) > MAX_LISTED:
+            print(f"  ... e mais {len(found.refused) - MAX_LISTED}.", file=sys.stderr)
+
+
+def import_main(argv: list[str]) -> int:
+    """``devaneio importar``: traz para o banco as partidas de mesa em JSON; devolve o código de saída."""
+    parser = argparse.ArgumentParser(
+        prog="devaneio importar",
+        description="Importa partidas de mesa em JSON (as de antes do banco) para o banco do servidor. "
+        "Não altera os arquivos originais e pula o que já foi importado.",
+    )
+    parser.add_argument(
+        "fontes",
+        nargs="*",
+        type=Path,
+        help="arquivos ou pastas com <id>.json; padrão: a pasta de dados",
+    )
+    parser.add_argument("--campanhas", type=Path, default=None, help="pasta das campanhas")
+    parser.add_argument(
+        "--dados", type=Path, default=None, help="pasta de dados (onde fica o banco)"
+    )
+    parser.add_argument(
+        "--max-mesas",
+        type=int,
+        default=None,
+        help="limite de mesas no banco; padrão: sem limite (importar é decisão do dono da máquina)",
+    )
+    args = parser.parse_args(argv)
+    args.web = None
+    try:
+        campaigns_dir, data_dir, _ = resolve_folders(args, Path.cwd())
+        catalog = Catalog(campaigns_dir)
+        data_dir = prepare_data_dir(data_dir)
+        instance_lock = acquire_instance_lock(data_dir)  # recusa se o servidor está de pé
+        db = Database(data_dir / DB_NAME)
+        try:
+            migrate(db)
+            storage = Storage(
+                db, max_tables=sys.maxsize if args.max_mesas is None else args.max_mesas
+            )
+            report = import_saves(storage, catalog, args.fontes or [data_dir])
+        finally:
+            db.close()
+            if instance_lock is not None:
+                instance_lock.close()
+    except (ValueError, CatalogError, DatabaseError, OSError) as exc:
+        print(f"erro: {exc}", file=sys.stderr)
+        return 1
+    print(f"Importadas: {len(report.imported)}. Já estavam no banco: {len(report.skipped)}.")
+    for name, reason in report.refused:
+        print(f"recusada: {name}: {reason}", file=sys.stderr)
+    return 1 if report.refused else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Sobe o servidor da mesa em grupo; devolve o código de saída do processo."""
+    arguments = sys.argv[1:] if argv is None else argv
+    if arguments[:1] == ["importar"]:
+        return import_main(arguments[1:])
     parser = argparse.ArgumentParser(prog="devaneio", description="Devaneio: mesa em grupo.")
     parser.add_argument(
         "--campanhas",
@@ -147,7 +229,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--sem-navegador", action="store_true", help="não abre o navegador ao subir"
     )
-    args = parser.parse_args(argv)
+    args = parser.parse_args(arguments)
 
     try:
         campaigns_dir, data_dir, web_dir = resolve_folders(args, Path.cwd())
@@ -159,7 +241,7 @@ def main(argv: list[str] | None = None) -> int:
         db = Database(data_dir / DB_NAME)
         migrate(db)
         settings = SettingsStore(db, data_dir, environment=environment, disabled=args.sem_llm)
-        storage = Storage(data_dir, max_tables=args.max_mesas)
+        storage = Storage(db, max_tables=args.max_mesas)
     except (
         ValueError,
         CatalogError,
@@ -190,6 +272,7 @@ def main(argv: list[str] | None = None) -> int:
     url = browser_url(args.host, port)
     print(f"Devaneio: mesa em http://{args.host}:{port} ({len(catalog.summaries())} campanha(s))")
     print(f"Campanhas em {campaigns_dir.resolve()}; mesas em {data_dir.resolve()}.")
+    warn_about_old_saves(storage, catalog, data_dir)
     if static is None:
         print(
             "O app ainda não foi construído (cd frontend/app && npm run build): só a API responde.",

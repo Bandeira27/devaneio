@@ -1,7 +1,7 @@
 """Exibição em memória de uma mesa: a narração do LLM por evento e o mural de falas.
 
-Nada daqui vai ao arquivo nem ao estado (o LLM só propõe) e tudo some ao reiniciar o
-servidor. Fica fora do ``Storage``, que cuida de caminho, lock, versão e vagas.
+Nada daqui vai ao banco nem ao estado (o LLM só propõe) e tudo some ao reiniciar o
+servidor. Fica fora do ``Storage``, que cuida das mesas no banco, do lock, da versão e das vagas.
 """
 
 from __future__ import annotations

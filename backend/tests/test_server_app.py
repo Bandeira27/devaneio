@@ -1,17 +1,25 @@
 """TableService sem HTTP: regras da mesa contra o motor real e o disco de verdade."""
 
 import json
+import re
 from dataclasses import replace
 from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
+from conftest import (
+    CAMPAIGN_PATH,
+    corrupt,
+    make_storage,
+    open_for_play,
+    save_session,
+    table_text,
+)
 from devaneio.engine import reveal_fact
-from devaneio.game import load_game, new_game, save_game
+from devaneio.game import new_game, save_game
 from devaneio.llm import LlmConfig
 from devaneio.schema import BeatStatus, Campaign, GameState
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import (
     CampaignView,
     CreateTableRequest,
@@ -29,7 +37,7 @@ def make_service(tmp_path, **kwargs):
     kwargs.setdefault("invite_source", lambda: "convite-fixo")
     return TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=kwargs.pop("max_tables", 10)),
+        make_storage(tmp_path / "mesas", max_tables=kwargs.pop("max_tables", 10)),
         **kwargs,
     )
 
@@ -69,6 +77,37 @@ def test_catalog_rejects_duplicated_ids_and_broken_files(tmp_path):
         Catalog(folder)
     (folder / "b.json").write_text('{"id": "x"}', encoding="utf-8")
     with pytest.raises(ValueError, match=r"campanha 'b\.json' inválida"):
+        Catalog(folder)
+
+
+def test_a_table_deleted_between_the_check_and_the_load_is_404_not_500(service, created):
+    assert service.storage.exists(created.table_id)
+    service.storage.delete(created.table_id)  # o editor encerrou a mesa depois da checagem
+    with pytest.raises(ApiFailure) as info:
+        service.load_session(created.table_id)
+    assert (info.value.status, info.value.code) == (404, "table_not_found")
+
+
+def test_the_table_limit_is_refused_before_any_work_is_done(tmp_path):
+    service = make_service(tmp_path, max_tables=1)
+    request = CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
+    service.create_table(request)
+    locks_before = len(service.storage._tables)
+    with pytest.raises(ApiFailure) as info:
+        service.create_table(request)
+    assert info.value.code == "table_limit"
+    assert (
+        len(service.storage._tables) == locks_before
+    )  # nada ficou em memória por uma mesa que não nasceu
+
+
+def test_catalog_refuses_a_campaign_that_is_a_link_to_outside_the_folder(tmp_path):
+    outside = tmp_path / "fora.json"
+    outside.write_text(CAMPAIGN_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    folder = tmp_path / "campanhas"
+    folder.mkdir()
+    (folder / "vale.json").symlink_to(outside)
+    with pytest.raises(ValueError, match="aponta para fora da pasta de campanhas"):
         Catalog(folder)
 
 
@@ -113,14 +152,16 @@ def test_create_table_writes_the_save_with_the_table(service, lobby, tmp_path):
     assert view.llm.enabled is False
     assert view.state.rng_seed == 7
 
-    path = tmp_path / "mesas" / f"{created.table_id}.json"
-    data = json.loads(path.read_text(encoding="utf-8"))
-    assert data["table"]["players"]["p1"]["token_hash"] != created.host_token
-    assert len(data["table"]["players"]["p1"]["token_hash"]) == 64
-    assert created.host_token not in path.read_text(encoding="utf-8")
-    assert created.invite_code not in path.read_text(encoding="utf-8")
-    # a partida é uma partida normal: o CLI abre e preserva a mesa
-    session = load_game(path)
+    record = service.storage.read(created.table_id)
+    meta = json.loads(record.meta)
+    assert meta["players"]["p1"]["token_hash"] != created.host_token
+    assert len(meta["players"]["p1"]["token_hash"]) == 64
+    assert created.host_token not in table_text(service, created.table_id)
+    assert created.invite_code not in table_text(service, created.table_id)
+    assert (
+        record.campaign_path == "sombra-do-vale.json"
+    )  # relativo à pasta de campanhas, nunca absoluto
+    session = service.load_session(created.table_id)
     assert session.table is not None
     assert session.table.players["p1"].name == "Ana"
 
@@ -161,18 +202,22 @@ def test_get_table_requires_a_valid_token(service, lobby):
 )
 def test_get_table_rejects_ids_it_did_not_generate(service, created, table_id, monkeypatch):
     def never(*_args, **_kwargs):
-        raise AssertionError("nenhum arquivo deveria ser aberto para esse id")
+        raise AssertionError("o banco não deveria ser consultado para esse id")
 
-    monkeypatch.setattr("devaneio.server.app.load_game", never)
+    monkeypatch.setattr(service.storage._db, "write", never)
+    if not re.fullmatch(
+        r"[a-f0-9]{16}", table_id
+    ):  # um id bem formado ainda pergunta ao banco se existe
+        monkeypatch.setattr(service.storage._db, "read", never)
     with pytest.raises(ApiFailure, match="mesa não encontrada") as info:
         service.get_table(table_id, bearer(created.host_token))
     assert info.value.status == 404
 
 
-def test_a_save_without_table_in_the_data_folder_is_not_a_table(service, created):
-    """Uma partida solo copiada para a pasta de dados não vira mesa."""
+def test_a_loose_save_file_in_the_data_folder_is_not_a_table(service, created, tmp_path):
+    """Uma partida solo copiada para a pasta de dados não vira mesa: só o que está no banco existe."""
     table_id = "0123456789abcdef"
-    save_game(new_game(CAMPAIGN_PATH, service.storage.data_dir / f"{table_id}.json", seed=7))
+    save_game(new_game(CAMPAIGN_PATH, tmp_path / "mesas" / f"{table_id}.json", seed=7))
     with pytest.raises(ApiFailure, match="mesa não encontrada") as info:
         service.get_table(table_id, bearer(created.host_token))
     assert info.value.status == 404
@@ -187,9 +232,9 @@ def test_players_see_a_fact_only_after_it_is_revealed(service, created):
     before = service.get_campaign(created.table_id, bearer(joined.token))
     assert before.facts == []
 
-    session = load_game(service.storage.path_for(created.table_id))
+    session = service.load_session(created.table_id)
     revealed = reveal_fact(session.state, session.campaign, fact_id="ferreiro-segredo").state
-    save_game(replace(session, state=revealed))
+    save_session(service, created.table_id, replace(session, state=revealed))
     after = service.get_campaign(created.table_id, bearer(joined.token))
     assert [(f.id, f.text) for f in after.facts] == [
         ("ferreiro-segredo", "Bram conhece o caminho secreto para o altar.")
@@ -226,11 +271,10 @@ def test_the_host_gets_the_whole_campaign_and_players_only_what_olhar_shows(serv
 
 
 def test_player_state_shows_hostile_but_never_the_numbers_behind_it(service, created):
-    path = service.storage.path_for(created.table_id)
-    session = load_game(path)
+    session = service.load_session(created.table_id)
     ferreiro = session.state.npcs["ferreiro"].model_copy(update={"disposition": -5})
     state = session.state.model_copy(update={"npcs": {**session.state.npcs, "ferreiro": ferreiro}})
-    save_game(replace(session, state=state))
+    save_session(service, created.table_id, replace(session, state=state))
     joined = join(service, created)
     view = service.get_table(created.table_id, joined.token)
     npc = view.state.npcs["ferreiro"]
@@ -246,12 +290,11 @@ def test_join_gives_a_token_and_stores_only_its_hash(service, created):
         ("p1", "Ana", "host"),
         ("p2", "Bia", "player"),
     ]
-    path = service.storage.path_for(created.table_id)
-    text = path.read_text(encoding="utf-8")
+    text = table_text(service, created.table_id)
     assert joined.token not in text
     assert "convite-fixo" not in text
-    data = json.loads(text)
-    assert len(data["table"]["players"]["p2"]["token_hash"]) == 64
+    meta = json.loads(service.storage.read(created.table_id).meta)
+    assert len(meta["players"]["p2"]["token_hash"]) == 64
     # o token novo abre a mesa, e o do anfitrião continua valendo
     assert service.get_table(created.table_id, joined.token).table_id == created.table_id
     assert service.get_table(created.table_id, created.host_token).table_id == created.table_id
@@ -303,9 +346,11 @@ def test_invite_preview_does_not_depend_on_the_table_being_full(service, created
     assert preview.title == "A Sombra do Vale"  # a prévia não é oráculo de "mesa cheia"
 
 
-def test_invite_preview_of_a_save_without_table_answers_like_an_unknown_table(service, created):
+def test_invite_preview_of_a_loose_save_file_answers_like_an_unknown_table(
+    service, created, tmp_path
+):
     table_id = "0123456789abcdef"
-    save_game(new_game(CAMPAIGN_PATH, service.storage.data_dir / f"{table_id}.json", seed=7))
+    save_game(new_game(CAMPAIGN_PATH, tmp_path / "mesas" / f"{table_id}.json", seed=7))
     with pytest.raises(ApiFailure, match="convite inválido") as info:
         service.preview_invite(table_id, InvitePreviewRequest(invite_code="convite-fixo"))
     assert (info.value.status, info.value.code) == (401, "invalid_invite")
@@ -324,11 +369,10 @@ def test_invite_preview_of_another_table_with_its_own_invite_is_refused(tmp_path
     assert service.preview_invite(second.table_id, other).title == "A Sombra do Vale"
 
 
-def test_invite_preview_changes_nothing_on_disk(service, created):
-    path = service.storage.data_dir / f"{created.table_id}.json"
-    before = path.read_bytes()
+def test_invite_preview_changes_nothing_in_the_database(service, created):
+    before = service.storage.read(created.table_id)
     service.preview_invite(created.table_id, InvitePreviewRequest(invite_code="convite-fixo"))
-    assert path.read_bytes() == before
+    assert service.storage.read(created.table_id) == before
 
 
 def test_invite_preview_request_accepts_sixty_four_characters():
@@ -383,22 +427,24 @@ def test_players_see_a_projection_of_the_state_and_the_host_sees_it_all(service,
     assert host_view.role == "host"
 
 
-def test_unreadable_save_is_an_internal_error_without_the_file_contents(service, created):
-    path = service.storage.path_for(created.table_id)
-    path.write_text('{"save_version": 1, "campaign_path": "x.json", "state": "SEGREDO"}')
+def test_unreadable_save_is_an_internal_error_without_the_stored_contents(service, created):
+    corrupt(service, created.table_id, state='{"state": "SEGREDO"}')
     with pytest.raises(RuntimeError, match="partida ilegível") as info:
         service.get_table(created.table_id, bearer(created.host_token))
     assert "SEGREDO" not in str(info.value)
+    assert (
+        info.value.__cause__ is None
+    )  # o traceback no log não encadeia a validação, que repetiria o dado
     assert service.storage.lock(created.table_id).locked() is False
 
 
-def test_campaign_outside_the_catalog_is_refused(service, created, tmp_path):
-    path = service.storage.path_for(created.table_id)
+@pytest.mark.parametrize(
+    "reference", ["../fora.json", "/etc/passwd", "sub/../../fora.json", ".", ""]
+)
+def test_campaign_outside_the_catalog_is_refused(service, created, tmp_path, reference):
     outside = tmp_path / "fora.json"
     outside.write_text(CAMPAIGN_PATH.read_text(encoding="utf-8"), encoding="utf-8")
-    data = json.loads(path.read_text(encoding="utf-8"))
-    data["campaign_path"] = "../fora.json"
-    path.write_text(json.dumps(data), encoding="utf-8")
+    corrupt(service, created.table_id, campaign_path=reference)
     with pytest.raises(RuntimeError, match="partida ilegível"):
         service.get_table(created.table_id, bearer(created.host_token))
 
@@ -475,11 +521,11 @@ def test_a_name_that_looks_like_an_existing_one_is_taken(service, created, name)
     assert info.value.code == "name_taken"
 
 
+STALE_CONTENT = json.dumps({"rules_sha256": "0" * 64, "narration_sha256": "0" * 64})
+
+
 def test_the_server_logs_a_changed_content_warning_once_per_table(service, created, capsys):
-    path = service.storage.path_for(created.table_id)
-    data = json.loads(path.read_text(encoding="utf-8"))
-    data["content"] = {"rules_sha256": "0" * 64, "narration_sha256": "0" * 64}
-    path.write_text(json.dumps(data), encoding="utf-8")
+    corrupt(service, created.table_id, content=STALE_CONTENT)
     service.get_table(created.table_id, bearer(created.host_token))
     service.get_table(created.table_id, bearer(created.host_token))
     err = capsys.readouterr().err
@@ -488,16 +534,14 @@ def test_the_server_logs_a_changed_content_warning_once_per_table(service, creat
 
 
 def test_a_second_content_change_warns_again_after_a_save(service, created, capsys):
-    path = service.storage.path_for(created.table_id)
-
     def stale():
-        data = json.loads(path.read_text(encoding="utf-8"))
-        data["content"] = {"rules_sha256": "0" * 64, "narration_sha256": "0" * 64}
-        path.write_text(json.dumps(data), encoding="utf-8")
+        corrupt(service, created.table_id, content=STALE_CONTENT)
 
     stale()
     service.get_table(created.table_id, bearer(created.host_token))
-    save_game(load_game(path))  # o salvamento grava o conteúdo atual
+    save_session(
+        service, created.table_id, service.load_session(created.table_id)
+    )  # grava o conteúdo atual
     service.get_table(created.table_id, bearer(created.host_token))
     capsys.readouterr()
     stale()
@@ -581,7 +625,7 @@ def test_the_rules_catalog_shows_the_authors_system_when_the_campaign_extends_on
     (folder / "sistemas" / "meu-sistema.json").write_text(json.dumps(system), encoding="utf-8")
     service = TableService(
         Catalog(folder),
-        Storage(tmp_path / "mesas", max_tables=2),
+        make_storage(tmp_path / "mesas", max_tables=2),
         token_source=lambda: "token-x",
         invite_source=lambda: "convite-x",
     )

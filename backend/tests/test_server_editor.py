@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from conftest import CAMPAIGN_PATH, make_storage
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server import http as server_http
 from devaneio.server.__main__ import browser_url, project_root, resolve_folders
 from devaneio.server.catalog import CatalogError
@@ -26,6 +26,7 @@ from devaneio.server.editor import (
 )
 from devaneio.server.http import make_server
 from devaneio.server.models import CreateTableRequest
+from devaneio.server.storage import Record
 
 SECRET = "SEGREDO-DO-SACERDOTE"  # noqa: S105 — texto de teste, não é senha
 
@@ -66,7 +67,7 @@ def folder(tmp_path):
 @pytest.fixture
 def setup(folder, tmp_path):
     catalog = Catalog(folder)
-    storage = Storage(tmp_path / "mesas", max_tables=10)
+    storage = make_storage(tmp_path / "mesas", max_tables=10)
     service = TableService(catalog, storage)
     return catalog, storage, service
 
@@ -574,22 +575,24 @@ def test_register_keeps_summaries_in_file_name_order(setup, folder):
 # --- Storage.campaigns_in_use --------------------------------------------------------
 
 
-def test_campaigns_in_use_ignores_corrupt_and_odd_saves(setup, folder):
+def test_campaigns_in_use_lists_the_campaign_of_every_table_even_an_unreadable_one(setup):
     _, storage, service = setup
     service.create_table(CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=1))
-    d = storage.data_dir
-    (d / "0000000000000001.json").write_text("{não é json", encoding="utf-8")
-    (d / "0000000000000002.json").write_text('{"sem": "caminho"}', encoding="utf-8")
-    (d / "0000000000000003.json").write_text('{"campaign_path": 5}', encoding="utf-8")
-    (d / "0000000000000004.json").write_text("[1]", encoding="utf-8")
-    (d / "0000000000000005.json").write_bytes(b"\xff\xfe")
-    (d / "notas.json").write_text('{"campaign_path": "x.json"}', encoding="utf-8")
-    assert storage.campaigns_in_use() == {(folder / "sombra-do-vale.json").resolve()}
+    assert storage.campaigns_in_use() == {"sombra-do-vale.json"}
+    # Uma mesa ilegível ainda trava a campanha dela: sem ler, não dá para saber que ninguém joga ali.
+    storage.create(
+        "0000000000000001",
+        Record(campaign_path="outra.json", state="{não é json", meta="[1]", content=None),
+    )
+    assert storage.campaigns_in_use() == {"sombra-do-vale.json", "outra.json"}
 
 
 def test_a_corrupt_save_does_not_block_listing_or_updating(api, folder, setup):
     _, storage, _ = setup
-    (storage.data_dir / "0000000000000001.json").write_text("{quebrado", encoding="utf-8")
+    storage.create(
+        "0000000000000001",
+        Record(campaign_path="outra.json", state="{quebrado", meta="{quebrado", content=None),
+    )
     assert api.call("GET", "/editor/campaigns")[1][0]["writable"] is True
     status, _ = api.call(
         "PUT", "/editor/campaigns/sombra-do-vale", {"campaign": campaign_json(folder, title="Y")}

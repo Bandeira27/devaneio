@@ -4,8 +4,8 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from conftest import CAMPAIGN_PATH, make_storage
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import (
     CommandRequest,
     CreateTableRequest,
@@ -33,7 +33,7 @@ class Room:
         self.clock = Clock()
         self.service = TableService(
             Catalog(CAMPAIGN_PATH.parent),
-            Storage(tmp_path / "mesas", max_tables=10),
+            make_storage(tmp_path / "mesas", max_tables=10),
             token_source=lambda: f"token-{next(TOKENS)}",
             invite_source=lambda: "convite",
             clock=self.clock,

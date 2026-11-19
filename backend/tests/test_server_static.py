@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
-from devaneio.server import Catalog, Storage, TableService
+from conftest import CAMPAIGN_PATH, make_storage
+from devaneio.server import Catalog, TableService
 from devaneio.server.__main__ import main
 from devaneio.server.http import make_server
 from devaneio.server.static import CSP, MAX_STATIC_BYTES, StaticError, StaticSite
@@ -54,7 +54,7 @@ def fetch(server, method, path, *, headers=None):
 def server(tmp_path, web):
     service = TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=2),
+        make_storage(tmp_path / "mesas", max_tables=2),
         token_source=lambda: "token-x",
         invite_source=lambda: "convite-x",
     )
@@ -222,7 +222,9 @@ def test_only_get_and_head_reach_the_files(server, method):
 
 
 def test_without_the_flag_the_server_is_json_only(tmp_path):
-    service = TableService(Catalog(CAMPAIGN_PATH.parent), Storage(tmp_path / "m", max_tables=1))
+    service = TableService(
+        Catalog(CAMPAIGN_PATH.parent), make_storage(tmp_path / "m", max_tables=1)
+    )
     httpd = make_server("127.0.0.1", 0, service)
     thread = threading.Thread(target=lambda: httpd.serve_forever(poll_interval=0.02), daemon=True)
     thread.start()

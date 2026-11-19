@@ -6,8 +6,8 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from conftest import CAMPAIGN_PATH, make_storage, open_for_play
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest
 from devaneio.server.storage import MAX_WAITERS
 
@@ -18,7 +18,7 @@ TOKENS = count(1)
 def service(tmp_path):
     return TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=10),
+        make_storage(tmp_path / "mesas", max_tables=10),
         token_source=lambda: f"token-{next(TOKENS)}",
         invite_source=lambda: "convite",
     )

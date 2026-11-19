@@ -3,7 +3,7 @@
 Está sempre ligado (``--sem-editor`` desliga), mas só atende pedidos vindos da própria máquina (rule 05,
 item 25). O único dado da requisição que vira nome de arquivo é o id da campanha, um slug: o arquivo é
 sempre ``<pasta>/<id>.json``. A escrita é atômica e só acontece sem erro de validação; campanha que
-alguma mesa usa não é sobrescrita, porque as mesas a relêem do arquivo.
+alguma mesa usa não é sobrescrita, porque as mesas a relêem do arquivo dela.
 """
 
 from __future__ import annotations
@@ -134,7 +134,11 @@ class EditorService:
             path = self.catalog.path(summary.id)
             if path is not None:
                 out.append(
-                    EditorCampaign(id=summary.id, title=summary.title, writable=path not in used)
+                    EditorCampaign(
+                        id=summary.id,
+                        title=summary.title,
+                        writable=self.catalog.relative(path) not in used,
+                    )
                 )
         return out
 
@@ -205,7 +209,7 @@ class EditorService:
                 409, "campaign_id_changed", "o id de uma campanha não muda: salve uma cópia"
             )
         with self._write_lock:
-            if path in self.storage.campaigns_in_use():
+            if self.catalog.relative(path) in self.storage.campaigns_in_use():
                 raise ApiFailure(
                     409,
                     "campaign_in_use",
@@ -267,7 +271,7 @@ class EditorService:
                 "internal",
                 "a campanha foi gravada, mas o catálogo não a leu; reinicie o servidor",
             ) from exc
-        writable = path not in self.storage.campaigns_in_use()
+        writable = self.catalog.relative(path) not in self.storage.campaigns_in_use()
         return EditorCampaign(id=campaign.id, title=campaign.title, writable=writable)
 
     # --- prévia ------------------------------------------------------------------

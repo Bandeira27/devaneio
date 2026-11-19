@@ -5,9 +5,9 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
+from conftest import CAMPAIGN_PATH, make_storage, open_for_play, table_text
 from devaneio.engine import GameStatus
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest
 
 TOKENS = count(1)
@@ -41,7 +41,7 @@ class Desk:
         return info.value
 
     def raw(self):
-        return self.service.storage.path_for(self.id).read_text(encoding="utf-8")
+        return table_text(self.service, self.id)
 
     def player(self, name, character=None):
         """Jogador que já entrou com um personagem (``id`` do personagem em minúsculas)."""
@@ -55,7 +55,7 @@ class Desk:
 def desk(tmp_path):
     service = TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=10),
+        make_storage(tmp_path / "mesas", max_tables=10),
         token_source=lambda: f"token-{next(TOKENS)}",
         invite_source=lambda: "convite",
     )

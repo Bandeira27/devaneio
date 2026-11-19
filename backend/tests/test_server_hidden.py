@@ -6,9 +6,9 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
+from conftest import CAMPAIGN_PATH, make_storage, open_for_play
 from devaneio.game import CommandError, execute, new_game
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import (
     CampaignView,
     CommandRequest,
@@ -48,7 +48,7 @@ class Desk:
 def desk(tmp_path):
     service = TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=4),
+        make_storage(tmp_path / "mesas", max_tables=4),
         token_source=lambda: f"token-{next(TOKENS)}",
         invite_source=lambda: "convite",
     )

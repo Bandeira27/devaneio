@@ -6,9 +6,10 @@ import time
 
 import pytest
 
-from conftest import CAMPAIGN_PATH
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from conftest import CAMPAIGN_PATH, make_storage, table_text
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.models import CreateTableRequest, InvitePreviewRequest
+from devaneio.server.storage import Record
 from test_server_editor import SECRET, Api, serve
 
 SOMBRA = "sombra-do-vale"
@@ -29,7 +30,7 @@ def folder(tmp_path):
 @pytest.fixture
 def setup(folder, tmp_path):
     catalog = Catalog(folder)
-    storage = Storage(tmp_path / "mesas", max_tables=10)
+    storage = make_storage(tmp_path / "mesas", max_tables=10)
     return catalog, storage, TableService(catalog, storage)
 
 
@@ -81,8 +82,10 @@ def test_an_unknown_campaign_is_404_and_a_campaign_without_tables_is_empty(api):
 def test_an_unreadable_table_does_not_break_the_list(api, setup):
     _, storage, service = setup
     good = make_table(service)
-    broken = storage.data_dir / "0123456789abcdef.json"
-    broken.write_text("{isto não é json", encoding="utf-8")
+    storage.create(
+        "0123456789abcdef",
+        Record(campaign_path=f"{SOMBRA}.json", state="{}", meta="{isto não é json", content=None),
+    )
     _, rows = api.call("GET", f"/editor/campaigns/{SOMBRA}/tables")
     assert [row["table_id"] for row in rows] == [good.table_id]
 
@@ -96,7 +99,7 @@ def test_closing_a_table_deletes_it_and_frees_the_campaign(api, setup):
     assert writable(api) is False
     status, body = api.call("DELETE", f"/editor/tables/{created.table_id}", headers=origin(api))
     assert (status, body) == (200, {"table_id": created.table_id})
-    assert storage.path_for(created.table_id) is None
+    assert not storage.exists(created.table_id)
     assert writable(api) is True
     assert api.call("GET", f"/editor/campaigns/{SOMBRA}/tables") == (200, [])
 
@@ -117,7 +120,7 @@ def test_closing_needs_a_same_origin_request(api, setup):
     )
     assert status == 403
     assert body["error"]["code"] == "origin_not_allowed"
-    assert storage.path_for(created.table_id) is not None
+    assert storage.exists(created.table_id)
 
 
 def test_closing_wakes_a_waiting_reader_with_404(api, setup):
@@ -169,13 +172,13 @@ def test_host_access_replaces_the_token_and_the_invite(api, setup):
     assert service.preview_invite(created.table_id, new_invite).title
 
 
-def test_host_access_does_not_store_the_secrets_in_the_file(api, setup):
-    _, storage, service = setup
+def test_host_access_does_not_store_the_secrets_in_the_database(api, setup):
+    _, _, service = setup
     created = make_table(service)
     _, access = api.call(
         "POST", f"/editor/tables/{created.table_id}/host-access", headers=origin(api)
     )
-    saved = storage.path_for(created.table_id).read_text(encoding="utf-8")
+    saved = table_text(service, created.table_id)
     assert access["token"] not in saved
     assert access["invite_code"] not in saved
 
@@ -187,7 +190,10 @@ def test_host_access_on_an_unknown_table_is_404(api):
 
 def test_host_access_on_an_unreadable_table_is_409(api, setup):
     _, storage, _ = setup
-    (storage.data_dir / "0123456789abcdef.json").write_text("{quebrado", encoding="utf-8")
+    storage.create(
+        "0123456789abcdef",
+        Record(campaign_path=f"{SOMBRA}.json", state="{quebrado", meta="{quebrado", content=None),
+    )
     status, body = api.call(
         "POST", "/editor/tables/0123456789abcdef/host-access", headers=origin(api)
     )

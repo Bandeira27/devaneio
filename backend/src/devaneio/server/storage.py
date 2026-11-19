@@ -1,9 +1,11 @@
-"""Onde as mesas vivem em disco e como o acesso a cada uma é serializado.
+"""Onde as mesas vivem (no banco) e como o acesso a cada uma é serializado.
 
-O id da mesa é gerado aqui e validado de novo quando vem da URL: só o formato que o
-próprio servidor produz vira caminho, e sempre dentro da pasta de dados. O arquivo é a fonte
-única da verdade; em memória ficam só a coordenação (lock, versão, vagas, intervalo do texto
-livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao reiniciar.
+O id da mesa é gerado aqui e validado de novo quando vem da URL: só o formato que o próprio servidor produz
+chega ao banco. O banco é a fonte única da verdade; em memória ficam só a coordenação (lock, versão, vagas,
+intervalo do texto livre) e, por mesa, a ``Presentation`` (narração e mural do LLM), que some ao reiniciar.
+
+Toda gravação de uma mesa acontece sob o lock dela: ler, mudar e gravar sem outro no meio. Cada leitura e cada
+gravação é uma transação curta no banco (``Database.read``/``write``); nenhuma atravessa chamada ao LLM.
 """
 
 from __future__ import annotations
@@ -14,14 +16,36 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from pathlib import Path
 
-from devaneio.game import saved_campaign_path
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.orm import Session
 
+from .database import Database
+from .errors import ApiFailure
+from .orm import GameTable
 from .presentation import Presentation
 
-TABLE_ID = re.compile(r"^[a-f0-9]{16}$")
+TABLE_ID = re.compile(r"[a-f0-9]{16}\Z")  # \Z, não $: o $ aceitaria uma quebra de linha no fim
 MAX_WAITERS = 16  # esperas de long-poll simultâneas por mesa; acima disso, responde de imediato
+
+
+@dataclass(frozen=True)
+class Record:
+    """O que se guarda de uma mesa: textos JSON já prontos, e onde a campanha dela está (relativo à pasta de campanhas)."""
+
+    campaign_path: str
+    state: str
+    meta: str
+    content: str | None
+
+
+@dataclass(frozen=True)
+class Summary:
+    """Uma linha da lista de mesas: o id, a ``TableMeta`` em JSON e quando a mesa foi gravada pela última vez."""
+
+    table_id: str
+    meta: str
+    updated_at: float
 
 
 @dataclass
@@ -45,71 +69,151 @@ class _Table:
 
 
 class Storage:
-    """Onde as mesas moram: arquivos numa pasta, mais os locks, a espera por mudanças e os limites do LLM em memória."""
+    """Onde as mesas moram (o banco), mais os locks, a espera por mudanças e os limites do LLM em memória."""
 
     def __init__(
         self,
-        data_dir: Path,
+        db: Database,
         *,
         max_tables: int,
         clock: Callable[[], float] = time.monotonic,
         wall_clock: Callable[[], float] = time.time,
     ) -> None:
+        self._db = db
         self._clock = clock  # injetável: os testes do intervalo do texto livre não esperam
-        self._wall_clock = wall_clock  # semente dos números do mural de falas
-        self.data_dir = Path(data_dir).resolve()
-        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self._wall_clock = (
+            wall_clock  # semente dos números do mural de falas e carimbo das gravações
+        )
         self.max_tables = max_tables
         self._tables: dict[str, _Table] = {}
         self._registry = threading.Lock()
 
-    def path_for(self, table_id: str) -> Path | None:
-        """O caminho do arquivo de uma mesa, ou nada se o id não serve.
+    # --- o banco -----------------------------------------------------------------
 
-        Caminho da mesa, ou ``None`` se o id não tem o formato gerado aqui, resolve para
-        fora da pasta de dados ou não existe.
-        """
+    def exists(self, table_id: str) -> bool:
+        """A mesa existe? Id fora do formato gerado aqui nunca chega ao banco."""
+        if not TABLE_ID.match(table_id):
+            return False
+        return self._db.read(
+            lambda s: s.scalar(select(GameTable.id).where(GameTable.id == table_id)) is not None
+        )
+
+    def read(self, table_id: str) -> Record | None:
+        """O que está guardado da mesa, ou nada se ela não existe."""
         if not TABLE_ID.match(table_id):
             return None
-        path = (self.data_dir / f"{table_id}.json").resolve()
-        if not path.is_relative_to(self.data_dir) or not path.is_file():
-            return None
-        return path
 
-    def new_table_path(self) -> tuple[str, Path]:
-        """Um id novo para uma mesa e o caminho do arquivo dela."""
+        def read(session: Session) -> Record | None:
+            row = session.execute(
+                select(
+                    GameTable.campaign_path, GameTable.state, GameTable.meta, GameTable.content
+                ).where(GameTable.id == table_id)
+            ).one_or_none()
+            return None if row is None else Record(*row)
+
+        return self._db.read(read)
+
+    def create(self, table_id: str, record: Record, *, updated_at: float | None = None) -> bool:
+        """Guarda uma mesa nova; ``False`` (e nada guardado) se o servidor já tem ``max_tables``.
+
+        A conferência do limite e a gravação são uma transação só: duas criações juntas não passam do limite.
+        ``updated_at`` só serve à importação, que guarda a data do arquivo original.
+        """
+        now = self._wall_clock() if updated_at is None else updated_at
+
+        def insert(session: Session) -> bool:
+            total = session.scalar(select(func.count()).select_from(GameTable)) or 0
+            if total >= self.max_tables:
+                return False
+            session.add(
+                GameTable(
+                    id=table_id,
+                    campaign_path=record.campaign_path,
+                    state=record.state,
+                    meta=record.meta,
+                    content=record.content,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            return True
+
+        return self._db.write(insert)
+
+    def save(self, table_id: str, record: Record) -> None:
+        """Regrava uma mesa que existe. Chamar com o lock dela tomado.
+
+        ``404`` se ela foi apagada no meio do caminho: gravar não a traz de volta.
+        """
+
+        def write(session: Session) -> int:
+            result = session.execute(
+                update(GameTable)
+                .where(GameTable.id == table_id)
+                .values(
+                    campaign_path=record.campaign_path,
+                    state=record.state,
+                    meta=record.meta,
+                    content=record.content,
+                    updated_at=self._wall_clock(),
+                )
+                .returning(GameTable.id)
+            )
+            return len(result.all())
+
+        if self._db.write(write) == 0:
+            raise ApiFailure(404, "table_not_found", "mesa não encontrada")
+
+    def delete(self, table_id: str) -> bool:
+        """Apaga a mesa; ``False`` se ela não existia."""
+
+        def remove(session: Session) -> int:
+            gone = session.execute(
+                delete(GameTable).where(GameTable.id == table_id).returning(GameTable.id)
+            )
+            return len(gone.all())
+
+        return TABLE_ID.match(table_id) is not None and self._db.write(remove) > 0
+
+    def new_table_id(self) -> str:
+        """Um id novo para uma mesa, que nenhuma outra usa."""
         while True:
             table_id = secrets.token_hex(8)
-            path = self.data_dir / f"{table_id}.json"
-            if not path.exists():
-                return table_id, path
+            if not self.exists(table_id):
+                return table_id
 
     def count(self) -> int:
         """Quantas mesas existem."""
-        return sum(1 for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
+        return self._db.read(lambda s: s.scalar(select(func.count()).select_from(GameTable)) or 0)
 
     def table_ids(self) -> list[str]:
         """Os ids das mesas que existem, em ordem estável."""
-        return sorted(p.stem for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
+        return self._db.read(lambda s: list(s.scalars(select(GameTable.id).order_by(GameTable.id))))
 
-    def campaigns_in_use(self) -> set[Path]:
-        """Os arquivos de campanha que alguma mesa usa (cada mesa guarda o caminho, relativo ao arquivo dela).
+    def summaries(self, campaign_path: str) -> list[Summary]:
+        """As mesas de uma campanha (``TableMeta`` em JSON, sem o estado), em ordem estável."""
 
-        Uma mesa ilegível não conta como uso: sem o caminho, não há o que proteger.
-        """
-        used: set[Path] = set()
-        for path in self.data_dir.glob("*.json"):
-            if TABLE_ID.match(path.stem):
-                campaign_path = saved_campaign_path(path)
-                if campaign_path is not None:
-                    used.add(campaign_path)
-        return used
+        def read(session: Session) -> list[Summary]:
+            rows = session.execute(
+                select(GameTable.id, GameTable.meta, GameTable.updated_at)
+                .where(GameTable.campaign_path == campaign_path)
+                .order_by(GameTable.id)
+            )
+            return [Summary(*row) for row in rows]
+
+        return self._db.read(read)
+
+    def campaigns_in_use(self) -> set[str]:
+        """Os caminhos de campanha (relativos à pasta de campanhas) que alguma mesa usa."""
+        return self._db.read(lambda s: set(s.scalars(select(GameTable.campaign_path).distinct())))
+
+    # --- coordenação em memória --------------------------------------------------
 
     def _table(self, table_id: str) -> _Table:
         """O cadeado da mesa, criado na primeira vez.
 
         Uma entrada por mesa existente; o dicionário não cresce com ids inventados porque
-        quem chama já validou o id com ``path_for``.
+        quem chama já validou o id com ``exists``.
         """
         with self._registry:
             if table_id not in self._tables:

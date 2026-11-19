@@ -10,10 +10,10 @@ from itertools import count
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, open_for_play
+from conftest import CAMPAIGN_PATH, corrupt, make_storage, open_for_play
 from devaneio.game import new_game, save_game
 from devaneio.llm import LlmConfig
-from devaneio.server import ApiFailure, Catalog, Storage, TableService
+from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server.__main__ import main
 from devaneio.server.http import ApiServer, make_server
 from fakes import FakeLlmServer
@@ -63,7 +63,7 @@ def service(tmp_path, issued):
 
     return TableService(
         Catalog(CAMPAIGN_PATH.parent),
-        Storage(tmp_path / "mesas", max_tables=5),
+        make_storage(tmp_path / "mesas", max_tables=5),
         token_source=issue,
         invite_source=lambda: "convite",
     )
@@ -393,9 +393,9 @@ def test_invite_preview_refuses_get_with_405(client):
     assert (status, body["error"]["code"]) == (405, "method_not_allowed")
 
 
-def test_invite_preview_of_a_save_without_table_is_401(client, service):
+def test_invite_preview_of_a_loose_save_file_is_401(client, tmp_path):
     table_id = "0123456789abcdef"
-    save_game(new_game(CAMPAIGN_PATH, service.storage.data_dir / f"{table_id}.json", seed=7))
+    save_game(new_game(CAMPAIGN_PATH, tmp_path / "mesas" / f"{table_id}.json", seed=7))
     status, body, _ = client.call(
         "POST", f"/tables/{table_id}/preview", body={"invite_code": "convite"}
     )
@@ -597,8 +597,7 @@ def test_unexpected_exception_is_a_generic_500_and_the_server_goes_on(
 
 def test_unreadable_save_is_a_generic_500(client, service):
     _, created, _ = create(client)
-    path = service.storage.path_for(created["table_id"])
-    path.write_text('{"save_version": 1, "campaign_path": "x.json", "state": "SEGREDO"}')
+    corrupt(service, created["table_id"], state='{"state": "SEGREDO"}')
     status, body, _ = client.call(
         "GET", f"/tables/{created['table_id']}", auth=created["host_token"]
     )
@@ -764,7 +763,7 @@ def test_the_copilot_route_answers_the_host_only(tmp_path, issued):
     with FakeLlmServer(lambda _body: (200, "Pense na floresta.")) as fake:
         service = TableService(
             Catalog(CAMPAIGN_PATH.parent),
-            Storage(tmp_path / "mesas", max_tables=5),
+            make_storage(tmp_path / "mesas", max_tables=5),
             llm=LlmConfig(base_url=fake.base_url, model="m"),
             copilot_cooldown=0,
             token_source=lambda: issued.append(f"token-{next(TOKENS)}") or issued[-1],

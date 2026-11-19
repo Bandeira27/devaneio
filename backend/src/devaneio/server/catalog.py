@@ -30,6 +30,10 @@ class Catalog:
         self._paths: dict[str, Path] = {}
         self._summaries: list[CampaignSummary] = []
         for path in sorted(self.root.glob("*.json")):
+            if (
+                path.resolve().parent != self.root
+            ):  # um link para fora da pasta: as mesas não o aceitariam
+                raise CatalogError(f"campanha '{path.name}' aponta para fora da pasta de campanhas")
             campaign = self._load(path)
             if campaign.id in self._paths:
                 raise CatalogError(
@@ -54,6 +58,21 @@ class Catalog:
         """O arquivo de uma campanha pelo id, ou nada se o id não existe."""
         with self._lock:
             return self._paths.get(campaign_id)
+
+    def relative(self, path: Path) -> str:
+        """O caminho de uma campanha relativo à pasta do catálogo, com ``/``: é como as mesas a guardam.
+
+        ``ValueError`` se o arquivo está fora da pasta.
+        """
+        return Path(path).resolve().relative_to(self.root).as_posix()
+
+    def inside(self, relative: str) -> Path | None:
+        """O arquivo de campanha de um caminho guardado, ou nada se ele sai da pasta do catálogo.
+
+        O caminho vem de dado (rule 05, item 10): nunca absoluto, nunca com ``..`` que escape da pasta.
+        """
+        resolved = (self.root / relative).resolve()
+        return resolved if resolved.is_relative_to(self.root) and resolved != self.root else None
 
     def register(self, path: Path) -> None:
         """Passa a conhecer (ou relê) uma campanha gravada depois da subida, sem reiniciar o servidor.

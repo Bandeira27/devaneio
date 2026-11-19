@@ -1,4 +1,8 @@
-"""Partida em disco: o arquivo da partida é a fonte da verdade, nada vive só em memória."""
+"""A partida: o que o jogo é, e como vira o arquivo de partida do CLI.
+
+``Session`` e a montagem dela a partir de um ``SaveFile`` (``open_save``) e de volta (``build_save``) são puras: não sabem
+onde a partida mora. O CLI as liga a um arquivo (``load_game``, ``save_game``); o servidor, ao banco dele.
+"""
 
 from __future__ import annotations
 
@@ -7,9 +11,9 @@ import json
 import os
 import random
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Literal
 
 from devaneio.engine import advance_beats, initial_state, reveal_facts
 from devaneio.llm import ChatClient, LlmConfig, OpenAiCompatClient
@@ -39,8 +43,6 @@ class SaveFile(StrictModel):
     poder ser movida junto com a campanha.
     """
 
-    CAMPAIGN_PATH_FIELD: ClassVar[str] = "campaign_path"
-
     save_version: Literal[1] = 1
     campaign_path: str
     state: GameState
@@ -50,44 +52,16 @@ class SaveFile(StrictModel):
     content: ContentHashes | None = None
 
 
-def saved_campaign_path(save_path: Path) -> Path | None:
-    """O arquivo de campanha que uma partida usa, ou nada se o arquivo da partida não se lê.
-
-    Lê só o campo ``campaign_path`` de ``SaveFile`` (relativo ao arquivo da partida), sem validar o estado todo.
-    """
-    try:
-        raw = json.loads(save_path.read_text(encoding="utf-8"))[SaveFile.CAMPAIGN_PATH_FIELD]
-    except (OSError, ValueError, KeyError, TypeError):
-        return None
-    return (save_path.parent / raw).resolve() if isinstance(raw, str) else None
-
-
-def saved_table_summary(save_path: Path) -> tuple[Path, TableMeta] | None:
-    """O arquivo de campanha e a mesa de uma partida, sem validar o estado todo; nada se não é uma mesa legível.
-
-    Serve para listar mesas: lê só ``campaign_path`` e ``table`` (``TableMeta`` validada), sem carregar campanha nem regras.
-    """
-    try:
-        raw = json.loads(save_path.read_text(encoding="utf-8"))
-        campaign = raw[SaveFile.CAMPAIGN_PATH_FIELD]
-        table = TableMeta.model_validate(raw["table"])
-    except (OSError, ValueError, KeyError, TypeError):
-        return None
-    if not isinstance(campaign, str):
-        return None
-    return (save_path.parent / campaign).resolve(), table
-
-
 @dataclass
 class Session:
-    """Uma partida em memória: campanha, regras, estado e onde está gravada."""
+    """Uma partida em memória: campanha, regras, estado e, no CLI, o arquivo onde está gravada."""
 
     campaign: Campaign
     rules: RuleSystem
     state: GameState
     campaign_path: Path
-    save_path: Path
     narrator: Narrator
+    save_path: Path | None = None  # só a partida em arquivo (CLI); a do servidor mora no banco dele
     llm: ChatClient | None = None  # opcional; nunca gravado na partida
     table: TableMeta | None = None  # mesa em grupo; gravada junto com o estado
     # Avisos de ao abrir (conteúdo mudou desde o último salvamento); quem abre mostra.
@@ -102,10 +76,8 @@ def connect_llm(config: LlmConfig) -> ChatClient:
     return OpenAiCompatClient(config)
 
 
-def new_game(
-    campaign_path: Path, save_path: Path, seed: int | None = None, *, start: bool = True
-) -> Session:
-    """Cria uma partida nova e a grava.
+def start_game(campaign_path: Path, seed: int | None = None, *, start: bool = True) -> Session:
+    """Cria uma partida nova em memória, sem gravar em lugar nenhum.
 
     Semente aleatória (< 2**53, portável) se não for dada. Com ``start=False`` a história ainda não
     começou: sem a abertura (marcos e fatos que já valem), que a mesa roda ao iniciar a partida.
@@ -118,24 +90,62 @@ def new_game(
     if start:
         state, _ = advance_beats(state, campaign)
         state, _ = reveal_facts(state, campaign)
-    session = Session(
-        campaign,
-        rules,
-        state,
-        campaign_path,
-        Path(save_path).resolve(),
-        Narrator(campaign, rules, pack),
+    return Session(campaign, rules, state, campaign_path, Narrator(campaign, rules, pack))
+
+
+def new_game(
+    campaign_path: Path, save_path: Path, seed: int | None = None, *, start: bool = True
+) -> Session:
+    """Cria uma partida nova e a grava no arquivo."""
+    session = replace(
+        start_game(campaign_path, seed, start=start), save_path=Path(save_path).resolve()
     )
     save_game(session)
     return session
+
+
+def open_save(data: SaveFile, campaign_path: Path, *, label: str) -> Session:
+    """Monta a partida de um ``SaveFile``: carrega a campanha e confere o estado contra ela e as regras.
+
+    ``campaign_path`` é onde a campanha está agora (quem guardou a partida sabe resolver o caminho dela, e
+    decide se ele é permitido). ``label`` identifica a partida nas mensagens de erro. ``GameError`` se o estado
+    não combina com a campanha ou com as regras.
+    """
+    campaign, rules, pack = load_campaign_content(campaign_path)
+    errors = validate_against_campaign(data.state, campaign) + validate_state_against_rules(
+        data.state, rules
+    )
+    if errors:
+        raise GameError(joined(f"partida '{label}' incoerente com a campanha/regras", errors))
+    return Session(
+        campaign,
+        rules,
+        data.state,
+        campaign_path,
+        Narrator(campaign, rules, pack),
+        table=data.table,
+        warnings=_content_warnings(data.content, content_hashes(rules, pack), rules, pack),
+    )
+
+
+def build_save(session: Session, campaign_ref: str) -> SaveFile:
+    """O ``SaveFile`` de uma partida: estado, mesa e as impressões digitais do conteúdo.
+
+    ``campaign_ref`` é como quem guarda aponta para a campanha (no CLI, o caminho relativo ao arquivo).
+    """
+    return SaveFile(
+        campaign_path=campaign_ref,
+        state=session.state,
+        table=session.table,
+        content=content_hashes(session.rules, session.narrator.pack),
+    )
 
 
 def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
     """Carrega uma partida do arquivo.
 
     Com ``campaign_root``, a campanha referenciada pela partida precisa estar dentro dessa
-    pasta: o caminho vem de dado (rule 05, item 10) e um servidor não pode deixá-lo apontar para
-    fora. Sem raiz (CLI local), qualquer caminho relativo vale.
+    pasta: o caminho vem de dado (rule 05, item 10). Sem raiz (CLI local), qualquer caminho relativo vale.
     """
     save_path = Path(save_path).resolve()
     data = SaveFile.model_validate_json(save_path.read_text(encoding="utf-8"))
@@ -144,38 +154,20 @@ def load_game(save_path: Path, *, campaign_root: Path | None = None) -> Session:
         Path(campaign_root).resolve()
     ):
         raise GameError(f"partida '{save_path}' aponta para uma campanha fora da pasta permitida")
-    campaign, rules, pack = load_campaign_content(campaign_path)
-    errors = validate_against_campaign(data.state, campaign) + validate_state_against_rules(
-        data.state, rules
-    )
-    if errors:
-        raise GameError(joined(f"partida '{save_path}' incoerente com a campanha/regras", errors))
-    return Session(
-        campaign,
-        rules,
-        data.state,
-        campaign_path,
-        save_path,
-        Narrator(campaign, rules, pack),
-        table=data.table,
-        warnings=_content_warnings(data.content, content_hashes(rules, pack), rules, pack),
-    )
+    session = open_save(data, campaign_path, label=str(save_path))
+    return replace(session, save_path=save_path)
 
 
 def save_game(session: Session) -> None:
-    """Grava a partida de forma atômica.
+    """Grava a partida no arquivo dela, de forma atômica.
 
     Arquivo temporário na mesma pasta e ``os.replace``, para uma queda no meio nunca deixar a
     partida truncada.
     """
+    if session.save_path is None:
+        raise GameError("esta partida não tem arquivo: ela mora no banco do servidor")
     relative = os.path.relpath(session.campaign_path, session.save_path.parent)
-    payload = SaveFile(
-        campaign_path=relative,
-        state=session.state,
-        table=session.table,
-        content=content_hashes(session.rules, session.narrator.pack),
-    )
-    text = payload.model_dump_json(indent=2) + "\n"
+    text = build_save(session, relative).model_dump_json(indent=2) + "\n"
     fd, temp = tempfile.mkstemp(dir=session.save_path.parent, prefix=".partida-", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:

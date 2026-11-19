@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from pathlib import Path
 
 from devaneio.game import (
     CopilotContextTooLarge,
@@ -39,7 +38,7 @@ class CopilotDesk:
         self,
         storage: Storage,
         llm: Callable[[], LlmConfig | None],
-        load: Callable[[Path], Session],
+        load: Callable[[str], Session],
         cooldown: float,
     ) -> None:
         self._storage = storage
@@ -47,11 +46,11 @@ class CopilotDesk:
         self._cooldown = cooldown  # segundos entre duas consultas ao copiloto da mesa
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
 
-    def run(self, table_id: str, path: Path, token: str, request: CopilotRequest) -> CopilotAnswer:
+    def run(self, table_id: str, token: str, request: CopilotRequest) -> CopilotAnswer:
         """Responde uma pergunta do anfitrião; só ele vê a resposta."""
         storage = self._storage
         with storage.lock(table_id):  # fase 1
-            session = self._load(path)
+            session = self._load(table_id)
             _, _, player = authenticate(session, token)
             if player.role != "host":
                 raise ApiFailure(403, "forbidden", "o copiloto é só do anfitrião")
