@@ -62,6 +62,22 @@ def saved_campaign_path(save_path: Path) -> Path | None:
     return (save_path.parent / raw).resolve() if isinstance(raw, str) else None
 
 
+def saved_table_summary(save_path: Path) -> tuple[Path, TableMeta] | None:
+    """O arquivo de campanha e a mesa de uma partida, sem validar o estado todo; nada se não é uma mesa legível.
+
+    Serve para listar mesas: lê só ``campaign_path`` e ``table`` (``TableMeta`` validada), sem carregar campanha nem regras.
+    """
+    try:
+        raw = json.loads(save_path.read_text(encoding="utf-8"))
+        campaign = raw[SaveFile.CAMPAIGN_PATH_FIELD]
+        table = TableMeta.model_validate(raw["table"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if not isinstance(campaign, str):
+        return None
+    return (save_path.parent / campaign).resolve(), table
+
+
 @dataclass
 class Session:
     """Uma partida em memória: campanha, regras, estado e onde está gravada."""

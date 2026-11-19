@@ -177,6 +177,27 @@ class Handler(BaseHTTPRequestHandler):
         request = self._read_json(ValidateRequest, limit=MAX_EDITOR_BODY)
         return 200, self._editor().preview(request.campaign)
 
+    def _refuse_body(self) -> None:
+        """Rotas sem corpo: se vier um, não é lido e a conexão fecha, para os bytes não virarem outra requisição."""
+        if self.headers.get("Transfer-Encoding") or self.headers.get(
+            "Content-Length", "0"
+        ).strip() not in (
+            "",
+            "0",
+        ):
+            self.close_connection = True
+
+    def _editor_tables(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().tables.list_for(match.group(1))
+
+    def _editor_close_table(self, match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor().tables.close(match.group(1))
+
+    def _editor_host_access(self, match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor().tables.host_access(match.group(1))
+
     ROUTES: tuple[Route, ...] = (
         ("GET", re.compile(r"^/campaigns$"), _campaigns),
         ("POST", re.compile(r"^/tables$"), _create_table),
@@ -196,6 +217,9 @@ class Handler(BaseHTTPRequestHandler):
         ("PUT", re.compile(r"^/editor/campaigns/([^/]+)$"), _editor_update),
         ("POST", re.compile(r"^/editor/validate$"), _editor_validate),
         ("POST", re.compile(r"^/editor/preview$"), _editor_preview),
+        ("GET", re.compile(r"^/editor/campaigns/([^/]+)/tables$"), _editor_tables),
+        ("DELETE", re.compile(r"^/editor/tables/([^/]+)$"), _editor_close_table),
+        ("POST", re.compile(r"^/editor/tables/([^/]+)/host-access$"), _editor_host_access),
         ("GET", re.compile(r"^/editor/systems$"), _editor_systems),
         ("GET", re.compile(r"^/editor/systems/([^/]+)$"), _editor_system),
     )
@@ -220,7 +244,7 @@ class Handler(BaseHTTPRequestHandler):
         self._dispatch("PATCH")
 
     def do_DELETE(self) -> None:
-        """405 em JSON: a API não tem rota DELETE."""
+        """Trata DELETE: só o editor encerra mesas; o resto é 405 em JSON."""
         self._dispatch("DELETE")
 
     def do_HEAD(self) -> None:

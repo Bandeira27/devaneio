@@ -88,6 +88,10 @@ class Storage:
         """Quantas mesas existem."""
         return sum(1 for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
 
+    def table_ids(self) -> list[str]:
+        """Os ids das mesas que existem, em ordem estável."""
+        return sorted(p.stem for p in self.data_dir.glob("*.json") if TABLE_ID.match(p.stem))
+
     def campaigns_in_use(self) -> set[Path]:
         """Os arquivos de campanha que alguma mesa usa (cada mesa guarda o caminho, relativo ao arquivo dela).
 

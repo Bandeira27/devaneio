@@ -594,6 +594,58 @@
       "title": "EditorCampaign",
       "type": "object"
     },
+    "EditorTable": {
+      "additionalProperties": false,
+      "description": "Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).\n\n``updated_at`` é a última gravação do arquivo da mesa, em segundos de época.",
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "phase": {
+          "enum": [
+            "lobby",
+            "running",
+            "paused",
+            "ended"
+          ],
+          "type": "string"
+        },
+        "host_name": {
+          "type": "string"
+        },
+        "players": {
+          "type": "integer"
+        },
+        "updated_at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "table_id",
+        "phase",
+        "host_name",
+        "players",
+        "updated_at"
+      ],
+      "title": "EditorTable",
+      "type": "object"
+    },
+    "EditorTableClosed": {
+      "additionalProperties": false,
+      "description": "A confirmação de que a mesa foi encerrada: o arquivo dela foi apagado.",
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "table_id"
+      ],
+      "title": "EditorTableClosed",
+      "type": "object"
+    },
     "ErrorResponse": {
       "additionalProperties": false,
       "description": "O corpo de toda resposta de erro.",
@@ -993,6 +1045,34 @@
       ],
       "title": "GameStatus",
       "type": "string"
+    },
+    "HostAccess": {
+      "additionalProperties": false,
+      "description": "O acesso novo do anfitrião, entregue uma única vez: o token e o convite novos (os antigos deixam de valer).",
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "player_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "invite_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "table_id",
+        "player_id",
+        "token",
+        "invite_code"
+      ],
+      "title": "HostAccess",
+      "type": "object"
     },
     "InvitePreview": {
       "additionalProperties": false,
@@ -1944,6 +2024,18 @@
     "editor_campaign": {
       "$ref": "#/$defs/EditorCampaign"
     },
+    "editor_tables": {
+      "items": {
+        "$ref": "#/$defs/EditorTable"
+      },
+      "type": "array"
+    },
+    "editor_table_closed": {
+      "$ref": "#/$defs/EditorTableClosed"
+    },
+    "editor_host_access": {
+      "$ref": "#/$defs/HostAccess"
+    },
     "editor_report": {
       "$ref": "#/$defs/ValidationReport"
     },
@@ -1975,6 +2067,9 @@
     "rules",
     "editor_campaigns",
     "editor_campaign",
+    "editor_tables",
+    "editor_table_closed",
+    "editor_host_access",
     "editor_report",
     "editor_systems",
     "editor_preview",

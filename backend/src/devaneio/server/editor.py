@@ -27,6 +27,7 @@ from devaneio.game import (
 from devaneio.schema import ID_REGEX, Campaign, CampaignIntegrityError, load_campaign
 
 from .catalog import Catalog, CatalogError
+from .editor_tables import EditorTables
 from .errors import ApiFailure
 from .models import (
     AuthoringFinding,
@@ -112,6 +113,9 @@ class EditorService:
         self.catalog = catalog
         self.storage = storage
         self.root = catalog.root
+        self.tables = EditorTables(
+            catalog, storage
+        )  # as mesas de uma campanha: listar, encerrar, reemitir o anfitrião
         self._write_lock = (
             threading.Lock()
         )  # create e update: checar, gravar e registrar sem outro editor no meio

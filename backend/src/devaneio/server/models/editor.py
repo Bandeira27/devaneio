@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from devaneio.game import Phase
 from devaneio.schema import Id, StrictModel
 
 from .campaign import CampaignView
@@ -73,3 +74,31 @@ class PreviewView(StrictModel):
     llm_secrets: str
     copilot_chars: int
     copilot_limit: int
+
+
+class EditorTable(StrictModel):
+    """Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).
+
+    ``updated_at`` é a última gravação do arquivo da mesa, em segundos de época.
+    """
+
+    table_id: Id
+    phase: Phase
+    host_name: str
+    players: int
+    updated_at: float
+
+
+class EditorTableClosed(StrictModel):
+    """A confirmação de que a mesa foi encerrada: o arquivo dela foi apagado."""
+
+    table_id: Id
+
+
+class HostAccess(StrictModel):
+    """O acesso novo do anfitrião, entregue uma única vez: o token e o convite novos (os antigos deixam de valer)."""
+
+    table_id: Id
+    player_id: Id
+    token: str
+    invite_code: str

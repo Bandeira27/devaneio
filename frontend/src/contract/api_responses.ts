@@ -38,6 +38,9 @@ export interface ApiResponses {
   rules: RulesView;
   editor_campaigns: EditorCampaign[];
   editor_campaign: EditorCampaign;
+  editor_tables: EditorTable[];
+  editor_table_closed: EditorTableClosed;
+  editor_host_access: HostAccess;
   editor_report: ValidationReport;
   editor_systems: SystemInfo[];
   editor_preview: PreviewView;
@@ -583,6 +586,33 @@ export interface EditorCampaign {
   id: string;
   title: string;
   writable: boolean;
+}
+/**
+ * Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).
+ *
+ * ``updated_at`` é a última gravação do arquivo da mesa, em segundos de época.
+ */
+export interface EditorTable {
+  table_id: string;
+  phase: "lobby" | "running" | "paused" | "ended";
+  host_name: string;
+  players: number;
+  updated_at: number;
+}
+/**
+ * A confirmação de que a mesa foi encerrada: o arquivo dela foi apagado.
+ */
+export interface EditorTableClosed {
+  table_id: string;
+}
+/**
+ * O acesso novo do anfitrião, entregue uma única vez: o token e o convite novos (os antigos deixam de valer).
+ */
+export interface HostAccess {
+  table_id: string;
+  player_id: string;
+  token: string;
+  invite_code: string;
 }
 /**
  * O resultado da validação: `ok` quando não há erro (os achados de autoria podem existir mesmo assim).
