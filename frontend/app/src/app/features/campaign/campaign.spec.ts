@@ -250,7 +250,7 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
   it('a visão geral conta as mesas do servidor que este navegador não conhece', async () => {
     const app = await openWithServer('/c/sombra-do-vale', [SERVER_TABLE]);
     const text = app.root().textContent ?? '';
-    expect(text).toContain('tem 1 mesa neste servidor');
+    expect(text).toContain('tem 1 mesa, mas este navegador');
     expect(text).not.toContain('Você ainda não tem mesa');
     expect(app.root().querySelector('.overview__actions a')?.getAttribute('href')).toBe(
       '/c/sombra-do-vale/mesas',
@@ -265,7 +265,7 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
   it('a lista de mesas mostra a mesa só do servidor, no vocabulário do jogo, com assumir e encerrar', async () => {
     const app = await openWithServer('/c/sombra-do-vale/mesas', [SERVER_TABLE]);
     const text = app.root().textContent ?? '';
-    expect(text).toContain('Neste servidor');
+    expect(text).toContain('Mesas desta campanha');
     expect(text).toContain('Mesa de Ana · em jogo · 2 jogadores · hoje');
     expect(text).toContain('Assumir como anfitrião');
     expect(text).toContain('Encerrar');

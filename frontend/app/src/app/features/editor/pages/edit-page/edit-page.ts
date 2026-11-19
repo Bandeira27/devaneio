@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   DestroyRef,
   OnInit,
   effect,
@@ -46,6 +48,7 @@ export class EditorPage implements OnInit {
 
   protected readonly store = inject(EditorStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   /**
    * A conferência está demorando (passou de `SLOW_CHECK_MS`): só então aparece "Conferindo…". Uma conferência rápida não
    * troca o selo de "Sem erros" por outro e de volta a cada pausa na digitação; o último resultado fica à vista.
@@ -73,6 +76,25 @@ export class EditorPage implements OnInit {
   /** A linha de uma mesa que trava a campanha, no vocabulário do jogo. */
   protected line(table: EditorTable): string {
     return tableLine(table, Date.now());
+  }
+
+  /** Encerra a mesa; o botão clicado some, então o foco vai à próxima mesa da lista (ou ao título, se não sobrou nenhuma). */
+  protected async closeTable(tableId: string): Promise<void> {
+    if (await this.store.closeTable(tableId)) {
+      afterNextRender(
+        () => {
+          const root = this.host.nativeElement;
+          const next = root.querySelector<HTMLElement>('.editor__table button, .editor__table a');
+          const heading = root.querySelector<HTMLElement>('h1');
+          if (next) {
+            next.focus(); // já é focável: não mexe no `tabindex`
+          } else if (heading) {
+            focusElement(heading);
+          }
+        },
+        { injector: this.injector },
+      );
+    }
   }
 
   /** Salvar como cópia: o botão some junto com o aviso, então o foco vai ao título da tela (que agora diz que é uma cópia). */

@@ -43,7 +43,12 @@
                     <span class="editor__table-line">{{ line(table) }}</span>
                     <span class="editor__table-actions">
                       @if (store.knowsTable(table.table_id)) {
-                        <a dvButton dvSize="sm" [routerLink]="['/mesa', table.table_id]">
+                        <a
+                          dvButton
+                          dvSize="sm"
+                          [routerLink]="['/mesa', table.table_id]"
+                          [attr.aria-label]="'Abrir: ' + line(table)"
+                        >
                           <dv-icon name="go" size="sm" />Abrir
                         </a>
                       } @else {
@@ -51,6 +56,8 @@
                           dvButton
                           dvSize="sm"
                           type="button"
+                          [dvBlocked]="store.tableBusy() !== null"
+                          [attr.aria-label]="'Assumir como anfitrião: ' + line(table)"
                           (click)="store.assumeHost(table.table_id)"
                         >
                           <dv-icon name="person" size="sm" />Assumir como anfitrião
@@ -60,7 +67,10 @@
                         dvButton="danger"
                         dvSize="sm"
                         type="button"
-                        (click)="store.closeTable(table.table_id)"
+                        [dvBlocked]="store.tableBusy() !== null"
+                        [dvLoading]="store.tableBusy() === table.table_id"
+                        [attr.aria-label]="'Encerrar: ' + line(table)"
+                        (click)="closeTable(table.table_id)"
                       >
                         <dv-icon name="trash" size="sm" />Encerrar
                       </button>
@@ -69,13 +79,13 @@
                 }
               </ul>
             }
-            @if (store.tablesError()) {
-              <span class="dv-note">{{ store.tablesError() }}</span>
-            }
             <button dvButton dvSize="sm" type="button" class="editor__copy" (click)="copy()">
               <dv-icon name="copy" size="sm" />Salvar como cópia
             </button>
           </dv-notice>
+        }
+        @if (store.tablesError()) {
+          <dv-notice kind="error">{{ store.tablesError() }}</dv-notice>
         }
 
         @if (store.info()) {

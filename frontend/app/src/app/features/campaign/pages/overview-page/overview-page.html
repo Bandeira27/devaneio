@@ -24,8 +24,8 @@
       } @else if (store.serverOnly().length > 0) {
         <p>
           Esta campanha tem {{ store.serverOnly().length }}
-          {{ store.serverOnly().length === 1 ? 'mesa' : 'mesas' }} neste servidor que este navegador
-          ainda não conhece.
+          {{ store.serverOnly().length === 1 ? 'mesa' : 'mesas' }}, mas este navegador ainda não tem
+          o acesso de anfitrião.
         </p>
         <div class="overview__actions">
           <a dvButton="primary" [routerLink]="['/c', campaign.id, 'mesas']"

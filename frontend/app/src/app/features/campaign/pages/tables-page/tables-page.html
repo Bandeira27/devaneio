@@ -3,9 +3,7 @@
 
   @if (store.tables().length > 0 || store.serverOnly().length > 0 || store.forgotten()) {
     <section class="dv-stack" aria-labelledby="titulo-guardadas">
-      <h2 class="dv-section" id="titulo-guardadas">
-        {{ store.serverList() === null ? 'Neste aparelho' : 'Neste servidor' }}
-      </h2>
+      <h2 class="dv-section" id="titulo-guardadas">Mesas desta campanha</h2>
       <ul class="saved">
         @for (table of store.tables(); track table.tableId; let first = $first) {
           <li
@@ -42,7 +40,9 @@
                   dvButton="danger"
                   dvSize="sm"
                   type="button"
-                  (click)="store.close(table.tableId)"
+                  [dvBlocked]="store.serverBusy() !== null"
+                  [dvLoading]="store.serverBusy() === table.tableId"
+                  (click)="close(table.tableId)"
                   [attr.aria-label]="'Encerrar a mesa ' + table.title"
                 >
                   <dv-icon name="trash" size="sm" />Encerrar
@@ -67,6 +67,8 @@
                 dvSize="sm"
                 type="button"
                 class="saved__assume"
+                [dvBlocked]="store.serverBusy() !== null"
+                [attr.aria-label]="'Assumir como anfitrião: ' + line(table)"
                 (click)="store.assume(table.table_id)"
               >
                 <dv-icon name="person" size="sm" />Assumir como anfitrião
@@ -75,7 +77,10 @@
                 dvButton="danger"
                 dvSize="sm"
                 type="button"
-                (click)="store.close(table.table_id)"
+                [dvBlocked]="store.serverBusy() !== null"
+                [dvLoading]="store.serverBusy() === table.table_id"
+                [attr.aria-label]="'Encerrar: ' + line(table)"
+                (click)="close(table.table_id)"
               >
                 <dv-icon name="trash" size="sm" />Encerrar
               </button>

@@ -86,6 +86,8 @@ export class EditorStore {
   readonly tables = signal<EditorTable[]>([]);
   /** O que deu errado ao encerrar uma mesa ou assumir o lugar de anfitrião. */
   readonly tablesError = signal('');
+  /** A mesa que está sendo encerrada ou assumida agora (bloqueia os botões das mesas até acabar). */
+  readonly tableBusy = signal<string | null>(null);
   readonly systems = signal<SystemInfo[]>([]);
   readonly rules = signal<RulesView | null>(null);
   readonly report = signal<ValidationReport | null>(null);
@@ -499,15 +501,16 @@ export class EditorStore {
   }
 
   /** Encerra uma mesa (depois de confirmar) e libera a campanha se era a última que a travava. */
-  async closeTable(tableId: string): Promise<void> {
+  async closeTable(tableId: string): Promise<boolean> {
     const ok = await this.sheet.open<boolean>(ConfirmSheet, {
       label: 'Encerrar a mesa',
       data: CLOSE_TABLE_CONFIRM,
     });
     if (ok !== true) {
-      return;
+      return false;
     }
     this.tablesError.set('');
+    this.tableBusy.set(tableId);
     try {
       await this.serverTables.close(tableId);
       const id = this.savedId();
@@ -517,8 +520,12 @@ export class EditorStore {
       this.info.set(
         this.writable() ? 'Mesa encerrada. A campanha já pode ser regravada.' : 'Mesa encerrada.',
       );
+      return true;
     } catch (error) {
       this.tablesError.set(messageOf(error));
+      return false;
+    } finally {
+      this.tableBusy.set(null);
     }
   }
 
@@ -537,11 +544,14 @@ export class EditorStore {
       return;
     }
     this.tablesError.set('');
+    this.tableBusy.set(tableId);
     try {
       await this.serverTables.assumeHost(tableId, { id, title: campaign.title });
       await this.router.navigate(['/mesa', tableId]);
     } catch (error) {
       this.tablesError.set(messageOf(error));
+    } finally {
+      this.tableBusy.set(null);
     }
   }
 

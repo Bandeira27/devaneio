@@ -16,6 +16,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
+import { focusElement } from '@shared/ui/focus';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { CampaignStore } from '../../campaign.store';
 import { DvIcon } from '../../../../shared/ui/icon/icon';
@@ -52,6 +53,25 @@ export class TablesPage {
   protected forget(tableId: string): void {
     this.store.forget(tableId);
     this.focusLater('.tables__undo');
+  }
+
+  /** Encerra a mesa; a linha some, então o foco vai à próxima ação da lista (ou ao título, se não sobrou nenhuma). */
+  protected async close(tableId: string): Promise<void> {
+    if (await this.store.close(tableId)) {
+      afterNextRender(
+        () => {
+          const root = this.host.nativeElement;
+          const next = root.querySelector<HTMLElement>('.saved__link, .saved__assume');
+          const heading = root.querySelector<HTMLElement>('h1');
+          if (next) {
+            next.focus(); // já é focável: não mexe no `tabindex`
+          } else if (heading) {
+            focusElement(heading);
+          }
+        },
+        { injector: this.injector },
+      );
+    }
   }
 
   protected restore(): void {

@@ -66,6 +66,8 @@ export class CampaignStore {
 
   /** O que deu errado ao encerrar uma mesa ou assumir o lugar de anfitrião. */
   readonly serverError = signal('');
+  /** A mesa que está sendo encerrada ou assumida agora (bloqueia os botões das mesas até acabar). */
+  readonly serverBusy = signal<string | null>(null);
 
   readonly hostName = signal('');
   readonly nameError = signal('');
@@ -97,20 +99,25 @@ export class CampaignStore {
   }
 
   /** Encerra uma mesa no servidor (depois de confirmar): some para todos os navegadores. */
-  async close(tableId: string): Promise<void> {
+  async close(tableId: string): Promise<boolean> {
     const ok = await this.sheet.open<boolean>(ConfirmSheet, {
       label: 'Encerrar a mesa',
       data: CLOSE_TABLE_CONFIRM,
     });
     if (ok !== true) {
-      return;
+      return false;
     }
     this.serverError.set('');
+    this.serverBusy.set(tableId);
     try {
       await this.serverTables.close(tableId);
       await this.loadServer();
+      return true;
     } catch (error) {
       this.serverError.set(messageOf(error));
+      return false;
+    } finally {
+      this.serverBusy.set(null);
     }
   }
 
@@ -128,11 +135,14 @@ export class CampaignStore {
       return;
     }
     this.serverError.set('');
+    this.serverBusy.set(tableId);
     try {
       await this.serverTables.assumeHost(tableId, { id: campaign.id, title: campaign.title });
       await this.router.navigate(['/mesa', tableId]);
     } catch (error) {
       this.serverError.set(messageOf(error));
+    } finally {
+      this.serverBusy.set(null);
     }
   }
 
