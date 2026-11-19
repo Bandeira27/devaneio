@@ -37,7 +37,7 @@ tem como filhas a visão geral, as mesas (`/mesas`) e o roteiro (`/roteiro/...`,
 A mesa em jogo (`/mesa/:tableId/...`) e as telas de entrada ficam fora do quadro, em tela cheia. As páginas de dentro
 leem o `campaignId` da rota de fora (`paramsInheritanceStrategy: 'always'`). Cada mesa guardada neste aparelho anota o id da
 campanha (`StoredTable.campaignId`; as antigas casam pelo título); o catálogo de campanhas e a pergunta "o editor atende
-este navegador?" vivem num serviço só (`core/catalog`). O desenho de interação está em [`padroes-de-interacao.md`](padroes-de-interacao.md).
+este navegador?" vivem num serviço só (`core/catalog`). **Quais mesas existem** é do servidor: `core/tables` pergunta a ele (só da máquina do servidor; de fora vem `404` e a lista volta a ser só a do navegador), e o `localStorage` guarda apenas o token de quem entrou. O desenho de interação está em [`padroes-de-interacao.md`](padroes-de-interacao.md).
 
 ## Fases da mesa
 

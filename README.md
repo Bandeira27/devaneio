@@ -49,7 +49,7 @@ servidor (`./devaneio --help` lista todas).
 
 O navegador abre em `http://localhost:8765`, na lista de campanhas. O card **Nova campanha** abre o editor: locais, NPCs,
 facções, marcos e fatos, com os erros em português, avisos de autoria e uma prévia do que o jogador e a IA veem.
-Campanha que já tem mesa não é sobrescrita: o editor oferece salvar uma cópia.
+Campanha que já tem mesa não é sobrescrita: o editor lista as mesas que a travam (as do servidor, de qualquer navegador desta máquina) e oferece encerrá-las, assumir o lugar de anfitrião ou salvar uma cópia.
 
 O editor só atende **o computador que roda o servidor**, aberto por `localhost`. Os amigos que entram pela rede nunca o
 veem, e abrir pelo endereço da rede (`192.168.x.x`) também não o libera. Se você expõe o servidor por proxy ou túnel,
@@ -107,9 +107,9 @@ contribui, pessoa ou IA, estão em [`AGENTS.md`](AGENTS.md).
 
 ## Para ler com calma
 
-| Quero saber... | Leia |
-|---|---|
-| o mapa da documentação | [`docs/index.md`](docs/index.md) |
+| Quero saber...                                  | Leia                                                     |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| o mapa da documentação                          | [`docs/index.md`](docs/index.md)                         |
 | como criar um sistema de regras ou uma narração | [`docs/sistema-de-regras.md`](docs/sistema-de-regras.md) |
-| como o motor e o diretor funcionam | [`docs/motor.md`](docs/motor.md) |
-| o que já foi construído | [`docs/historico.md`](docs/historico.md) |
+| como o motor e o diretor funcionam              | [`docs/motor.md`](docs/motor.md)                         |
+| o que já foi construído                         | [`docs/historico.md`](docs/historico.md)                 |

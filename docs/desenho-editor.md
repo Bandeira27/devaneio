@@ -33,15 +33,18 @@ O servidor só faz I/O: a conferência da campanha (`game.check_campaign_data`) 
 
 ## API (`server/editor.py`)
 
-| Rota                                           | Faz                                                                            |
-| ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| `GET /editor/campaigns`                        | `[{id, title, writable}]`; `writable` = nenhuma mesa usa o arquivo             |
-| `GET /editor/campaigns/{id}`                   | a `Campaign` inteira                                                           |
-| `POST /editor/validate` `{campaign}`           | `{ok, errors: [{path, message}], findings: [{level, text}]}`                   |
-| `POST /editor/campaigns` `{campaign}`          | cria (`409` se o id existe); `201 {id, title, writable}`                       |
-| `PUT /editor/campaigns/{id}` `{campaign}`      | regrava (`409` com mesa; o id não muda)                                        |
-| `GET /editor/systems` e `/editor/systems/{id}` | os sistemas de regras disponíveis e o `RulesView` (habilidades e dificuldades) |
-| `POST /editor/preview` `{campaign}`            | `{player, llm, llm_secrets, copilot_chars, copilot_limit}`                     |
+| Rota                                           | Faz                                                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `GET /editor/campaigns`                        | `[{id, title, writable}]`; `writable` = nenhuma mesa usa o arquivo                               |
+| `GET /editor/campaigns/{id}`                   | a `Campaign` inteira                                                                             |
+| `POST /editor/validate` `{campaign}`           | `{ok, errors: [{path, message}], findings: [{level, text}]}`                                     |
+| `POST /editor/campaigns` `{campaign}`          | cria (`409` se o id existe); `201 {id, title, writable}`                                         |
+| `PUT /editor/campaigns/{id}` `{campaign}`      | regrava (`409` com mesa; o id não muda)                                                          |
+| `GET /editor/systems` e `/editor/systems/{id}` | os sistemas de regras disponíveis e o `RulesView` (habilidades e dificuldades)                   |
+| `POST /editor/preview` `{campaign}`            | `{player, llm, llm_secrets, copilot_chars, copilot_limit}`                                       |
+| `GET /editor/campaigns/{id}/tables`            | `[{table_id, phase, host_name, players, updated_at}]`: as mesas que usam a campanha, sem segredo |
+| `DELETE /editor/tables/{id}`                   | encerra a mesa: apaga o arquivo e acorda quem espera (`{table_id}`)                              |
+| `POST /editor/tables/{id}/host-access`         | reemite o acesso do anfitrião: `{table_id, player_id, token, invite_code}`                       |
 
 Com `--sem-editor`, ou de fora da máquina do servidor, tudo isso é `404`. O corpo vai até 512 KiB. O catálogo passa a ver a campanha salva sem reiniciar.
 
@@ -73,6 +76,25 @@ separação passa a ser o sistema operacional, não a conferência de endereço 
   sairia errado quando gerado pela porta local (o servidor precisaria informar o endereço público);
 - a guarda por pedido já cobre o uso real (rede de casa, acesso por `localhost`) e `--sem-editor` cobre o resto;
 - sem programa externo (Node, `nginx`) e sem dependência nova, a instalação continua a mais simples possível.
+
+## As mesas, vistas pelo servidor (`server/editor_tables.py`)
+
+O servidor é a fonte da verdade de quais mesas existem; o navegador só guarda o token de quem entrou
+(`localStorage`, por origem). Antes, a Visão Geral confiava no navegador e o editor no servidor, e as duas telas se
+contradiziam (testar em dois navegadores deixava mesas que nenhum dos dois via, travando a campanha). Agora:
+
+- **Listar** lê só `campaign_path` e `table` de cada arquivo (`saved_table_summary`), sem carregar campanha nem regras.
+  Expõe id, fase, nome do anfitrião, número de jogadores e a data do arquivo; nunca hash, convite nem notas.
+- **Encerrar** apaga o arquivo sob o lock da mesa e acorda quem espera (`announce_change`); a volta do long-poll é `404`.
+  A entrada em memória da mesa fica: quem espera compara a versão dela, e esquecê-la a faria voltar a zero.
+- **Assumir como anfitrião** troca o token e o convite do anfitrião (o servidor guarda só hash, então reemite).
+  O token antigo deixa de valer, e os links de convite já enviados também. A resposta mostra os novos uma única vez.
+- As três rotas ficam sob `/editor/*`: herdam o `404` fora da máquina, `Host` e `Origin`.
+- No app, o aviso "esta campanha já tem mesa", a Visão Geral e a página Mesas usam a lista do servidor; fora da máquina
+  do servidor (`404`) caem de volta na lista do navegador.
+
+**Limite conhecido:** o token de **jogador** continua só no navegador dele. Perdê-lo exige entrar de novo com o convite e
+deixa o personagem antigo órfão. Um link de retorno por jogador, gerado pelo anfitrião, é a ideia para o futuro.
 
 ## Fora do editor
 
