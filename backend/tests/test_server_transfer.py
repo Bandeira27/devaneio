@@ -12,8 +12,9 @@ from devaneio.game import SaveFile, TableMeta, build_save, new_game, save_game
 from devaneio.game.table import Player
 from devaneio.server import Catalog, TableService
 from devaneio.server import __main__ as entry
-from devaneio.server.__main__ import import_main, main
+from devaneio.server.__main__ import main
 from devaneio.server.auth import hash_secret
+from devaneio.server.cli_tools import import_main
 from devaneio.server.database import DB_NAME, acquire_instance_lock
 from devaneio.server.files import prepare_data_dir
 from devaneio.server.models import CommandRequest, CreateTableRequest, JoinRequest

@@ -217,9 +217,23 @@ class Handler(BaseHTTPRequestHandler):
     def _editor_tables(self, match: re.Match[str]) -> tuple[int, Payload]:
         return 200, self._editor().tables.list_for(match.group(1))
 
-    def _editor_close_table(self, match: re.Match[str]) -> tuple[int, Payload]:
+    def _editor_archive_table(self, match: re.Match[str]) -> tuple[int, Payload]:
         self._refuse_body()
-        return 200, self._editor().tables.close(match.group(1))
+        return 200, self._editor().tables.archive(match.group(1))
+
+    def _editor_archived_tables(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().tables.list_archived(match.group(1))
+
+    def _editor_restore_table(self, match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor().tables.restore(match.group(1))
+
+    def _editor_purge_table(self, match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor().tables.purge(match.group(1))
+
+    def _editor_table_history(self, match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor().tables.history(match.group(1))
 
     def _editor_host_access(self, match: re.Match[str]) -> tuple[int, Payload]:
         self._refuse_body()
@@ -245,7 +259,15 @@ class Handler(BaseHTTPRequestHandler):
         ("POST", re.compile(r"^/editor/validate$"), _editor_validate),
         ("POST", re.compile(r"^/editor/preview$"), _editor_preview),
         ("GET", re.compile(r"^/editor/campaigns/([^/]+)/tables$"), _editor_tables),
-        ("DELETE", re.compile(r"^/editor/tables/([^/]+)$"), _editor_close_table),
+        ("DELETE", re.compile(r"^/editor/tables/([^/]+)$"), _editor_archive_table),
+        (
+            "GET",
+            re.compile(r"^/editor/campaigns/([^/]+)/archived-tables$"),
+            _editor_archived_tables,
+        ),
+        ("POST", re.compile(r"^/editor/archived-tables/([^/]+)/restore$"), _editor_restore_table),
+        ("GET", re.compile(r"^/editor/archived-tables/([^/]+)/log$"), _editor_table_history),
+        ("DELETE", re.compile(r"^/editor/archived-tables/([^/]+)$"), _editor_purge_table),
         ("POST", re.compile(r"^/editor/tables/([^/]+)/host-access$"), _editor_host_access),
         ("GET", re.compile(r"^/editor/settings/llm$"), _editor_llm_get),
         ("PUT", re.compile(r"^/editor/settings/llm$"), _editor_llm_put),

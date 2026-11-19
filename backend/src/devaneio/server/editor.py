@@ -119,7 +119,7 @@ class EditorService:
         self.root = catalog.root
         self.tables = EditorTables(
             catalog, storage
-        )  # as mesas de uma campanha: listar, encerrar, reemitir o anfitrião
+        )  # as mesas de uma campanha: listar, arquivar, reemitir o anfitrião
         self._write_lock = (
             threading.Lock()
         )  # create e update: checar, gravar e registrar sem outro editor no meio

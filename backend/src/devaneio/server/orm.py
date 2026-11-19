@@ -40,3 +40,5 @@ class GameTable(Base):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[float] = mapped_column(Float, nullable=False)
     updated_at: Mapped[float] = mapped_column(Float, nullable=False)
+    # Nulo = ativa. Arquivada: fora da lista, do jogo, do limite e da trava da campanha; estado e log ficam.
+    archived_at: Mapped[float | None] = mapped_column(Float, nullable=True)

@@ -14,7 +14,7 @@ import pytest
 from conftest import CAMPAIGN_PATH, make_storage
 from devaneio.server import ApiFailure, Catalog, TableService
 from devaneio.server import http as server_http
-from devaneio.server.__main__ import browser_url, project_root, resolve_folders
+from devaneio.server.__main__ import browser_url
 from devaneio.server.catalog import CatalogError
 from devaneio.server.editor import (
     CAMPAIGN_ID,
@@ -24,6 +24,7 @@ from devaneio.server.editor import (
     origin_allowed,
     peer_is_local,
 )
+from devaneio.server.folders import project_root, resolve_folders
 from devaneio.server.http import make_server
 from devaneio.server.models import CreateTableRequest
 from devaneio.server.storage import Record

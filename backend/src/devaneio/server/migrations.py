@@ -43,6 +43,11 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         """,
         "CREATE INDEX ix_tables_campaign_path ON tables (campaign_path)",
     ),
+    (
+        # Mesa arquivada: sai de tudo (lista, jogo, limite de mesas, trava da campanha), mas o estado e o log ficam e
+        # dá para restaurá-la. Nulo = mesa ativa; o valor é quando foi arquivada.
+        "ALTER TABLE tables ADD COLUMN archived_at REAL",
+    ),
 )
 LATEST = len(MIGRATIONS)
 

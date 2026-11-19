@@ -16,8 +16,9 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Literal
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import ColumnElement, delete, func, select, true, update
 from sqlalchemy.orm import Session
 
 from .database import Database
@@ -41,11 +42,28 @@ class Record:
 
 @dataclass(frozen=True)
 class Summary:
-    """Uma linha da lista de mesas: o id, a ``TableMeta`` em JSON e quando a mesa foi gravada pela última vez."""
+    """Uma linha da lista de mesas: o id, a ``TableMeta`` em JSON, a última gravação e, se arquivada, quando."""
 
     table_id: str
     meta: str
     updated_at: float
+    archived_at: float | None
+
+
+Scope = Literal["active", "archived", "any"]
+
+
+def _in(scope: Scope) -> ColumnElement[bool]:
+    """O filtro de uma consulta: só as mesas ativas, só as arquivadas ou todas."""
+    if scope == "active":
+        return GameTable.archived_at.is_(None)
+    if scope == "archived":
+        return GameTable.archived_at.is_not(None)
+    return true()
+
+
+def _active_count(session: Session) -> int:
+    return session.scalar(select(func.count()).select_from(GameTable).where(_in("active"))) or 0
 
 
 @dataclass
@@ -90,16 +108,22 @@ class Storage:
 
     # --- o banco -----------------------------------------------------------------
 
-    def exists(self, table_id: str) -> bool:
-        """A mesa existe? Id fora do formato gerado aqui nunca chega ao banco."""
+    def exists(self, table_id: str, *, scope: Scope = "active") -> bool:
+        """A mesa existe? Por padrão só conta a ativa (a que se joga); ``scope`` pede a arquivada ou qualquer uma.
+
+        Id fora do formato gerado aqui nunca chega ao banco.
+        """
         if not TABLE_ID.match(table_id):
             return False
         return self._db.read(
-            lambda s: s.scalar(select(GameTable.id).where(GameTable.id == table_id)) is not None
+            lambda s: (
+                s.scalar(select(GameTable.id).where(GameTable.id == table_id, _in(scope)))
+                is not None
+            )
         )
 
-    def read(self, table_id: str) -> Record | None:
-        """O que está guardado da mesa, ou nada se ela não existe."""
+    def read(self, table_id: str, *, scope: Scope = "active") -> Record | None:
+        """O que está guardado da mesa, ou nada se ela não existe (no ``scope`` pedido)."""
         if not TABLE_ID.match(table_id):
             return None
 
@@ -107,14 +131,14 @@ class Storage:
             row = session.execute(
                 select(
                     GameTable.campaign_path, GameTable.state, GameTable.meta, GameTable.content
-                ).where(GameTable.id == table_id)
+                ).where(GameTable.id == table_id, _in(scope))
             ).one_or_none()
             return None if row is None else Record(*row)
 
         return self._db.read(read)
 
     def create(self, table_id: str, record: Record, *, updated_at: float | None = None) -> bool:
-        """Guarda uma mesa nova; ``False`` (e nada guardado) se o servidor já tem ``max_tables``.
+        """Guarda uma mesa nova; ``False`` (e nada guardado) se o servidor já tem ``max_tables`` mesas ativas.
 
         A conferência do limite e a gravação são uma transação só: duas criações juntas não passam do limite.
         ``updated_at`` só serve à importação, que guarda a data do arquivo original.
@@ -122,8 +146,7 @@ class Storage:
         now = self._wall_clock() if updated_at is None else updated_at
 
         def insert(session: Session) -> bool:
-            total = session.scalar(select(func.count()).select_from(GameTable)) or 0
-            if total >= self.max_tables:
+            if _active_count(session) >= self.max_tables:
                 return False
             session.add(
                 GameTable(
@@ -141,15 +164,15 @@ class Storage:
         return self._db.write(insert)
 
     def save(self, table_id: str, record: Record) -> None:
-        """Regrava uma mesa que existe. Chamar com o lock dela tomado.
+        """Regrava uma mesa ativa. Chamar com o lock dela tomado.
 
-        ``404`` se ela foi apagada no meio do caminho: gravar não a traz de volta.
+        ``404`` se ela foi apagada ou arquivada no meio do caminho: gravar não a traz de volta.
         """
 
         def write(session: Session) -> int:
             result = session.execute(
                 update(GameTable)
-                .where(GameTable.id == table_id)
+                .where(GameTable.id == table_id, _in("active"))
                 .values(
                     campaign_path=record.campaign_path,
                     state=record.state,
@@ -164,39 +187,87 @@ class Storage:
         if self._db.write(write) == 0:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
 
-    def delete(self, table_id: str) -> bool:
-        """Apaga a mesa; ``False`` se ela não existia."""
+    def archive(self, table_id: str) -> bool:
+        """Arquiva a mesa ativa (sai da lista, do jogo, do limite e da trava da campanha; o log fica). ``False`` se não há."""
+        return self._flip(table_id, archiving=True)
+
+    def restore(self, table_id: str) -> bool:
+        """Traz de volta uma mesa arquivada. ``False`` se não há; ``409 table_limit`` se o servidor já tem o máximo ativo."""
+        return self._flip(table_id, archiving=False)
+
+    def _flip(self, table_id: str, *, archiving: bool) -> bool:
+        """Arquiva (``archiving=True``, uma mesa ativa) ou restaura (``False``, uma arquivada); diz se havia o que mudar."""
+        if not TABLE_ID.match(table_id):
+            return False
+        now = self._wall_clock()
+
+        def write(session: Session) -> int:
+            wanted: Scope = "active" if archiving else "archived"
+            present = session.scalar(
+                select(GameTable.id).where(GameTable.id == table_id, _in(wanted))
+            )
+            if present is None:
+                return 0  # não há o que mudar (já estava assim, ou não existe)
+            if (
+                not archiving and _active_count(session) >= self.max_tables
+            ):  # a vaga, na mesma transação
+                raise ApiFailure(409, "table_limit", "este servidor já tem o máximo de mesas")
+            changed = session.execute(
+                update(GameTable)
+                .where(GameTable.id == table_id, _in(wanted))
+                .values(archived_at=now if archiving else None)
+                .returning(GameTable.id)
+            )
+            return len(changed.all())
+
+        return self._db.write(write) > 0
+
+    def delete(self, table_id: str, *, scope: Scope = "archived") -> bool:
+        """Apaga de vez; só a arquivada, por padrão (arquivar é o jeito de encerrar). ``False`` se não havia."""
 
         def remove(session: Session) -> int:
             gone = session.execute(
-                delete(GameTable).where(GameTable.id == table_id).returning(GameTable.id)
+                delete(GameTable)
+                .where(GameTable.id == table_id, _in(scope))
+                .returning(GameTable.id)
             )
             return len(gone.all())
 
         return TABLE_ID.match(table_id) is not None and self._db.write(remove) > 0
 
+    def updated_at(self, table_id: str) -> float:
+        """Quando a mesa foi gravada pela última vez (0 se não existe)."""
+        return (
+            self._db.read(
+                lambda s: s.scalar(select(GameTable.updated_at).where(GameTable.id == table_id))
+            )
+            or 0.0
+        )
+
     def new_table_id(self) -> str:
-        """Um id novo para uma mesa, que nenhuma outra usa."""
+        """Um id novo para uma mesa, que nenhuma outra (ativa ou arquivada) usa."""
         while True:
             table_id = secrets.token_hex(8)
-            if not self.exists(table_id):
+            if not self.exists(table_id, scope="any"):
                 return table_id
 
     def count(self) -> int:
-        """Quantas mesas existem."""
-        return self._db.read(lambda s: s.scalar(select(func.count()).select_from(GameTable)) or 0)
+        """Quantas mesas ativas existem."""
+        return self._db.read(_active_count)
 
-    def table_ids(self) -> list[str]:
-        """Os ids das mesas que existem, em ordem estável."""
-        return self._db.read(lambda s: list(s.scalars(select(GameTable.id).order_by(GameTable.id))))
+    def table_ids(self, *, scope: Scope = "active") -> list[str]:
+        """Os ids das mesas, em ordem estável (só as ativas, por padrão)."""
+        return self._db.read(
+            lambda s: list(s.scalars(select(GameTable.id).where(_in(scope)).order_by(GameTable.id)))
+        )
 
-    def summaries(self, campaign_path: str) -> list[Summary]:
+    def summaries(self, campaign_path: str, *, scope: Scope = "active") -> list[Summary]:
         """As mesas de uma campanha (``TableMeta`` em JSON, sem o estado), em ordem estável."""
 
         def read(session: Session) -> list[Summary]:
             rows = session.execute(
-                select(GameTable.id, GameTable.meta, GameTable.updated_at)
-                .where(GameTable.campaign_path == campaign_path)
+                select(GameTable.id, GameTable.meta, GameTable.updated_at, GameTable.archived_at)
+                .where(GameTable.campaign_path == campaign_path, _in(scope))
                 .order_by(GameTable.id)
             )
             return [Summary(*row) for row in rows]
@@ -204,8 +275,15 @@ class Storage:
         return self._db.read(read)
 
     def campaigns_in_use(self) -> set[str]:
-        """Os caminhos de campanha (relativos à pasta de campanhas) que alguma mesa usa."""
-        return self._db.read(lambda s: set(s.scalars(select(GameTable.campaign_path).distinct())))
+        """Os caminhos de campanha (relativos à pasta de campanhas) que alguma mesa **ativa** usa.
+
+        Mesa arquivada não trava a campanha: ao restaurá-la, a partida é conferida contra a campanha de então.
+        """
+        return self._db.read(
+            lambda s: set(
+                s.scalars(select(GameTable.campaign_path).where(_in("active")).distinct())
+            )
+        )
 
     # --- coordenação em memória --------------------------------------------------
 

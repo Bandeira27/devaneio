@@ -39,6 +39,8 @@ export interface ApiResponses {
   editor_campaigns: EditorCampaign[];
   editor_campaign: EditorCampaign;
   editor_tables: EditorTable[];
+  editor_archived_tables: ArchivedTable[];
+  editor_archived_log: ArchivedLog;
   editor_table_closed: EditorTableClosed;
   editor_host_access: HostAccess;
   editor_report: ValidationReport;
@@ -592,7 +594,7 @@ export interface EditorCampaign {
 /**
  * Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).
  *
- * ``updated_at`` é a última gravação do arquivo da mesa, em segundos de época.
+ * ``updated_at`` é a última gravação da mesa, em segundos de época.
  */
 export interface EditorTable {
   table_id: string;
@@ -602,7 +604,37 @@ export interface EditorTable {
   updated_at: number;
 }
 /**
- * A confirmação de que a mesa foi encerrada: o arquivo dela foi apagado.
+ * Uma mesa arquivada de uma campanha: some do jogo e da lista, mas o estado e o log ficam e dá para restaurá-la.
+ *
+ * ``archived_at`` é quando foi arquivada e ``updated_at`` a última gravação antes disso, ambos em segundos de época.
+ */
+export interface ArchivedTable {
+  table_id: string;
+  phase: "lobby" | "running" | "paused" | "ended";
+  host_name: string;
+  players: number;
+  updated_at: number;
+  archived_at: number;
+}
+/**
+ * O histórico de uma mesa arquivada, na ordem em que aconteceu: o log inteiro, como o anfitrião o vê.
+ */
+export interface ArchivedLog {
+  table_id: string;
+  turn: number;
+  events: LogEvent[];
+}
+/**
+ * Uma linha do log de uma mesa arquivada: a linha mecânica do evento (``data`` não sai).
+ */
+export interface LogEvent {
+  index: number;
+  turn: number;
+  kind: string;
+  text: string;
+}
+/**
+ * A confirmação de que a mesa saiu: arquivada (dá para restaurá-la) ou, nas arquivadas, apagada de vez.
  */
 export interface EditorTableClosed {
   table_id: string;

@@ -82,7 +82,9 @@ def test_catalog_rejects_duplicated_ids_and_broken_files(tmp_path):
 
 def test_a_table_deleted_between_the_check_and_the_load_is_404_not_500(service, created):
     assert service.storage.exists(created.table_id)
-    service.storage.delete(created.table_id)  # o editor encerrou a mesa depois da checagem
+    service.storage.delete(
+        created.table_id, scope="active"
+    )  # o editor apagou a mesa depois da checagem
     with pytest.raises(ApiFailure) as info:
         service.load_session(created.table_id)
     assert (info.value.status, info.value.code) == (404, "table_not_found")

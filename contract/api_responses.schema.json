@@ -19,6 +19,73 @@
       "title": "ApiError",
       "type": "object"
     },
+    "ArchivedLog": {
+      "additionalProperties": false,
+      "description": "O histórico de uma mesa arquivada, na ordem em que aconteceu: o log inteiro, como o anfitrião o vê.",
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "turn": {
+          "type": "integer"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/LogEvent"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "table_id",
+        "turn",
+        "events"
+      ],
+      "title": "ArchivedLog",
+      "type": "object"
+    },
+    "ArchivedTable": {
+      "additionalProperties": false,
+      "description": "Uma mesa arquivada de uma campanha: some do jogo e da lista, mas o estado e o log ficam e dá para restaurá-la.\n\n``archived_at`` é quando foi arquivada e ``updated_at`` a última gravação antes disso, ambos em segundos de época.",
+      "properties": {
+        "table_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "phase": {
+          "enum": [
+            "lobby",
+            "running",
+            "paused",
+            "ended"
+          ],
+          "type": "string"
+        },
+        "host_name": {
+          "type": "string"
+        },
+        "players": {
+          "type": "integer"
+        },
+        "updated_at": {
+          "type": "number"
+        },
+        "archived_at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "table_id",
+        "phase",
+        "host_name",
+        "players",
+        "updated_at",
+        "archived_at"
+      ],
+      "title": "ArchivedTable",
+      "type": "object"
+    },
     "AtLocation": {
       "additionalProperties": false,
       "description": "Vale quando o grupo está num local.",
@@ -596,7 +663,7 @@
     },
     "EditorTable": {
       "additionalProperties": false,
-      "description": "Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).\n\n``updated_at`` é a última gravação do arquivo da mesa, em segundos de época.",
+      "description": "Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).\n\n``updated_at`` é a última gravação da mesa, em segundos de época.",
       "properties": {
         "table_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -633,7 +700,7 @@
     },
     "EditorTableClosed": {
       "additionalProperties": false,
-      "description": "A confirmação de que a mesa foi encerrada: o arquivo dela foi apagado.",
+      "description": "A confirmação de que a mesa saiu: arquivada (dá para restaurá-la) ou, nas arquivadas, apagada de vez.",
       "properties": {
         "table_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
@@ -1289,6 +1356,32 @@
         "exits"
       ],
       "title": "LocationView",
+      "type": "object"
+    },
+    "LogEvent": {
+      "additionalProperties": false,
+      "description": "Uma linha do log de uma mesa arquivada: a linha mecânica do evento (``data`` não sai).",
+      "properties": {
+        "index": {
+          "type": "integer"
+        },
+        "turn": {
+          "type": "integer"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "index",
+        "turn",
+        "kind",
+        "text"
+      ],
+      "title": "LogEvent",
       "type": "object"
     },
     "ModifierInfo": {
@@ -2119,6 +2212,15 @@
       },
       "type": "array"
     },
+    "editor_archived_tables": {
+      "items": {
+        "$ref": "#/$defs/ArchivedTable"
+      },
+      "type": "array"
+    },
+    "editor_archived_log": {
+      "$ref": "#/$defs/ArchivedLog"
+    },
     "editor_table_closed": {
       "$ref": "#/$defs/EditorTableClosed"
     },
@@ -2163,6 +2265,8 @@
     "editor_campaigns",
     "editor_campaign",
     "editor_tables",
+    "editor_archived_tables",
+    "editor_archived_log",
     "editor_table_closed",
     "editor_host_access",
     "editor_report",

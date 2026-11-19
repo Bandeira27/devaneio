@@ -9,6 +9,8 @@ from devaneio.schema import (
 
 from .campaign import CampaignSummary, CampaignView
 from .editor import (
+    ArchivedLog,
+    ArchivedTable,
     EditorCampaign,
     EditorTable,
     EditorTableClosed,
@@ -88,6 +90,8 @@ class ApiResponses(StrictModel):
     editor_campaigns: list[EditorCampaign]
     editor_campaign: EditorCampaign
     editor_tables: list[EditorTable]
+    editor_archived_tables: list[ArchivedTable]
+    editor_archived_log: ArchivedLog
     editor_table_closed: EditorTableClosed
     editor_host_access: HostAccess
     editor_report: ValidationReport

@@ -31,10 +31,17 @@ def prepare_data_dir(data_dir: Path) -> Path:
     return data_dir
 
 
-def create_private_file(path: Path) -> None:
-    """Cria o arquivo vazio com ``0600`` desde o primeiro instante, se ainda não existe."""
+def create_private_file(path: Path, *, exclusive: bool = False) -> None:
+    """Cria o arquivo vazio com ``0600`` desde o primeiro instante, se ainda não existe.
+
+    Com ``exclusive``, um arquivo que já existe (ou aparece entre a checagem e a criação) é ``FileExistsError``,
+    nunca aberto: quem pede não sobrescreve nada.
+    """
+    flags = os.O_RDWR | os.O_CREAT | (os.O_EXCL if exclusive else 0)
     try:
-        os.close(os.open(path, os.O_RDWR | os.O_CREAT, FILE_MODE))
+        os.close(os.open(path, flags, FILE_MODE))
+    except FileExistsError:
+        raise
     except OSError as exc:
         raise DatabaseError(f"não consegui criar {path.name}: {exc.strerror}") from exc
 

@@ -168,20 +168,26 @@ class Database:
         finally:
             connection.close()
 
-    def backup_to(self, target: Path) -> None:
+    def backup_to(self, target: Path, *, exclusive: bool = False) -> None:
         """Cópia consistente do banco inteiro (inclui o que ainda está no WAL), arquivo ``0600``.
 
-        Não leva a chave do LLM nem nada fora do banco.
+        Não leva a chave do LLM nem nada fora do banco. Com ``exclusive``, um destino que já existe é
+        ``FileExistsError`` (a criação é atômica, sem janela entre checar e criar), e uma cópia que falha no meio
+        não deixa um arquivo pela metade para trás.
         """
         target = Path(target)
-        create_private_file(target)
+        create_private_file(target, exclusive=exclusive)
         tighten(target, "a cópia")
         destination = sqlite3.connect(target)
         try:
             with self.raw_connection() as source:
                 source.backup(destination)
-        finally:
+        except BaseException:
             destination.close()
+            if exclusive:
+                target.unlink(missing_ok=True)
+            raise
+        destination.close()
 
     def close(self) -> None:
         """Fecha as conexões do pool."""

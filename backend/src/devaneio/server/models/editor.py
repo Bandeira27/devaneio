@@ -79,7 +79,7 @@ class PreviewView(StrictModel):
 class EditorTable(StrictModel):
     """Uma mesa que usa uma campanha, como o editor a lista (sem nenhum segredo: nem token, nem convite).
 
-    ``updated_at`` é a última gravação do arquivo da mesa, em segundos de época.
+    ``updated_at`` é a última gravação da mesa, em segundos de época.
     """
 
     table_id: Id
@@ -90,9 +90,40 @@ class EditorTable(StrictModel):
 
 
 class EditorTableClosed(StrictModel):
-    """A confirmação de que a mesa foi encerrada: o arquivo dela foi apagado."""
+    """A confirmação de que a mesa saiu: arquivada (dá para restaurá-la) ou, nas arquivadas, apagada de vez."""
 
     table_id: Id
+
+
+class ArchivedTable(StrictModel):
+    """Uma mesa arquivada de uma campanha: some do jogo e da lista, mas o estado e o log ficam e dá para restaurá-la.
+
+    ``archived_at`` é quando foi arquivada e ``updated_at`` a última gravação antes disso, ambos em segundos de época.
+    """
+
+    table_id: Id
+    phase: Phase
+    host_name: str
+    players: int
+    updated_at: float
+    archived_at: float
+
+
+class LogEvent(StrictModel):
+    """Uma linha do log de uma mesa arquivada: a linha mecânica do evento (``data`` não sai)."""
+
+    index: int
+    turn: int
+    kind: str
+    text: str
+
+
+class ArchivedLog(StrictModel):
+    """O histórico de uma mesa arquivada, na ordem em que aconteceu: o log inteiro, como o anfitrião o vê."""
+
+    table_id: Id
+    turn: int
+    events: list[LogEvent]
 
 
 class HostAccess(StrictModel):

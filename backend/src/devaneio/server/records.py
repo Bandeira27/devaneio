@@ -22,7 +22,7 @@ from devaneio.schema import GameState
 
 from .catalog import Catalog
 from .errors import ApiFailure
-from .storage import Record, Storage
+from .storage import Record, Scope, Storage
 
 
 def record_from_save(data: SaveFile, reference: str) -> Record:
@@ -47,12 +47,12 @@ class TableRecords:
         self._storage = storage
         self._catalog = catalog
 
-    def load(self, table_id: str) -> Session:
+    def load(self, table_id: str, *, scope: Scope = "active") -> Session:
         """A partida de uma mesa. Registro ilegível é erro interno (``RuntimeError``, sem detalhe do dado).
 
         ``404`` se a mesa não existe (inclusive se foi apagada entre a checagem de quem chama e esta leitura).
         """
-        record = self._storage.read(table_id)
+        record = self._storage.read(table_id, scope=scope)
         if record is None:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
         try:

@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from conftest import CAMPAIGN_PATH, make_storage, table_text
+from conftest import CAMPAIGN_PATH, corrupt, make_storage, open_for_play, table_text
 from devaneio.server import ApiFailure, Catalog, TableService
-from devaneio.server.models import CreateTableRequest, InvitePreviewRequest
+from devaneio.server.models import CommandRequest, CreateTableRequest, InvitePreviewRequest
 from devaneio.server.storage import Record
 from test_server_editor import SECRET, Api, serve
 
@@ -93,7 +93,7 @@ def test_an_unreadable_table_does_not_break_the_list(api, setup):
 # --- encerrar -----------------------------------------------------------------------------
 
 
-def test_closing_a_table_deletes_it_and_frees_the_campaign(api, setup):
+def test_closing_a_table_archives_it_and_frees_the_campaign(api, setup):
     _, storage, service = setup
     created = make_table(service)
     assert writable(api) is False
@@ -144,6 +144,203 @@ def test_closing_wakes_a_waiting_reader_with_404(api, setup):
     thread.join(timeout=10)
     assert box["status"] == 404
     assert box["elapsed"] < 5  # acordou pelo encerramento, não pelo prazo
+
+
+# --- arquivar, restaurar, apagar de vez e o histórico ----------------------------------------
+
+
+def archive(api, created):
+    return api.call("DELETE", f"/editor/tables/{created.table_id}", headers=origin(api))
+
+
+def test_archiving_keeps_the_state_and_moves_the_table_to_the_archived_list(api, setup):
+    _, storage, service = setup
+    created = make_table(service)
+    status, body = archive(api, created)
+    assert (status, body) == (200, {"table_id": created.table_id})
+    assert storage.exists(created.table_id) is False  # fora do jogo
+    assert storage.exists(created.table_id, scope="archived") is True  # mas guardada
+    assert api.call("GET", f"/editor/campaigns/{SOMBRA}/tables") == (200, [])
+    status, rows = api.call("GET", f"/editor/campaigns/{SOMBRA}/archived-tables")
+    assert status == 200
+    [row] = rows
+    assert (row["table_id"], row["host_name"], row["players"]) == (created.table_id, "Ana", 1)
+    assert row["archived_at"] >= row["updated_at"] > 0
+    for secret in (created.host_token, created.invite_code, "hash", "token"):
+        assert secret not in json.dumps(rows)
+
+
+def test_an_archived_table_is_gone_for_the_players_and_does_not_hold_the_campaign(api, setup):
+    _, _, service = setup
+    created = make_table(service)
+    assert writable(api) is False
+    archive(api, created)
+    assert writable(api) is True  # só mesa ativa trava a campanha
+    for call in (
+        lambda: service.get_table(created.table_id, created.host_token),
+        lambda: service.get_events(created.table_id, created.host_token, 0),
+        lambda: service.preview_invite(
+            created.table_id, InvitePreviewRequest(invite_code=created.invite_code)
+        ),
+    ):
+        with pytest.raises(ApiFailure) as info:
+            call()
+        assert info.value.status in (401, 404)
+
+
+def test_archiving_twice_or_an_unknown_table_is_404(api, setup):
+    _, _, service = setup
+    created = make_table(service)
+    assert archive(api, created)[0] == 200
+    assert archive(api, created)[0] == 404
+    status, _ = api.call("DELETE", "/editor/tables/0123456789abcdef", headers=origin(api))
+    assert status == 404
+
+
+def test_restoring_brings_the_same_table_back_with_the_old_token_and_invite(api, setup):
+    _, _, service = setup
+    created = make_table(service)
+    before = service.get_table(created.table_id, created.host_token).revision
+    archive(api, created)
+    status, row = api.call(
+        "POST", f"/editor/archived-tables/{created.table_id}/restore", headers=origin(api)
+    )
+    assert status == 200
+    assert (row["table_id"], row["host_name"], row["phase"]) == (created.table_id, "Ana", "lobby")
+    assert service.get_table(created.table_id, created.host_token).revision == before
+    assert service.preview_invite(
+        created.table_id, InvitePreviewRequest(invite_code=created.invite_code)
+    ).title
+    assert api.call("GET", f"/editor/campaigns/{SOMBRA}/archived-tables") == (200, [])
+    assert writable(api) is False  # voltou a travar a campanha
+
+
+def test_restoring_an_active_or_unknown_table_is_404(api, setup):
+    _, _, service = setup
+    created = make_table(service)
+    for table_id in (created.table_id, "0123456789abcdef"):
+        status, _ = api.call(
+            "POST", f"/editor/archived-tables/{table_id}/restore", headers=origin(api)
+        )
+        assert status == 404
+
+
+def test_restoring_respects_the_table_limit(tmp_path, folder):
+    catalog = Catalog(folder)
+    storage = make_storage(tmp_path / "mesas", max_tables=1)
+    service = TableService(catalog, storage)
+    server = serve((catalog, storage, service))
+    api = Api(server.server_address[1])
+    try:
+        first = make_table(service)
+        archive(api, first)
+        make_table(service)  # a vaga do arquivamento foi usada por outra mesa
+        status, body = api.call(
+            "POST", f"/editor/archived-tables/{first.table_id}/restore", headers=origin(api)
+        )
+        assert (status, body["error"]["code"]) == (409, "table_limit")
+        assert storage.exists(first.table_id, scope="archived")  # segue arquivada
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_a_table_whose_game_no_longer_fits_the_campaign_stays_archived_with_its_date(api, setup):
+    _, storage, service = setup
+    created = make_table(service)
+    archive(api, created)
+    [before] = storage.summaries("sombra-do-vale.json", scope="archived")
+    corrupt(service, created.table_id, state='{"state": "estragado"}')
+    status, body = api.call(
+        "POST", f"/editor/archived-tables/{created.table_id}/restore", headers=origin(api)
+    )
+    assert (status, body["error"]["code"]) == (409, "table_unreadable")
+    assert "não combina mais com a campanha" in body["error"]["message"]
+    assert storage.exists(created.table_id) is False
+    assert storage.exists(created.table_id, scope="archived") is True
+    [after] = storage.summaries("sombra-do-vale.json", scope="archived")
+    assert after.archived_at == before.archived_at  # a data original do arquivamento não mudou
+
+
+@pytest.mark.parametrize("table_id", ["inventado", "0123456789abcdef", "ABC", "x" * 64])
+def test_an_invented_id_creates_no_lock_entry_in_memory(api, setup, table_id):
+    _, storage, _ = setup
+    before = len(storage._tables)
+    for method, path in (
+        ("POST", f"/editor/archived-tables/{table_id}/restore"),
+        ("DELETE", f"/editor/archived-tables/{table_id}"),
+    ):
+        assert api.call(method, path, headers=origin(api))[0] == 404
+    assert len(storage._tables) == before
+
+
+def test_purging_deletes_only_an_archived_table_and_for_good(api, setup):
+    _, storage, service = setup
+    created = make_table(service)
+    status, _ = api.call(
+        "DELETE", f"/editor/archived-tables/{created.table_id}", headers=origin(api)
+    )
+    assert status == 404  # ativa: só arquivar a tira do jogo
+    assert storage.exists(created.table_id)
+    archive(api, created)
+    status, body = api.call(
+        "DELETE", f"/editor/archived-tables/{created.table_id}", headers=origin(api)
+    )
+    assert (status, body) == (200, {"table_id": created.table_id})
+    assert storage.exists(created.table_id, scope="any") is False
+    assert api.call("GET", f"/editor/campaigns/{SOMBRA}/archived-tables") == (200, [])
+
+
+def test_the_history_of_an_archived_table_is_its_whole_log_and_nothing_secret(api, setup):
+    _, _, service = setup
+    created = make_table(service)
+    open_for_play(service, created.table_id)
+    view = service.get_table(created.table_id, created.host_token)
+    service.run_command(
+        created.table_id,
+        created.host_token,
+        CommandRequest(line='entrar ana "Ana"', revision=view.revision),
+    )
+    expected = service.load_session(created.table_id).state.events
+    assert expected
+    archive(api, created)
+    status, log = api.call("GET", f"/editor/archived-tables/{created.table_id}/log")
+    assert status == 200
+    assert [(e["index"], e["turn"], e["kind"], e["text"]) for e in log["events"]] == [
+        (i, e.turn, e.kind, e.text) for i, e in enumerate(expected)
+    ]
+    text = json.dumps(log)
+    for secret in (created.host_token, created.invite_code, "token_hash", "invite_hash", SECRET):
+        assert secret not in text
+
+
+def test_the_history_only_exists_for_archived_tables(api, setup):
+    _, _, service = setup
+    created = make_table(service)
+    assert api.call("GET", f"/editor/archived-tables/{created.table_id}/log")[0] == 404
+    assert api.call("GET", "/editor/archived-tables/0123456789abcdef/log")[0] == 404
+
+
+def test_the_archive_routes_need_a_same_origin_request_and_the_editor(api, setup, folder):
+    _, _, service = setup
+    created = make_table(service)
+    archive(api, created)
+    bad = {"Origin": "http://exemplo.com"}
+    for method, path in (
+        ("POST", f"/editor/archived-tables/{created.table_id}/restore"),
+        ("DELETE", f"/editor/archived-tables/{created.table_id}"),
+    ):
+        status, body = api.call(method, path, headers=bad)
+        assert (status, body["error"]["code"]) == (403, "origin_not_allowed")
+    server = serve(setup, editor=False)
+    off = Api(server.server_address[1])
+    for path in (
+        f"/editor/campaigns/{SOMBRA}/archived-tables",
+        f"/editor/archived-tables/{created.table_id}/log",
+    ):
+        assert off.call("GET", path)[0] == 404
+    server.shutdown()
+    server.server_close()
 
 
 # --- reemitir o acesso do anfitrião -----------------------------------------------------------

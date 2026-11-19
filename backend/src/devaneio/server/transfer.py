@@ -63,7 +63,7 @@ def _import_one(
     if not TABLE_ID.match(path.stem):
         report.refused.append((name, "o nome do arquivo não é um id de mesa (16 letras e números)"))
         return
-    if storage.exists(path.stem):
+    if storage.exists(path.stem, scope="any"):  # já está lá, ativa ou arquivada
         report.skipped.append(path.stem)
         return
     try:
