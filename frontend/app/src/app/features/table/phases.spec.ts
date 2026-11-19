@@ -156,13 +156,36 @@ describe('Sala de espera', () => {
     expect(app.root().querySelector('dv-lobby')).not.toBeNull();
   });
 
-  it('o convidado espera: sem botão de iniciar e com o caminho para criar o personagem', async () => {
-    const { root, text, buttons } = await open(mesa, table('lobby', 'player'));
+  it('o convidado com personagem espera: sem botão de iniciar nem convite', async () => {
+    const { root, text, buttons } = await open(mesa, table('lobby', 'player', [BIA]));
     expect(text()).toContain('Esperando o anfitrião iniciar');
     expect(buttons('Iniciar campanha')).toEqual([]);
     expect(root().querySelector('dv-copy-field')).toBeNull(); // o convite é do anfitrião
-    expect(root().querySelector(`a[href="/mesa/${TABLE_ID}/personagem"]`)?.textContent).toContain(
-      'Criar o meu personagem',
+    expect(root().querySelector('a[href$="/personagem"]')).toBeNull(); // já tem personagem: nada a criar
+  });
+
+  it('a sala é o último passo do caminho do convidado', async () => {
+    const { root } = await open(mesa, table('lobby', 'player', [BIA]));
+    expect(root().querySelector('dv-steps [aria-current="step"]')?.textContent).toContain('Sala');
+    expect(root().querySelector('dv-steps')?.textContent).toContain('Convite');
+  });
+
+  it('a sala é o último passo do caminho do anfitrião', async () => {
+    const { root } = await open(mesa, table('lobby', 'host', [BIA]), { invite: true });
+    expect(root().querySelector('dv-steps [aria-current="step"]')?.textContent).toContain('Sala');
+    expect(root().querySelector('dv-steps')?.textContent).toContain('Mesa');
+  });
+
+  it('o convidado sem personagem é levado ao passo que falta', async () => {
+    const app = await open(mesa, table('lobby', 'player'));
+    expect(app.router.url).toBe(`${mesa}/personagem`);
+  });
+
+  it('o anfitrião sem personagem fica na sala: seguir sem personagem é escolha dele', async () => {
+    const app = await open(mesa, table('lobby', 'host'), { invite: true });
+    expect(app.router.url).toBe(mesa);
+    expect(app.root().querySelector('a[href$="/personagem"]')?.textContent).toContain(
+      'Criar personagem',
     );
   });
 

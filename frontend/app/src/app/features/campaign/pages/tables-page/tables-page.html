@@ -103,6 +103,7 @@
   }
 
   <section class="dv-card dv-stack" aria-labelledby="titulo-criar">
+    <dv-steps [steps]="hostSteps" [current]="entryStep.start" />
     <h2 class="dv-section" id="titulo-criar">Criar uma mesa</h2>
     <form class="dv-stack" (submit)="$event.preventDefault(); store.create()">
       <dv-field label="Seu nome" [error]="store.nameError()">

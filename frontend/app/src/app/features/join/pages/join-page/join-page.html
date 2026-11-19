@@ -1,6 +1,6 @@
 <div class="dv-stage">
   <div class="dv-stage__context">
-    <dv-steps [steps]="steps" [current]="0" />
+    <dv-steps [steps]="steps" [current]="entryStep.start" />
     <h1 class="dv-display">Entrar na mesa</h1>
     @if (invitedTo(); as title) {
       <!-- O nome da mesa aparece em qualquer largura: é o que confirma que o link é o certo. -->

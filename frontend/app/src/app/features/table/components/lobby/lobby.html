@@ -1,12 +1,13 @@
 <section class="lobby dv-stack" aria-labelledby="sala-titulo">
   <div class="dv-stack">
+    <dv-steps [steps]="steps()" [current]="entryStep.lobby" />
     <h2 class="dv-title" id="sala-titulo">Sala de espera</h2>
     <p class="dv-lede">
       @if (store.isHost()) {
         A história só começa quando você clicar em Iniciar campanha. Enquanto isso, mande o convite
         e espere o grupo criar os personagens.
       } @else {
-        A história ainda não começou. Crie o seu personagem e espere o anfitrião iniciar.
+        A história ainda não começou. Espere aqui o anfitrião iniciar a campanha.
       }
     </p>
   </div>
@@ -39,7 +40,7 @@
         class="lobby__character"
         [routerLink]="['/mesa', tableId(), 'personagem']"
       >
-        <dv-icon name="person" size="sm" />Criar o meu personagem
+        <dv-icon name="person" size="sm" />Criar personagem
       </a>
     }
   </section>

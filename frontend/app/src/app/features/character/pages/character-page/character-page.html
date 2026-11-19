@@ -1,6 +1,6 @@
 <div class="dv-stage">
   <div class="dv-stage__context">
-    <dv-steps [steps]="store.isHost() ? hostSteps : guestSteps" [current]="1" />
+    <dv-steps [steps]="store.isHost() ? hostSteps : guestSteps" [current]="entryStep.character" />
     <h1 class="dv-display">Seu personagem</h1>
     <p class="dv-lede">
       Dê um nome a quem você vai ser. Se quiser, ajuste os atributos; o padrão já serve e o mestre
@@ -79,7 +79,7 @@
             <dv-notice kind="error">{{ store.error() }}</dv-notice>
           }
           <button dvButton="primary" type="submit" [dvLoading]="store.saving()">
-            <dv-icon name="play" size="sm" />Jogar
+            <dv-icon name="ok" size="sm" />Salvar e ir para a sala
           </button>
           @if (store.llmNotice()) {
             <dv-disclosure label="O que o mestre de IA recebe">

@@ -160,8 +160,8 @@ export class CampaignStore {
         invite: created.invite_code,
         savedAt: Date.now(),
       });
-      // A mesa nasce numa sala de espera: o anfitrião cai nela, convida e cria o personagem por lá.
-      await this.router.navigate(['/mesa', created.table_id]);
+      // O caminho de entrada segue: depois da mesa vem o personagem, e só então a sala de espera.
+      await this.router.navigate(['/mesa', created.table_id, 'personagem']);
     } catch (error) {
       this.createError.set(messageOf(error));
     } finally {

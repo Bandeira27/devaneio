@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvIcon } from '@shared/ui/icon/icon';
@@ -73,6 +73,7 @@ export class TablePage {
   private readonly sceneName = computed(() => this.store.shownScene()?.name);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');
   private readonly actions = viewChild(ActionDock);
   private readonly dock = viewChild<ElementRef<HTMLElement>>('dock');
@@ -91,6 +92,18 @@ export class TablePage {
   protected readonly mineOpen = signal(true);
 
   constructor() {
+    effect(() => {
+      // O personagem é passo obrigatório de quem foi convidado: na sala sem ele, o caminho o leva ao passo que falta.
+      // O anfitrião não é levado: seguir sem personagem é escolha dele.
+      if (
+        this.store.state() === 'ready' &&
+        this.store.phase() === 'lobby' &&
+        !this.store.isHost() &&
+        !this.store.character()
+      ) {
+        void this.router.navigate(['/mesa', this.tableId(), 'personagem'], { replaceUrl: true });
+      }
+    });
     effect(() => {
       // A rota antiga do painel pede a barra aberta; só o anfitrião tem barra.
       if (this.session.requested() && this.store.state() === 'ready') {

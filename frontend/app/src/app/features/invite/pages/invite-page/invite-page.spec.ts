@@ -67,12 +67,12 @@ describe('Convite do anfitrião', () => {
     expect(root().querySelector('[role="alert"]')?.textContent).toContain('Escreva um endereço');
   });
 
-  it('leva ao personagem e à mesa sem personagem', async () => {
+  it('o único caminho é voltar para a mesa', async () => {
     const { root } = await host();
     const links = Array.from(root().querySelectorAll('a[dvbutton]')).map((a) =>
       a.getAttribute('href'),
     );
-    expect(links).toEqual([`/mesa/${TABLE_ID}/personagem`, `/mesa/${TABLE_ID}`]);
+    expect(links).toEqual([`/mesa/${TABLE_ID}`]);
   });
 
   it('quem não é anfitrião vai para o personagem', async () => {

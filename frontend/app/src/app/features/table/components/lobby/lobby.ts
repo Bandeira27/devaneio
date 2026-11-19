@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SessionStore } from '@core/session/session-store';
+import { ENTRY_STEP, GUEST_STEPS, HOST_STEPS } from '@shared/game/entry-steps';
 import { describeInvite } from '@shared/game/invite';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
@@ -19,6 +20,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvIcon } from '@shared/ui/icon/icon';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { DvSteps } from '@shared/ui/steps/steps';
 import { TableStore } from '../../table.store';
 
 /** De quanto em quanto tempo (ms) a sala relê a mesa: entrar na mesa e criar personagem não geram evento. */
@@ -41,6 +43,7 @@ export const LOBBY_REFRESH_MS = 4000;
     DvIcon,
     DvInput,
     DvNotice,
+    DvSteps,
   ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.css',
@@ -53,6 +56,8 @@ export class Lobby {
   protected readonly store = inject(TableStore);
   private readonly session = inject(SessionStore);
   protected readonly fieldValue = fieldValue;
+  protected readonly steps = computed(() => (this.store.isHost() ? HOST_STEPS : GUEST_STEPS));
+  protected readonly entryStep = ENTRY_STEP;
 
   /** O endereço que os outros aparelhos alcançam (começa no deste aparelho). */
   protected readonly addressText = signal(globalThis.location.origin);

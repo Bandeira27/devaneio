@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { EditorTable } from '@contract/api_responses';
+import { ENTRY_STEP, HOST_STEPS } from '@shared/game/entry-steps';
 import { tableLine } from '@shared/game/server-tables';
 import { whenOf } from '@shared/game/when';
 import { DvButton } from '@shared/ui/button/button';
@@ -18,6 +19,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { focusElement } from '@shared/ui/focus';
 import { DvNotice } from '@shared/ui/notice/notice';
+import { DvSteps } from '@shared/ui/steps/steps';
 import { CampaignStore } from '../../campaign.store';
 import { DvIcon } from '../../../../shared/ui/icon/icon';
 
@@ -28,7 +30,7 @@ import { DvIcon } from '../../../../shared/ui/icon/icon';
  */
 @Component({
   selector: 'dv-campaign-tables-page',
-  imports: [DvIcon, RouterLink, DvButton, DvField, DvInput, DvNotice],
+  imports: [DvIcon, RouterLink, DvButton, DvField, DvInput, DvNotice, DvSteps],
   providers: [CampaignStore],
   templateUrl: './tables-page.html',
   styleUrl: './tables-page.css',
@@ -39,6 +41,8 @@ export class TablesPage {
   readonly campaignId = input.required<string>();
 
   protected readonly fieldValue = fieldValue;
+  protected readonly hostSteps = HOST_STEPS;
+  protected readonly entryStep = ENTRY_STEP;
   protected readonly store = inject(CampaignStore);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

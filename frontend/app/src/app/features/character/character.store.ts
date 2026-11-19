@@ -150,6 +150,6 @@ export class CharacterStore {
   private async send(name: string, revision: number): Promise<void> {
     const line = join(this.characterId(), name, this.values());
     await firstValueFrom(this.api.command(this.tableId(), { line, revision }));
-    await this.router.navigate(['/mesa', this.tableId()]);
+    await this.router.navigate(['/mesa', this.tableId()], { replaceUrl: true });
   }
 }

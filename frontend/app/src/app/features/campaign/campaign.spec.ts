@@ -180,7 +180,7 @@ describe('Campanha: mesas', () => {
     expect(items).toEqual([TABLE_ID, '1111111111111111']);
   });
 
-  it('criar mesa pede o nome, envia a campanha e vai à sala de espera', async () => {
+  it('criar mesa pede o nome, envia a campanha e vai ao passo do personagem', async () => {
     const app = await open('/c/sombra-do-vale/mesas');
     await app.submit();
     expect(app.root().textContent).toContain('Escreva o seu nome.');
@@ -191,7 +191,7 @@ describe('Campanha: mesas', () => {
     expect(request.request.body).toEqual({ campaign_id: 'sombra-do-vale', host_name: 'Ana' });
     request.flush(tableCreated());
     await app.settle();
-    expect(app.router.url).toBe(`/mesa/${TABLE_ID}`); // a sala de espera
+    expect(app.router.url).toBe(`/mesa/${TABLE_ID}/personagem`); // o caminho segue: depois da mesa, o personagem
     expect(app.session.get(TABLE_ID)?.campaignId).toBe('sombra-do-vale');
   });
 
