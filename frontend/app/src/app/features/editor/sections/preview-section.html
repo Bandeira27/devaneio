@@ -14,18 +14,22 @@
   } @else if (store.checkError()) {
     <dv-state kind="error">
       Não consegui conferir a campanha agora: {{ store.checkError() }}
-      <button dvStateAction dvButton type="button" (click)="retryCheck()">Conferir de novo</button>
+      <button dvStateAction dvButton type="button" (click)="retryCheck()">
+        <dv-icon name="retry" size="sm" />Conferir de novo
+      </button>
     </dv-state>
   } @else {
     @if (store.previewError()) {
       <dv-notice kind="error">
         {{ store.previewError() }}
-        <button dvButton type="button" (click)="retry()">Tentar de novo</button>
+        <button dvButton type="button" (click)="retry()">
+          <dv-icon name="retry" size="sm" />Tentar de novo
+        </button>
       </dv-notice>
     }
     @if (store.preview(); as preview) {
       <button dvButton type="button" [dvLoading]="store.previewing()" (click)="store.loadPreview()">
-        Atualizar prévia
+        <dv-icon name="retry" size="sm" />Atualizar prévia
       </button>
       @if (store.previewStale()) {
         <dv-notice kind="warn">

@@ -16,6 +16,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement } from '@shared/ui/focus';
 import { EditorStore } from '../../editor.store';
+import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /** Quanto a conferência espera (ms) antes de dizer "Conferindo…". */
 const SLOW_CHECK_MS = 300;
@@ -28,7 +29,7 @@ const SLOW_CHECK_MS = 300;
  */
 @Component({
   selector: 'dv-editor-page',
-  imports: [RouterLink, RouterOutlet, DvBadge, DvButton, DvNotice, DvState],
+  imports: [DvIcon, RouterLink, RouterOutlet, DvBadge, DvButton, DvNotice, DvState],
   providers: [EditorStore],
   templateUrl: './edit-page.html',
   styleUrl: './edit-page.css',

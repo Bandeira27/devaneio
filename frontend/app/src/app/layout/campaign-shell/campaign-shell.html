@@ -8,7 +8,7 @@
       <dv-state kind="error">
         {{ catalog.loadError() }}
         <button dvStateAction dvButton type="button" (click)="catalog.load()">
-          Tentar de novo
+          <dv-icon name="retry" size="sm" />Tentar de novo
         </button>
       </dv-state>
     } @else {

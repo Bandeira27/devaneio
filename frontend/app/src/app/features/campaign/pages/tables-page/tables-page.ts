@@ -16,6 +16,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { CampaignStore } from '../../campaign.store';
+import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /**
  * As mesas de uma campanha neste aparelho (continuar, abrir ou esquecer, com desfazer) e criar uma mesa nova, que pede só
@@ -23,7 +24,7 @@ import { CampaignStore } from '../../campaign.store';
  */
 @Component({
   selector: 'dv-campaign-tables-page',
-  imports: [RouterLink, DvButton, DvField, DvInput, DvNotice],
+  imports: [DvIcon, RouterLink, DvButton, DvField, DvInput, DvNotice],
   providers: [CampaignStore],
   templateUrl: './tables-page.html',
   styleUrl: './tables-page.css',

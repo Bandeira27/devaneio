@@ -17,11 +17,13 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvOrnament } from '@shared/ui/ornament/ornament';
 import { InviteStore } from '../../invite.store';
 import { fieldValue } from '@shared/ui/field/field-value';
+import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /** Tela do convite do anfitrião: o link para mandar aos jogadores. */
 @Component({
   selector: 'dv-invite-page',
   imports: [
+    DvIcon,
     RouterLink,
     DvButton,
     DvCopyField,

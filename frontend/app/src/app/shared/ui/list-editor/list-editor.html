@@ -17,32 +17,35 @@
             <div class="tools">
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 [dvBlocked]="first"
                 data-act="up"
                 [attr.aria-label]="'Subir ' + nameOf()(item, i) + ' (' + position(i) + ')'"
                 (click)="moved(i, -1)"
               >
-                Subir
+                <dv-icon name="up" size="sm" />Subir
               </button>
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 [dvBlocked]="last"
                 data-act="down"
                 [attr.aria-label]="'Descer ' + nameOf()(item, i) + ' (' + position(i) + ')'"
                 (click)="moved(i, 1)"
               >
-                Descer
+                <dv-icon name="down" size="sm" />Descer
               </button>
               <button
+                dvSize="sm"
                 dvButton="danger"
                 type="button"
                 class="tools__remove"
                 [attr.aria-label]="'Remover ' + nameOf()(item, i) + ' (' + position(i) + ')'"
                 (click)="removed(i)"
               >
-                Remover
+                <dv-icon name="trash" size="sm" />Remover
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { whenOf } from '@shared/game/when';
 import { DvButton } from '@shared/ui/button/button';
 import { DvOrnament } from '@shared/ui/ornament/ornament';
 import { CampaignStore } from '../../campaign.store';
+import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /**
  * A visão geral de uma campanha: a premissa e o caminho mais curto para jogar, que é continuar a mesa mais recente deste
@@ -11,7 +12,7 @@ import { CampaignStore } from '../../campaign.store';
  */
 @Component({
   selector: 'dv-campaign-overview-page',
-  imports: [RouterLink, DvButton, DvOrnament],
+  imports: [DvIcon, RouterLink, DvButton, DvOrnament],
   providers: [CampaignStore],
   templateUrl: './overview-page.html',
   styleUrl: './overview-page.css',

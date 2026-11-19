@@ -3,13 +3,16 @@ import { booleanAttribute, DestroyRef, Directive, ElementRef, inject, input } fr
 /** O visual de um botão: destaque, discreto ou de perigo (o que remove ou descarta). */
 export type ButtonVariant = 'primary' | 'ghost' | 'danger';
 
+/** O tamanho de um botão: o padrão ou o compacto (ação secundária dentro de aviso, lista ou painel). */
+export type ButtonSize = 'md' | 'sm';
+
 /**
  * Botão do Devaneio sobre o `<button>` ou `<a>` nativo (a semântica e o teclado ficam do navegador).
  * `<button dvButton="primary">`; sem valor é o botão discreto; `dvButton="danger"` é para o que remove ou descarta (contorno e texto na cor de erro, sem preenchimento: o perigo chama a atenção sem competir com a ação principal). O visual está em `styles/primitives.css`.
  *
  * Estados: `disabled` nativo para o que não existe agora; **`dvBlocked`** para o que está bloqueado por um motivo
  * (`aria-disabled`, o foco não se perde: ligue o motivo com `aria-describedby`); **`dvLoading`** durante um envio
- * (`aria-busy`, o botão fica bloqueado e um ponto pulsa). Bloqueado e em envio não deixam o clique passar.
+ * (`aria-busy`, o botão fica bloqueado e um ponto pulsa). **`dvSize="sm"`** é o compacto, para ação secundária dentro de aviso, lista ou painel; com ponteiro preciso o padrão também encolhe, e em toque o alvo continua grande. Bloqueado e em envio não deixam o clique passar.
  */
 @Directive({
   selector: '[dvButton]',
@@ -17,6 +20,7 @@ export type ButtonVariant = 'primary' | 'ghost' | 'danger';
     class: 'dv-button',
     '[class.dv-button--primary]': "variant() === 'primary'",
     '[class.dv-button--danger]': "variant() === 'danger'",
+    '[class.dv-button--sm]': "dvSize() === 'sm'",
     '[class.dv-button--loading]': 'dvLoading()',
     '[attr.aria-busy]': "dvLoading() ? 'true' : null",
     '[attr.aria-disabled]': "dvBlocked() || dvLoading() ? 'true' : null",
@@ -27,6 +31,7 @@ export class DvButton {
     alias: 'dvButton',
     transform: (value) => value || 'ghost',
   });
+  readonly dvSize = input<ButtonSize>('md');
   /** Bloqueado por um motivo que o usuário pode ler; o botão continua focável. */
   readonly dvBlocked = input(false, { transform: booleanAttribute });
   /** Enviando: bloqueia e mostra o ponto de pendência. */

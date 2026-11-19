@@ -12,12 +12,13 @@
               <dv-badge tone="warn" icon="warn">Oculto</dv-badge>
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 [dvBlocked]="store.actionBusy()"
                 [attr.aria-label]="labelOf(f.text)"
                 (click)="reveal(f.id, f.text)"
               >
-                Revelar
+                <dv-icon name="eye" size="sm" />Revelar
               </button>
             } @else {
               <dv-badge tone="ok" icon="ok" animate.enter="dv-enter"

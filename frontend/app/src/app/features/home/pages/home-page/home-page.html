@@ -20,7 +20,7 @@
         dvButton="primary"
         [routerLink]="['/mesa', table.tableId]"
         [attr.aria-label]="'Continuar a mesa ' + table.title"
-        >Continuar</a
+        ><dv-icon name="go" size="sm" />Continuar</a
       >
     </section>
   }
@@ -32,7 +32,9 @@
     @case ('failed') {
       <dv-state kind="error">
         {{ store.loadError() }}
-        <button dvStateAction dvButton type="button" (click)="store.load()">Tentar de novo</button>
+        <button dvStateAction dvButton type="button" (click)="store.load()">
+          <dv-icon name="retry" size="sm" />Tentar de novo
+        </button>
       </dv-state>
     }
     @case ('ready') {
@@ -96,7 +98,7 @@
             (input)="store.setInviteText(fieldValue($event))"
           />
         </dv-field>
-        <button dvButton type="submit">Entrar</button>
+        <button dvButton type="submit"><dv-icon name="go" size="sm" />Entrar</button>
       </form>
     </dv-disclosure>
   </section>

@@ -14,13 +14,19 @@
           {{ when(table.savedAt) }}
         </p>
         <div class="overview__actions">
-          <a dvButton="primary" [routerLink]="['/mesa', table.tableId]">Continuar a mesa</a>
-          <a dvButton [routerLink]="['/c', campaign.id, 'mesas']">Ver as mesas</a>
+          <a dvButton="primary" [routerLink]="['/mesa', table.tableId]"
+            ><dv-icon name="go" size="sm" />Continuar a mesa</a
+          >
+          <a dvButton [routerLink]="['/c', campaign.id, 'mesas']"
+            ><dv-icon name="table" size="sm" />Ver as mesas</a
+          >
         </div>
       } @else {
         <p>Você ainda não tem mesa nesta campanha, neste aparelho.</p>
         <div class="overview__actions">
-          <a dvButton="primary" [routerLink]="['/c', campaign.id, 'mesas']">Criar uma mesa</a>
+          <a dvButton="primary" [routerLink]="['/c', campaign.id, 'mesas']"
+            ><dv-icon name="add" size="sm" />Criar uma mesa</a
+          >
         </div>
       }
     </section>

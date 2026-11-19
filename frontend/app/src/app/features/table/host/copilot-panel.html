@@ -26,7 +26,9 @@
       </dv-field>
       <div class="copilot__foot">
         <span class="dv-note" aria-hidden="true">{{ text().length }}/{{ max }}</span>
-        <button dvButton="primary" type="submit" [dvLoading]="copilot.busy()">Perguntar</button>
+        <button dvButton="primary" type="submit" [dvLoading]="copilot.busy()">
+          <dv-icon name="say" size="sm" />Perguntar
+        </button>
       </div>
     </form>
     @if (copilot.error()) {
@@ -51,7 +53,9 @@
       >
         <p class="dv-note">Sobre: {{ copilot.asked() }}</p>
         <p class="copilot__answer">{{ copilot.answer() }}</p>
-        <button dvButton type="button" (click)="clear()">Limpar</button>
+        <button dvButton dvSize="sm" type="button" (click)="clear()">
+          <dv-icon name="close" size="sm" />Limpar
+        </button>
       </div>
     }
   }

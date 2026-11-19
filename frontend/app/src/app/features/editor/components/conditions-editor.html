@@ -36,22 +36,24 @@
       }
       <button
         dvButton
+        dvSize="sm"
         type="button"
         class="row__remove"
         [attr.aria-label]="'Remover ' + name(condition, i) + ' de ' + where()"
         (click)="remove(i)"
       >
-        Remover
+        <dv-icon name="trash" size="sm" />Remover
       </button>
     </div>
   }
   <button
     dvButton
+    dvSize="sm"
     type="button"
     class="add-condition"
     [attr.aria-label]="'Acrescentar condição: ' + where()"
     (click)="add()"
   >
-    Acrescentar condição
+    <dv-icon name="add" size="sm" />Acrescentar condição
   </button>
 </fieldset>

@@ -10,7 +10,7 @@
         {{ store.loadError() }}
         @if (store.loadRetryable()) {
           <button dvStateAction dvButton type="button" (click)="store.load()">
-            Tentar de novo
+            <dv-icon name="retry" size="sm" />Tentar de novo
           </button>
         }
       </dv-state>

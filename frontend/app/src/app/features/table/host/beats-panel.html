@@ -37,13 +37,14 @@
             <div class="item__actions">
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 [dvBlocked]="b.activateBlock !== '' || store.actionBusy()"
                 [attr.aria-describedby]="b.activateBlock ? 'ativar-' + b.id : null"
                 [attr.aria-label]="'Ativar ' + b.title"
                 (click)="run('ativar', b.id, b.title)"
               >
-                Ativar
+                <dv-icon name="play" size="sm" />Ativar
               </button>
             </div>
             @if (b.activateBlock) {
@@ -53,21 +54,23 @@
             <div class="item__actions">
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 [dvBlocked]="store.actionBusy()"
                 [attr.aria-label]="'Concluir ' + b.title"
                 (click)="run('concluir', b.id, b.title)"
               >
-                Concluir
+                <dv-icon name="ok" size="sm" />Concluir
               </button>
               <button
+                dvSize="sm"
                 dvButton="danger"
                 type="button"
                 [dvBlocked]="store.actionBusy()"
                 [attr.aria-label]="'Falhar ' + b.title"
                 (click)="run('falhar', b.id, b.title)"
               >
-                Falhar
+                <dv-icon name="close" size="sm" />Falhar
               </button>
             </div>
           }

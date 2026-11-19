@@ -22,6 +22,7 @@ import { focusElement, isFocusFree } from '@shared/ui/focus';
 import { DvSelect, type SelectOption } from '@shared/ui/select/select';
 import { DvStepper } from '@shared/ui/stepper/stepper';
 import { EditorStore } from '../editor.store';
+import { DvIcon } from '../../../shared/ui/icon/icon';
 
 const KINDS: SelectOption[] = CONDITION_KINDS.map((k) => ({ value: k.kind, label: k.label }));
 
@@ -32,7 +33,7 @@ const KINDS: SelectOption[] = CONDITION_KINDS.map((k) => ({ value: k.kind, label
  */
 @Component({
   selector: 'dv-conditions-editor',
-  imports: [DvButton, DvSelect, DvStepper],
+  imports: [DvIcon, DvButton, DvSelect, DvStepper],
   templateUrl: './conditions-editor.html',
   styleUrl: './conditions-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

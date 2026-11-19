@@ -15,7 +15,7 @@
         <dv-state kind="error">
           {{ store.loadError() }}
           <button dvStateAction dvButton type="button" (click)="store.load(campaignId(), copia())">
-            Tentar de novo
+            <dv-icon name="retry" size="sm" />Tentar de novo
           </button>
         </dv-state>
       }
@@ -36,7 +36,9 @@
           <dv-notice kind="warn">
             Esta campanha já tem mesa, e as mesas a relêem do arquivo: ela não pode ser regravada.
             Salve uma cópia para mudar.
-            <button dvButton type="button" (click)="copy()">Salvar como cópia</button>
+            <button dvButton dvSize="sm" type="button" (click)="copy()">
+              <dv-icon name="copy" size="sm" />Salvar como cópia
+            </button>
           </dv-notice>
         }
 
@@ -48,7 +50,9 @@
         @if (store.checkError()) {
           <dv-notice kind="warn">
             Não consegui conferir a campanha agora: {{ store.checkError() }}
-            <button dvButton type="button" (click)="store.recheck()">Conferir de novo</button>
+            <button dvButton dvSize="sm" type="button" (click)="store.recheck()">
+              <dv-icon name="retry" size="sm" />Conferir de novo
+            </button>
           </dv-notice>
         }
 
@@ -86,7 +90,9 @@
           @if (store.removed(); as gone) {
             <dv-notice animate.leave="dv-leave">
               {{ gone.message }}
-              <button dvButton type="button" (click)="store.undoRemove()">Desfazer</button>
+              <button dvButton dvSize="sm" type="button" (click)="store.undoRemove()">
+                <dv-icon name="undo" size="sm" />Desfazer
+              </button>
             </dv-notice>
           }
           @if (store.saveError()) {
@@ -126,7 +132,7 @@
             [attr.aria-describedby]="store.saveBlock() ? 'save-reason' : null"
             (click)="store.save()"
           >
-            {{ store.isNew() ? 'Criar campanha' : 'Gravar' }}
+            <dv-icon name="save" size="sm" />{{ store.isNew() ? 'Criar campanha' : 'Gravar' }}
           </button>
         </div>
       </div>

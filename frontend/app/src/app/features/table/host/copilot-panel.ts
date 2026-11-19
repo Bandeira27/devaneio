@@ -19,6 +19,7 @@ import { focusElement } from '@shared/ui/focus';
 import { DvState } from '@shared/ui/state/state';
 import { TableStore } from '../table.store';
 import { HostSession } from './host-session';
+import { DvIcon } from '../../../shared/ui/icon/icon';
 
 /**
  * O copiloto do anfitrião: uma pergunta de cada vez, sem memória, e a resposta só para ele (nunca vai ao feed nem ao
@@ -27,7 +28,7 @@ import { HostSession } from './host-session';
  */
 @Component({
   selector: 'dv-copilot-panel',
-  imports: [DvBadge, DvButton, DvField, DvInput, DvNotice, DvState],
+  imports: [DvIcon, DvBadge, DvButton, DvField, DvInput, DvNotice, DvState],
   templateUrl: './copilot-panel.html',
   styleUrl: './copilot-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

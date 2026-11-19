@@ -15,6 +15,7 @@ import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import type { IconName } from '@shared/ui/icon/icon';
 import { TableStore } from '../table.store';
+import { DvIcon } from '../../../shared/ui/icon/icon';
 
 const TONES: Record<BeatStatus, { tone: BadgeTone; icon: IconName | null }> = {
   pending: { tone: 'neutral', icon: null },
@@ -30,7 +31,7 @@ const TONES: Record<BeatStatus, { tone: BadgeTone; icon: IconName | null }> = {
  */
 @Component({
   selector: 'dv-beats-panel',
-  imports: [DvBadge, DvButton, DvDisclosure],
+  imports: [DvIcon, DvBadge, DvButton, DvDisclosure],
   templateUrl: './beats-panel.html',
   styleUrl: './host-lists.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -13,6 +13,7 @@ import { focusElement } from '@shared/ui/focus';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { TableStore } from '../table.store';
+import { DvIcon } from '../../../shared/ui/icon/icon';
 
 const LABEL_MAX = 50;
 
@@ -24,7 +25,7 @@ const LABEL_MAX = 50;
  */
 @Component({
   selector: 'dv-facts-panel',
-  imports: [DvBadge, DvButton],
+  imports: [DvIcon, DvBadge, DvButton],
   templateUrl: './facts-panel.html',
   styleUrl: './host-lists.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

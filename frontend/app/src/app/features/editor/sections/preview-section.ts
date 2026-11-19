@@ -15,6 +15,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { focusElement } from '@shared/ui/focus';
 import { DvState } from '@shared/ui/state/state';
 import { EditorStore } from '../editor.store';
+import { DvIcon } from '../../../shared/ui/icon/icon';
 
 /** A partir de quanto do teto o aviso do contexto do copiloto passa de "ok" para "perto do limite". */
 const NEAR_LIMIT = 0.8;
@@ -28,7 +29,7 @@ const NEAR_LIMIT = 0.8;
  */
 @Component({
   selector: 'dv-preview-section',
-  imports: [DvBadge, DvButton, DvDisclosure, DvNotice, DvState],
+  imports: [DvIcon, DvBadge, DvButton, DvDisclosure, DvNotice, DvState],
   templateUrl: './preview-section.html',
   styleUrl: './preview-section.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -27,12 +27,13 @@
               >
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 class="saved__forget"
                 (click)="forget(table.tableId)"
                 [attr.aria-label]="'Esquecer a mesa ' + table.title"
               >
-                Esquecer
+                <dv-icon name="trash" size="sm" />Esquecer
               </button>
             </div>
           </li>
@@ -41,7 +42,9 @@
       @if (store.forgotten(); as gone) {
         <dv-notice animate.leave="dv-leave">
           Mesa “{{ gone.title }}” esquecida neste aparelho.
-          <button dvButton type="button" class="tables__undo" (click)="restore()">Desfazer</button>
+          <button dvButton dvSize="sm" type="button" class="tables__undo" (click)="restore()">
+            <dv-icon name="undo" size="sm" />Desfazer
+          </button>
         </dv-notice>
       }
     </section>
@@ -68,7 +71,7 @@
         type="submit"
         [dvLoading]="store.creating()"
       >
-        Criar mesa
+        <dv-icon name="add" size="sm" />Criar mesa
       </button>
     </form>
   </section>

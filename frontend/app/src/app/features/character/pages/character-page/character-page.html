@@ -28,7 +28,7 @@
           {{ store.loadError() }}
           @if (store.loadRetryable()) {
             <button dvStateAction dvButton type="button" (click)="store.load()">
-              Tentar de novo
+              <dv-icon name="retry" size="sm" />Tentar de novo
             </button>
           }
         </dv-state>
@@ -62,12 +62,13 @@
               </div>
               <button
                 dvButton
+                dvSize="sm"
                 type="button"
                 [dvBlocked]="!store.changed()"
                 [attr.aria-describedby]="store.changed() ? null : 'restore-reason'"
                 (click)="store.useDefaults()"
               >
-                Restaurar padrão
+                <dv-icon name="undo" size="sm" />Restaurar padrão
               </button>
               <span id="restore-reason" class="dv-visually-hidden"
                 >Os atributos já estão no padrão.</span
@@ -77,7 +78,9 @@
           @if (store.error()) {
             <dv-notice kind="error">{{ store.error() }}</dv-notice>
           }
-          <button dvButton="primary" type="submit" [dvLoading]="store.saving()">Jogar</button>
+          <button dvButton="primary" type="submit" [dvLoading]="store.saving()">
+            <dv-icon name="play" size="sm" />Jogar
+          </button>
           @if (store.llmNotice()) {
             <dv-disclosure label="O que o mestre de IA recebe">
               <p>{{ store.llmNotice() }}</p>

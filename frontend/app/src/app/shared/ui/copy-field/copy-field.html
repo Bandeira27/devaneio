@@ -9,11 +9,11 @@
     [value]="text()"
     (focus)="select()"
   />
-  <button dvButton type="button" class="copy__button" (click)="copy()">
+  <button dvButton dvSize="sm" type="button" class="copy__button" (click)="copy()">
     @if (state() === 'copied') {
       <dv-icon name="ok" size="sm" />Copiado
     } @else {
-      Copiar
+      <dv-icon name="copy" size="sm" />Copiar
     }
   </button>
 </div>

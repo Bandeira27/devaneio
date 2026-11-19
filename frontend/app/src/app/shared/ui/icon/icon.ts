@@ -24,7 +24,15 @@ export type IconName =
   | 'menu'
   | 'back'
   | 'mail'
-  | 'panel';
+  | 'panel'
+  | 'save'
+  | 'copy'
+  | 'retry'
+  | 'undo'
+  | 'trash'
+  | 'up'
+  | 'down'
+  | 'play';
 
 /** Traços de cada ícone, num quadro de 24 por 24 (só contorno, `currentcolor`). */
 const PATHS: Record<IconName, string> = {
@@ -53,6 +61,14 @@ const PATHS: Record<IconName, string> = {
   back: 'M19 12H5M11 6l-6 6 6 6',
   mail: 'M4 6h16v12H4zM4 7l8 6 8-6',
   panel: 'M4 5h16v4H4zM4 13h7v6H4zM15 13h5v6h-5',
+  save: 'M5 4h11l3 3v13H5V4zM8 4v5h7V4M8 20v-6h8v6',
+  copy: 'M9 9h10v11H9zM5 15V4h10',
+  retry: 'M20 12a8 8 0 1 1-2.5-5.8M20 4v4h-4',
+  undo: 'M9 6L4 11l5 5M4 11h9a6 6 0 0 1 0 8h-3',
+  trash: 'M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13M10 11v5M14 11v5',
+  up: 'M12 19V5M6 11l6-6 6 6',
+  down: 'M12 5v14M6 13l6 6 6-6',
+  play: 'M7 4l13 8-13 8V4z',
 };
 
 /**
