@@ -23,11 +23,11 @@ interação mais intuitiva. Sem resposta, não existe. Nunca atrasa a operação
 | `--dv-ease-accelerate`    | `(0.3, 0, 1, 1)`      | o que sai                                     |
 | `--dv-ease-emphasized`    | `(0.05, 0.7, 0.1, 1)` | folha e diálogo                               |
 | `--dv-stagger`            | 60 ms                 | escalonamento (no máximo 3 itens)             |
-| `--dv-reveal-step`        | 1000 ms               | tempo de ler ~80 caracteres: um passo da fila |
+| `--dv-reveal-step`        | 1000 ms               | tempo de ler ~80 caracteres: um passo da fila (nunca zera) |
 | `--dv-duration-pending`   | 480 ms                | pulso de "pendente" (botão, selo, estado)     |
 | `--dv-motion-distance`    | 0,25 rem              | deslocamento de entrada                       |
 
-Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o escalonamento para 0 e a distância para 0.
+Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o escalonamento para 0 e a distância para 0. `--dv-reveal-step` **não** cai: a pausa é tempo de leitura, não movimento. A rolagem que acompanha o texto novo é suave (`behavior: smooth`) e, com movimento reduzido, direta.
 
 ## Catálogo
 
@@ -47,7 +47,7 @@ Com `prefers-reduced-motion: reduce` os tokens de duração caem para 1 ms, o es
 | Troca de rota                        | páginas                                              | 1, 3     | `fast` sai, `base` entra (`withViewTransitions`): só a página "vira", o cabeçalho fica parado                                                                               |
 | Folha de transição                   | troca de tela que demora                             | 1, 2     | `base` ao entrar, `fast` ao sair; só depois de 150 ms de espera, e some no instante em que a tela chega                                                                     |
 | Pendência                            | botão em envio, "mestre pensando"                    | 1, 2     | pontos de fumaça (`pending`), só enquanto pendente                                                                                                                          |
-| Itens do feed em fila                | o que chega depois de uma ação                       | 1, 3     | o mesmo `narrative`; cada item espera os anteriores serem lidos (1 a 3 `--dv-reveal-step` por item, conforme o texto); lote grande, movimento reduzido e toque entram junto |
+| Itens do feed em fila                | o que chega depois de uma ação                       | 1, 3     | o mesmo `narrative`; a espera é da fila da mesa, não do CSS: o item só existe na tela quando chega a vez dele (1 `--dv-reveal-step` antes do primeiro, 1 a 3 por item conforme o texto). Sem exceção: lote grande, movimento reduzido e toque também esperam; a tela acompanha com rolagem suave |
 | Cards de campanha                    | tela inicial                                         | 3, 4     | `base`, `decelerate`, escalonado em até 3 (`--dv-stagger`); apontar muda só contorno e cor                                                                                  |
 | Item atual da barra lateral          | barra da campanha                                    | 1, 3     | a marca na borda aparece com `base`, `standard`                                                                                                                             |
 

@@ -138,14 +138,20 @@ levam ao roteiro da campanha.
 
 ## A história chega em fila
 
-O que o servidor devolve de uma ação (a nota do golpe, o desfecho, a narração) entra no feed **um item de cada vez**: o
-primeiro espera um passo (a resposta não surge junto do toque, como o mestre pensando) e cada um espera os anteriores
-serem lidos (de 1 a 3 passos de `--dv-reveal-step`, conforme o tamanho do texto), com o mesmo fade da tinta nova. Um
-lote que chega com a fila ainda andando espera ela acabar. Uma carga grande (recarga) e o movimento reduzido entram de
-uma vez. Um toque no feed pula a espera. Nada disso bloqueia os botões. Não há texto aparecendo letra a letra.
+Todo texto novo da mesa (a nota do golpe, o desfecho, a narração, a fala do mestre e a resposta de `olhar`/`ficha`)
+espera a sua vez numa **fila única** (`RevealQueue`, em `features/table/table.reveal.ts`): o primeiro espera um passo
+(a resposta não surge junto do toque, como o mestre pensando), cada um espera os anteriores serem lidos (de 1 a 3 passos
+de `--dv-reveal-step`, conforme o tamanho do texto) e um lote que chega com a fila andando espera ela acabar. O item só
+entra no DOM quando chega a vez dele. **Não há exceção**: lote grande, movimento reduzido e toque no feed não pulam a
+espera (a recarga da página, que só relê o histórico, entra de uma vez). Não há texto aparecendo letra a letra. Nada
+disso bloqueia os botões.
 
-**A tela acompanha a fila.** Quando algo novo chega, a tela é levada a cada item no momento em que ele aparece, mesmo de
-quem estava no topo, e termina na última ação. Não há mais o aviso "N novas": o usuário não é deixado para trás.
+**O painel lateral espera junto.** A cena (nome, descrição, saídas), o grupo (vida) e a ficha mostram a foto da mesa
+só depois que todo texto daquela revisão apareceu; assim a cena nova ou a vida que caiu nunca antecipam a narração. O
+que decide se dá para agir (botões, turno, quem agiu) usa sempre a foto viva.
+
+**A tela acompanha a fila com rolagem suave.** Quando um item aparece, a tela é levada até ele com `behavior: smooth`
+(direta com movimento reduzido), e termina na última ação. Não há mais o aviso "N novas".
 
 ## Sala de espera, pausa e fim
 

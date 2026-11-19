@@ -17,7 +17,7 @@ Sem resposta convincente, a animação não existe. O PR que adiciona movimento 
 ## Como se escreve
 
 - **Só tokens:** `--dv-duration-{instant,fast,base,slow,narrative,pending}`, `--dv-ease-*`, `--dv-stagger`,
-  `--dv-reveal-step` (a pausa entre os itens novos do feed), `--dv-motion-distance`. Nenhuma duração nem curva literal (o design-lint barra).
+  `--dv-reveal-step` (a pausa entre os textos novos da mesa; nem o movimento reduzido a zera), `--dv-motion-distance`. Nenhuma duração nem curva literal (o design-lint barra).
 - **Só o que é barato:** `opacity`, `transform`, cor e contorno. Nunca animar `width`, `height`, `top`, `margin`,
   `max-height` etc. (expandir usa `grid-template-rows` ou `interpolate-size`). Sem `will-change` por padrão.
 - **CSS e o que o Angular já traz:** transições e `@keyframes` em CSS; `animate.enter`/`animate.leave` para o que entra e
