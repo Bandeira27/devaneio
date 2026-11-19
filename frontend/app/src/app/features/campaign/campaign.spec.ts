@@ -191,6 +191,21 @@ describe('Campanha: mesas', () => {
     expect(app.root().querySelector('dv-steps')).toBeNull();
   });
 
+  it('sem mesa nenhuma, a lista explica o que é uma mesa antes do botão', async () => {
+    const app = await open('/c/sombra-do-vale/mesas');
+    expect(app.root().querySelector('#sem-mesas')?.textContent).toContain('ainda não tem mesa');
+  });
+
+  it('com mesa guardada, a explicação do estado vazio some', async () => {
+    const app = await setup('/c/sombra-do-vale/mesas');
+    app.session.save(TABLE_ID, { ...saved, campaignId: 'sombra-do-vale' });
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    app.http.expectOne('/editor/campaigns').flush([]);
+    await app.settle();
+    await answerTables(app);
+    expect(app.root().querySelector('#sem-mesas')).toBeNull();
+  });
+
   it('criar mesa pede o nome, envia a campanha e vai ao passo do personagem', async () => {
     const app = await setup('/c/sombra-do-vale/nova-mesa'); // fora do quadro da campanha: nada a perguntar além de criar
     await app.submit();

@@ -161,6 +161,13 @@ describe('Entrar na mesa', () => {
     expect(root().querySelector('.dv-stage form')).not.toBeNull();
   });
 
+  it('sempre há saída: Voltar ao início, abaixo do formulário', async () => {
+    const { root } = await setup(url);
+    const exit = root().querySelector('.dv-stage__task')?.lastElementChild;
+    expect(exit?.getAttribute('href')).toBe('/');
+    expect(exit?.textContent).toContain('Voltar ao início');
+  });
+
   it('quem já entrou por este navegador vai direto para a mesa', async () => {
     const app = await setup('/');
     app.http.expectOne('/campaigns').flush([]);

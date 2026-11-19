@@ -90,6 +90,9 @@
         @if (store.isHost()) {
           <a dvButton [routerLink]="['/mesa', tableId()]">Ir para a mesa sem personagem</a>
         }
+        <a dvButton [routerLink]="store.backLink()"
+          ><dv-icon name="back" size="sm" />{{ store.backLabel() }}</a
+        >
       }
     }
   </div>

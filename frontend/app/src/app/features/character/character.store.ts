@@ -35,6 +35,12 @@ export class CharacterStore {
   readonly error = signal('');
 
   readonly isHost = computed(() => this.table()?.role === 'host');
+  /** Para onde "voltar" leva: o anfitrião, às mesas da campanha; quem foi convidado, ao início (a mesa fica guardada em "Continuar"). */
+  readonly backLink = computed<string[]>(() => {
+    const campaign = this.table()?.campaign.id;
+    return this.isHost() && campaign ? ['/c', campaign, 'mesas'] : ['/'];
+  });
+  readonly backLabel = computed(() => (this.isHost() ? 'Voltar às mesas' : 'Voltar ao início'));
   readonly llmNotice = computed(() => llmNoticeOf(this.table()));
   /** O id do personagem: o nome em slug, com sufixo se já houver outro (ou um NPC) com ele. */
   readonly characterId = computed(() =>

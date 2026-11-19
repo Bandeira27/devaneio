@@ -182,6 +182,20 @@ describe('Sala de espera', () => {
     expect(root().querySelector('dv-steps')?.textContent).toContain('Mesa');
   });
 
+  it('a sala tem saída no fim da tarefa: às mesas para o anfitrião, ao início para o convidado', async () => {
+    const host = await open(mesa, table('lobby', 'host', [BIA]), { invite: true });
+    const hostExit = host.root().querySelector('.dv-stage__task')?.lastElementChild;
+    expect(hostExit?.textContent).toContain('Voltar às mesas');
+    expect(hostExit?.getAttribute('href')).toMatch(/^\/c\/[^/]+\/mesas$/);
+  });
+
+  it('a sala do convidado sai para o início', async () => {
+    const guest = await open(mesa, table('lobby', 'player', [BIA]));
+    const exit = guest.root().querySelector('.dv-stage__task')?.lastElementChild;
+    expect(exit?.textContent).toContain('Voltar ao início');
+    expect(exit?.getAttribute('href')).toBe('/');
+  });
+
   it('o convidado sem personagem é levado ao passo que falta', async () => {
     const app = await open(mesa, table('lobby', 'player'));
     expect(app.router.url).toBe(`${mesa}/personagem`);

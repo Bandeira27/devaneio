@@ -219,6 +219,21 @@ describe('Personagem', () => {
     );
   });
 
+  it('o anfitrião sai para as mesas da campanha, depois da opção de pular', async () => {
+    const table = tableView({ role: 'host', you: 'p1' });
+    const { root } = await open(table);
+    const exit = root().querySelector('.dv-stage__task')?.lastElementChild;
+    expect(exit?.getAttribute('href')).toBe(`/c/${table.campaign.id}/mesas`);
+    expect(exit?.textContent).toContain('Voltar às mesas');
+  });
+
+  it('quem foi convidado sempre tem saída: Voltar ao início', async () => {
+    const { root } = await open();
+    const exit = root().querySelector('.dv-stage__task')?.lastElementChild;
+    expect(exit?.getAttribute('href')).toBe('/');
+    expect(exit?.textContent).toContain('Voltar ao início');
+  });
+
   it('token inválido ou mesa que sumiu: mostra o erro e esquece a sessão', async () => {
     const app = await setup(url);
     app.session.save(TABLE_ID, {

@@ -24,12 +24,13 @@ escreve a mudança também deve passar por ela antes de pedir revisão.
 - [ ] Nenhum beco sem saída: erro e vazio têm ação (tentar de novo, voltar, criar).
 - [ ] **Caminho com passos** (entrada na mesa): todo passo prometido tem uma tela que o mostra como atual, e toda tela do caminho mostra os passos; o nome do passo diz onde a pessoa está.
 - [ ] **Os passos moram num lugar só**: no topo da coluna de contexto do palco `.dv-stage`, à esquerda, acima do título e fora de cartões, em todas as telas e larguras. Tela nova do caminho usa o palco; não há tela que os centralize ou os ponha dentro de um card. Página de lista ou de gerenciamento nunca hospeda um passo: ela aponta para a tela do passo, que fica fora do quadro de gerenciamento (sem barra lateral nem item de menu marcado).
+- [ ] **Toda tela do caminho tem saída, no mesmo lugar**: um botão discreto abaixo da ação principal (anfitrião: "Voltar às mesas"; convidado: "Voltar ao início"), também no celular e depois do botão principal. Os passos não são clicáveis: o passo anterior pode já ter criado algo que não se refaz.
 - [ ] **Pré-requisito obrigatório é conduzido, não oferecido**: o sistema leva ao passo que falta; botão só serve para voltar a ele. Exceção, só se declarada (o anfitrião sem personagem).
 - [ ] O caminho foi percorrido **de ponta a ponta nos dois papéis** (anfitrião e convidado), incluindo reentrada com e sem o pré-requisito e o botão Voltar; mudou o destino de uma ação, conferiu quem mais aponta para a tela antiga (rotas, textos, docs).
 
 **Estados** (os que fizerem sentido)
 
-- [ ] Carregando, vazio, erro, em envio (rótulo mantido, botão não clicável), bloqueado **com motivo ligado** (`aria-describedby`), sem conexão.
+- [ ] Vazio de lista **explica** o que a coisa é e leva à ação (a lista de mesas sem mesa não é só um título e um botão). Carregando, vazio, erro, em envio (rótulo mantido, botão não clicável), bloqueado **com motivo ligado** (`aria-describedby`), sem conexão.
 
 **Acessibilidade**
 

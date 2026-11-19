@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ENTRY_STEP, GUEST_STEPS } from '@shared/game/entry-steps';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
@@ -13,7 +14,7 @@ import { DvIcon } from '../../../../shared/ui/icon/icon';
 /** Tela de entrar numa mesa: o nome do jogador e o convite que veio no link. */
 @Component({
   selector: 'dv-join-page',
-  imports: [DvIcon, DvButton, DvField, DvInput, DvNotice, DvOrnament, DvSteps],
+  imports: [RouterLink, DvIcon, DvButton, DvField, DvInput, DvNotice, DvOrnament, DvSteps],
   providers: [JoinStore],
   templateUrl: './join-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

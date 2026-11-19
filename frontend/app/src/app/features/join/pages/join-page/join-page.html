@@ -20,38 +20,41 @@
     <dv-ornament class="dv-stage__extra" />
   </div>
 
-  <form class="dv-stage__task dv-card" (submit)="$event.preventDefault(); store.join()">
-    <dv-field label="Seu nome" [error]="store.nameError()">
-      <input
-        dvInput
-        type="text"
-        autocomplete="nickname"
-        maxlength="40"
-        [value]="store.name()"
-        (input)="store.setName(fieldValue($event))"
-      />
-    </dv-field>
-    @if (!invite()) {
-      <dv-field label="Código do convite" [error]="store.codeError()">
+  <div class="dv-stage__task">
+    <form class="dv-card dv-stack" (submit)="$event.preventDefault(); store.join()">
+      <dv-field label="Seu nome" [error]="store.nameError()">
         <input
           dvInput
           type="text"
-          autocomplete="off"
-          [value]="store.code()"
-          (input)="store.setCode(fieldValue($event))"
+          autocomplete="nickname"
+          maxlength="40"
+          [value]="store.name()"
+          (input)="store.setName(fieldValue($event))"
         />
       </dv-field>
-    } @else {
-      <p class="dv-note">Convite recebido pelo link.</p>
-    }
-    @if (store.preview().kind === 'invalid' && !store.error()) {
-      <dv-notice kind="error">{{ invalidMessage() }}</dv-notice>
-    }
-    @if (store.error()) {
-      <dv-notice kind="error">{{ store.error() }}</dv-notice>
-    }
-    <button dvButton="primary" type="submit" [dvLoading]="store.joining()">
-      <dv-icon name="go" size="sm" />Entrar
-    </button>
-  </form>
+      @if (!invite()) {
+        <dv-field label="Código do convite" [error]="store.codeError()">
+          <input
+            dvInput
+            type="text"
+            autocomplete="off"
+            [value]="store.code()"
+            (input)="store.setCode(fieldValue($event))"
+          />
+        </dv-field>
+      } @else {
+        <p class="dv-note">Convite recebido pelo link.</p>
+      }
+      @if (store.preview().kind === 'invalid' && !store.error()) {
+        <dv-notice kind="error">{{ invalidMessage() }}</dv-notice>
+      }
+      @if (store.error()) {
+        <dv-notice kind="error">{{ store.error() }}</dv-notice>
+      }
+      <button dvButton="primary" type="submit" [dvLoading]="store.joining()">
+        <dv-icon name="go" size="sm" />Entrar
+      </button>
+    </form>
+    <a dvButton routerLink="/"><dv-icon name="back" size="sm" />Voltar ao início</a>
+  </div>
 </div>

@@ -58,6 +58,13 @@ export class Lobby {
   protected readonly fieldValue = fieldValue;
   protected readonly steps = computed(() => (this.store.isHost() ? HOST_STEPS : GUEST_STEPS));
   protected readonly entryStep = ENTRY_STEP;
+  /** A saída do caminho: o anfitrião volta às mesas da campanha; quem foi convidado, ao início (a mesa fica em "Continuar"). */
+  protected readonly backLink = computed(() =>
+    this.store.isHost() ? this.store.backLink() : ['/'],
+  );
+  protected readonly backLabel = computed(() =>
+    this.store.isHost() ? 'Voltar às mesas' : 'Voltar ao início',
+  );
 
   /** O endereço que os outros aparelhos alcançam (começa no deste aparelho). */
   protected readonly addressText = signal(globalThis.location.origin);
