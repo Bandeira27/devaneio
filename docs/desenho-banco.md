@@ -1,7 +1,7 @@
 # O banco do servidor
 
-**Status: aprovado em 2026-11-19; as fatias 1 (base do banco e configuração do LLM) e 2 (mesas, partidas e tokens no banco)
-estão implementadas. A 3 (exportar, backup e histórico) segue em aberto.**
+**Status: aprovado em 2026-11-19; as três fatias estão implementadas: 1 (base do banco e configuração do LLM), 2 (mesas, partidas e tokens
+no banco) e 3 (arquivar, histórico, exportar e backup).**
 
 O servidor guarda o que a aplicação gera e muda em **SQLite**, pelo **SQLAlchemy 2.0**. O que o autor escreve
 (campanhas, sistemas de regras, narrações) continua **JSON em arquivo**, e o CLI continua com o arquivo de partida.
@@ -123,7 +123,21 @@ A tabela `tables` guarda uma mesa por linha: `id`, `campaign_path` (relativo à 
   Ao subir, o servidor faz a mesma conta sem gravar (`import_saves(..., apply=False)`) e avisa o que entraria e **lista o que seria
   recusado, com o motivo**, para o aviso não pedir um `importar` que não resolve.
 
-## Próxima fatia
+## Arquivar, histórico, exportar e backup (fatia 3)
 
-- **3. Exportar, backup e histórico.** `exportar` (sem os hashes de token por padrão), `backup` (API de backup do SQLite,
-  sem a chave) e a política de "apagar mesa".
+- **Encerrar uma mesa é arquivá-la** (decisão do dono, 2026-11-19). A coluna `archived_at` (migração 3; nula = ativa) tira a mesa
+  do jogo (404 para quem a usava), da lista, do limite de mesas e da trava da campanha, mas guarda o estado e o log. **Restaurar** traz
+  a mesa de volta com os mesmos tokens e convite, se há vaga entre as ativas (conferida na mesma transação) e a partida ainda abre
+  contra a campanha de hoje; senão ela segue arquivada, com `409`. **Apagar de vez** só vale para uma arquivada: o que some para sempre
+  exige um segundo passo. O histórico (`GET .../log`) devolve o log de uma arquivada, só texto, para o dono da máquina.
+- **`Storage` com escopo.** `exists`, `read`, `table_ids` e `summaries` aceitam `scope` (`active`, `archived` ou `any`) e o padrão é a
+  ativa, então nada do jogo enxerga uma arquivada. `save` só grava em ativa; `delete` só apaga arquivada, por padrão; um id novo não
+  repete o de uma arquivada; `campaigns_in_use` só olha as ativas.
+- **`devaneio exportar <id>`** grava uma mesa (ativa ou arquivada) como arquivo de partida do CLI, em um arquivo novo `0600` que nunca
+  sobrescreve. Por padrão **sem os hashes de token e de convite** (uma partida solo que o jogo no terminal abre); com `--com-mesa`
+  leva a mesa inteira e o arquivo volta ao banco por `devaneio importar` (o nome `<id>.json` é como a mesa é reconhecida).
+- **`devaneio backup <destino>`** usa a API de backup do SQLite: uma cópia consistente do banco inteiro (arquivadas incluídas), `0600`,
+  sem a chave do LLM (que fica em `llm.key`, fora do banco). Recusa um destino que já existe, não cria banco onde não há e **não migra**:
+  a cópia é fiel ao esquema que está lá.
+- As três ferramentas (`importar`, `exportar`, `backup`) pegam o mesmo `flock` do servidor e recusam rodar com ele de pé: um banco, um
+  processo. Vivem em `server/cli_tools.py`; as pastas padrão, em `server/folders.py`.

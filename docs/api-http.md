@@ -155,5 +155,12 @@ Mesma guarda do editor (`/editor/*`: loopback, sem cabeçalho de proxy, `Host` l
 | `DELETE /editor/settings/llm/key` | apaga só a chave. |
 | `POST /editor/settings/llm/test` | uma chamada curta ao LLM em uso; `LlmTestResult` com `ok` e uma **frase fixa** (nunca o corpo do servidor nem o endereço). |
 
+## Mesas arquivadas (`/editor/*`, só da máquina do servidor)
+
+`DELETE /editor/tables/{id}` **arquiva** a mesa (não a apaga): ela sai do jogo (404 para quem a usava), da lista e do limite de mesas, e o estado e o
+log ficam. `GET /editor/campaigns/{id}/archived-tables` lista as arquivadas; `POST /editor/archived-tables/{id}/restore` as traz de volta com os mesmos tokens
+e convite; `GET /editor/archived-tables/{id}/log` devolve o log inteiro (só texto); `DELETE /editor/archived-tables/{id}` apaga de vez uma arquivada. Ver
+[`desenho-editor.md`](desenho-editor.md).
+
 `503 busy` (com `Retry-After: 1`) vale para qualquer rota se o banco seguir ocupado depois da espera e das novas tentativas.
 

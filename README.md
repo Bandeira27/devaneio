@@ -50,7 +50,7 @@ servidor (`./devaneio --help` lista todas).
 O navegador abre em `http://localhost:8765`, na lista de campanhas. O card **Nova campanha** abre o editor: locais, NPCs,
 facções, marcos e fatos, com os erros em português, avisos de autoria e uma prévia do que o jogador e a IA veem.
 Para ligar o mestre de IA, o botão **Configurar o mestre de IA** da tela inicial guarda o endereço, o modelo e a chave do LLM, e vale sem reiniciar (ver [`docs/llm.md`](docs/llm.md)).
-Campanha que já tem mesa não é sobrescrita: o editor lista as mesas que a travam (as do servidor, de qualquer navegador desta máquina) e oferece encerrá-las, assumir o lugar de anfitrião ou salvar uma cópia.
+Campanha que já tem mesa não é sobrescrita: o editor lista as mesas que a travam (as do servidor, de qualquer navegador desta máquina) e oferece arquivá-las, assumir o lugar de anfitrião ou salvar uma cópia.
 
 O editor só atende **o computador que roda o servidor**, aberto por `localhost`. Os amigos que entram pela rede nunca o
 veem, e abrir pelo endereço da rede (`192.168.x.x`) também não o libera. Se você expõe o servidor por proxy ou túnel,
@@ -65,6 +65,8 @@ instalado, `devaneio` (em `backend/.venv/bin`) faz o mesmo que `./devaneio`, sem
 As mesas ficam num banco SQLite na pasta de dados (`mesas/devaneio.db` por padrão), só do seu usuário. Se você já tinha mesas
 de antes do banco (arquivos `<id>.json` em `mesas/`), pare o servidor e rode `./devaneio importar`: ele traz cada uma com o mesmo
 convite e os mesmos tokens e não mexe nos arquivos originais. Ao subir, o servidor avisa se há arquivos esperando e lista os que não podem ser importados, com o motivo. O jogo solo no terminal segue com o arquivo de partida.
+
+Com o servidor parado, `./devaneio exportar <id>` grava uma mesa como partida do terminal (sem os hashes de token e de convite, a menos que você peça `--com-mesa`) e `./devaneio backup <arquivo>` faz uma cópia consistente do banco, sem a chave do LLM. Na página Mesas, **Arquivar** tira uma mesa do jogo sem apagar o histórico: dá para ver o histórico, restaurar ou apagar de vez.
 
 Crie a mesa, escolha a campanha e copie o link do convite. Para os amigos entrarem pela mesma rede, suba com
 `./devaneio --host 0.0.0.0` e troque `localhost` no link pelo endereço do seu computador na rede (algo como `192.168.0.5:8765`).

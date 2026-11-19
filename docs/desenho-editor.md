@@ -43,7 +43,11 @@ O servidor só faz I/O: a conferência da campanha (`game.check_campaign_data`) 
 | `GET /editor/systems` e `/editor/systems/{id}` | os sistemas de regras disponíveis e o `RulesView` (habilidades e dificuldades)                   |
 | `POST /editor/preview` `{campaign}`            | `{player, llm, llm_secrets, copilot_chars, copilot_limit}`                                       |
 | `GET /editor/campaigns/{id}/tables`            | `[{table_id, phase, host_name, players, updated_at}]`: as mesas que usam a campanha, sem segredo |
-| `DELETE /editor/tables/{id}`                   | encerra a mesa: apaga o arquivo e acorda quem espera (`{table_id}`)                              |
+| `DELETE /editor/tables/{id}`                   | **arquiva** a mesa: sai do jogo, da lista e da trava da campanha, e acorda quem espera (`{table_id}`) |
+| `GET /editor/campaigns/{id}/archived-tables`   | `[{table_id, phase, host_name, players, updated_at, archived_at}]`: as arquivadas, a mais recente primeiro |
+| `POST /editor/archived-tables/{id}/restore`    | traz a mesa de volta (mesmos tokens e convite); `409` se a campanha mudou ou o servidor está cheio |
+| `GET /editor/archived-tables/{id}/log`         | o histórico: `{table_id, turn, events: [{index, turn, kind, text}]}`, sem `data`                  |
+| `DELETE /editor/archived-tables/{id}`          | apaga de vez uma mesa **arquivada** (`404` se está ativa); não tem volta                          |
 | `POST /editor/tables/{id}/host-access`         | reemite o acesso do anfitrião: `{table_id, player_id, token, invite_code}`                       |
 
 Com `--sem-editor`, ou de fora da máquina do servidor, tudo isso é `404`. O corpo vai até 512 KiB. O catálogo passa a ver a campanha salva sem reiniciar.
@@ -85,8 +89,13 @@ contradiziam (testar em dois navegadores deixava mesas que nenhum dos dois via, 
 
 - **Listar** é uma consulta ao banco (`Storage.summaries`) que traz só a mesa em grupo (`meta`) das mesas da campanha, sem o estado
   nem carregar campanha ou regras. Expõe id, fase, nome do anfitrião, número de jogadores e a data da última gravação; nunca hash, convite nem notas.
-- **Encerrar** apaga a linha da mesa no banco sob o lock dela e acorda quem espera (`announce_change`); a volta do long-poll é `404`.
-  A entrada em memória da mesa fica: quem espera compara a versão dela, e esquecê-la a faria voltar a zero.
+- **Arquivar** marca a mesa (`archived_at`) sob o lock dela e acorda quem espera (`announce_change`); a volta do long-poll é `404`.
+  A entrada em memória da mesa fica: quem espera compara a versão dela, e esquecê-la a faria voltar a zero. A mesa arquivada não
+  conta no limite de mesas nem trava a campanha, mas o estado e o log ficam guardados.
+- **Restaurar** limpa a marca, se há vaga entre as ativas (conferida na mesma transação) e a partida ainda abre contra a campanha de
+  hoje; senão a mesa segue arquivada e a resposta é `409`. **Apagar de vez** só vale para a arquivada: arquivar é o jeito de
+  encerrar, e o que some para sempre exige um segundo passo.
+- **Histórico** devolve o log inteiro de uma arquivada (o anfitrião, dono da máquina, vê tudo), só texto: nem `data`, nem hash.
 - **Assumir como anfitrião** troca o token e o convite do anfitrião (o servidor guarda só hash, então reemite).
   O token antigo deixa de valer, e os links de convite já enviados também. A resposta mostra os novos uma única vez.
 - As três rotas ficam sob `/editor/*`: herdam o `404` fora da máquina, `Host` e `Origin`.
