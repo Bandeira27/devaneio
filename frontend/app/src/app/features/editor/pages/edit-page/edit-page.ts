@@ -10,6 +10,8 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import type { EditorTable } from '@contract/api_responses';
+import { tableLine } from '@shared/game/server-tables';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvNotice } from '@shared/ui/notice/notice';
@@ -66,6 +68,11 @@ export class EditorPage implements OnInit {
 
   ngOnInit(): void {
     void this.store.load(this.campaignId(), this.copia());
+  }
+
+  /** A linha de uma mesa que trava a campanha, no vocabulário do jogo. */
+  protected line(table: EditorTable): string {
+    return tableLine(table, Date.now());
   }
 
   /** Salvar como cópia: o botão some junto com o aviso, então o foco vai ao título da tela (que agora diz que é uma cópia). */

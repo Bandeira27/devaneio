@@ -35,8 +35,44 @@
         @if (!store.isNew() && !store.writable()) {
           <dv-notice kind="warn">
             Esta campanha já tem mesa, e as mesas a relêem do arquivo: ela não pode ser regravada.
-            Salve uma cópia para mudar.
-            <button dvButton dvSize="sm" type="button" (click)="copy()">
+            Encerre as mesas ou salve uma cópia para mudar.
+            @if (store.tables().length > 0) {
+              <ul class="editor__tables">
+                @for (table of store.tables(); track table.table_id) {
+                  <li class="editor__table">
+                    <span class="editor__table-line">{{ line(table) }}</span>
+                    <span class="editor__table-actions">
+                      @if (store.knowsTable(table.table_id)) {
+                        <a dvButton dvSize="sm" [routerLink]="['/mesa', table.table_id]">
+                          <dv-icon name="go" size="sm" />Abrir
+                        </a>
+                      } @else {
+                        <button
+                          dvButton
+                          dvSize="sm"
+                          type="button"
+                          (click)="store.assumeHost(table.table_id)"
+                        >
+                          <dv-icon name="person" size="sm" />Assumir como anfitrião
+                        </button>
+                      }
+                      <button
+                        dvButton="danger"
+                        dvSize="sm"
+                        type="button"
+                        (click)="store.closeTable(table.table_id)"
+                      >
+                        <dv-icon name="trash" size="sm" />Encerrar
+                      </button>
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+            @if (store.tablesError()) {
+              <span class="dv-note">{{ store.tablesError() }}</span>
+            }
+            <button dvButton dvSize="sm" type="button" class="editor__copy" (click)="copy()">
               <dv-icon name="copy" size="sm" />Salvar como cópia
             </button>
           </dv-notice>

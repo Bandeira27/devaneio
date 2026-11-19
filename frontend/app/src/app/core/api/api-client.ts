@@ -8,7 +8,10 @@ import type {
   CommandResult,
   CopilotAnswer,
   EditorCampaign,
+  EditorTable,
+  EditorTableClosed,
   EventsView,
+  HostAccess,
   InvitePreview,
   RulesView,
   PreviewView,
@@ -133,6 +136,26 @@ export class ApiClient {
     return this.http.put<EditorCampaign>(`/editor/campaigns/${encodeURIComponent(id)}`, {
       campaign,
     });
+  }
+
+  /** As mesas deste servidor que usam a campanha (a lista de quem manda no servidor, não a do navegador). */
+  editorTables(campaignId: string): Observable<EditorTable[]> {
+    return this.http.get<EditorTable[]>(
+      `/editor/campaigns/${encodeURIComponent(campaignId)}/tables`,
+    );
+  }
+
+  /** Encerra a mesa: apaga o arquivo dela. Não tem volta. */
+  editorCloseTable(tableId: string): Observable<EditorTableClosed> {
+    return this.http.delete<EditorTableClosed>(`/editor/tables/${encodeURIComponent(tableId)}`);
+  }
+
+  /** Reemite o acesso do anfitrião: token e convite novos; os antigos deixam de valer. */
+  editorHostAccess(tableId: string): Observable<HostAccess> {
+    return this.http.post<HostAccess>(
+      `/editor/tables/${encodeURIComponent(tableId)}/host-access`,
+      null,
+    );
   }
 
   /** Os sistemas de regras que uma campanha pode citar. */

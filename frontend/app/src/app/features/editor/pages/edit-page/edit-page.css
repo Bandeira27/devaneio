@@ -28,6 +28,32 @@
   gap: var(--dv-space-2) var(--dv-space-4);
 }
 
+.editor__tables {
+  display: grid;
+  gap: var(--dv-space-2);
+  margin: var(--dv-space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor__table {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-2) var(--dv-space-4);
+}
+
+.editor__table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dv-space-2);
+}
+
+.editor__copy {
+  margin-top: var(--dv-space-2);
+}
+
 .editor__problems {
   margin: var(--dv-space-1) 0 0;
   padding-left: var(--dv-space-4);

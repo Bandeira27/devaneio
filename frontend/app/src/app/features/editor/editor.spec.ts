@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import type { Campaign, ValidationReport } from '@contract/api_responses';
+import type { Campaign, EditorTable, ValidationReport } from '@contract/api_responses';
+import { SessionStore } from '@core/session/session-store';
 import { hostCampaign, rulesView } from '../../testing/fixtures';
 import { setup } from '../../testing/setup';
 import { VALIDATE_DELAY } from './editor.store';
@@ -17,7 +18,12 @@ const sleep = () => new Promise((resolve) => setTimeout(resolve, 5));
 /** Abre o editor e responde às cargas, uma de cada vez, como o servidor faria. */
 async function open(
   url: string,
-  options: { campaign?: Campaign; list?: typeof LIST; report?: ValidationReport | 'fail' } = {},
+  options: {
+    campaign?: Campaign;
+    list?: typeof LIST;
+    report?: ValidationReport | 'fail';
+    tables?: EditorTable[];
+  } = {},
 ) {
   TestBed.overrideProvider(VALIDATE_DELAY, { useValue: 0 });
   const app = await setup(url);
@@ -35,6 +41,11 @@ async function open(
     await settle();
   }
   http.expectOne((r) => r.url.startsWith('/editor/systems/')).flush(rulesView());
+  await settle();
+  // Campanha travada por mesa: o roteiro pergunta ao servidor quais mesas a travam.
+  for (const request of http.match((r) => r.url.endsWith('/tables'))) {
+    request.flush(options.tables ?? []);
+  }
   await settle();
   const validations: Campaign[] = [];
   const answer = async (report: ValidationReport | 'fail' = options.report ?? OK) => {
@@ -679,5 +690,136 @@ describe('Editor de campanhas: edição', () => {
       await settle();
       expect(text()).toContain('A Sombra do Vale');
     });
+  });
+});
+
+const TABLE: EditorTable = {
+  table_id: '0123456789abcdef',
+  phase: 'running',
+  host_name: 'Ana',
+  players: 2,
+  updated_at: Date.now() / 1000,
+};
+const LOCKED = { ...hostCampaign, id: 'com-mesa', title: 'Com mesa' };
+
+/** O botão de confirmar da folha aberta (ou o de voltar). */
+function sheetButton(label: string): HTMLButtonElement | undefined {
+  return Array.from(document.querySelectorAll<HTMLButtonElement>('.dv-sheet__foot button')).find(
+    (b) => b.textContent?.includes(label),
+  );
+}
+
+describe('Editor de campanhas: mesas que travam a campanha', () => {
+  it('lista as mesas do servidor no aviso, com o vocabulário do jogo e sem ids', async () => {
+    const { text } = await open('/c/com-mesa/roteiro', { campaign: LOCKED, tables: [TABLE] });
+    expect(text()).toContain('Mesa de Ana · em jogo · 2 jogadores · hoje');
+    expect(text()).toContain('Assumir como anfitrião');
+    expect(text()).toContain('Encerrar');
+    expect(text()).not.toContain(TABLE.table_id);
+  });
+
+  it('uma mesa que o navegador conhece mostra "Abrir" em vez de "Assumir"', async () => {
+    const { text, harness, settle } = await open('/c/com-mesa/roteiro', {
+      campaign: LOCKED,
+      tables: [TABLE],
+    });
+    TestBed.inject(SessionStore).save(TABLE.table_id, {
+      token: 't',
+      playerId: 'p1',
+      role: 'host',
+      title: 'Com mesa',
+      savedAt: 1,
+    });
+    await settle();
+    harness.detectChanges();
+    expect(text()).toContain('Abrir');
+    expect(text()).not.toContain('Assumir como anfitrião');
+  });
+
+  it('encerrar pede confirmação; cancelar não manda nada', async () => {
+    const { http, button, settle, harness } = await open('/c/com-mesa/roteiro', {
+      campaign: LOCKED,
+      tables: [TABLE],
+    });
+    (button('Encerrar') as HTMLButtonElement).click();
+    await settle();
+    harness.detectChanges();
+    expect(document.body.textContent).toContain('Isto não tem volta');
+    sheetButton('Voltar')?.click();
+    await settle();
+    http.expectNone(`/editor/tables/${TABLE.table_id}`);
+  });
+
+  it('encerrar a última mesa libera a campanha para gravar', async () => {
+    const { http, button, settle, text, harness } = await open('/c/com-mesa/roteiro', {
+      campaign: LOCKED,
+      tables: [TABLE],
+    });
+    (button('Encerrar') as HTMLButtonElement).click();
+    await settle();
+    harness.detectChanges();
+    sheetButton('Encerrar a mesa')?.click();
+    await settle();
+    const request = http.expectOne(`/editor/tables/${TABLE.table_id}`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush({ table_id: TABLE.table_id });
+    await settle();
+    http
+      .expectOne('/editor/campaigns')
+      .flush(LIST.map((c) => (c.id === 'com-mesa' ? { ...c, writable: true } : c)));
+    await settle();
+    expect(text()).toContain('já pode ser regravada');
+    expect(text()).not.toContain('Esta campanha já tem mesa');
+  });
+
+  it('assumir como anfitrião guarda o token novo neste navegador e abre a mesa', async () => {
+    const { http, button, settle, harness, router } = await open('/c/com-mesa/roteiro', {
+      campaign: LOCKED,
+      tables: [TABLE],
+    });
+    (button('Assumir como anfitrião') as HTMLButtonElement).click();
+    await settle();
+    harness.detectChanges();
+    expect(document.body.textContent).toContain('deixam de valer');
+    sheetButton('Assumir')?.click();
+    await settle();
+    const request = http.expectOne(`/editor/tables/${TABLE.table_id}/host-access`);
+    expect(request.request.method).toBe('POST');
+    request.flush({
+      table_id: TABLE.table_id,
+      player_id: 'p1',
+      token: 'token-novo',
+      invite_code: 'convite-novo',
+    });
+    await settle();
+    const saved = TestBed.inject(SessionStore).get(TABLE.table_id);
+    expect([saved?.token, saved?.invite, saved?.role]).toEqual([
+      'token-novo',
+      'convite-novo',
+      'host',
+    ]);
+    expect(saved?.campaignId).toBe('com-mesa');
+    expect(router.url).toBe(`/mesa/${TABLE.table_id}`);
+  });
+
+  it('falha ao encerrar mostra o erro no aviso e mantém a mesa', async () => {
+    const { http, button, settle, text, harness } = await open('/c/com-mesa/roteiro', {
+      campaign: LOCKED,
+      tables: [TABLE],
+    });
+    (button('Encerrar') as HTMLButtonElement).click();
+    await settle();
+    harness.detectChanges();
+    sheetButton('Encerrar a mesa')?.click();
+    await settle();
+    http
+      .expectOne(`/editor/tables/${TABLE.table_id}`)
+      .flush(
+        { error: { code: 'internal', message: 'erro interno' } },
+        { status: 500, statusText: 'x' },
+      );
+    await settle();
+    expect(text()).toContain('O servidor falhou');
+    expect(text()).toContain('Mesa de Ana');
   });
 });

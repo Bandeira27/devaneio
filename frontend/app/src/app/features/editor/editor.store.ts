@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type {
   Campaign,
   EditorCampaign,
+  EditorTable,
   PreviewView,
   RulesView,
   SystemInfo,
@@ -13,6 +14,8 @@ import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
 import { CampaignCatalog } from '@core/catalog/campaign-catalog';
 import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
+import { SessionStore } from '@core/session/session-store';
+import { ServerTables } from '@core/tables/server-tables';
 import {
   addBeat,
   addFact,
@@ -29,6 +32,7 @@ import {
   type ItemKind,
 } from '@shared/game/campaign-edit';
 import { slugify, uniqueId } from '@shared/game/names';
+import { ASSUME_HOST_CONFIRM, CLOSE_TABLE_CONFIRM } from '@shared/game/server-tables';
 import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
@@ -67,6 +71,8 @@ export class EditorStore {
   private readonly created = inject(CreatedCampaign);
   private readonly router = inject(Router);
   private readonly sheet = inject(Sheet);
+  private readonly serverTables = inject(ServerTables);
+  private readonly session = inject(SessionStore);
   private readonly delay = inject(VALIDATE_DELAY);
 
   readonly state = signal<LoadState>('loading');
@@ -76,6 +82,10 @@ export class EditorStore {
   readonly savedId = signal<string | null>(null);
   /** A campanha pode ser regravada? Falso quando alguma mesa a usa. */
   readonly writable = signal(true);
+  /** As mesas do servidor que travam a campanha (só enquanto ela não pode ser regravada). */
+  readonly tables = signal<EditorTable[]>([]);
+  /** O que deu errado ao encerrar uma mesa ou assumir o lugar de anfitrião. */
+  readonly tablesError = signal('');
   readonly systems = signal<SystemInfo[]>([]);
   readonly rules = signal<RulesView | null>(null);
   readonly report = signal<ValidationReport | null>(null);
@@ -175,6 +185,7 @@ export class EditorStore {
         this.start(campaign, campaignId, list.find((c) => c.id === campaignId)?.writable ?? true);
       }
       await this.loadRules();
+      await this.loadTables();
       this.state.set('ready');
       this.scheduleValidation(0);
     } catch (error) {
@@ -473,6 +484,66 @@ export class EditorStore {
   }
 
   // --- gravar ---------------------------------------------------------------------
+
+  /** As mesas que travam a campanha, ou nada se ela pode ser regravada. */
+  async loadTables(): Promise<void> {
+    const id = this.savedId();
+    this.tables.set(
+      id !== null && !this.writable() ? ((await this.serverTables.list(id)) ?? []) : [],
+    );
+  }
+
+  /** O navegador já tem o acesso a esta mesa (dá para abri-la sem assumir)? */
+  knowsTable(tableId: string): boolean {
+    return this.session.get(tableId) !== null;
+  }
+
+  /** Encerra uma mesa (depois de confirmar) e libera a campanha se era a última que a travava. */
+  async closeTable(tableId: string): Promise<void> {
+    const ok = await this.sheet.open<boolean>(ConfirmSheet, {
+      label: 'Encerrar a mesa',
+      data: CLOSE_TABLE_CONFIRM,
+    });
+    if (ok !== true) {
+      return;
+    }
+    this.tablesError.set('');
+    try {
+      await this.serverTables.close(tableId);
+      const id = this.savedId();
+      const list = await firstValueFrom(this.api.editorCampaigns());
+      this.writable.set(list.find((c) => c.id === id)?.writable ?? true);
+      await this.loadTables();
+      this.info.set(
+        this.writable() ? 'Mesa encerrada. A campanha já pode ser regravada.' : 'Mesa encerrada.',
+      );
+    } catch (error) {
+      this.tablesError.set(messageOf(error));
+    }
+  }
+
+  /** Assume o lugar de anfitrião de uma mesa (depois de confirmar) e vai para ela. */
+  async assumeHost(tableId: string): Promise<void> {
+    const campaign = this.campaign();
+    const id = this.savedId();
+    if (campaign === null || id === null) {
+      return;
+    }
+    const ok = await this.sheet.open<boolean>(ConfirmSheet, {
+      label: 'Assumir como anfitrião',
+      data: ASSUME_HOST_CONFIRM,
+    });
+    if (ok !== true) {
+      return;
+    }
+    this.tablesError.set('');
+    try {
+      await this.serverTables.assumeHost(tableId, { id, title: campaign.title });
+      await this.router.navigate(['/mesa', tableId]);
+    } catch (error) {
+      this.tablesError.set(messageOf(error));
+    }
+  }
 
   /** Prepara a gravação como cópia: id novo, e a campanha passa a ser nova. */
   async startCopy(): Promise<boolean> {
