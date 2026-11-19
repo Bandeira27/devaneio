@@ -37,6 +37,17 @@ class ChatClient(Protocol):
         ...
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Não segue redirecionamento: o ``Authorization`` iria junto para o servidor de destino, que o dono não escolheu."""
+
+    def redirect_request(self, *_args: Any, **_kwargs: Any) -> None:
+        """Recusa seguir: devolver ``None`` faz o 3xx virar um ``HTTPError`` comum."""
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 class _HttpStatus(Exception):
     def __init__(self, status: int, detail: str) -> None:
         super().__init__(status, detail)
@@ -92,12 +103,14 @@ class OpenAiCompatClient:
             url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST"
         )
         try:
-            with urllib.request.urlopen(  # noqa: S310 — esquema http(s) validado em LlmConfig
-                request, timeout=self.config.timeout
-            ) as response:
+            with _OPENER.open(request, timeout=self.config.timeout) as response:
                 raw = response.read()
         except urllib.error.HTTPError as exc:
             raise _HttpStatus(exc.code, _snippet(exc)) from None
+        except (
+            UnicodeError
+        ):  # chave com caractere fora de ASCII no cabeçalho: sem repetir o texto original
+            raise LlmError("a chave de acesso tem caracteres inválidos") from None
         except (urllib.error.URLError, OSError) as exc:  # inclui timeout
             reason = getattr(exc, "reason", exc)
             raise LlmError(f"falha de conexão com {self.config.host}: {reason}") from None

@@ -39,6 +39,7 @@ from .models import (
     ValidationIssue,
     ValidationReport,
 )
+from .settings_store import SettingsStore
 from .storage import Storage
 
 MAX_EDITOR_BODY = 512 * 1024
@@ -109,9 +110,12 @@ def origin_allowed(origin: str | None, host_header: str | None) -> bool:
 class EditorService:
     """As operações do editor sobre a pasta de campanhas, sem HTTP."""
 
-    def __init__(self, catalog: Catalog, storage: Storage) -> None:
+    def __init__(
+        self, catalog: Catalog, storage: Storage, settings: SettingsStore | None = None
+    ) -> None:
         self.catalog = catalog
         self.storage = storage
+        self.settings = settings  # a configuração do LLM da máquina; sem ela, as rotas dela são 404
         self.root = catalog.root
         self.tables = EditorTables(
             catalog, storage

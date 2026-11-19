@@ -34,7 +34,7 @@ from devaneio.game import (
 
 from . import policy
 from .errors import ApiFailure
-from .llm_gate import SAY, reserve
+from .llm_gate import SAY, require_llm, reserve
 from .models import SayRequest, SayResult
 from .storage import Storage
 from .turns import (
@@ -54,13 +54,13 @@ class SayDesk:
     def __init__(
         self,
         storage: Storage,
-        llm: LlmConfig,
+        llm: Callable[[], LlmConfig | None],
         load: Callable[[Path], Session],
         cooldown: float,
         secrets: bool,
     ) -> None:
         self._storage = storage
-        self._llm = llm
+        self._llm = llm  # consultado a cada chamada: a tela de configuração o troca sem reiniciar
         self._cooldown = cooldown  # segundos entre dois textos livres do mesmo jogador
         self._secrets = secrets  # os segredos dos NPCs vão ao LLM (a fala dele chega a todos)
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
@@ -89,7 +89,7 @@ class SayDesk:
         sent: tuple[Session, TableMeta, Player, str, str],
     ) -> SayResult:
         session, table, player, who, text = sent
-        client = connect_llm(self._llm)
+        client = connect_llm(require_llm(self._llm))
         revision = len(session.state.events)
         try:  # fase 2, sem lock
             freeform = run_freeform(

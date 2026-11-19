@@ -17,7 +17,22 @@ O jogo funciona inteiro sem LLM. Quando configurado, ele faz dois papéis, e **s
    é só exibição e nunca volta ao estado; se o modelo falhar ou responder fora do formato, o
    CLI cai na gramática e avisa.
 
-Configuração, só por variáveis de ambiente (nada é gravado em partida, campanha ou repositório):
+## Configuração
+
+Pela **tela de Configuração** do app (`/configuracao`, o botão "Configurar o mestre de IA" na tela inicial), que só abre no
+computador onde o servidor roda, em `localhost`, como o roteiro. Ali você diz o endereço (qualquer servidor no formato
+OpenAI chat/completions, por exemplo `http://localhost:11434/v1` do Ollama), o modelo, o tempo limite e a chave, e usa
+"Salvar e testar". **Vale na hora, sem reiniciar o servidor.**
+
+- **Onde fica:** endereço, modelo e tempo no banco do servidor (`<--dados>/devaneio.db`); a chave num arquivo à parte,
+  `<--dados>/llm.key`, só do dono (`0600`). A chave **nunca** vai para o banco, para backup, para exportação de partida,
+  para resposta da API (a tela só sabe se há uma guardada) nem para log ou mensagem de erro.
+- **Precedência, sem misturar:** o que a tela guardou vale por inteiro (com a chave do arquivo); sem isso, as variáveis
+  de ambiente abaixo, por inteiras; sem nenhuma, LLM desligado. A chave do ambiente nunca é enviada a um endereço
+  escolhido na tela. `--sem-llm` desliga tudo.
+- **O endereço** não pode ter usuário e senha, parâmetros nem âncora (a chave vai no campo próprio).
+
+Por variáveis de ambiente, ainda valem (úteis em scripts e no CLI, que não usa o banco):
 
 ```bash
 export DEVANEIO_LLM_BASE_URL=http://localhost:11434/v1   # qualquer servidor no formato OpenAI chat/completions
@@ -26,9 +41,8 @@ export DEVANEIO_LLM_API_KEY=...                          # opcional (modelos loc
 export DEVANEIO_LLM_TIMEOUT=60                           # opcional, em segundos
 ```
 
-`jogar --sem-llm` ignora a configuração. **Privacidade:** com LLM ligado, o contexto da partida
-(local, grupo, NPCs presentes com seus segredos, marcos ativos, eventos recentes) é enviado ao
-servidor configurado, e o CLI avisa na abertura. A chave só viaja no cabeçalho da requisição. O
+`jogar --sem-llm` e `devaneio --sem-llm` ignoram a configuração. **Privacidade:** com LLM ligado, o contexto da partida
+(local, grupo, NPCs presentes, marcos ativos, eventos recentes) é enviado ao servidor configurado, e o CLI e a mesa avisam. A chave só viaja no cabeçalho da requisição. O
 cliente usa só a biblioteca padrão; pede `response_format: json_object` e, se o servidor recusar
 (HTTP 400/422), repete sem o campo e valida o JSON por conta própria.
 

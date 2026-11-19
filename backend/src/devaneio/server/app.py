@@ -39,6 +39,7 @@ from .catalog import Catalog
 from .copilot import CopilotDesk
 from .errors import ApiFailure
 from .lifecycle import LifecycleDesk
+from .llm_gate import require_llm
 from .models import (
     TURN_POLICY,
     CampaignSummary,
@@ -113,7 +114,7 @@ class TableService:
         catalog: Catalog,
         storage: Storage,
         *,
-        llm: LlmConfig | None = None,
+        llm: LlmConfig | Callable[[], LlmConfig | None] | None = None,
         say_cooldown: float = SAY_COOLDOWN,
         copilot_cooldown: float = COPILOT_COOLDOWN,
         llm_secrets: bool = False,
@@ -123,23 +124,22 @@ class TableService:
     ) -> None:
         self.catalog = catalog
         self.storage = storage
-        self.llm = llm
+        # O LLM em uso é consultado a cada pedido (a tela de configuração o troca sem reiniciar). Uma
+        # configuração fixa (testes, ou ``None``) vira uma fonte que sempre responde o mesmo.
+        self._llm_source: Callable[[], LlmConfig | None] = llm if callable(llm) else (lambda: llm)
         self._llm_secrets = llm_secrets
         self._warned: set[tuple[str, str]] = set()
         self._token_source = token_source
         self._invite_source = invite_source
         self._clock = clock
         self._lifecycle = LifecycleDesk(storage, self.load_session, clock)
-        self._say = (
-            SayDesk(storage, llm, self.load_session, say_cooldown, llm_secrets)
-            if llm is not None
-            else None
-        )
-        self._copilot = (
-            CopilotDesk(storage, llm, self.load_session, copilot_cooldown)
-            if llm is not None
-            else None
-        )
+        self._say = SayDesk(storage, self._llm_source, self.load_session, say_cooldown, llm_secrets)
+        self._copilot = CopilotDesk(storage, self._llm_source, self.load_session, copilot_cooldown)
+
+    @property
+    def llm(self) -> LlmConfig | None:
+        """O LLM em uso agora, ou ``None`` (desligado)."""
+        return self._llm_source()
 
     # --- operações ---------------------------------------------------------------
 
@@ -324,8 +324,7 @@ class TableService:
 
     def say(self, table_id: str, token: str | None, request: SayRequest) -> SayResult:
         """Texto livre pelo LLM do anfitrião (ver ``say.SayDesk``)."""
-        if self._say is None:
-            raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
+        require_llm(self._llm_source)
         path = self.storage.path_for(table_id)
         if path is None:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
@@ -335,8 +334,7 @@ class TableService:
 
     def copilot(self, table_id: str, token: str | None, request: CopilotRequest) -> CopilotAnswer:
         """Consulta ao copiloto do anfitrião (ver ``copilot.CopilotDesk``)."""
-        if self._copilot is None:
-            raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
+        require_llm(self._llm_source)
         path = self.storage.path_for(table_id)
         if path is None:
             raise ApiFailure(404, "table_not_found", "mesa não encontrada")
@@ -412,16 +410,17 @@ class TableService:
         return session
 
     def _llm_view(self) -> LlmView:
-        if self.llm is None:
+        llm = self.llm
+        if llm is None:
             return LlmView(enabled=False)
         with_secrets, secrets_note = (
             NOTICE_WITH_SECRETS if self._llm_secrets else NOTICE_WITHOUT_SECRETS
         )
         return LlmView(
             enabled=True,
-            description=self.llm.description,
+            description=llm.description,
             notice=LLM_NOTICE.format(
-                description=self.llm.description,
+                description=llm.description,
                 with_secrets=with_secrets,
                 secrets_note=secrets_note,
             ),

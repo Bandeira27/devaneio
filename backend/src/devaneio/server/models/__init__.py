@@ -71,6 +71,7 @@ from .rules_view import (
     SkillInfo,
     WeaponInfo,
 )
+from .settings import LlmSettingsUpdate, LlmSettingsView, LlmTestResult
 from .state import (
     TURN_POLICY,
     LlmView,
@@ -115,6 +116,9 @@ __all__ = [
     "InvitePreviewRequest",
     "JoinRequest",
     "LifecycleRequest",
+    "LlmSettingsUpdate",
+    "LlmSettingsView",
+    "LlmTestResult",
     "LlmView",
     "LocationView",
     "ModifierInfo",

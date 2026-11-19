@@ -18,6 +18,7 @@ export interface ApiRequests {
   copilot: CopilotRequest;
   editor_validate: ValidateRequest;
   editor_save: SaveRequest;
+  editor_llm_settings: LlmSettingsUpdate;
 }
 /**
  * Criar uma mesa: a campanha, o nome do anfitrião e, opcionalmente, a semente.
@@ -82,4 +83,13 @@ export interface SaveRequest {
   campaign: {
     [k: string]: unknown;
   };
+}
+/**
+ * A configuração a guardar. `api_key` ausente mantém a chave atual; não existe "enviar vazio".
+ */
+export interface LlmSettingsUpdate {
+  base_url: string;
+  model: string;
+  timeout?: number;
+  api_key?: string | null;
 }

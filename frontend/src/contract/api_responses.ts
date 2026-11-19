@@ -44,6 +44,8 @@ export interface ApiResponses {
   editor_report: ValidationReport;
   editor_systems: SystemInfo[];
   editor_preview: PreviewView;
+  editor_llm_settings: LlmSettingsView;
+  editor_llm_test: LlmTestResult;
   error: ErrorResponse;
 }
 /**
@@ -655,6 +657,25 @@ export interface PreviewView {
   llm_secrets: string;
   copilot_chars: number;
   copilot_limit: number;
+}
+/**
+ * A configuração do LLM como o editor a mostra. Nunca traz a chave.
+ */
+export interface LlmSettingsView {
+  source: "screen" | "environment" | "none";
+  disabled: boolean;
+  base_url: string | null;
+  model: string | null;
+  timeout: number | null;
+  key_set: boolean;
+  description: string | null;
+}
+/**
+ * O resultado de uma chamada curta ao LLM: `message` é sempre uma frase fixa, nunca o texto do servidor.
+ */
+export interface LlmTestResult {
+  ok: boolean;
+  message: string;
 }
 /**
  * O corpo de toda resposta de erro.

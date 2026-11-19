@@ -135,6 +135,47 @@
       "title": "LifecycleRequest",
       "type": "object"
     },
+    "LlmSettingsUpdate": {
+      "additionalProperties": false,
+      "description": "A configuração a guardar. `api_key` ausente mantém a chave atual; não existe \"enviar vazio\".",
+      "properties": {
+        "base_url": {
+          "maxLength": 300,
+          "minLength": 1,
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "timeout": {
+          "default": 60.0,
+          "maximum": 600.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "base_url",
+        "model"
+      ],
+      "title": "LlmSettingsUpdate",
+      "type": "object"
+    },
     "SaveRequest": {
       "additionalProperties": false,
       "description": "A campanha a gravar: o servidor a valida de novo e só grava sem erro.",
@@ -216,6 +257,9 @@
     },
     "editor_save": {
       "$ref": "#/$defs/SaveRequest"
+    },
+    "editor_llm_settings": {
+      "$ref": "#/$defs/LlmSettingsUpdate"
     }
   },
   "required": [
@@ -227,7 +271,8 @@
     "say",
     "copilot",
     "editor_validate",
-    "editor_save"
+    "editor_save",
+    "editor_llm_settings"
   ],
   "title": "ApiRequests",
   "type": "object"

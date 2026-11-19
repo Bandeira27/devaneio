@@ -9,7 +9,10 @@ num ``finally`` com ``storage.leave_slot``.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
+
+from devaneio.llm import LlmConfig
 
 from .errors import ApiFailure
 from .storage import Storage
@@ -40,6 +43,14 @@ COPILOT = LlmSlot(
     "copilot_busy",
     "já há uma consulta ao copiloto em andamento",
 )
+
+
+def require_llm(source: Callable[[], LlmConfig | None]) -> LlmConfig:
+    """O LLM em uso agora; sem ele (nunca configurado, ou removido no meio do caminho), 409 ``llm_disabled``."""
+    config = source()
+    if config is None:
+        raise ApiFailure(409, "llm_disabled", "esta mesa não tem LLM configurado")
+    return config
 
 
 def reserve(storage: Storage, table_id: str, slot: LlmSlot, key: str, cooldown: float) -> None:

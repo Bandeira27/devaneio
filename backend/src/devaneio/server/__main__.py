@@ -21,8 +21,13 @@ from devaneio.game import LlmConfig, LlmError
 
 from .app import COPILOT_COOLDOWN, SAY_COOLDOWN, TableService
 from .catalog import Catalog, CatalogError
+from .database import DB_NAME, Database, acquire_instance_lock
 from .editor import EditorService
+from .errors import DatabaseError
+from .files import prepare_data_dir
 from .http import make_server
+from .migrations import migrate
+from .settings_store import SettingsStore
 from .static import StaticError, StaticSite
 from .storage import Storage
 
@@ -132,7 +137,7 @@ def main(argv: list[str] | None = None) -> int:
         help="pasta do build do front (index.html); padrão: o build do projeto, se existir",
     )
     parser.add_argument(
-        "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
+        "--sem-llm", action="store_true", help="ignora o LLM configurado (na tela ou no ambiente)"
     )
     parser.add_argument(
         "--sem-editor",
@@ -147,21 +152,33 @@ def main(argv: list[str] | None = None) -> int:
     try:
         campaigns_dir, data_dir, web_dir = resolve_folders(args, Path.cwd())
         catalog = Catalog(campaigns_dir)
-        llm = None if args.sem_llm else LlmConfig.from_env(os.environ)
+        environment = None if args.sem_llm else LlmConfig.from_env(os.environ)
         static = StaticSite(web_dir) if web_dir is not None else None
+        data_dir = prepare_data_dir(data_dir)
+        instance_lock = acquire_instance_lock(data_dir)  # fica aberto até o processo sair
+        db = Database(data_dir / DB_NAME)
+        migrate(db)
+        settings = SettingsStore(db, data_dir, environment=environment, disabled=args.sem_llm)
         storage = Storage(data_dir, max_tables=args.max_mesas)
-    except (ValueError, CatalogError, LlmError, StaticError, OSError) as exc:
+    except (
+        ValueError,
+        CatalogError,
+        DatabaseError,
+        LlmError,
+        StaticError,
+        OSError,
+    ) as exc:
         print(f"erro: {exc}", file=sys.stderr)
         return 1
     service = TableService(
         catalog,
         storage,
-        llm=llm,
+        llm=settings.effective,
         say_cooldown=args.intervalo_say,
         copilot_cooldown=args.intervalo_copiloto,
         llm_secrets=args.segredos_no_llm,
     )
-    editor = None if args.sem_editor else EditorService(catalog, storage)
+    editor = None if args.sem_editor else EditorService(catalog, storage, settings)
     server = make_server(args.host, args.porta, service, static, editor)
     port = server.server_address[1]
     if args.host not in ("127.0.0.1", "localhost", "::1"):
@@ -185,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
         and url.startswith(("http://localhost:", "http://[::1]:"))
     ):
         print(f"Para criar e editar campanhas, abra {url} neste computador.")
+    llm = settings.effective()
     if llm is not None:
         print(f"LLM ligado ({llm.description}): o contexto das mesas vai a esse servidor.")
     if static is not None and not args.sem_navegador:
@@ -195,6 +213,9 @@ def main(argv: list[str] | None = None) -> int:
         print("\nencerrando.")
     finally:
         server.server_close()
+        db.close()
+        if instance_lock is not None:
+            instance_lock.close()
     return 0
 
 

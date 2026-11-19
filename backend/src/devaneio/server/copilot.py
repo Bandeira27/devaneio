@@ -24,7 +24,7 @@ from devaneio.game import (
 )
 
 from .errors import ApiFailure
-from .llm_gate import COPILOT, reserve
+from .llm_gate import COPILOT, require_llm, reserve
 from .models import CopilotAnswer, CopilotRequest
 from .storage import Storage
 from .turns import authenticate
@@ -38,12 +38,12 @@ class CopilotDesk:
     def __init__(
         self,
         storage: Storage,
-        llm: LlmConfig,
+        llm: Callable[[], LlmConfig | None],
         load: Callable[[Path], Session],
         cooldown: float,
     ) -> None:
         self._storage = storage
-        self._llm = llm
+        self._llm = llm  # consultado a cada chamada: a tela de configuração o troca sem reiniciar
         self._cooldown = cooldown  # segundos entre duas consultas ao copiloto da mesa
         self._load = load  # carrega a partida; levanta o erro interno se ela estiver ilegível
 
@@ -57,7 +57,7 @@ class CopilotDesk:
                 raise ApiFailure(403, "forbidden", "o copiloto é só do anfitrião")
         reserve(storage, table_id, COPILOT, TABLE_KEY, self._cooldown)
         try:  # fase 2, sem lock
-            client = connect_llm(self._llm)
+            client = connect_llm(require_llm(self._llm))
             text = ask_copilot(client, session.campaign, session.rules, session.state, request.text)
         except CopilotContextTooLarge as exc:
             raise ApiFailure(

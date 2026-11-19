@@ -49,7 +49,7 @@ marcos que já começaram) e `CampaignView` (título, premissa, local com saída
 dois ramos veio. Nomes de jogador são normalizados (NFKC) e recusam caracteres de controle ou invisíveis. O CLI abre esse arquivo e preserva a mesa, mas **não jogue
 a mesma partida no CLI com o servidor aberto**: não há bloqueio entre processos. `--host 0.0.0.0` expõe HTTP em
 claro, tokens inclusive: use rede local, VPN ou um proxy TLS (o servidor fecha a conexão ao recusar um corpo e não
-limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado no ambiente do servidor,
+limita conexões simultâneas: é uma mesa entre amigos, não um serviço público). Com o LLM configurado (tela de Configuração ou ambiente do servidor),
 `table.llm.notice` avisa todos os jogadores de que o texto e o estado da partida vão a esse servidor.
 
 ## Servir o front (`--web`)
@@ -108,7 +108,7 @@ memória entre perguntas. Desenho em [`desenho-copiloto.md`](desenho-copiloto.md
 
 ## Texto livre pelo LLM na mesa
 
-Com `DEVANEIO_LLM_*` no ambiente **do servidor** (nunca em requisição, resposta ou arquivo), `POST /tables/{id}/say`
+Com o LLM configurado **no servidor** (tela de Configuração ou `DEVANEIO_LLM_*`; a chave nunca vai em requisição de jogo, resposta ou arquivo de partida), `POST /tables/{id}/say`
 manda o texto de um jogador ao LLM, que **só propõe** (as mesmas quatro ações do CLI: `check`, `attack`, `move`,
 `rest`). Cada ação proposta passa pela mesma política do jogador que falou: um `rest` proposto para um jogador comum
 é recusado e volta ao modelo como feedback (duas tentativas, tudo ou nada), e um ataque a NPC que o jogador não vê
@@ -143,3 +143,18 @@ ações (só conversa) nada é gravado e a ação não é gasta.
   Campanhas e partidas anteriores a `facts` não carregam: troque `secrets` por `facts` (ver o documento de desenho).
 - A fala e a narração do LLM passam por um filtro (sem controle, ANSI, bidi nem invisíveis) porque chegam à tela dos
   outros. Falha do servidor de LLM é `502 llm_unavailable` sem detalhes do provedor (ficam no stderr).
+
+## Configuração do LLM (`/editor/settings/llm`, só da máquina do servidor)
+
+Mesma guarda do editor (`/editor/*`: loopback, sem cabeçalho de proxy, `Host` local e `Origin` do próprio servidor; senão 404 ou 403).
+
+| Rota | Faz |
+|---|---|
+| `GET /editor/settings/llm` | `LlmSettingsView`: `source` (`screen`, `environment` ou `none`), `disabled` (`--sem-llm`), `base_url`, `model`, `timeout` guardados, `key_set` e `description`. **Nunca** traz a chave, nem parte dela. |
+| `PUT /editor/settings/llm` | `LlmSettingsUpdate`: `base_url`, `model`, `timeout` e `api_key` opcional (ausente mantém a atual). Endereço só `http`/`https`, sem usuário e senha, parâmetros nem âncora; chave em ASCII visível, sem espaços. Mudar de servidor sem escrever a chave de novo é recusado. `422 invalid_settings` se recusar. Vale na hora. |
+| `DELETE /editor/settings/llm` | apaga o que a tela guardou, chave inclusive: volta ao ambiente, se houver. |
+| `DELETE /editor/settings/llm/key` | apaga só a chave. |
+| `POST /editor/settings/llm/test` | uma chamada curta ao LLM em uso; `LlmTestResult` com `ok` e uma **frase fixa** (nunca o corpo do servidor nem o endereço). |
+
+`503 busy` (com `Retry-After: 1`) vale para qualquer rota se o banco seguir ocupado depois da espera e das novas tentativas.
+

@@ -39,10 +39,12 @@ from .models import (
     InvitePreviewRequest,
     JoinRequest,
     LifecycleRequest,
+    LlmSettingsUpdate,
     SaveRequest,
     SayRequest,
     ValidateRequest,
 )
+from .settings_store import SettingsStore
 from .static import MAX_STATIC_BYTES, SECURITY_HEADERS, StaticFile, StaticSite
 
 MAX_BODY = 64 * 1024
@@ -177,6 +179,31 @@ class Handler(BaseHTTPRequestHandler):
         request = self._read_json(ValidateRequest, limit=MAX_EDITOR_BODY)
         return 200, self._editor().preview(request.campaign)
 
+    def _editor_settings(self) -> SettingsStore:
+        settings = self._editor().settings
+        if settings is None:
+            raise ApiFailure(404, "not_found", f"rota desconhecida: {urlsplit(self.path).path}")
+        return settings
+
+    def _editor_llm_get(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        return 200, self._editor_settings().view()
+
+    def _editor_llm_put(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(LlmSettingsUpdate)
+        return 200, self._editor_settings().save(request)
+
+    def _editor_llm_clear(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor_settings().clear()
+
+    def _editor_llm_clear_key(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor_settings().clear_key()
+
+    def _editor_llm_test(self, _match: re.Match[str]) -> tuple[int, Payload]:
+        self._refuse_body()
+        return 200, self._editor_settings().test()
+
     def _refuse_body(self) -> None:
         """Rotas sem corpo: se vier um, não é lido e a conexão fecha, para os bytes não virarem outra requisição."""
         lengths = self.headers.get_all("Content-Length") or []
@@ -220,6 +247,11 @@ class Handler(BaseHTTPRequestHandler):
         ("GET", re.compile(r"^/editor/campaigns/([^/]+)/tables$"), _editor_tables),
         ("DELETE", re.compile(r"^/editor/tables/([^/]+)$"), _editor_close_table),
         ("POST", re.compile(r"^/editor/tables/([^/]+)/host-access$"), _editor_host_access),
+        ("GET", re.compile(r"^/editor/settings/llm$"), _editor_llm_get),
+        ("PUT", re.compile(r"^/editor/settings/llm$"), _editor_llm_put),
+        ("DELETE", re.compile(r"^/editor/settings/llm$"), _editor_llm_clear),
+        ("DELETE", re.compile(r"^/editor/settings/llm/key$"), _editor_llm_clear_key),
+        ("POST", re.compile(r"^/editor/settings/llm/test$"), _editor_llm_test),
         ("GET", re.compile(r"^/editor/systems$"), _editor_systems),
         ("GET", re.compile(r"^/editor/systems/([^/]+)$"), _editor_system),
     )
@@ -291,7 +323,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.close_connection = (
                     True  # recusou sem ler o corpo: os bytes não podem virar outra requisição
                 )
-            self._send_error(exc.status, exc.code, exc.message)
+            self._send_error(exc.status, exc.code, exc.message, exc.retry_after)
             return
         except Exception:  # noqa: BLE001 — fronteira do handler HTTP: 500 genérico, traceback no stderr
             traceback.print_exc(file=sys.stderr)
@@ -401,11 +433,14 @@ class Handler(BaseHTTPRequestHandler):
             text = json.dumps([m.model_dump(mode="json") for m in payload], ensure_ascii=False)
         self._send_bytes(status, text.encode("utf-8"))
 
-    def _send_error(self, status: int, code: str, message: str) -> None:
+    def _send_error(
+        self, status: int, code: str, message: str, retry_after: int | None = None
+    ) -> None:
         body = ErrorResponse(error=ApiError(code=code, message=message))
-        self._send_bytes(status, body.model_dump_json().encode("utf-8"))
+        extra = {} if retry_after is None else {"Retry-After": str(retry_after)}
+        self._send_bytes(status, body.model_dump_json().encode("utf-8"), extra)
 
-    def _send_bytes(self, status: int, body: bytes) -> None:
+    def _send_bytes(self, status: int, body: bytes, extra: dict[str, str] | None = None) -> None:
         self._respond(
             status,
             body,
@@ -413,6 +448,7 @@ class Handler(BaseHTTPRequestHandler):
                 "Content-Type": f"{JSON}; charset=utf-8",
                 "Cache-Control": "no-store",
                 "X-Content-Type-Options": SECURITY_HEADERS["X-Content-Type-Options"],
+                **(extra or {}),
             },
         )
 

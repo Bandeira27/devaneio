@@ -38,6 +38,7 @@ from .responses import (
     TableJoined,
 )
 from .rules_view import RulesView
+from .settings import LlmSettingsUpdate, LlmSettingsView, LlmTestResult
 from .state import TableView
 
 
@@ -66,6 +67,7 @@ class ApiRequests(StrictModel):
     copilot: CopilotRequest
     editor_validate: ValidateRequest
     editor_save: SaveRequest
+    editor_llm_settings: LlmSettingsUpdate
 
 
 class ApiResponses(StrictModel):
@@ -91,4 +93,6 @@ class ApiResponses(StrictModel):
     editor_report: ValidationReport
     editor_systems: list[SystemInfo]
     editor_preview: PreviewView
+    editor_llm_settings: LlmSettingsView
+    editor_llm_test: LlmTestResult
     error: ErrorResponse
