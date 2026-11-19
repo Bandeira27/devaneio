@@ -1,24 +1,27 @@
 """Sobe a mesa em grupo.
 
-Uso: ``python -m devaneio.server --campanhas DIR --dados DIR [--host H] [--porta P]``.
+Uso: ``devaneio`` (ou ``python -m devaneio.server``) dentro do projeto (ou ``--campanhas DIR --dados DIR [--web DIR]``).
 
 Por padrão escuta só em 127.0.0.1. Com ``--host 0.0.0.0`` o tráfego é HTTP em claro (tokens
-inclusive): use rede local, VPN ou um proxy TLS na frente.
+inclusive): use rede local, VPN ou um proxy TLS na frente. O editor de campanhas está sempre ligado
+(``--sem-editor`` desliga) e só atende pedidos feitos desta máquina, por ``localhost``.
 """
 
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import math
 import os
 import sys
+import webbrowser
 from pathlib import Path
 
 from devaneio.game import LlmConfig, LlmError
 
 from .app import COPILOT_COOLDOWN, SAY_COOLDOWN, TableService
 from .catalog import Catalog, CatalogError
-from .editor import EditorService, is_loopback
+from .editor import EditorService
 from .http import make_server
 from .static import StaticError, StaticSite
 from .storage import Storage
@@ -36,14 +39,69 @@ def seconds(raw: str) -> float:
     return value
 
 
+BUILD = Path("frontend/app/dist/devaneio/browser")
+
+
+def project_root(start: Path) -> Path | None:
+    """A pasta do projeto: a atual ou a de cima, a que tem ``campaigns/`` e ``backend/`` (o marcador do Devaneio).
+
+    Só ``campaigns/`` bastaria para achar as campanhas, mas o editor grava nela: uma pasta qualquer com esse nome,
+    sem ser do Devaneio, não vira o destino sem o anfitrião pedir.
+    """
+    for folder in (start, start.parent):
+        if (folder / "campaigns").is_dir() and (folder / "backend").is_dir():
+            return folder
+    return None
+
+
+def resolve_folders(args: argparse.Namespace, cwd: Path) -> tuple[Path, Path, Path | None]:
+    """Campanhas, mesas e app: o que veio na linha de comando, senão o padrão da pasta do projeto.
+
+    Levanta ``ValueError`` (em pt-br) se faltar uma pasta e o projeto não for achado. O app só entra
+    se já foi construído; sem ele o servidor responde só a API.
+    """
+    root = project_root(cwd)
+    campaigns = args.campanhas or (root / "campaigns" if root else None)
+    data = args.dados or (root / "mesas" if root else None)
+    if campaigns is None or data is None:
+        raise ValueError(
+            "não achei a pasta do projeto (a que tem 'campaigns/' e 'backend/'): rode de dentro dela "
+            "ou passe --campanhas e --dados"
+        )
+    web = args.web
+    if web is None and root is not None and (root / BUILD / "index.html").is_file():
+        web = root / BUILD
+    return Path(campaigns), Path(data), web
+
+
+def browser_url(host: str, port: int) -> str:
+    """O endereço que o anfitrião abre: ``localhost`` sempre que o servidor escuta nesta máquina."""
+    if host in ("::1", "[::1]"):
+        return f"http://[::1]:{port}"
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return f"http://{host}:{port}"
+    # Escutar em todas as interfaces também vale por localhost.
+    if ip.is_loopback or ip.is_unspecified:
+        return f"http://localhost:{port}"
+    return f"http://[{host}]:{port}" if ip.version == 6 else f"http://{host}:{port}"
+
+
 def main(argv: list[str] | None = None) -> int:
     """Sobe o servidor da mesa em grupo; devolve o código de saída do processo."""
-    parser = argparse.ArgumentParser(prog="devaneio.server", description="Devaneio: mesa em grupo.")
+    parser = argparse.ArgumentParser(prog="devaneio", description="Devaneio: mesa em grupo.")
     parser.add_argument(
-        "--campanhas", type=Path, required=True, help="pasta com campanhas (*.json)"
+        "--campanhas",
+        type=Path,
+        default=None,
+        help="pasta com campanhas (*.json); padrão: campaigns/ do projeto",
     )
     parser.add_argument(
-        "--dados", type=Path, required=True, help="pasta onde as mesas são gravadas"
+        "--dados",
+        type=Path,
+        default=None,
+        help="pasta onde as mesas são gravadas; padrão: mesas/ do projeto",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--porta", type=int, default=8765)
@@ -71,32 +129,30 @@ def main(argv: list[str] | None = None) -> int:
         "--web",
         type=Path,
         default=None,
-        help="pasta do build do front (index.html); sem ela o servidor responde só a API JSON",
+        help="pasta do build do front (index.html); padrão: o build do projeto, se existir",
     )
     parser.add_argument(
         "--sem-llm", action="store_true", help="ignora o LLM configurado no ambiente"
     )
     parser.add_argument(
-        "--editor",
+        "--sem-editor",
         action="store_true",
-        help="liga o editor de campanhas (sem login: só aceita --host de loopback e pedidos de localhost)",
+        help="desliga o editor de campanhas (ligado por padrão; só atende pedidos desta máquina)",
+    )
+    parser.add_argument(
+        "--sem-navegador", action="store_true", help="não abre o navegador ao subir"
     )
     args = parser.parse_args(argv)
-    if args.editor and not is_loopback(args.host):
-        print(
-            "erro: --editor não tem login e só vale em loopback; use --host 127.0.0.1 (ou ::1, localhost).",
-            file=sys.stderr,
-        )
-        return 1
 
     try:
-        catalog = Catalog(args.campanhas)
+        campaigns_dir, data_dir, web_dir = resolve_folders(args, Path.cwd())
+        catalog = Catalog(campaigns_dir)
         llm = None if args.sem_llm else LlmConfig.from_env(os.environ)
-        static = StaticSite(args.web) if args.web is not None else None
-    except (CatalogError, LlmError, StaticError, OSError) as exc:
+        static = StaticSite(web_dir) if web_dir is not None else None
+        storage = Storage(data_dir, max_tables=args.max_mesas)
+    except (ValueError, CatalogError, LlmError, StaticError, OSError) as exc:
         print(f"erro: {exc}", file=sys.stderr)
         return 1
-    storage = Storage(args.dados, max_tables=args.max_mesas)
     service = TableService(
         catalog,
         storage,
@@ -105,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         copilot_cooldown=args.intervalo_copiloto,
         llm_secrets=args.segredos_no_llm,
     )
-    editor = EditorService(catalog, storage) if args.editor else None
+    editor = None if args.sem_editor else EditorService(catalog, storage)
     server = make_server(args.host, args.porta, service, static, editor)
     port = server.server_address[1]
     if args.host not in ("127.0.0.1", "localhost", "::1"):
@@ -114,11 +170,25 @@ def main(argv: list[str] | None = None) -> int:
             "Use rede local, VPN ou um proxy TLS.",
             file=sys.stderr,
         )
+    url = browser_url(args.host, port)
     print(f"Devaneio: mesa em http://{args.host}:{port} ({len(catalog.summaries())} campanha(s))")
-    if editor is not None:
-        print(f"Editor de campanhas em http://{args.host}:{port}/#/editor (só desta máquina).")
+    print(f"Campanhas em {campaigns_dir.resolve()}; mesas em {data_dir.resolve()}.")
+    if static is None:
+        print(
+            "O app ainda não foi construído (cd frontend/app && npm run build): só a API responde.",
+            file=sys.stderr,
+        )
+    # Escutando só num endereço da rede, `localhost` nem conecta: o editor não está ao alcance e não se promete.
+    if (
+        editor is not None
+        and static is not None
+        and url.startswith(("http://localhost:", "http://[::1]:"))
+    ):
+        print(f"Para criar e editar campanhas, abra {url} neste computador.")
     if llm is not None:
         print(f"LLM ligado ({llm.description}): o contexto das mesas vai a esse servidor.")
+    if static is not None and not args.sem_navegador:
+        webbrowser.open(url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

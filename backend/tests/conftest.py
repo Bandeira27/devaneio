@@ -44,6 +44,14 @@ def _no_llm_from_the_environment(monkeypatch):
         monkeypatch.delenv(f"DEVANEIO_LLM_{name}", raising=False)
 
 
+@pytest.fixture(autouse=True)
+def opened_urls(monkeypatch):
+    """Nenhum teste abre o navegador de verdade: os endereços que o servidor pediu para abrir ficam nesta lista."""
+    urls: list[str] = []
+    monkeypatch.setattr("webbrowser.open", lambda url, *_args, **_kwargs: urls.append(url) or True)
+    return urls
+
+
 def open_for_play(service, table_id):
     """Põe a mesa em andamento como ela nascia antes da sala de espera: com a abertura e sem o evento de início."""
     path = service.storage.path_for(table_id)

@@ -20,7 +20,15 @@ from pydantic import BaseModel, ValidationError
 
 from .app import TableService
 from .auth import bearer_token
-from .editor import MAX_EDITOR_BODY, EditorService, host_allowed, origin_allowed
+from .editor import (
+    FORWARDING_HEADERS,
+    MAX_EDITOR_BODY,
+    EditorService,
+    host_allowed,
+    is_loopback,
+    origin_allowed,
+    peer_is_local,
+)
 from .errors import ApiFailure
 from .models import (
     ApiError,
@@ -63,9 +71,12 @@ class ApiServer(ThreadingHTTPServer):
         if ":" in address[0]:
             self.address_family = socket.AF_INET6  # --host ::1
         super().__init__(address, Handler)
+        # Só esta máquina alcança o servidor? ``is_loopback`` conhece "localhost"; ``peer_is_local``, o 127.0.0.0/8 inteiro.
+        self.local_only = is_loopback(address[0]) or peer_is_local(address[0])
         self.service = service
         self.static = static  # o front, só com --web; sem ele a API é só JSON
-        self.editor = editor  # só com --editor (e só em loopback): sem ele, /editor/* é 404
+        # Sempre, salvo --sem-editor; só atende a própria máquina. Sem ele, /editor/* é 404.
+        self.editor = editor
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -130,7 +141,7 @@ class Handler(BaseHTTPRequestHandler):
             match.group(1), self._token(), since, wait=wait, since_talk=since_talk
         )
 
-    # --- editor (só com --editor) -------------------------------------------------
+    # --- editor (só da própria máquina) -------------------------------------------
 
     def _editor(self) -> EditorService:
         editor = self.server.editor
@@ -265,16 +276,22 @@ class Handler(BaseHTTPRequestHandler):
         self._send(status, payload)
 
     def _guard_editor(self, method: str, path: str) -> None:
-        """Sem ``--editor``, ``/editor/*`` não existe; com ele, só pedidos de dentro desta máquina (rule 05, item 25).
+        """``/editor/*`` só existe para pedidos de dentro desta máquina (rule 05, item 25).
 
-        Vale para toda requisição, não só ``/editor/*``: ``Host`` precisa ser um nome local com a porta do
-        servidor (DNS rebinding) e, num pedido que muda algo, o ``Origin`` que vier precisa ser o próprio
+        Em ``/editor/*``, tudo precisa valer, e o que falha em quem nem devia saber do editor é ``404``: o
+        servidor tem o editor (sem ``--sem-editor``), a conexão vem de loopback e não passou por proxy ou túnel
+        (cabeçalhos de encaminhamento). Daí, ``403`` se o ``Host`` não for um nome local com a porta do
+        servidor (DNS rebinding) ou, num pedido que muda algo, se o ``Origin`` que vier não for o próprio
         servidor (CSRF). Um front servido de outra origem (dev server) precisa de proxy.
+
+        Fora do editor a guarda só vale quando o servidor escuta em loopback (o padrão): aí o ``Host`` também
+        precisa ser local em toda requisição. Escutando na rede, o ``Host`` é o da rede, e os jogadores entram.
         """
         editor = self.server.editor
-        if editor is None:
-            if path == "/editor" or path.startswith("/editor/"):
+        if path == "/editor" or path.startswith("/editor/"):
+            if editor is None or not self._from_this_machine():
                 raise ApiFailure(404, "not_found", f"rota desconhecida: {path}")
+        elif editor is None or not self.server.local_only:
             return
         host = self.headers.get("Host")
         refused: ApiFailure | None = None
@@ -287,6 +304,12 @@ class Handler(BaseHTTPRequestHandler):
                 True  # o corpo não foi lido: fecha, ou os bytes viram a próxima requisição
             )
             raise refused
+
+    def _from_this_machine(self) -> bool:
+        """A conexão vem de loopback e não passou por proxy ou túnel."""
+        if any(self.headers.get(name) is not None for name in FORWARDING_HEADERS):
+            return False
+        return peer_is_local(self.client_address[0])
 
     # --- leitura -----------------------------------------------------------------
 

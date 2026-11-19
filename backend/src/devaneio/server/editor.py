@@ -1,13 +1,14 @@
 """O editor de campanhas: validar, listar, criar e regravar arquivos da pasta de campanhas.
 
-Só existe com ``--editor`` e em localhost (rule 05, item 25). O único dado da requisição que vira nome
-de arquivo é o id da campanha, um slug: o arquivo é sempre ``<pasta>/<id>.json``. A escrita é atômica
-e só acontece sem erro de validação; campanha que alguma mesa usa não é sobrescrita, porque as mesas
-a relêem do arquivo.
+Está sempre ligado (``--sem-editor`` desliga), mas só atende pedidos vindos da própria máquina (rule 05,
+item 25). O único dado da requisição que vira nome de arquivo é o id da campanha, um slug: o arquivo é
+sempre ``<pasta>/<id>.json``. A escrita é atômica e só acontece sem erro de validação; campanha que
+alguma mesa usa não é sobrescrita, porque as mesas a relêem do arquivo.
 """
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import shutil
@@ -45,9 +46,34 @@ MAX_ID = 64
 CAMPAIGN_ID = ID_REGEX  # o id vira nome de arquivo: o mesmo slug do esquema, conferido por inteiro
 
 
+# Quem põe um proxy ou túnel na frente do servidor faz todo pedido parecer local: esses cabeçalhos o denunciam.
+FORWARDING_HEADERS = (
+    "Forwarded",
+    "X-Forwarded-For",
+    "X-Forwarded-Host",
+    "X-Forwarded-Proto",
+    "X-Real-IP",
+)
+
+
 def is_loopback(host: str) -> bool:
     """O endereço de escuta é só desta máquina (``127.0.0.1``, ``::1`` ou ``localhost``)."""
     return host.strip().lower() in LOOPBACK_NAMES
+
+
+def peer_is_local(address: str) -> bool:
+    """O endereço de quem se conectou (ou em que o servidor escuta) é desta máquina.
+
+    Vale ``127.0.0.0/8`` e ``::1``, inclusive o IPv4 mapeado em IPv6 (``::ffff:127.0.0.1``). O endereço da
+    própria rede (``192.168.x.x``) não vale, mesmo sendo desta máquina: abra o app por ``localhost``.
+    """
+    try:
+        ip = ipaddress.ip_address(address.split("%", 1)[0])  # sem o escopo de ``fe80::1%eth0``
+    except ValueError:
+        return False
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    return ip.is_loopback
 
 
 def host_allowed(header: str | None, port: int) -> bool:

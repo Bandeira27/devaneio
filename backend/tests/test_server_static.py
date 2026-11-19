@@ -375,8 +375,9 @@ def test_the_site_needs_an_existing_folder_with_an_index(tmp_path):
 
 
 def test_the_web_flag_reaches_the_server_and_a_bad_folder_stops_the_start(
-    tmp_path, web, monkeypatch, capsys
+    tmp_path, web, monkeypatch, capsys, opened_urls
 ):
+    monkeypatch.chdir(tmp_path)  # fora do projeto: sem o app construído por padrão
     seen = []
     monkeypatch.setattr(
         "devaneio.server.__main__.make_server",
@@ -395,8 +396,12 @@ def test_the_web_flag_reaches_the_server_and_a_bad_folder_stops_the_start(
     assert main([*base, "--web", str(web)]) == 0
     assert isinstance(seen[0], StaticSite)
     assert seen[0].root == web.resolve()
+    assert opened_urls == ["http://localhost:4242"]  # com o app, o navegador abre
     assert main([*base]) == 0
     assert seen[1] is None
+    assert opened_urls == ["http://localhost:4242"]  # sem o app não há o que abrir
+    assert main([*base, "--web", str(web), "--sem-navegador"]) == 0
+    assert opened_urls == ["http://localhost:4242"]
     assert main([*base, "--web", str(tmp_path / "nada")]) == 1
     assert "não existe" in capsys.readouterr().err
 

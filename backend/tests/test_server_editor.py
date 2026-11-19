@@ -1,5 +1,6 @@
 """O editor de campanhas: segurança do lugar (Host, Origin, loopback), validação em português, escrita e prévia."""
 
+import argparse
 import contextlib
 import http.client
 import json
@@ -12,7 +13,8 @@ import pytest
 
 from conftest import CAMPAIGN_PATH
 from devaneio.server import ApiFailure, Catalog, Storage, TableService
-from devaneio.server.__main__ import main
+from devaneio.server import http as server_http
+from devaneio.server.__main__ import browser_url, project_root, resolve_folders
 from devaneio.server.catalog import CatalogError
 from devaneio.server.editor import (
     CAMPAIGN_ID,
@@ -20,6 +22,7 @@ from devaneio.server.editor import (
     host_allowed,
     is_loopback,
     origin_allowed,
+    peer_is_local,
 )
 from devaneio.server.http import make_server
 from devaneio.server.models import CreateTableRequest
@@ -143,23 +146,150 @@ def test_origin_must_be_ourselves_when_present():
     assert not origin_allowed("https://localhost:1", "localhost:1")
 
 
-def test_the_server_refuses_to_start_the_editor_outside_loopback(folder, tmp_path, capsys):
-    code = main(
-        [
-            "--campanhas",
-            str(folder),
-            "--dados",
-            str(tmp_path / "d"),
-            "--editor",
-            "--host",
-            "192.168.0.5",
-        ]
-    )
-    assert code == 1
-    assert "loopback" in capsys.readouterr().err
+@pytest.mark.parametrize("address", ["127.0.0.1", "127.0.0.5", "::1", "::ffff:127.0.0.1", "::1%lo"])
+def test_loopback_peers_are_this_machine(address):
+    assert peer_is_local(address)
 
 
-def test_without_the_editor_flag_every_editor_route_is_404(api_off):
+@pytest.mark.parametrize(
+    "address",
+    [
+        "192.168.0.5",
+        "10.0.0.1",
+        "8.8.8.8",
+        "::ffff:192.168.0.5",
+        "fe80::1%eth0",
+        "",
+        "localhost",
+        "x",
+    ],
+)
+def test_other_peers_are_not_this_machine(address):
+    # Nem o endereço da própria rede vale: o editor só atende por localhost.
+    assert not peer_is_local(address)
+
+
+def serve_on_the_network(setup):
+    """Escuta em todas as interfaces, como ``--host 0.0.0.0``: o editor tem de seguir só da própria máquina."""
+    catalog, storage, service = setup
+    server = make_server("0.0.0.0", 0, service, None, EditorService(catalog, storage))  # noqa: S104 — teste do --host 0.0.0.0
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
+def test_listening_on_the_network_keeps_players_in_and_the_editor_local(setup):
+    server = serve_on_the_network(setup)
+    api = Api(server.server_address[1])
+    try:
+        # Um jogador entra pelo endereço da rede: o Host dele é o da rede, e a mesa responde.
+        status, _ = api.call("GET", "/campaigns", headers={"Host": f"192.168.0.5:{api.port}"})
+        assert status == 200
+        # O anfitrião, por localhost, edita.
+        assert api.call("GET", "/editor/campaigns")[0] == 200
+        # Pelo endereço da rede o Host não é local: o editor recusa.
+        status, body = api.call(
+            "GET", "/editor/campaigns", headers={"Host": f"192.168.0.5:{api.port}"}
+        )
+        assert status == 403
+        assert body["error"]["code"] == "host_not_allowed"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_a_simulated_peer_from_the_network_gets_404_in_the_editor_and_the_table_still_answers(
+    setup, monkeypatch
+):
+    server = serve(setup)
+    api = Api(server.server_address[1])
+    # A origem de rede é simulada, depois de o servidor já ter decidido que escuta só aqui (`local_only`).
+    monkeypatch.setattr(server_http, "peer_is_local", lambda _address: False)
+    try:
+        for method, path in [
+            ("GET", "/editor/campaigns"),
+            ("POST", "/editor/validate"),
+            ("PUT", "/editor/campaigns/sombra-do-vale"),
+            ("GET", "/editor"),
+        ]:
+            status, body = api.call(method, path, {} if method != "GET" else None)
+            assert status == 404, (method, path)
+            assert body["error"]["code"] == "not_found"
+        assert api.call("GET", "/campaigns")[0] == 200
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["Forwarded", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto", "X-Real-IP"],
+)
+def test_a_proxy_or_tunnel_in_front_hides_the_editor(api, header):
+    status, body = api.call("GET", "/editor/campaigns", headers={header: "203.0.113.9"})
+    assert status == 404
+    assert body["error"]["code"] == "not_found"
+    assert api.call("GET", "/campaigns", headers={header: "203.0.113.9"})[0] == 200
+
+
+def test_the_editor_is_off_only_when_asked_and_everything_else_still_works(api_off):
+    assert api_off.call("GET", "/editor/campaigns")[0] == 404
+    assert api_off.call("GET", "/campaigns")[0] == 200
+
+
+def test_the_default_folders_come_from_the_project_and_the_flags_win(tmp_path):
+    project = tmp_path / "projeto"
+    (project / "campaigns").mkdir(parents=True)
+    (project / "backend").mkdir()
+    build = project / "frontend" / "app" / "dist" / "devaneio" / "browser"
+    build.mkdir(parents=True)
+    (build / "index.html").write_text("<!doctype html>", encoding="utf-8")
+    none = argparse.Namespace(campanhas=None, dados=None, web=None)
+
+    assert resolve_folders(none, project) == (project / "campaigns", project / "mesas", build)
+    # De dentro de backend/ (a pasta de baixo) também acha o projeto.
+    inside = project / "backend"
+    assert resolve_folders(none, inside) == (project / "campaigns", project / "mesas", build)
+    given = argparse.Namespace(campanhas=Path("a"), dados=Path("b"), web=Path("c"))
+    assert resolve_folders(given, project) == (Path("a"), Path("b"), Path("c"))
+
+
+def test_without_a_project_the_folders_must_be_given(tmp_path):
+    assert project_root(tmp_path) is None
+    with pytest.raises(ValueError, match="--campanhas e --dados"):
+        resolve_folders(argparse.Namespace(campanhas=None, dados=None, web=None), tmp_path)
+
+
+def test_a_campaigns_folder_alone_is_not_the_project(tmp_path):
+    (
+        tmp_path / "campaigns"
+    ).mkdir()  # qualquer pasta com esse nome: o editor não grava nela sem pedido
+    assert project_root(tmp_path) is None
+
+
+def test_without_a_build_the_app_is_left_out(tmp_path):
+    (tmp_path / "campaigns").mkdir()
+    (tmp_path / "backend").mkdir()
+    folders = resolve_folders(argparse.Namespace(campanhas=None, dados=None, web=None), tmp_path)
+    assert folders[2] is None
+
+
+@pytest.mark.parametrize(
+    ("host", "url"),
+    [
+        ("127.0.0.1", "http://localhost:8765"),
+        ("localhost", "http://localhost:8765"),
+        ("0.0.0.0", "http://localhost:8765"),  # noqa: S104 — endereço de escuta no teste
+        ("::", "http://localhost:8765"),
+        ("::1", "http://[::1]:8765"),
+        ("fe80::1", "http://[fe80::1]:8765"),
+        ("192.168.0.5", "http://192.168.0.5:8765"),
+    ],
+)
+def test_the_browser_opens_on_localhost_whenever_the_server_is_on_this_machine(host, url):
+    assert browser_url(host, 8765) == url
+
+
+def test_with_the_editor_off_every_editor_route_is_404(api_off):
     for method, path in [
         ("GET", "/editor/campaigns"),
         ("POST", "/editor/campaigns"),
@@ -173,7 +303,7 @@ def test_without_the_editor_flag_every_editor_route_is_404(api_off):
         assert body["error"]["code"] == "not_found"
 
 
-def test_a_foreign_host_header_is_refused_everywhere_when_the_editor_is_on(api):
+def test_a_foreign_host_header_is_refused_everywhere_when_listening_only_here(api):
     for host in ("evil.example", f"localhost:{api.port + 1}", "localhost.evil.example"):
         for path in ("/editor/campaigns", "/campaigns"):
             status, body = api.call("GET", path, headers={"Host": f"{host}"})
