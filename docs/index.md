@@ -18,6 +18,7 @@ as coisas são hoje, e os de **desenho** contam por que foram feitas assim.
 
 | Assunto                                              | Texto                                                                      |
 | ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| O banco do servidor: o que vai nele e as premissas   | [`desenho-banco.md`](desenho-banco.md)                                     |
 | Para onde o projeto vai e em que ordem               | [`rumo-extensibilidade.md`](rumo-extensibilidade.md)                       |
 | Visibilidade e revelações pelo motor                 | [`desenho-visibilidade-revelacoes.md`](desenho-visibilidade-revelacoes.md) |
 | Sistemas e narrações criados pelo usuário            | [`desenho-sistemas-do-usuario.md`](desenho-sistemas-do-usuario.md)         |

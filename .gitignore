@@ -35,3 +35,10 @@ htmlcov/
 
 # Partidas salvas pelo servidor (--dados): estado de jogo, não conteúdo do projeto
 mesas/
+
+# Banco do servidor e arquivos auxiliares (--dados): estado, não conteúdo do projeto
+*.db
+*.db-wal
+*.db-shm
+*.bak
+devaneio.lock

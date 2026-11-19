@@ -9,6 +9,7 @@ description = "Mesa de RPG com mestre de IA — backend (esquema, motor de regra
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.5",
+    "sqlalchemy>=2.0,<2.1",
 ]
 
 [project.scripts]
@@ -103,6 +104,7 @@ allow-magic-value-types = ["str", "bytes", "int"]
 
 [tool.importlinter]
 root_package = "devaneio"
+include_external_packages = true  # o contrato de banco olha sqlalchemy e sqlite3
 
 # Dependências só apontam para baixo. engine, narration e llm são irmãos e não se
 # importam entre si (llm não conhece o motor: game traduz a proposta em comandos).
@@ -116,4 +118,33 @@ layers = [
     "devaneio.engine | devaneio.narration | devaneio.llm",
     "devaneio.rules",
     "devaneio.schema | devaneio.rng",
+]
+
+# A persistência em banco é só do servidor (docs/desenho-banco.md): o motor, as regras e o CLI não conhecem
+# SQLite nem SQLAlchemy. O CLI continua com arquivo de partida.
+[[tool.importlinter.contracts]]
+name = "Banco de dados só no servidor"
+type = "forbidden"
+source_modules = [
+    "devaneio.cli",
+    "devaneio.game",
+    "devaneio.engine",
+    "devaneio.narration",
+    "devaneio.llm",
+    "devaneio.rules",
+    "devaneio.schema",
+    "devaneio.rng",
+]
+forbidden_modules = ["sqlalchemy", "sqlite3"]
+
+# O contrato da API (modelos Pydantic) não depende de como o servidor guarda: nada do ORM nem do banco.
+[[tool.importlinter.contracts]]
+name = "Modelos da API não conhecem o banco"
+type = "forbidden"
+source_modules = ["devaneio.server.models"]
+forbidden_modules = [
+    "sqlalchemy",
+    "sqlite3",
+    "devaneio.server.orm",
+    "devaneio.server.database",
 ]
