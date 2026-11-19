@@ -20,7 +20,7 @@ export class HomeStore {
 
   readonly state = this.catalog.state;
   readonly loadError = this.catalog.loadError;
-  /** O servidor tem o editor de campanhas ligado (`--editor`)? Sem ele, a lista não oferece "Nova campanha". */
+  /** O editor de campanhas atende este navegador (o da máquina do servidor)? Sem ele, a lista não oferece "Nova campanha". */
   readonly editorAvailable = this.catalog.editorAvailable;
 
   /** As campanhas, cada uma com quantas mesas guardadas tem. As mesas antigas (sem o id) casam pelo título. */

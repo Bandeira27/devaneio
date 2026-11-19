@@ -8,7 +8,7 @@ import { messageOf } from '@core/api/api-failure';
 export type CatalogState = 'loading' | 'ready' | 'failed';
 
 /**
- * As campanhas que o servidor oferece e se o editor está ligado (`--editor`): a lista de cards da tela inicial e a
+ * As campanhas que o servidor oferece e se o editor atende este navegador (só o da máquina do servidor): a lista de cards da tela inicial e a
  * barra lateral de uma campanha leem daqui, para não perguntar duas vezes. `load` sempre pergunta de novo (a tela
  * inicial o chama a cada visita, e o editor, depois de gravar); `ensure` só pergunta se ainda não há resposta.
  */
@@ -21,7 +21,7 @@ export class CampaignCatalog {
   readonly campaigns = signal<CampaignSummary[]>([]);
   readonly state = signal<CatalogState>('loading');
   readonly loadError = signal('');
-  /** O servidor tem o editor de campanhas ligado? Sem ele, nada oferece o roteiro. */
+  /** O editor de campanhas atende este navegador? Sem ele, nada oferece o roteiro. */
   readonly editorAvailable = signal(false);
   readonly ready = computed(() => this.state() === 'ready');
   /** Há uma pergunta ao servidor em andamento (a lista pode estar prestes a mudar). */
@@ -83,7 +83,7 @@ export class CampaignCatalog {
       await firstValueFrom(this.api.editorCampaigns());
       this.editorAvailable.set(true);
     } catch {
-      this.editorAvailable.set(false); // 404 sem `--editor`, ou o servidor fora do ar: ninguém oferece o roteiro
+      this.editorAvailable.set(false); // 404 com `--sem-editor` ou de fora da máquina do servidor, ou o servidor fora do ar: ninguém oferece o roteiro
     }
   }
 }

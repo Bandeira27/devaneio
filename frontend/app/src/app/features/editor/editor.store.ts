@@ -91,7 +91,7 @@ export class EditorStore {
   readonly justSaved = signal(false);
   /** A conferência não chegou ao servidor (rede, servidor fora): não é erro da campanha, e dá para tentar de novo. */
   readonly checkError = signal('');
-  /** O editor está desligado neste servidor (`--editor` ausente)? */
+  /** O editor não atende este pedido (servidor com `--sem-editor`, ou o app aberto de fora da máquina do servidor)? */
   readonly unavailable = signal(false);
   /** Um aviso curto para o autor (por exemplo, "agora é uma cópia"). */
   readonly info = signal('');

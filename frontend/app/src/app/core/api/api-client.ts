@@ -106,7 +106,7 @@ export class ApiClient {
     );
   }
 
-  // --- editor de campanhas (só com `--editor`; sem ele o servidor responde 404) ----------------------------------
+  // --- editor de campanhas (só da máquina do servidor; de fora, ou com `--sem-editor`, o servidor responde 404) ----------------------------------
 
   /** As campanhas da pasta, com `writable` falso nas que já têm mesa. */
   editorCampaigns(): Observable<EditorCampaign[]> {
