@@ -10,7 +10,7 @@ Criar uma mesa ou entrar por convite é um caminho curto de três passos: **Mesa
 **Sala** (a sala de espera). Os passos ficam visíveis em **toda** tela do caminho, cada uma com o seu como atual (as
 constantes estão em `shared/game/entry-steps.ts`); ao começar a campanha, a mesa deixa de ser entrada e os passos somem.
 O caminho **conduz**: criar a mesa ou aceitar o convite leva direto ao personagem, e quem foi convidado e chega à sala
-sem personagem é levado de volta a ele. O personagem não é um botão a descobrir. O primeiro passo tem tela própria: páginas de lista (as mesas da campanha) só apontam para ele com um botão, sem formulário nem passos embutidos. Só o anfitrião pode seguir sem
+sem personagem é levado de volta a ele. O personagem não é um botão a descobrir. O primeiro passo tem tela própria, em tela cheia como as outras do caminho (fora do quadro com a barra lateral da campanha, para não parecer parte de "Mesas"): páginas de lista (as mesas da campanha) só apontam para ele com um botão, sem formulário nem passos embutidos. Só o anfitrião pode seguir sem
 personagem ("Ir para a mesa sem personagem"); para ele, "Criar personagem" fica na sala como retorno. Quem já tem
 personagem vai direto à sala, com o passo Personagem como feito. A tela larga mostra o contexto ao lado da tarefa; o celular mostra o mais provável primeiro (a tarefa; na home, "Continuar"). O que é técnico
 (endereço do servidor, código do convite) fica em "Opções avançadas", recolhido: o centro do convite é o link e o "Copiar".

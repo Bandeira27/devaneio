@@ -130,7 +130,7 @@ describe('Campanha: visão geral', () => {
     expect(root().textContent).toContain('Um culto desperta.');
     expect(root().querySelector('.overview__actions a')?.textContent).toContain('Criar uma mesa');
     expect(root().querySelector('.overview__actions a')?.getAttribute('href')).toBe(
-      '/c/sombra-do-vale/mesas/nova',
+      '/c/sombra-do-vale/nova-mesa',
     ); // sem mesa, vai direto à tela do passo
   });
 
@@ -185,14 +185,14 @@ describe('Campanha: mesas', () => {
 
   it('a lista só aponta para a tela de criar: um botão, sem formulário nem passos', async () => {
     const app = await open('/c/sombra-do-vale/mesas');
-    const link = app.root().querySelector('a[href="/c/sombra-do-vale/mesas/nova"]');
+    const link = app.root().querySelector('a[href="/c/sombra-do-vale/nova-mesa"]');
     expect(link?.textContent).toContain('Criar uma mesa');
     expect(app.root().querySelector('form')).toBeNull();
     expect(app.root().querySelector('dv-steps')).toBeNull();
   });
 
   it('criar mesa pede o nome, envia a campanha e vai ao passo do personagem', async () => {
-    const app = await open('/c/sombra-do-vale/mesas/nova');
+    const app = await setup('/c/sombra-do-vale/nova-mesa'); // fora do quadro da campanha: nada a perguntar além de criar
     await app.submit();
     expect(app.root().textContent).toContain('Escreva o seu nome.');
     app.http.expectNone('/tables');
@@ -207,13 +207,15 @@ describe('Campanha: mesas', () => {
   });
 
   it('criar mesa é o passo Mesa no palco, à frente do contexto, com saída para a lista', async () => {
-    const app = await open('/c/sombra-do-vale/mesas/nova');
+    const app = await setup('/c/sombra-do-vale/nova-mesa'); // fora do quadro da campanha: nada a perguntar além de criar
     const context = app.root().querySelector('.dv-stage__context');
     expect(context?.firstElementChild?.tagName.toLowerCase()).toBe('dv-steps');
     expect(context?.querySelector('[aria-current="step"]')?.textContent).toContain('Mesa');
     expect(context?.querySelector('a[href="/c/sombra-do-vale/mesas"]')?.textContent).toContain(
       'Voltar às mesas',
     );
+    expect(app.root().querySelector('nav[aria-label="Partes da campanha"]')).toBeNull(); // sem a barra lateral: o foco é o caminho
+    expect(app.root().querySelector('.campaign__link--active')).toBeNull(); // e nada de "Mesas" marcado
   });
 
   it('esquecer uma mesa pode ser desfeito', async () => {

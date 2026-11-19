@@ -17,6 +17,13 @@ export const routes: Routes = [
         title: 'Início',
         loadChildren: () => import('@features/home/home.routes').then((m) => m.HOME_ROUTES),
       },
+      // Criar mesa é o primeiro passo do caminho do anfitrião: fica fora do quadro da campanha, como as outras telas do caminho.
+      {
+        path: 'c/:campaignId/nova-mesa',
+        title: 'Criar uma mesa',
+        loadChildren: () =>
+          import('@features/campaign/new-table.routes').then((m) => m.NEW_TABLE_ROUTES),
+      },
       {
         path: 'c/:campaignId',
         component: CampaignShell,
