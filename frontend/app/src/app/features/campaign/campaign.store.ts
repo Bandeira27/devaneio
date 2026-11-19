@@ -7,6 +7,7 @@ import { messageOf } from '@core/api/api-failure';
 import { CampaignCatalog } from '@core/catalog/campaign-catalog';
 import { SessionStore, type StoredTable } from '@core/session/session-store';
 import { ServerTables } from '@core/tables/server-tables';
+import { TableActionRunner } from '@core/tables/table-action-runner';
 import { normalizeName, validateName } from '@shared/game/names';
 import { ASSUME_HOST_CONFIRM, CLOSE_TABLE_CONFIRM } from '@shared/game/server-tables';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
@@ -64,10 +65,11 @@ export class CampaignStore {
     return (this.serverList() ?? []).filter((table) => !known.has(table.table_id));
   });
 
+  private readonly tableActions = new TableActionRunner();
   /** O que deu errado ao encerrar uma mesa ou assumir o lugar de anfitrião. */
-  readonly serverError = signal('');
+  readonly serverError = this.tableActions.error;
   /** A mesa que está sendo encerrada ou assumida agora (bloqueia os botões das mesas até acabar). */
-  readonly serverBusy = signal<string | null>(null);
+  readonly serverBusy = this.tableActions.busy;
 
   readonly hostName = signal('');
   readonly nameError = signal('');
@@ -104,21 +106,13 @@ export class CampaignStore {
       label: 'Encerrar a mesa',
       data: CLOSE_TABLE_CONFIRM,
     });
-    if (ok !== true) {
-      return false;
-    }
-    this.serverError.set('');
-    this.serverBusy.set(tableId);
-    try {
-      await this.serverTables.close(tableId);
-      await this.loadServer();
-      return true;
-    } catch (error) {
-      this.serverError.set(messageOf(error));
-      return false;
-    } finally {
-      this.serverBusy.set(null);
-    }
+    return (
+      ok === true &&
+      this.tableActions.run(tableId, async () => {
+        await this.serverTables.close(tableId);
+        await this.loadServer();
+      })
+    );
   }
 
   /** Assume o lugar de anfitrião de uma mesa que este navegador não conhece (depois de confirmar) e vai para ela. */
@@ -131,18 +125,11 @@ export class CampaignStore {
       label: 'Assumir como anfitrião',
       data: ASSUME_HOST_CONFIRM,
     });
-    if (ok !== true) {
-      return;
-    }
-    this.serverError.set('');
-    this.serverBusy.set(tableId);
-    try {
-      await this.serverTables.assumeHost(tableId, { id: campaign.id, title: campaign.title });
-      await this.router.navigate(['/mesa', tableId]);
-    } catch (error) {
-      this.serverError.set(messageOf(error));
-    } finally {
-      this.serverBusy.set(null);
+    if (ok === true) {
+      await this.tableActions.run(tableId, async () => {
+        await this.serverTables.assumeHost(tableId, { id: campaign.id, title: campaign.title });
+        await this.router.navigate(['/mesa', tableId]);
+      });
     }
   }
 

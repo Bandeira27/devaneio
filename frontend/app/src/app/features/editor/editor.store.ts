@@ -16,6 +16,7 @@ import { CampaignCatalog } from '@core/catalog/campaign-catalog';
 import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
 import { SessionStore } from '@core/session/session-store';
 import { ServerTables } from '@core/tables/server-tables';
+import { TableActionRunner } from '@core/tables/table-action-runner';
 import {
   addBeat,
   addFact,
@@ -84,10 +85,11 @@ export class EditorStore {
   readonly writable = signal(true);
   /** As mesas do servidor que travam a campanha (só enquanto ela não pode ser regravada). */
   readonly tables = signal<EditorTable[]>([]);
+  private readonly tableActions = new TableActionRunner();
   /** O que deu errado ao encerrar uma mesa ou assumir o lugar de anfitrião. */
-  readonly tablesError = signal('');
+  readonly tablesError = this.tableActions.error;
   /** A mesa que está sendo encerrada ou assumida agora (bloqueia os botões das mesas até acabar). */
-  readonly tableBusy = signal<string | null>(null);
+  readonly tableBusy = this.tableActions.busy;
   readonly systems = signal<SystemInfo[]>([]);
   readonly rules = signal<RulesView | null>(null);
   readonly report = signal<ValidationReport | null>(null);
@@ -506,27 +508,19 @@ export class EditorStore {
       label: 'Encerrar a mesa',
       data: CLOSE_TABLE_CONFIRM,
     });
-    if (ok !== true) {
-      return false;
-    }
-    this.tablesError.set('');
-    this.tableBusy.set(tableId);
-    try {
-      await this.serverTables.close(tableId);
-      const id = this.savedId();
-      const list = await firstValueFrom(this.api.editorCampaigns());
-      this.writable.set(list.find((c) => c.id === id)?.writable ?? true);
-      await this.loadTables();
-      this.info.set(
-        this.writable() ? 'Mesa encerrada. A campanha já pode ser regravada.' : 'Mesa encerrada.',
-      );
-      return true;
-    } catch (error) {
-      this.tablesError.set(messageOf(error));
-      return false;
-    } finally {
-      this.tableBusy.set(null);
-    }
+    return (
+      ok === true &&
+      this.tableActions.run(tableId, async () => {
+        await this.serverTables.close(tableId);
+        const id = this.savedId();
+        const list = await firstValueFrom(this.api.editorCampaigns());
+        this.writable.set(list.find((c) => c.id === id)?.writable ?? true);
+        await this.loadTables();
+        this.info.set(
+          this.writable() ? 'Mesa encerrada. A campanha já pode ser regravada.' : 'Mesa encerrada.',
+        );
+      })
+    );
   }
 
   /** Assume o lugar de anfitrião de uma mesa (depois de confirmar) e vai para ela. */
@@ -540,18 +534,11 @@ export class EditorStore {
       label: 'Assumir como anfitrião',
       data: ASSUME_HOST_CONFIRM,
     });
-    if (ok !== true) {
-      return;
-    }
-    this.tablesError.set('');
-    this.tableBusy.set(tableId);
-    try {
-      await this.serverTables.assumeHost(tableId, { id, title: campaign.title });
-      await this.router.navigate(['/mesa', tableId]);
-    } catch (error) {
-      this.tablesError.set(messageOf(error));
-    } finally {
-      this.tableBusy.set(null);
+    if (ok === true) {
+      await this.tableActions.run(tableId, async () => {
+        await this.serverTables.assumeHost(tableId, { id, title: campaign.title });
+        await this.router.navigate(['/mesa', tableId]);
+      });
     }
   }
 
