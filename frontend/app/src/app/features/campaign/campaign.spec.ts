@@ -195,6 +195,13 @@ describe('Campanha: mesas', () => {
     expect(app.session.get(TABLE_ID)?.campaignId).toBe('sombra-do-vale');
   });
 
+  it('criar mesa mostra o passo Mesa, fora do card, como nas outras telas do caminho', async () => {
+    const app = await open('/c/sombra-do-vale/mesas');
+    const steps = app.root().querySelector('dv-steps');
+    expect(steps?.querySelector('[aria-current="step"]')?.textContent).toContain('Mesa');
+    expect(steps?.closest('.dv-card')).toBeNull();
+  });
+
   it('esquecer uma mesa pode ser desfeito', async () => {
     const app = await setup('/c/sombra-do-vale/mesas');
     app.session.save(TABLE_ID, { ...saved, campaignId: 'sombra-do-vale' });

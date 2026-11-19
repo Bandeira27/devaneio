@@ -7,9 +7,9 @@ export default meta;
 
 export const NoPersonagem: StoryObj = story(
   [DvSteps],
-  `<dv-steps [steps]="['Mesa', 'Personagem', 'Jogar']" [current]="1" />`,
+  `<dv-steps [steps]="['Mesa', 'Personagem', 'Sala']" [current]="1" />`,
 );
 export const NoComeco: StoryObj = story(
   [DvSteps],
-  `<dv-steps [steps]="['Mesa', 'Personagem', 'Jogar']" [current]="0" />`,
+  `<dv-steps [steps]="['Mesa', 'Personagem', 'Sala']" [current]="0" />`,
 );

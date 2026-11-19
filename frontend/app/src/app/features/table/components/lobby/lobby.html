@@ -1,5 +1,5 @@
-<section class="lobby dv-stack" aria-labelledby="sala-titulo">
-  <div class="dv-stack">
+<section class="dv-stage" aria-labelledby="sala-titulo">
+  <div class="dv-stage__context">
     <dv-steps [steps]="steps()" [current]="entryStep.lobby" />
     <h2 class="dv-title" id="sala-titulo">Sala de espera</h2>
     <p class="dv-lede">
@@ -12,95 +12,97 @@
     </p>
   </div>
 
-  <section class="dv-card dv-stack" aria-labelledby="sala-jogadores">
-    <h3 class="dv-section" id="sala-jogadores">Quem está aqui</h3>
-    <ul class="lobby__people">
-      @for (person of people(); track person.id) {
-        <li class="lobby__person">
-          <span class="lobby__name">{{ person.name }}</span>
-          <span class="lobby__badges">
-            @if (person.host) {
-              <dv-badge>anfitrião</dv-badge>
-            }
-            @if (person.you) {
-              <dv-badge>você</dv-badge>
-            }
-            @if (person.characters.length > 0) {
-              <dv-badge tone="ok" icon="ok">{{ person.characters.join(', ') }}</dv-badge>
-            } @else {
-              <dv-badge tone="warn" icon="warn">sem personagem</dv-badge>
-            }
-          </span>
-        </li>
-      }
-    </ul>
-    @if (!store.character()) {
-      <a
-        dvButton="primary"
-        class="lobby__character"
-        [routerLink]="['/mesa', tableId(), 'personagem']"
-      >
-        <dv-icon name="person" size="sm" />Criar personagem
-      </a>
-    }
-  </section>
-
-  @if (store.isHost()) {
-    <section class="dv-card dv-stack" aria-labelledby="sala-convite">
-      <h3 class="dv-section" id="sala-convite">Convidar</h3>
-      @if (link()) {
-        <dv-copy-field label="Link do convite" [text]="link()" />
-      } @else if (!addressError()) {
-        <dv-notice kind="warn">
-          Não encontrei o código do convite desta mesa neste aparelho. Ele fica guardado só no
-          aparelho de quem criou a mesa.
-        </dv-notice>
-      }
-      @if (localWarning()) {
-        <dv-notice>
-          Esse endereço é só deste aparelho: os outros não o alcançam. Troque, logo abaixo, pelo IP
-          do seu computador na rede, como 192.168.0.5:8765.
-        </dv-notice>
-      }
-      <dv-disclosure label="Endereço do convite" [(open)]="advancedOpen">
-        <dv-field
-          label="Endereço do servidor"
-          hint="É o endereço que o celular dos outros alcança, não o seu localhost."
-          [error]="addressError()"
+  <div class="dv-stage__task">
+    <section class="dv-card dv-stack" aria-labelledby="sala-jogadores">
+      <h3 class="dv-section" id="sala-jogadores">Quem está aqui</h3>
+      <ul class="lobby__people">
+        @for (person of people(); track person.id) {
+          <li class="lobby__person">
+            <span class="lobby__name">{{ person.name }}</span>
+            <span class="lobby__badges">
+              @if (person.host) {
+                <dv-badge>anfitrião</dv-badge>
+              }
+              @if (person.you) {
+                <dv-badge>você</dv-badge>
+              }
+              @if (person.characters.length > 0) {
+                <dv-badge tone="ok" icon="ok">{{ person.characters.join(', ') }}</dv-badge>
+              } @else {
+                <dv-badge tone="warn" icon="warn">sem personagem</dv-badge>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+      @if (!store.character()) {
+        <a
+          dvButton="primary"
+          class="lobby__character"
+          [routerLink]="['/mesa', tableId(), 'personagem']"
         >
-          <input
-            dvInput
-            type="text"
-            autocomplete="off"
-            [value]="addressText()"
-            (input)="addressText.set(fieldValue($event))"
-          />
-        </dv-field>
-      </dv-disclosure>
+          <dv-icon name="person" size="sm" />Criar personagem
+        </a>
+      }
     </section>
 
-    <div class="lobby__start dv-stack">
-      @if (startBlock()) {
-        <p id="iniciar-motivo" class="dv-note">{{ startBlock() }}</p>
-      }
-      @if (store.lifecycleError()) {
-        <dv-notice kind="error">{{ store.lifecycleError() }}</dv-notice>
-      }
-      <button
-        dvButton="primary"
-        type="button"
-        class="lobby__go"
-        [dvBlocked]="startBlock() !== ''"
-        [dvLoading]="store.lifecycleBusy()"
-        [attr.aria-describedby]="startBlock() ? 'iniciar-motivo' : null"
-        (click)="start()"
-      >
-        <dv-icon name="play" size="sm" />Iniciar campanha
-      </button>
-    </div>
-  } @else {
-    <p class="lobby__waiting" role="status">
-      <dv-badge tone="info" [pending]="true">Esperando o anfitrião iniciar a campanha…</dv-badge>
-    </p>
-  }
+    @if (store.isHost()) {
+      <section class="dv-card dv-stack" aria-labelledby="sala-convite">
+        <h3 class="dv-section" id="sala-convite">Convidar</h3>
+        @if (link()) {
+          <dv-copy-field label="Link do convite" [text]="link()" />
+        } @else if (!addressError()) {
+          <dv-notice kind="warn">
+            Não encontrei o código do convite desta mesa neste aparelho. Ele fica guardado só no
+            aparelho de quem criou a mesa.
+          </dv-notice>
+        }
+        @if (localWarning()) {
+          <dv-notice>
+            Esse endereço é só deste aparelho: os outros não o alcançam. Troque, logo abaixo, pelo
+            IP do seu computador na rede, como 192.168.0.5:8765.
+          </dv-notice>
+        }
+        <dv-disclosure label="Endereço do convite" [(open)]="advancedOpen">
+          <dv-field
+            label="Endereço do servidor"
+            hint="É o endereço que o celular dos outros alcança, não o seu localhost."
+            [error]="addressError()"
+          >
+            <input
+              dvInput
+              type="text"
+              autocomplete="off"
+              [value]="addressText()"
+              (input)="addressText.set(fieldValue($event))"
+            />
+          </dv-field>
+        </dv-disclosure>
+      </section>
+
+      <div class="lobby__start dv-stack">
+        @if (startBlock()) {
+          <p id="iniciar-motivo" class="dv-note">{{ startBlock() }}</p>
+        }
+        @if (store.lifecycleError()) {
+          <dv-notice kind="error">{{ store.lifecycleError() }}</dv-notice>
+        }
+        <button
+          dvButton="primary"
+          type="button"
+          class="lobby__go"
+          [dvBlocked]="startBlock() !== ''"
+          [dvLoading]="store.lifecycleBusy()"
+          [attr.aria-describedby]="startBlock() ? 'iniciar-motivo' : null"
+          (click)="start()"
+        >
+          <dv-icon name="play" size="sm" />Iniciar campanha
+        </button>
+      </div>
+    } @else {
+      <p class="lobby__waiting" role="status">
+        <dv-badge tone="info" [pending]="true">Esperando o anfitrião iniciar a campanha…</dv-badge>
+      </p>
+    }
+  </div>
 </section>

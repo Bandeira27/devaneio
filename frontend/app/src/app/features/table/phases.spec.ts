@@ -164,6 +164,12 @@ describe('Sala de espera', () => {
     expect(root().querySelector('a[href$="/personagem"]')).toBeNull(); // já tem personagem: nada a criar
   });
 
+  it('os passos abrem a coluna de contexto da sala, o mesmo lugar das outras telas do caminho', async () => {
+    const { root } = await open(mesa, table('lobby', 'player', [BIA]));
+    const context = root().querySelector('.dv-stage__context');
+    expect(context?.firstElementChild?.tagName.toLowerCase()).toBe('dv-steps');
+  });
+
   it('a sala é o último passo do caminho do convidado', async () => {
     const { root } = await open(mesa, table('lobby', 'player', [BIA]));
     expect(root().querySelector('dv-steps [aria-current="step"]')?.textContent).toContain('Sala');
