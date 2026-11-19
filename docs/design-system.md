@@ -86,7 +86,7 @@ está no JSDoc de cada um.
 | `dv-select`                              | escolha de um item numa lista, com rótulo, dica e erro (`select` nativo); "(nenhum)" é a opção de valor vazio                                               |
 | `dv-list-editor`                         | lista editável (locais, NPCs...): itens recolhidos, formulário projetado, subir, descer, remover e acrescentar                                              |
 | `dv-character-card`                      | a ficha (pontos de vida, atributos, inventário): na folha "Ficha" e no painel da mesa larga                                                                 |
-| `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Sala), com o atual marcado                                                                                |
+| `dv-steps`                               | os passos de um caminho curto (Mesa, Personagem, Sala), com o atual marcado                                                                                 |
 | `dv-brand`                               | a marca: selo com a inicial e o nome (cabeçalho `md`, abertura `lg`)                                                                                        |
 | `dv-ornament`                            | filete com losango: abre tela e separa capítulos (decoração)                                                                                                |
 | `dv-icon`                                | conjunto fechado de ícones decorativos                                                                                                                      |
@@ -102,8 +102,8 @@ usam `dvLoading` e mantêm o rótulo.
 **As telas de entrada** (entrar, personagem, sala de espera) usam o **palco** `.dv-stage`: no celular uma coluna; a partir de
 64rem, o contexto à esquerda (passos, título em `.dv-display`, texto, ornamento, resumo da ficha) e a tarefa à direita.
 A **home** é capa + painel: à esquerda a apresentação, a premissa da campanha e as mesas guardadas ("Continuar" na mais
-recente), à direita "Tenho um convite" (recolhido); criar mesa fica em `/c/:id/mesas`. O cabeçalho e todas essas telas se alinham ao mesmo
-contêiner (`--dv-measure-wide`). **Os passos têm um lugar só**: o topo da coluna de contexto, à esquerda, acima do título e fora de cartões. Em criar mesa, que é uma página de lista com formulário, ficam acima do cartão "Criar uma mesa", também à esquerda.
+recente), à direita "Tenho um convite" (recolhido); criar mesa fica em `/c/:id/mesas/nova`. O cabeçalho e todas essas telas se alinham ao mesmo
+contêiner (`--dv-measure-wide`). **Os passos têm um lugar só**: o topo da coluna de contexto, à esquerda, acima do título e fora de cartões. Criar mesa também é uma tela de palco (`/c/:id/mesas/nova`): a lista de mesas só aponta para ela com um botão, porque uma página de lista com formulário não é um passo do caminho.
 
 **Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-title`, `.dv-section`, marca em `text-display`),
 rótulos em caixa-alta com espaçamento (`tracking-label`), superfície, ornamento e cor com papel único (rosa = ação e

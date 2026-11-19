@@ -1,0 +1,33 @@
+<div class="dv-stage">
+  <div class="dv-stage__context">
+    <dv-steps [steps]="steps" [current]="entryStep.start" />
+    <h1 class="dv-display">Criar uma mesa</h1>
+    <p class="dv-lede">
+      Diga como quer ser chamado. No próximo passo você cria o seu personagem e, depois, chama o
+      grupo pela sala de espera.
+    </p>
+    <dv-ornament class="dv-stage__extra" />
+    <a class="dv-back" [routerLink]="['/c', campaignId(), 'mesas']">
+      <dv-icon name="back" size="sm" />Voltar às mesas
+    </a>
+  </div>
+
+  <form class="dv-stage__task dv-card dv-stack" (submit)="$event.preventDefault(); store.create()">
+    <dv-field label="Seu nome" [error]="store.nameError()">
+      <input
+        dvInput
+        type="text"
+        autocomplete="nickname"
+        maxlength="40"
+        [value]="store.hostName()"
+        (input)="store.setHostName(fieldValue($event))"
+      />
+    </dv-field>
+    @if (store.createError()) {
+      <dv-notice kind="error">{{ store.createError() }}</dv-notice>
+    }
+    <button dvButton="primary" type="submit" [dvLoading]="store.creating()">
+      <dv-icon name="add" size="sm" />Criar mesa
+    </button>
+  </form>
+</div>

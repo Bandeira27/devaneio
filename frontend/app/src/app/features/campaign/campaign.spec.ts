@@ -129,6 +129,9 @@ describe('Campanha: visão geral', () => {
     expect(root().querySelector('h1')?.textContent).toContain('A Sombra do Vale');
     expect(root().textContent).toContain('Um culto desperta.');
     expect(root().querySelector('.overview__actions a')?.textContent).toContain('Criar uma mesa');
+    expect(root().querySelector('.overview__actions a')?.getAttribute('href')).toBe(
+      '/c/sombra-do-vale/mesas/nova',
+    ); // sem mesa, vai direto à tela do passo
   });
 
   it('com mesa guardada desta campanha oferece continuar a mais recente', async () => {
@@ -180,8 +183,16 @@ describe('Campanha: mesas', () => {
     expect(items).toEqual([TABLE_ID, '1111111111111111']);
   });
 
-  it('criar mesa pede o nome, envia a campanha e vai ao passo do personagem', async () => {
+  it('a lista só aponta para a tela de criar: um botão, sem formulário nem passos', async () => {
     const app = await open('/c/sombra-do-vale/mesas');
+    const link = app.root().querySelector('a[href="/c/sombra-do-vale/mesas/nova"]');
+    expect(link?.textContent).toContain('Criar uma mesa');
+    expect(app.root().querySelector('form')).toBeNull();
+    expect(app.root().querySelector('dv-steps')).toBeNull();
+  });
+
+  it('criar mesa pede o nome, envia a campanha e vai ao passo do personagem', async () => {
+    const app = await open('/c/sombra-do-vale/mesas/nova');
     await app.submit();
     expect(app.root().textContent).toContain('Escreva o seu nome.');
     app.http.expectNone('/tables');
@@ -195,11 +206,14 @@ describe('Campanha: mesas', () => {
     expect(app.session.get(TABLE_ID)?.campaignId).toBe('sombra-do-vale');
   });
 
-  it('criar mesa mostra o passo Mesa, fora do card, como nas outras telas do caminho', async () => {
-    const app = await open('/c/sombra-do-vale/mesas');
-    const steps = app.root().querySelector('dv-steps');
-    expect(steps?.querySelector('[aria-current="step"]')?.textContent).toContain('Mesa');
-    expect(steps?.closest('.dv-card')).toBeNull();
+  it('criar mesa é o passo Mesa no palco, à frente do contexto, com saída para a lista', async () => {
+    const app = await open('/c/sombra-do-vale/mesas/nova');
+    const context = app.root().querySelector('.dv-stage__context');
+    expect(context?.firstElementChild?.tagName.toLowerCase()).toBe('dv-steps');
+    expect(context?.querySelector('[aria-current="step"]')?.textContent).toContain('Mesa');
+    expect(context?.querySelector('a[href="/c/sombra-do-vale/mesas"]')?.textContent).toContain(
+      'Voltar às mesas',
+    );
   });
 
   it('esquecer uma mesa pode ser desfeito', async () => {

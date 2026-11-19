@@ -102,30 +102,10 @@
     </section>
   }
 
-  <dv-steps [steps]="hostSteps" [current]="entryStep.start" />
-  <section class="dv-card dv-stack" aria-labelledby="titulo-criar">
-    <h2 class="dv-section" id="titulo-criar">Criar uma mesa</h2>
-    <form class="dv-stack" (submit)="$event.preventDefault(); store.create()">
-      <dv-field label="Seu nome" [error]="store.nameError()">
-        <input
-          dvInput
-          type="text"
-          autocomplete="nickname"
-          maxlength="40"
-          [value]="store.hostName()"
-          (input)="store.setHostName(fieldValue($event))"
-        />
-      </dv-field>
-      @if (store.createError()) {
-        <dv-notice kind="error">{{ store.createError() }}</dv-notice>
-      }
-      <button
-        [dvButton]="store.tables().length > 0 ? '' : 'primary'"
-        type="submit"
-        [dvLoading]="store.creating()"
-      >
-        <dv-icon name="add" size="sm" />Criar mesa
-      </button>
-    </form>
-  </section>
+  <a
+    [dvButton]="store.tables().length > 0 ? '' : 'primary'"
+    [routerLink]="['/c', campaignId(), 'mesas', 'nova']"
+  >
+    <dv-icon name="add" size="sm" />Criar uma mesa
+  </a>
 </div>

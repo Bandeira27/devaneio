@@ -10,27 +10,22 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { EditorTable } from '@contract/api_responses';
-import { ENTRY_STEP, HOST_STEPS } from '@shared/game/entry-steps';
 import { tableLine } from '@shared/game/server-tables';
 import { whenOf } from '@shared/game/when';
 import { DvButton } from '@shared/ui/button/button';
-import { DvField } from '@shared/ui/field/field';
-import { fieldValue } from '@shared/ui/field/field-value';
-import { DvInput } from '@shared/ui/field/input';
 import { focusElement } from '@shared/ui/focus';
 import { DvNotice } from '@shared/ui/notice/notice';
-import { DvSteps } from '@shared/ui/steps/steps';
 import { CampaignStore } from '../../campaign.store';
 import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /**
  * As mesas de uma campanha, como o servidor as conhece quando este aparelho o enxerga (continuar, abrir, esquecer neste
- * navegador com desfazer, encerrar, ou assumir o lugar de anfitrião de uma que este navegador não conhece) e criar uma mesa nova, que pede só
- * o nome de quem vai ser o anfitrião.
+ * navegador com desfazer, encerrar, ou assumir o lugar de anfitrião de uma que este navegador não conhece) e levar a criar uma mesa nova (a tela
+ * própria, `NewTablePage`).
  */
 @Component({
   selector: 'dv-campaign-tables-page',
-  imports: [DvIcon, RouterLink, DvButton, DvField, DvInput, DvNotice, DvSteps],
+  imports: [DvIcon, RouterLink, DvButton, DvNotice],
   providers: [CampaignStore],
   templateUrl: './tables-page.html',
   styleUrl: './tables-page.css',
@@ -40,9 +35,6 @@ export class TablesPage {
   /** O id da campanha, da rota `/c/:campaignId`. */
   readonly campaignId = input.required<string>();
 
-  protected readonly fieldValue = fieldValue;
-  protected readonly hostSteps = HOST_STEPS;
-  protected readonly entryStep = ENTRY_STEP;
   protected readonly store = inject(CampaignStore);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
