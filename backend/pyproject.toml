@@ -11,6 +11,10 @@ dependencies = [
     "pydantic>=2.5",
 ]
 
+[project.scripts]
+devaneio = "devaneio.server.__main__:main"  # sobe a mesa e o editor de campanhas
+devaneio-terminal = "devaneio.cli.__main__:main"  # joga sozinho, no terminal
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7",

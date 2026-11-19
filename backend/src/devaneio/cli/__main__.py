@@ -42,7 +42,7 @@ QUIT = ("sair", "quit", "exit")
 
 def main(argv: list[str] | None = None) -> int:
     """Roda a linha de comando; devolve o código de saída do processo."""
-    parser = argparse.ArgumentParser(prog="devaneio", description="Devaneio: mesa de RPG.")
+    parser = argparse.ArgumentParser(prog="devaneio-terminal", description="Devaneio: mesa de RPG.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     new = sub.add_parser("nova", help="cria uma partida a partir de uma campanha")

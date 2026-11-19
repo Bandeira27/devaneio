@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Abre o Devaneio: prepara o que falta (ambiente do backend e app) e sobe a mesa com o editor de campanhas.
+#   ./devaneio                     sobe e abre o navegador em http://localhost:8765
+#   ./devaneio --host 0.0.0.0      abre a mesa para a rede de casa (o editor segue só neste computador)
+#   ./devaneio --help              todas as opções do servidor
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+venv="$root/backend/.venv"
+site="$root/frontend/app/dist/devaneio/browser"
+
+need() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "erro: preciso do '$1' instalado ($2)." >&2
+        exit 1
+    fi
+}
+
+if [[ ! -x "$venv/bin/devaneio" ]]; then
+    need uv "https://docs.astral.sh/uv/"
+    echo "Preparando o backend (só na primeira vez)..." >&2
+    (cd "$root/backend" && uv venv && uv pip install -e .)
+fi
+
+if [[ ! -f "$site/index.html" ]]; then
+    need npm "Node 24.15 ou mais novo, https://nodejs.org/"
+    echo "Construindo o app (só na primeira vez; demora um pouco)..." >&2
+    (cd "$root/frontend/app" && npm install && npm run build)
+fi
+
+cd "$root"
+exec "$venv/bin/devaneio" "$@"
