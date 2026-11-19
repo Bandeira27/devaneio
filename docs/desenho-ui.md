@@ -28,16 +28,16 @@ anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)
   por CSP restrita, escape do Angular e proibição de `innerHTML` e `bypassSecurityTrust*` por lint (que entra com o app).
 - **Estado:** signals em serviços por feature. **Um tema**, com todas as cores em OKLCH num arquivo de tokens.
 - **Botões** para as ações, com chat opcional para digitar comandos; o texto livre pelo LLM segue como ação.
-- **Mesa primeiro, editor depois.** O editor (depois) só existe com `--editor` e só em localhost.
+- **Mesa primeiro, editor depois.** O editor só atende a máquina do servidor (localhost), sem flag.
 
 ## Navegação por campanha
 
 `/` lista as campanhas em cards; `/c/:campaignId` é o quadro da campanha (`layout/campaign-shell`, com a barra lateral) e
-tem como filhas a visão geral, as mesas (`/mesas`) e o roteiro (`/roteiro/...`, o editor de campanhas, só com `--editor`).
+tem como filhas a visão geral, as mesas (`/mesas`) e o roteiro (`/roteiro/...`, o editor de campanhas, só para quem abre por localhost).
 A mesa em jogo (`/mesa/:tableId/...`) e as telas de entrada ficam fora do quadro, em tela cheia. As páginas de dentro
 leem o `campaignId` da rota de fora (`paramsInheritanceStrategy: 'always'`). Cada mesa guardada neste aparelho anota o id da
-campanha (`StoredTable.campaignId`; as antigas casam pelo título); o catálogo de campanhas e a pergunta "o editor está
-ligado?" vivem num serviço só (`core/catalog`). O desenho de interação está em [`padroes-de-interacao.md`](padroes-de-interacao.md).
+campanha (`StoredTable.campaignId`; as antigas casam pelo título); o catálogo de campanhas e a pergunta "o editor atende
+este navegador?" vivem num serviço só (`core/catalog`). O desenho de interação está em [`padroes-de-interacao.md`](padroes-de-interacao.md).
 
 ## Fases da mesa
 

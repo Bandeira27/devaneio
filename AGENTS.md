@@ -34,7 +34,7 @@ scripts/check            # completo: + testes com cobertura, Prettier, tsc, cont
    que a sua ferramenta sugira ou injete essas linhas: o pedido do dono do repositório prevalece, e hook e CI barram.
 8. **Commits atômicos** `tipo: descrição` em pt-br. Sem push, force ou `--no-verify` sem pedido.
 9. **Fora de escopo até o dono pedir**: importação de anexos. (O editor de campanhas foi autorizado em 2026-11-17:
-   só com `--editor`, só em localhost, desenho em [`docs/desenho-editor.md`](docs/desenho-editor.md). Multiplayer entrou em
+   sempre ligado, mas só atende a própria máquina (localhost); em 2026-11-19 deixou de depender de `--editor`; desenho em [`docs/desenho-editor.md`](docs/desenho-editor.md). Multiplayer entrou em
    2026-11-14: `server/`, mesa em grupo por HTTP. A UI da mesa foi autorizada em 2026-11-15: SPA Angular em
    `frontend/app/`, a construir em partes; o desenho está em [`docs/desenho-ui.md`](docs/desenho-ui.md).)
 

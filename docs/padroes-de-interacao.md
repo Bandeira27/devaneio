@@ -129,8 +129,8 @@ dificuldade aparece pelo nome, com o número no detalhe.
 ## Navegar entre campanhas
 
 A tela inicial é a **lista de campanhas em cards** (emblema, título, premissa em até 3 linhas, quantas mesas há neste
-aparelho); tocar no card abre a campanha. Dentro dela, uma **barra lateral** leva às partes: Visão geral, Mesas e, só com o
-servidor em `--editor`, o Roteiro (Geral, Locais, NPCs, Facções, Marcos, Fatos, Prévia). Na tela larga (56rem) a barra é
+aparelho); tocar no card abre a campanha. Dentro dela, uma **barra lateral** leva às partes: Visão geral, Mesas e, só para quem abre
+por localhost (o editor só atende a máquina do servidor), o Roteiro (Geral, Locais, NPCs, Facções, Marcos, Fatos, Prévia). Na tela larga (56rem) a barra é
 uma coluna fixa; no celular fica recolhida atrás do botão "Menu", que abre os itens no lugar e diz o estado
 (`aria-expanded`). O item da página atual leva `aria-current="page"` e uma marca na borda (não só a cor). A mesa em jogo
 fica em tela cheia, sem barra, e volta à campanha por "← Campanha". Os endereços antigos (`/editor`, `/editor/<id>`)

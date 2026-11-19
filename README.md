@@ -28,27 +28,43 @@ Você precisa de Python 3.10 ou mais novo e do [uv](https://docs.astral.sh/uv/).
 ```bash
 cd backend
 uv venv && uv pip install -e ".[dev]"
-.venv/bin/python -m devaneio.cli nova ../campaigns/sombra-do-vale.json partida.json
-.venv/bin/python -m devaneio.cli jogar partida.json
+.venv/bin/devaneio-terminal nova ../campaigns/sombra-do-vale.json partida.json
+.venv/bin/devaneio-terminal jogar partida.json
 ```
 
 Dentro do jogo, digite `ajuda` para ver os comandos. Os mais usados: `olhar`, `entrar <id> "<nome>"`,
 `ir <local>`, `testar <habilidade> <dificuldade>`, `atacar <arma> <alvo>`, `ficha`, `fim` e `sair`.
 
-## Jogar com os amigos
+## Criar e gerenciar suas campanhas
 
-Quem hospeda roda o servidor e manda um link; os outros entram pelo navegador, sem instalar nada.
+Quem hospeda cria e edita campanhas no próprio navegador, sem mexer em JSON. Você precisa de [uv](https://docs.astral.sh/uv/)
+e de Node 24.15 ou mais novo. Na pasta do projeto, um comando só:
 
 ```bash
-cd frontend/app && npm install && npm run build      # uma vez; precisa de Node 24.15 ou mais novo
-cd ../../backend
-.venv/bin/python -m devaneio.server --campanhas ../campaigns --dados ../mesas \
-  --web ../frontend/app/dist/devaneio/browser
+./devaneio
 ```
 
-Abra `http://localhost:8765` no navegador, crie a mesa, escolha a campanha e copie o link do convite. Para os amigos
-entrarem pela mesma rede, troque `localhost` pelo endereço do seu computador na rede (algo como `192.168.0.5:8765`)
-e use `--host 0.0.0.0`. A mesa roda em HTTP simples, então é para rede de casa, não para a internet.
+Na primeira vez ele prepara o backend e constrói o app (demora um pouco); depois sobe direto. Ele repassa as opções ao
+servidor (`./devaneio --help` lista todas).
+
+O navegador abre em `http://localhost:8765`, na lista de campanhas. O card **Nova campanha** abre o editor: locais, NPCs,
+facções, marcos e fatos, com os erros em português, avisos de autoria e uma prévia do que o jogador e a IA veem.
+Campanha que já tem mesa não é sobrescrita: o editor oferece salvar uma cópia.
+
+O editor só atende **o computador que roda o servidor**, aberto por `localhost`. Os amigos que entram pela rede nunca o
+veem, e abrir pelo endereço da rede (`192.168.x.x`) também não o libera. Se você expõe o servidor por proxy ou túnel,
+suba com `--sem-editor`: a guarda não os cobre. Quer desligá-lo? Use `--sem-editor`. O desenho está em [`docs/desenho-editor.md`](docs/desenho-editor.md).
+
+## Jogar com os amigos
+
+Quem hospeda roda o servidor e manda um link; os outros entram pelo navegador, sem instalar nada. O comando é o mesmo
+da seção anterior; se preferir escolher as pastas, use `--campanhas`, `--dados` e `--web`. Com o ambiente já
+instalado, `devaneio` (em `backend/.venv/bin`) faz o mesmo que `./devaneio`, sem preparar nada.
+
+Crie a mesa, escolha a campanha e copie o link do convite. Para os amigos entrarem pela mesma rede, suba com
+`./devaneio --host 0.0.0.0` e troque `localhost` no link pelo endereço do seu computador na rede (algo como `192.168.0.5:8765`).
+Você segue abrindo o seu navegador por `localhost` para editar. A mesa roda em HTTP simples, então é para rede de casa,
+não para a internet.
 
 A API que o app usa está em [`docs/api-http.md`](docs/api-http.md).
 

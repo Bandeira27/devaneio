@@ -162,17 +162,24 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
     aceito (XSS leria o token), reduzido por CSP e pelo lint. **Pré-condição do editor de campanhas:** validar o
     cabeçalho `Host` e responder só em localhost, contra DNS rebinding.
 
-25. **O editor de campanhas escreve arquivo sem login, então a defesa é o lugar.** Só existe com `--editor`; o servidor
-    **recusa subir** com `--editor` fora de loopback (`127.0.0.1`, `::1`, `localhost`). Com ele ligado, todo pedido
-    confere `Host` (só `localhost`, `127.0.0.1` ou `[::1]`, com a porta do servidor: contra DNS rebinding) e, em
-    `POST`/`PUT`, o `Origin` quando vier (precisa ser o próprio servidor: contra CSRF); senão `403`. Sem `--editor`,
-    `/editor/*` é `404`. O id da campanha é o único dado que vira nome de arquivo: slug (`^[a-z0-9][a-z0-9_-]*$`), sempre
+25. **O editor de campanhas escreve arquivo sem login, então a defesa é o lugar, conferida por pedido.** Está sempre
+    ligado (`--sem-editor` desliga), mesmo com o servidor escutando na rede (`--host 0.0.0.0`), mas **só atende a própria
+    máquina**. Em `/editor/*` tudo precisa valer, e o que falha em quem nem devia saber do editor é `404`: servidor sem
+    `--sem-editor`, conexão vinda de loopback (`127.0.0.0/8`, `::1`, IPv4 mapeado; o endereço da própria rede não vale) e
+    nenhum cabeçalho de proxy ou túnel (`Forwarded`, `X-Forwarded-*`, `X-Real-IP`). Depois, `403` se o `Host` não for
+    `localhost`, `127.0.0.1` ou `[::1]` com a porta do servidor (contra DNS rebinding) ou, em `POST`/`PUT`, se o `Origin`
+    que vier não for o próprio servidor (contra CSRF). Com o servidor escutando só em loopback (o padrão), o `Host` local
+    também vale em toda requisição; escutando na rede, só no editor, porque os jogadores entram pelo `Host` da rede.
+    **A guarda não cobre proxy local:** um proxy na mesma máquina (o `nginx` com `proxy_pass http://127.0.0.1:porta`,
+    por exemplo) reescreve o `Host` para o endereço local e, por padrão, não manda cabeçalho de encaminhamento: todo
+    pedido remoto passaria por local e alcançaria o editor. Quem expõe o servidor por proxy ou túnel sobe com
+    `--sem-editor`. WSL2,
+    contêiner e máquina virtual falham fechado (o editor some). O id da campanha é o único dado que vira nome de arquivo: slug (`^[a-z0-9][a-z0-9_-]*$`), sempre
     `<pasta de campanhas>/<id>.json`, nunca caminho vindo da requisição; a escrita é atômica (arquivo temporário e
     `os.replace`) e só acontece sem erro de validação. **Campanha com mesa não é sobrescrita** (as mesas releem o arquivo):
     o editor cria ou copia. O corpo do editor tem teto próprio (512 KiB). `create` e `update` rodam sob um lock e `create` usa `os.link`, então
     dois pedidos com o mesmo id não se sobrescrevem; **risco aceito:** uma mesa criada no instante entre a checagem de uso e
-    a troca do arquivo de uma campanha passa a reler o arquivo novo. A guarda de `Host`/`Origin` vale para toda requisição
-    enquanto o editor está ligado. A prévia (`POST /editor/preview`) mostra ao autor o contexto do LLM **com** os segredos (`private_notes`, fatos
+    a troca do arquivo de uma campanha passa a reler o arquivo novo. A prévia (`POST /editor/preview`) mostra ao autor o contexto do LLM **com** os segredos (`private_notes`, fatos
     ocultos) por desenho, para ele conferir o que vazaria com `--segredos-no-llm`: por isso ela só existe sob as mesmas
     guardas, não grava nada e o app a guarda só em memória. Os testes estão em `test_server_editor.py`.
 
