@@ -12,7 +12,6 @@
 }
 
 .saved__forget {
-  min-height: var(--dv-touch);
   color: var(--dv-text-muted);
 }
 
@@ -30,6 +29,7 @@
 
 .saved__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--dv-space-2);
 }

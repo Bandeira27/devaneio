@@ -9,6 +9,8 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import type { EditorTable } from '@contract/api_responses';
+import { tableLine } from '@shared/game/server-tables';
 import { whenOf } from '@shared/game/when';
 import { DvButton } from '@shared/ui/button/button';
 import { DvField } from '@shared/ui/field/field';
@@ -19,7 +21,8 @@ import { CampaignStore } from '../../campaign.store';
 import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /**
- * As mesas de uma campanha neste aparelho (continuar, abrir ou esquecer, com desfazer) e criar uma mesa nova, que pede só
+ * As mesas de uma campanha, como o servidor as conhece quando este aparelho o enxerga (continuar, abrir, esquecer neste
+ * navegador com desfazer, encerrar, ou assumir o lugar de anfitrião de uma que este navegador não conhece) e criar uma mesa nova, que pede só
  * o nome de quem vai ser o anfitrião.
  */
 @Component({
@@ -38,6 +41,7 @@ export class TablesPage {
   protected readonly store = inject(CampaignStore);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly line = (table: EditorTable): string => tableLine(table, Date.now());
   protected readonly when = (time: number): string => whenOf(time, Date.now());
 
   constructor() {

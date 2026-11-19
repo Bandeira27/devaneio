@@ -21,8 +21,23 @@
             ><dv-icon name="table" size="sm" />Ver as mesas</a
           >
         </div>
+      } @else if (store.serverOnly().length > 0) {
+        <p>
+          Esta campanha tem {{ store.serverOnly().length }}
+          {{ store.serverOnly().length === 1 ? 'mesa' : 'mesas' }} neste servidor que este navegador
+          ainda não conhece.
+        </p>
+        <div class="overview__actions">
+          <a dvButton="primary" [routerLink]="['/c', campaign.id, 'mesas']"
+            ><dv-icon name="table" size="sm" />Ver as mesas</a
+          >
+        </div>
       } @else {
-        <p>Você ainda não tem mesa nesta campanha, neste aparelho.</p>
+        <p>
+          Você ainda não tem mesa nesta campanha{{
+            store.serverList() === null ? ', neste aparelho' : ''
+          }}.
+        </p>
         <div class="overview__actions">
           <a dvButton="primary" [routerLink]="['/c', campaign.id, 'mesas']"
             ><dv-icon name="add" size="sm" />Criar uma mesa</a
