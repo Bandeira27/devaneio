@@ -109,7 +109,7 @@ describe('contraste dos tokens', () => {
   });
 
   it.each(SURFACES)('o contorno de controle e o anel de foco passam de 3:1 em %s', (surface) => {
-    for (const name of ['--dv-border-control', '--dv-focus-ring']) {
+    for (const name of ['--dv-border-control', '--dv-focus-ring', '--dv-scrollbar-thumb']) {
       expect(contrast(color(name), color(surface)), name).toBeGreaterThanOrEqual(NON_TEXT);
     }
   });

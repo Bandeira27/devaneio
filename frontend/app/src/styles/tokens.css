@@ -50,6 +50,11 @@
   --dv-border-disabled: var(--dv-line);
   --dv-focus-ring: var(--dv-accent);
 
+  /* Barra de rolagem: a haste é um controle de arrastar (>= 3:1); a trilha some, como margem de papel */
+  --dv-scrollbar-thumb: oklch(64% 0.04 90);
+  --dv-scrollbar-thumb-hover: var(--dv-text-muted);
+  --dv-scrollbar-track: transparent;
+
   /* Fundo que escurece o que está atrás de uma folha */
   --dv-scrim: oklch(10% 0.01 81 / 0.6);
 

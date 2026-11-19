@@ -6,6 +6,9 @@
 
 html {
   color-scheme: dark;
+  /* Barra de rolagem do sistema no tom do app (herdada por todo contêiner que rola). */
+  scrollbar-width: thin;
+  scrollbar-color: var(--dv-scrollbar-thumb) var(--dv-scrollbar-track);
   /* A barra de ações fixa não cobre o que ganha foco nem o fim da rolagem. */
   scroll-padding-bottom: var(--dv-dock-height);
   /* O mesmo para a linha de situação presa no topo da mesa, no celular. */
@@ -22,6 +25,13 @@ body {
   font-family: var(--dv-font-ui);
   font-size: var(--dv-text-ui);
   line-height: var(--dv-leading-ui);
+}
+
+/* A haste clareia sob o ponteiro; a propriedade é padrão, então vale onde há `scrollbar-color`. */
+@media (hover: hover) {
+  :hover {
+    scrollbar-color: var(--dv-scrollbar-thumb-hover) var(--dv-scrollbar-track);
+  }
 }
 
 a {
