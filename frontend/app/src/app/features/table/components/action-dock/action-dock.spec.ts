@@ -194,6 +194,10 @@ describe('Ações da mesa', () => {
     await app.settle();
     app.commandRequest().flush(commandResult({ text: 'Você vê uma vila.' }));
     await answerReread(app);
+    expect(app.root().querySelector('dv-action-dock')?.textContent).not.toContain(
+      'Você vê uma vila.',
+    ); // a resposta espera a vez
+    await app.reveal();
     expect(app.root().querySelector('dv-action-dock')?.textContent).toContain('Você vê uma vila.');
   });
 
@@ -316,6 +320,8 @@ describe('Ações da mesa', () => {
     expect(app.root().querySelector('.dock__said')?.textContent).toContain('Você: “Olho o altar.”'); // o eco do que disse
     request.flush({ ...commandResult(), say: 'O altar range.', commands: [] });
     await answerReread(app);
+    expect(app.root().querySelector('dv-action-dock')?.textContent).not.toContain('O altar range.');
+    await app.reveal();
     expect(app.root().querySelector('dv-action-dock')?.textContent).toContain('O altar range.');
     expect(app.root().querySelector('.dock__said')).toBeNull(); // o eco some quando o mestre responde
   });

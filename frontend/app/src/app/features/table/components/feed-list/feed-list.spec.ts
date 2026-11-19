@@ -26,71 +26,20 @@ class Host {
   readonly loaded = signal(false);
 }
 
-describe('FeedList: a fila dos itens novos', () => {
-  async function render() {
-    const fixture = TestBed.createComponent(Host);
-    await fixture.whenStable();
-    const root = fixture.nativeElement as HTMLElement;
-    const steps = () =>
-      Array.from(root.querySelectorAll<HTMLElement>('.feed__event--new')).map((el) =>
-        el.style.getPropertyValue('--step'),
-      );
-    return { fixture, host: fixture.componentInstance, root, steps };
-  }
-
-  it('a carga inicial entra sem fila e sem animar', async () => {
-    const { fixture, host, root } = await render();
-    host.loaded.set(true);
-    await fixture.whenStable();
-    expect(root.querySelectorAll('.feed__event--new').length).toBe(0);
-  });
-
-  it('os itens de um golpe entram um de cada vez, na ordem', async () => {
-    const { fixture, host, steps } = await render();
-    host.loaded.set(true);
-    await fixture.whenStable();
-    host.items.set([event(0), event(1), event(2), event(3)]);
-    await fixture.whenStable();
-    expect(steps()).toEqual(['1', '2', '3']);
-  });
-
-  it('um lote grande entra todo de uma vez', async () => {
-    const { fixture, host, steps } = await render();
-    host.loaded.set(true);
-    await fixture.whenStable();
-    host.items.set([0, 1, 2, 3, 4, 5, 6].map(event));
-    await fixture.whenStable();
-    expect(steps().every((step) => step === '0')).toBe(true);
-  });
-
-  it('um toque no feed pula a espera, e um lote novo volta à fila', async () => {
-    const { fixture, host, root, steps } = await render();
-    host.loaded.set(true);
-    await fixture.whenStable();
-    host.items.set([event(0), event(1), event(2)]);
-    await fixture.whenStable();
-    expect(steps()).toEqual(['1', '2']);
-    (root.querySelector('dv-feed-list') as HTMLElement).click();
-    await fixture.whenStable();
-    expect(steps()).toEqual(['0', '0']);
-    host.items.set([event(0), event(1), event(2), event(3)]);
-    await fixture.whenStable();
-    expect(steps()).toEqual(['1', '2', '1']); // o lote novo (um item) volta a esperar a sua vez; os antigos já tocaram
-  });
-});
-
-describe('FeedList: acompanhar a fila', () => {
+describe('FeedList', () => {
   let scrolled: ReturnType<typeof vi.fn>;
+  let reduced = false;
 
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    reduced = false;
     scrolled = vi.fn();
     Element.prototype.scrollIntoView =
       scrolled as unknown as typeof Element.prototype.scrollIntoView;
+    vi.stubGlobal('matchMedia', () => ({ matches: reduced }));
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    vi.unstubAllGlobals();
     Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
   });
 
@@ -104,36 +53,38 @@ describe('FeedList: acompanhar a fila', () => {
     return { fixture, host: fixture.componentInstance, root: fixture.nativeElement as HTMLElement };
   }
 
-  it('o que chega leva a tela até o item novo, mesmo de quem está no topo', async () => {
-    const { fixture, host } = await loaded();
+  it('a carga inicial entra sem animar', async () => {
+    const { root } = await loaded();
+    expect(root.querySelectorAll('.feed__event--new').length).toBe(0);
+  });
+
+  it('o item que aparece depois anima e a tela vai até ele, de forma suave', async () => {
+    const { fixture, host, root } = await loaded();
     host.items.set([event(0), event(1)]);
     await fixture.whenStable();
-    vi.runAllTimers();
-    expect(scrolled).toHaveBeenCalled();
-    const element = scrolled.mock.contexts.at(-1) as HTMLElement;
-    expect(element.getAttribute('data-key')).toBe('e1');
+    await Promise.resolve();
+    expect(root.querySelectorAll('.feed__event--new').length).toBe(1);
+    expect((scrolled.mock.contexts.at(-1) as HTMLElement).getAttribute('data-key')).toBe('e1');
+    expect(scrolled).toHaveBeenLastCalledWith({ block: 'nearest', behavior: 'smooth' });
   });
 
-  it('cada item da fila recebe a tela quando começa a aparecer, na ordem', async () => {
+  it('com movimento reduzido a rolagem é direta', async () => {
     const { fixture, host } = await loaded();
-    host.items.set([event(0), event(1), event(2)]);
+    reduced = true;
+    host.items.set([event(0), event(1)]);
     await fixture.whenStable();
-    vi.runAllTimers();
-    const keys = scrolled.mock.contexts.map((el) => (el as HTMLElement).getAttribute('data-key'));
-    expect(keys).toEqual(['e1', 'e2']);
+    await Promise.resolve();
+    expect(scrolled).toHaveBeenLastCalledWith({ block: 'nearest', behavior: 'auto' });
   });
 
-  it('um toque pula a espera e leva a tela ao fim', async () => {
+  it('um toque no feed não pula nada: não há o que pular', async () => {
     const { fixture, host, root } = await loaded();
-    host.items.set([event(0), event(1), event(2)]);
+    host.items.set([event(0), event(1)]);
     await fixture.whenStable();
+    await Promise.resolve();
     scrolled.mockClear();
     (root.querySelector('dv-feed-list') as HTMLElement).click();
     await Promise.resolve();
-    vi.runAllTimers();
-    expect(scrolled).toHaveBeenCalledWith({ block: 'end' });
-    expect(scrolled.mock.contexts.some((el) => (el as HTMLElement).getAttribute('data-key'))).toBe(
-      false,
-    ); // nada mais é agendado
+    expect(scrolled).not.toHaveBeenCalled();
   });
 });

@@ -7,6 +7,7 @@ import type {
   WeaponInfo,
 } from '@contract/api_responses';
 import type { LifecycleRequest } from '@contract/api_requests';
+import type { TableView } from '@contract/api_responses';
 import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '@core/api/api-client';
 import { isRetryable, messageOf } from '@core/api/api-failure';
@@ -14,6 +15,7 @@ import { LiveFeed, LiveStatus } from '@core/live/live-feed';
 import { TableLive } from '@core/live/table-live';
 import { SessionStore } from '@core/session/session-store';
 import { buildFeed } from '@shared/game/feed';
+import { revealTextLength } from '@shared/game/reveal';
 import { llmNoticeOf } from '@shared/game/llm-notice';
 import type { LoadState } from '@shared/game/load-state';
 import { hostViewOf } from '@shared/game/host';
@@ -27,6 +29,7 @@ import {
   targetsOf,
   turnStatusOf,
 } from './table.derived';
+import { REVEAL_CLOCK, RevealQueue } from './table.reveal';
 import { TableSnapshot } from './table.snapshot';
 
 /**
@@ -49,10 +52,18 @@ export class TableStore implements OnDestroy {
   private readonly actions = new TableActions(this.api, () => this.tableId(), this.snapshot);
   private readonly feed = signal<LiveFeed | null>(null);
   private destroyed = false;
+  /** Todo texto novo espera a sua vez aqui: feed, painel lateral e resposta do dock aparecem juntos e em ordem. */
+  private readonly queue = new RevealQueue(inject(REVEAL_CLOCK));
+  /** As chaves do feed que já podem aparecer: o histórico da abertura e o que a fila já revelou. */
+  private readonly released = signal<ReadonlySet<string>>(new Set());
+  /** As chaves que já entraram na fila ou no histórico (cada item novo é enfileirado uma vez só). */
+  private readonly known = new Set<string>();
+  private seeded = false;
 
   readonly table = this.snapshot.table;
   readonly campaign = this.snapshot.campaign;
-  readonly reply = this.actions.reply;
+  /** A resposta da última ação sem evento, já na vez dela na fila da história (`RevealQueue`). */
+  readonly reply = signal('');
   readonly actionBusy = this.actions.busy;
   readonly saying = this.actions.saying;
   readonly actionError = this.actions.error;
@@ -87,9 +98,21 @@ export class TableStore implements OnDestroy {
   readonly party = computed<Character[]>(() => Object.values(this.table()?.state.characters ?? {}));
   readonly character = computed(() => characterOf(this.table()));
   readonly scene = computed(() => sceneFor(this.table(), this.campaign()));
+  private readonly allItems = computed(() => buildFeed(this.events(), this.talk(), this.turn()));
+  /**
+   * A foto da mesa que a tela mostra (cena, grupo, ficha): só avança para a mais nova quando todo texto daquela
+   * revisão já apareceu. A foto viva (`table`) continua decidindo o que se pode fazer: o botão não libera por espera.
+   */
+  readonly shownTable = signal<TableView | null>(null);
+  readonly shownScene = computed(() => sceneFor(this.shownTable(), this.campaign()));
+  readonly shownParty = computed<Character[]>(() =>
+    Object.values(this.shownTable()?.state.characters ?? {}),
+  );
+  readonly shownCharacter = computed(() => characterOf(this.shownTable()));
   /** O feed da mesa; a nota de como foi resolvido sai em palavras de quem joga (`plainNote`), não com os códigos do sistema. */
   readonly feedItems = computed(() => {
-    const items = buildFeed(this.events(), this.talk(), this.turn());
+    const released = this.released();
+    const items = this.allItems().filter((item) => released.has(item.key));
     const attributes = this.rules()?.attributes ?? [];
     return attributes.length === 0
       ? items
@@ -114,6 +137,21 @@ export class TableStore implements OnDestroy {
   );
 
   constructor() {
+    effect(() => this.syncReveal());
+    effect(() => {
+      const text = this.actions.reply();
+      untracked(() => {
+        if (text === '') {
+          this.reply.set('');
+        } else {
+          this.queue.enqueue(text.length, () => {
+            if (this.actions.reply() === text) {
+              this.reply.set(text); // uma resposta dispensada ou trocada no meio da espera não volta
+            }
+          });
+        }
+      });
+    });
     // A cada revisão nova do fluxo, relê a foto da mesa: hp, turno, quem já agiu, onde o grupo está.
     effect(() => {
       const feed = this.feed();
@@ -127,6 +165,58 @@ export class TableStore implements OnDestroy {
         }
       });
     });
+  }
+
+  /**
+   * Põe na fila o texto novo do feed e decide qual foto da mesa a tela mostra. Os dois passos andam juntos, nesta ordem:
+   * se a foto fosse avaliada antes de o evento entrar na fila, a cena nova apareceria antes da narração.
+   */
+  private syncReveal(): void {
+    const items = this.allItems();
+    const table = this.table();
+    const live = this.feed();
+    const status = this.liveStatus();
+    const revision = live?.revision() ?? 0;
+    const idle = this.queue.idle();
+    untracked(() => {
+      if (!this.seeded) {
+        if (status === 'live') {
+          // A primeira leitura de cada abertura é o histórico: entra de uma vez, sem fila.
+          this.seeded = true;
+          items.forEach((item) => this.known.add(item.key));
+          this.released.set(new Set(this.known));
+        }
+      } else {
+        this.enqueueNew(items);
+      }
+      if (table === null) {
+        this.shownTable.set(null);
+      } else if (
+        this.shownTable() === null ||
+        (idle && this.queue.idle() && table.revision <= revision)
+      ) {
+        this.shownTable.set(table);
+      }
+    });
+  }
+
+  private enqueueNew(items: ReturnType<typeof buildFeed>): void {
+    let carry: string[] = []; // marcadores de turno aparecem junto do primeiro texto do turno
+    for (const item of items) {
+      if (this.known.has(item.key)) {
+        continue;
+      }
+      if (item.type === 'turn') {
+        carry.push(item.key);
+        continue;
+      }
+      const keys = [...carry, item.key];
+      carry = [];
+      keys.forEach((key) => this.known.add(key));
+      this.queue.enqueue(revealTextLength(item), () =>
+        this.released.update((set) => new Set([...set, ...keys])),
+      );
+    }
   }
 
   /** Lê a mesa, as regras e a cena e abre o fluxo ao vivo. */
@@ -161,6 +251,7 @@ export class TableStore implements OnDestroy {
   /** Tira da tela a resposta e o erro da última ação. */
   dismissFeedback(): void {
     this.actions.dismiss();
+    this.reply.set('');
   }
 
   /** Relê a mesa agora (a sala de espera faz isso de tempos em tempos: entrar na mesa não gera evento). */
@@ -205,6 +296,7 @@ export class TableStore implements OnDestroy {
   ngOnDestroy(): void {
     this.destroyed = true;
     this.snapshot.stop();
+    this.queue.dispose();
     this.feed()?.stop();
   }
 

@@ -70,7 +70,7 @@ export class TablePage {
   private readonly feed = viewChild(FeedList);
   private lastSceneName: string | undefined;
   /** O nome da cena: o `computed` só avisa quando o texto muda, não a cada leitura nova da mesa. */
-  private readonly sceneName = computed(() => this.store.scene()?.name);
+  private readonly sceneName = computed(() => this.store.shownScene()?.name);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly story = viewChild<ElementRef<HTMLElement>>('story');

@@ -145,7 +145,7 @@
   --dv-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
   --dv-stagger: 60ms;
   --dv-duration-pending: 480ms; /* o pulso de "pendente" (botão, selo, estado): um ritmo só; o narrativo é só da narração */
-  --dv-reveal-step: 1000ms; /* o tempo de ler ~80 caracteres: a fila do feed espera isso por passo, e texto maior segura o seguinte por mais passos */
+  --dv-reveal-step: 1000ms; /* o tempo de ler ~80 caracteres: a fila da mesa espera isso por passo, e texto maior segura o seguinte por mais passos; nem o movimento reduzido o zera */
   --dv-iterations-pending: infinite; /* indicador de pendência: com movimento reduzido roda uma vez */
   --dv-motion-distance: 0.25rem;
 }
@@ -170,7 +170,6 @@
     --dv-duration-narrative: 1ms;
     --dv-duration-pending: 1ms;
     --dv-stagger: 0ms;
-    --dv-reveal-step: 0ms;
     --dv-iterations-pending: 1;
     --dv-motion-distance: 0;
   }

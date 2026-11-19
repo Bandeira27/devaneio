@@ -195,7 +195,7 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
       ],
       npcs: [],
     } as unknown as Campaign;
-    const { root, events, http, settle } = await open(withCharacter(), campaign);
+    const { root, events, http, settle, reveal } = await open(withCharacter(), campaign);
     events('0').flush(eventsView(3));
     await settle();
     const exit = root().querySelector('.scene__list button') as HTMLButtonElement;
@@ -221,6 +221,10 @@ describe('Mesa: situação, novidades e acessibilidade', () => {
     http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaign);
     await settle();
     await settle();
+    expect(root().querySelector('.scene__list button')).not.toBeNull(); // a cena nova espera o fluxo ao vivo chegar a ela
+    events('20').flush(eventsView(4));
+    await settle();
+    await reveal();
     expect(root().querySelector('.scene__list button')).toBeNull(); // a saída tocada deixou de existir
     expect(document.activeElement).toBe(root().querySelector('[aria-label="A história"]'));
   });
@@ -420,12 +424,14 @@ describe('Mesa', () => {
   });
 
   it('só o que chegou depois do carregamento anima a tinta nova', async () => {
-    const { root, events, settle } = await open();
+    const { root, events, settle, reveal } = await open();
     events('0').flush(eventsView(3, [event(1, 1)]));
     await settle();
     expect(root().querySelectorAll('.feed__event--new').length).toBe(0); // a carga inicial entra sem animar
     events('20').flush(eventsView(4, [event(2, 1)]));
     await settle();
+    expect(root().querySelectorAll('.feed__event--new').length).toBe(0); // ainda espera a vez
+    await reveal();
     expect(root().querySelectorAll('.feed__event--new').length).toBe(1);
     expect(root().querySelector('.feed__event--new')?.textContent).toContain('prosa 2');
   });
@@ -449,11 +455,13 @@ describe('Mesa', () => {
   });
 
   it('um evento novo chega pelo long-poll e a mesa é relida (hp, turno, quem agiu)', async () => {
-    const { root, events, http, settle } = await open();
+    const { root, events, http, settle, reveal } = await open();
     events('0').flush(eventsView(3));
     await settle();
     events('20').flush(eventsView(4, [event(3, 2)]));
     await settle();
+    expect(root().textContent).not.toContain('prosa 3'); // a narração espera a vez
+    await reveal();
     expect(root().textContent).toContain('prosa 3');
     const reread = http.expectOne(`/tables/${TABLE_ID}`);
     http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
@@ -464,6 +472,41 @@ describe('Mesa', () => {
     expect(root().querySelector('dv-party-strip dv-pips')?.getAttribute('aria-label')).toBe(
       'pontos de vida: 5 de 10',
     );
+  });
+
+  it('a vida do grupo só muda depois que a narração do golpe aparece', async () => {
+    const { root, events, http, settle, reveal } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    events('20').flush(eventsView(4, [event(3, 2)]));
+    await settle();
+    const reread = http.expectOne(`/tables/${TABLE_ID}`);
+    http.expectOne(`/tables/${TABLE_ID}/campaign`).flush(campaignView());
+    const table = withCharacter({ revision: 4 });
+    (table.state.characters['bia'] ?? { hp: 0 }).hp = 5;
+    reread.flush(table);
+    await settle();
+    const pips = () => root().querySelector('dv-party-strip dv-pips')?.getAttribute('aria-label');
+    expect(pips()).toBe('pontos de vida: 8 de 10'); // ainda esperando a vez do texto
+    await reveal();
+    expect(pips()).toBe('pontos de vida: 5 de 10');
+  });
+
+  it('um lote grande também entra em fila, um item de cada vez', async () => {
+    const { root, events, settle, reveal } = await open();
+    events('0').flush(eventsView(3));
+    await settle();
+    const lote = [3, 4, 5, 6, 7, 8, 9].map((index) => event(index, 2));
+    events('20').flush(eventsView(10, lote));
+    await settle();
+    const shown = () => root().querySelectorAll('.feed__event').length;
+    expect(shown()).toBe(0);
+    await reveal(1);
+    expect(shown()).toBe(1);
+    await reveal(2);
+    expect(shown()).toBe(3);
+    await reveal(60);
+    expect(shown()).toBe(7);
   });
 
   it('sem personagem avisa e leva a criar um', async () => {

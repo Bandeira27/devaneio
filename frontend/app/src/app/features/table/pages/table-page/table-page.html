@@ -101,7 +101,7 @@
       } @else {
         <!-- A ordem aqui é a ordem de leitura e de foco: situação, cena e grupo; a história; a minha ficha (só na tela larga); as ações. -->
         <div class="table__layout">
-          @if (store.scene(); as place) {
+          @if (store.shownScene(); as place) {
             <p #situation class="table__situation" aria-hidden="true">
               <span class="table__situation-place">{{ place.name }}</span>
               @if (store.turnStatus()) {
@@ -116,7 +116,7 @@
                 <span class="table__turn-status">{{ store.turnStatus() }}</span>
               </p>
             }
-            @if (store.scene(); as scene) {
+            @if (store.shownScene(); as scene) {
               <dv-scene-card
                 [scene]="scene"
                 [canGo]="!store.blockedReason() && !store.actionBusy()"
@@ -125,7 +125,7 @@
               />
             }
             <dv-party-strip
-              [characters]="store.party()"
+              [characters]="store.shownParty()"
               [mine]="store.character()?.id ?? null"
               [acted]="store.table()?.acted ?? {}"
               [turn]="store.turn()"
@@ -151,7 +151,7 @@
             }
           </section>
 
-          @if (store.character(); as mine) {
+          @if (store.shownCharacter(); as mine) {
             @if (store.rules(); as rules) {
               <section class="table__mine dv-card dv-card--page" aria-label="Minha ficha">
                 <dv-disclosure [label]="'Ficha de ' + mine.name" [(open)]="mineOpen">
