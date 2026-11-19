@@ -37,15 +37,16 @@
               </button>
               @if (store.serverList() !== null) {
                 <button
-                  dvButton="danger"
+                  dvButton
                   dvSize="sm"
                   type="button"
+                  class="saved__archive"
                   [dvBlocked]="store.serverBusy() !== null"
                   [dvLoading]="store.serverBusy() === table.tableId"
-                  (click)="close(table.tableId)"
-                  [attr.aria-label]="'Encerrar a mesa ' + table.title"
+                  (click)="archive(table.tableId)"
+                  [attr.aria-label]="'Arquivar a mesa ' + table.title"
                 >
-                  <dv-icon name="trash" size="sm" />Encerrar
+                  <dv-icon name="down" size="sm" />Arquivar
                 </button>
               }
             </div>
@@ -74,23 +75,21 @@
                 <dv-icon name="person" size="sm" />Assumir como anfitrião
               </button>
               <button
-                dvButton="danger"
+                dvButton
                 dvSize="sm"
                 type="button"
+                class="saved__archive"
                 [dvBlocked]="store.serverBusy() !== null"
                 [dvLoading]="store.serverBusy() === table.table_id"
-                [attr.aria-label]="'Encerrar: ' + line(table)"
-                (click)="close(table.table_id)"
+                [attr.aria-label]="'Arquivar: ' + line(table)"
+                (click)="archive(table.table_id)"
               >
-                <dv-icon name="trash" size="sm" />Encerrar
+                <dv-icon name="down" size="sm" />Arquivar
               </button>
             </div>
           </li>
         }
       </ul>
-      @if (store.serverError()) {
-        <dv-notice kind="error">{{ store.serverError() }}</dv-notice>
-      }
       @if (store.forgotten(); as gone) {
         <dv-notice animate.leave="dv-leave">
           Mesa “{{ gone.title }}” esquecida neste navegador.
@@ -105,6 +104,71 @@
       Esta campanha ainda não tem mesa. Uma mesa é uma partida: você cria, chama o grupo e o mestre
       de IA conduz.
     </p>
+  }
+
+  @if (store.archivedList().length > 0) {
+    <section class="dv-stack" aria-labelledby="titulo-arquivadas">
+      <h2 class="dv-section" id="titulo-arquivadas">Mesas arquivadas</h2>
+      <p class="dv-note">
+        Saíram do jogo, mas o histórico ficou guardado. Restaurar traz a mesa de volta para a lista,
+        com os mesmos jogadores; a campanha volta a ficar travada para regravar. O anfitrião reabre
+        por “Assumir como anfitrião”.
+      </p>
+      <ul class="saved">
+        @for (table of store.archivedList(); track table.table_id) {
+          <li
+            class="saved__item dv-card dv-card--page"
+            [attr.data-table-id]="table.table_id"
+            animate.leave="dv-leave"
+          >
+            <div class="saved__info">
+              <span class="saved__title">{{ archivedLine(table) }}</span>
+            </div>
+            <div class="saved__actions">
+              <button
+                dvButton
+                dvSize="sm"
+                type="button"
+                class="saved__history"
+                [attr.aria-label]="'Ver o histórico: ' + archivedLine(table)"
+                (click)="store.showHistory(table)"
+              >
+                <dv-icon name="scroll" size="sm" />Ver histórico
+              </button>
+              <button
+                dvButton="primary"
+                dvSize="sm"
+                type="button"
+                class="saved__restore"
+                [dvBlocked]="store.serverBusy() !== null"
+                [dvLoading]="store.serverBusy() === table.table_id"
+                [attr.aria-label]="'Restaurar: ' + archivedLine(table)"
+                (click)="restoreArchived(table.table_id)"
+              >
+                <dv-icon name="up" size="sm" />Restaurar
+              </button>
+              <button
+                dvButton="danger"
+                dvSize="sm"
+                type="button"
+                [dvBlocked]="store.serverBusy() !== null"
+                [attr.aria-label]="'Apagar de vez: ' + archivedLine(table)"
+                (click)="purge(table)"
+              >
+                <dv-icon name="trash" size="sm" />Apagar de vez
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (store.serverError()) {
+    <dv-notice kind="error">{{ store.serverError() }}</dv-notice>
+  }
+  @if (store.done()) {
+    <dv-notice kind="ok" animate.leave="dv-leave">{{ store.done() }}</dv-notice>
   }
 
   <a

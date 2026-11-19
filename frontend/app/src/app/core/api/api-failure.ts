@@ -56,7 +56,8 @@ const FRIENDLY: Readonly<Record<string, string>> = {
   no_characters: 'Crie ao menos um personagem antes de iniciar.',
   invalid_transition: 'Isso não dá para fazer na fase em que a partida está.',
   table_full: 'A mesa está cheia.',
-  table_limit: 'O servidor já tem o máximo de mesas. Tente mais tarde.',
+  table_limit:
+    'O servidor já tem o máximo de mesas. Arquive ou apague outra mesa, ou tente mais tarde.',
   stale_revision: 'A mesa mudou enquanto você agia. Tente de novo.',
   no_character: 'Você ainda não tem personagem nesta mesa. Crie um para agir.',
   say_rate_limited: 'Calma: espere um instante antes de falar de novo.',

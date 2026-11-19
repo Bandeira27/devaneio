@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { EditorTable } from '@contract/api_responses';
+import type { ArchivedLog, ArchivedTable, EditorTable } from '@contract/api_responses';
 import { ApiClient } from '../api/api-client';
 import { SessionStore } from '../session/session-store';
 
@@ -29,10 +29,34 @@ export class ServerTables {
     }
   }
 
-  /** Encerra a mesa no servidor e a esquece neste navegador. A falha sobe, para a tela dizer o que houve. */
-  async close(tableId: string): Promise<void> {
-    await firstValueFrom(this.api.editorCloseTable(tableId));
+  /** As mesas arquivadas da campanha, ou `null` se este aparelho não enxerga o servidor assim. */
+  async listArchived(campaignId: string): Promise<ArchivedTable[] | null> {
+    try {
+      return await firstValueFrom(this.api.editorArchivedTables(campaignId));
+    } catch {
+      return null;
+    }
+  }
+
+  /** Arquiva a mesa no servidor e a esquece neste navegador. A falha sobe, para a tela dizer o que houve. */
+  async archive(tableId: string): Promise<void> {
+    await firstValueFrom(this.api.editorArchiveTable(tableId));
     this.session.forget(tableId);
+  }
+
+  /** Restaura uma mesa arquivada. A falha sobe (campanha mudou, servidor cheio), para a tela dizer o que houve. */
+  async restore(tableId: string): Promise<void> {
+    await firstValueFrom(this.api.editorRestoreTable(tableId));
+  }
+
+  /** Apaga de vez uma mesa arquivada. A falha sobe. */
+  async purge(tableId: string): Promise<void> {
+    await firstValueFrom(this.api.editorPurgeTable(tableId));
+  }
+
+  /** O histórico de uma mesa arquivada. A falha sobe. */
+  history(tableId: string): Promise<ArchivedLog> {
+    return firstValueFrom(this.api.editorTableHistory(tableId));
   }
 
   /** Reemite o acesso do anfitrião e guarda o token novo neste navegador, que passa a conhecer a mesa. */

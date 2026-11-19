@@ -2,6 +2,8 @@ import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
+  ArchivedLog,
+  ArchivedTable,
   Campaign,
   CampaignSummary,
   CampaignView,
@@ -148,9 +150,36 @@ export class ApiClient {
     );
   }
 
-  /** Encerra a mesa: apaga o arquivo dela. Não tem volta. */
-  editorCloseTable(tableId: string): Observable<EditorTableClosed> {
+  /** Arquiva a mesa: sai do jogo e da lista, mas o estado e o log ficam e dá para restaurá-la. */
+  editorArchiveTable(tableId: string): Observable<EditorTableClosed> {
     return this.http.delete<EditorTableClosed>(`/editor/tables/${encodeURIComponent(tableId)}`);
+  }
+
+  /** As mesas arquivadas da campanha, a mais recente primeiro. */
+  editorArchivedTables(campaignId: string): Observable<ArchivedTable[]> {
+    return this.http.get<ArchivedTable[]>(
+      `/editor/campaigns/${encodeURIComponent(campaignId)}/archived-tables`,
+    );
+  }
+
+  /** Traz de volta uma mesa arquivada (os tokens e o convite de antes voltam a valer). */
+  editorRestoreTable(tableId: string): Observable<EditorTable> {
+    return this.http.post<EditorTable>(
+      `/editor/archived-tables/${encodeURIComponent(tableId)}/restore`,
+      null,
+    );
+  }
+
+  /** Apaga de vez uma mesa arquivada, com o histórico. Não tem volta. */
+  editorPurgeTable(tableId: string): Observable<EditorTableClosed> {
+    return this.http.delete<EditorTableClosed>(
+      `/editor/archived-tables/${encodeURIComponent(tableId)}`,
+    );
+  }
+
+  /** O histórico (o log inteiro) de uma mesa arquivada. */
+  editorTableHistory(tableId: string): Observable<ArchivedLog> {
+    return this.http.get<ArchivedLog>(`/editor/archived-tables/${encodeURIComponent(tableId)}/log`);
   }
 
   /** Reemite o acesso do anfitrião: token e convite novos; os antigos deixam de valer. */

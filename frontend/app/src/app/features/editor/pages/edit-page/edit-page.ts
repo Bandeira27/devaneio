@@ -78,9 +78,9 @@ export class EditorPage implements OnInit {
     return tableLine(table, Date.now());
   }
 
-  /** Encerra a mesa; o botão clicado some, então o foco vai à próxima mesa da lista (ou ao título, se não sobrou nenhuma). */
-  protected async closeTable(tableId: string): Promise<void> {
-    if (await this.store.closeTable(tableId)) {
+  /** Arquiva a mesa (depois de confirmar); o foco vai ao próximo botão, porque a linha some. */
+  protected async archiveTable(tableId: string): Promise<void> {
+    if (await this.store.archiveTable(tableId)) {
       afterNextRender(
         () => {
           const root = this.host.nativeElement;

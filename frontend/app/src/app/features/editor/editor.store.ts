@@ -33,7 +33,7 @@ import {
   type ItemKind,
 } from '@shared/game/campaign-edit';
 import { slugify, uniqueId } from '@shared/game/names';
-import { ASSUME_HOST_CONFIRM, CLOSE_TABLE_CONFIRM } from '@shared/game/server-tables';
+import { ASSUME_HOST_CONFIRM, ARCHIVE_TABLE_CONFIRM } from '@shared/game/server-tables';
 import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
@@ -86,9 +86,9 @@ export class EditorStore {
   /** As mesas do servidor que travam a campanha (só enquanto ela não pode ser regravada). */
   readonly tables = signal<EditorTable[]>([]);
   private readonly tableActions = new TableActionRunner();
-  /** O que deu errado ao encerrar uma mesa ou assumir o lugar de anfitrião. */
+  /** O que deu errado ao arquivar uma mesa ou assumir o lugar de anfitrião. */
   readonly tablesError = this.tableActions.error;
-  /** A mesa que está sendo encerrada ou assumida agora (bloqueia os botões das mesas até acabar). */
+  /** A mesa que está sendo arquivada ou assumida agora (bloqueia os botões das mesas até acabar). */
   readonly tableBusy = this.tableActions.busy;
   readonly systems = signal<SystemInfo[]>([]);
   readonly rules = signal<RulesView | null>(null);
@@ -502,22 +502,22 @@ export class EditorStore {
     return this.session.get(tableId) !== null;
   }
 
-  /** Encerra uma mesa (depois de confirmar) e libera a campanha se era a última que a travava. */
-  async closeTable(tableId: string): Promise<boolean> {
+  /** Arquiva uma mesa (depois de confirmar) e libera a campanha se era a última que a travava. */
+  async archiveTable(tableId: string): Promise<boolean> {
     const ok = await this.sheet.open<boolean>(ConfirmSheet, {
-      label: 'Encerrar a mesa',
-      data: CLOSE_TABLE_CONFIRM,
+      label: 'Arquivar a mesa',
+      data: ARCHIVE_TABLE_CONFIRM,
     });
     return (
       ok === true &&
       this.tableActions.run(tableId, async () => {
-        await this.serverTables.close(tableId);
+        await this.serverTables.archive(tableId);
         const id = this.savedId();
         const list = await firstValueFrom(this.api.editorCampaigns());
         this.writable.set(list.find((c) => c.id === id)?.writable ?? true);
         await this.loadTables();
         this.info.set(
-          this.writable() ? 'Mesa encerrada. A campanha já pode ser regravada.' : 'Mesa encerrada.',
+          this.writable() ? 'Mesa arquivada. A campanha já pode ser regravada.' : 'Mesa arquivada.',
         );
       })
     );

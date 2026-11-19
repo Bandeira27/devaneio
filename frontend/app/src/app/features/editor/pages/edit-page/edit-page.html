@@ -35,7 +35,7 @@
         @if (!store.isNew() && !store.writable()) {
           <dv-notice kind="warn">
             Esta campanha já tem mesa, e as mesas a relêem do arquivo: ela não pode ser regravada.
-            Encerre as mesas ou salve uma cópia para mudar.
+            Arquive as mesas ou salve uma cópia para mudar.
             @if (store.tables().length > 0) {
               <ul class="editor__tables">
                 @for (table of store.tables(); track table.table_id) {
@@ -64,15 +64,15 @@
                         </button>
                       }
                       <button
-                        dvButton="danger"
+                        dvButton
                         dvSize="sm"
                         type="button"
                         [dvBlocked]="store.tableBusy() !== null"
                         [dvLoading]="store.tableBusy() === table.table_id"
-                        [attr.aria-label]="'Encerrar: ' + line(table)"
-                        (click)="closeTable(table.table_id)"
+                        [attr.aria-label]="'Arquivar: ' + line(table)"
+                        (click)="archiveTable(table.table_id)"
                       >
-                        <dv-icon name="trash" size="sm" />Encerrar
+                        <dv-icon name="down" size="sm" />Arquivar
                       </button>
                     </span>
                   </li>

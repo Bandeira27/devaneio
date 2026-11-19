@@ -714,7 +714,7 @@ describe('Editor de campanhas: mesas que travam a campanha', () => {
     const { text } = await open('/c/com-mesa/roteiro', { campaign: LOCKED, tables: [TABLE] });
     expect(text()).toContain('Mesa de Ana · em jogo · 2 jogadores · hoje');
     expect(text()).toContain('Assumir como anfitrião');
-    expect(text()).toContain('Encerrar');
+    expect(text()).toContain('Arquivar');
     expect(text()).not.toContain(TABLE.table_id);
   });
 
@@ -736,29 +736,29 @@ describe('Editor de campanhas: mesas que travam a campanha', () => {
     expect(text()).not.toContain('Assumir como anfitrião');
   });
 
-  it('encerrar pede confirmação; cancelar não manda nada', async () => {
+  it('arquivar pede confirmação; cancelar não manda nada', async () => {
     const { http, button, settle, harness } = await open('/c/com-mesa/roteiro', {
       campaign: LOCKED,
       tables: [TABLE],
     });
-    (button('Encerrar') as HTMLButtonElement).click();
+    (button('Arquivar') as HTMLButtonElement).click();
     await settle();
     harness.detectChanges();
-    expect(document.body.textContent).toContain('Isto não tem volta');
+    expect(document.body.textContent).toContain('O histórico fica guardado');
     sheetButton('Voltar')?.click();
     await settle();
     http.expectNone(`/editor/tables/${TABLE.table_id}`);
   });
 
-  it('encerrar a última mesa libera a campanha para gravar', async () => {
+  it('arquivar a última mesa libera a campanha para gravar', async () => {
     const { http, button, settle, text, harness } = await open('/c/com-mesa/roteiro', {
       campaign: LOCKED,
       tables: [TABLE],
     });
-    (button('Encerrar') as HTMLButtonElement).click();
+    (button('Arquivar') as HTMLButtonElement).click();
     await settle();
     harness.detectChanges();
-    sheetButton('Encerrar a mesa')?.click();
+    sheetButton('Arquivar a mesa')?.click();
     await settle();
     const request = http.expectOne(`/editor/tables/${TABLE.table_id}`);
     expect(request.request.method).toBe('DELETE');
@@ -802,15 +802,15 @@ describe('Editor de campanhas: mesas que travam a campanha', () => {
     expect(router.url).toBe(`/mesa/${TABLE.table_id}`);
   });
 
-  it('falha ao encerrar mostra o erro no aviso e mantém a mesa', async () => {
+  it('falha ao arquivar mostra o erro no aviso e mantém a mesa', async () => {
     const { http, button, settle, text, harness } = await open('/c/com-mesa/roteiro', {
       campaign: LOCKED,
       tables: [TABLE],
     });
-    (button('Encerrar') as HTMLButtonElement).click();
+    (button('Arquivar') as HTMLButtonElement).click();
     await settle();
     harness.detectChanges();
-    sheetButton('Encerrar a mesa')?.click();
+    sheetButton('Arquivar a mesa')?.click();
     await settle();
     http
       .expectOne(`/editor/tables/${TABLE.table_id}`)

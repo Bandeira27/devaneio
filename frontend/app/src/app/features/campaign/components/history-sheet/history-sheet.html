@@ -1,0 +1,35 @@
+<dv-sheet-head [title]="'Histórico: ' + data.title" />
+
+@switch (state()) {
+  @case ('loading') {
+    <dv-state kind="loading">Lendo o histórico…</dv-state>
+  }
+  @case ('failed') {
+    <dv-state kind="error">
+      {{ error() }}
+      <button dvStateAction dvButton type="button" [dvLoading]="retrying()" (click)="load()">
+        <dv-icon name="retry" size="sm" />Tentar de novo
+      </button>
+    </dv-state>
+  }
+  @case ('ready') {
+    @if (events().length === 0) {
+      <dv-state kind="empty">Esta mesa não tem nada registrado.</dv-state>
+    } @else {
+      <ol class="history" role="list" aria-label="Eventos da mesa, do primeiro ao último">
+        @for (event of events(); track event.index) {
+          <li class="history__item">
+            <span class="dv-note history__turn">{{
+              event.turn === 0 ? 'Início' : 'Turno ' + event.turn
+            }}</span>
+            <span>{{ event.text }}</span>
+          </li>
+        }
+      </ol>
+    }
+  }
+}
+
+<div class="dv-sheet__foot">
+  <button dvButton type="button" (click)="ref.close()">Fechar</button>
+</div>

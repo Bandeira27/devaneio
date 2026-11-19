@@ -1,0 +1,18 @@
+/* O log é uma lista longa: quem rola é a própria folha (sem rolagem aninhada), com o turno à esquerda do texto. */
+.history {
+  display: grid;
+  gap: var(--dv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history__item {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--dv-space-3);
+}
+
+.history__turn {
+  white-space: nowrap;
+}

@@ -9,8 +9,8 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { EditorTable } from '@contract/api_responses';
-import { tableLine } from '@shared/game/server-tables';
+import type { ArchivedTable, EditorTable } from '@contract/api_responses';
+import { archivedLine, tableLine } from '@shared/game/server-tables';
 import { whenOf } from '@shared/game/when';
 import { DvButton } from '@shared/ui/button/button';
 import { focusElement } from '@shared/ui/focus';
@@ -20,7 +20,7 @@ import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /**
  * As mesas de uma campanha, como o servidor as conhece quando este aparelho o enxerga (continuar, abrir, esquecer neste
- * navegador com desfazer, encerrar, ou assumir o lugar de anfitrião de uma que este navegador não conhece) e levar a criar uma mesa nova (a tela
+ * navegador com desfazer, arquivar, ou assumir o lugar de anfitrião de uma que este navegador não conhece) e levar a criar uma mesa nova (a tela
  * própria, `NewTablePage`).
  */
 @Component({
@@ -39,6 +39,8 @@ export class TablesPage {
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly line = (table: EditorTable): string => tableLine(table, Date.now());
+  protected readonly archivedLine = (table: ArchivedTable): string =>
+    archivedLine(table, Date.now());
   protected readonly when = (time: number): string => whenOf(time, Date.now());
 
   constructor() {
@@ -51,22 +53,27 @@ export class TablesPage {
     this.focusLater('.tables__undo');
   }
 
-  /** Encerra a mesa; a linha some, então o foco vai à próxima ação da lista (ou ao título, se não sobrou nenhuma). */
-  protected async close(tableId: string): Promise<void> {
-    if (await this.store.close(tableId)) {
-      afterNextRender(
-        () => {
-          const root = this.host.nativeElement;
-          const next = root.querySelector<HTMLElement>('.saved__link, .saved__assume');
-          const heading = root.querySelector<HTMLElement>('h1');
-          if (next) {
-            next.focus(); // já é focável: não mexe no `tabindex`
-          } else if (heading) {
-            focusElement(heading);
-          }
-        },
-        { injector: this.injector },
+  /** Arquiva a mesa; a linha vai para “Mesas arquivadas”, então o foco vai à ação dela lá (ou ao título). */
+  protected async archive(tableId: string): Promise<void> {
+    if (await this.store.archive(tableId)) {
+      this.focusLater(`[data-table-id="${tableId}"] .saved__history`, 'h1');
+    }
+  }
+
+  /** Restaura uma mesa arquivada; ela reaparece na lista de cima, então o foco vai à ação dela (ou ao título). */
+  protected async restoreArchived(tableId: string): Promise<void> {
+    if (await this.store.restoreArchived(tableId)) {
+      this.focusLater(
+        `[data-table-id="${tableId}"] .saved__link, [data-table-id="${tableId}"] .saved__assume`,
+        'h1',
       );
+    }
+  }
+
+  /** Apaga de vez uma mesa arquivada (depois de confirmar); o foco vai à próxima arquivada, ou ao título. */
+  protected async purge(table: ArchivedTable): Promise<void> {
+    if (await this.store.purge(table)) {
+      this.focusLater('.saved__history', 'h1');
     }
   }
 
@@ -76,9 +83,22 @@ export class TablesPage {
     this.focusLater(id ? `[data-table-id="${id}"] .saved__link` : '.saved__link');
   }
 
-  private focusLater(selector: string): void {
-    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
-      injector: this.injector,
-    });
+  /** Depois de renderizar, foca o primeiro elemento de `selector`; sem ele, o `fallback` (um título leva `tabindex`). */
+  private focusLater(selector: string, fallback?: string): void {
+    afterNextRender(
+      () => {
+        const root = this.host.nativeElement;
+        const target = root.querySelector<HTMLElement>(selector);
+        if (target) {
+          target.focus();
+        } else if (fallback) {
+          const heading = root.querySelector<HTMLElement>(fallback);
+          if (heading) {
+            focusElement(heading);
+          }
+        }
+      },
+      { injector: this.injector },
+    );
   }
 }

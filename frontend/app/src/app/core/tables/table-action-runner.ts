@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { messageOf } from '../api/api-failure';
 
 /**
- * Roda uma ação sobre uma mesa (encerrar, assumir o lugar de anfitrião) e guarda o que a tela mostra: qual mesa está
+ * Roda uma ação sobre uma mesa (arquivar, restaurar, apagar, assumir o lugar de anfitrião) e guarda o que a tela mostra: qual mesa está
  * ocupada (os botões dela ficam bloqueados, para um segundo toque não repetir o pedido) e a mensagem se a ação falhar.
  * Cada tela cria o seu: o erro de uma não aparece na outra.
  */

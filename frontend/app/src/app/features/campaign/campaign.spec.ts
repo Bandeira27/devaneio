@@ -1,4 +1,4 @@
-import type { EditorTable } from '@contract/api_responses';
+import type { ArchivedTable, EditorTable } from '@contract/api_responses';
 import { TABLE_ID, tableCreated } from '../../testing/fixtures';
 import { setup } from '../../testing/setup';
 
@@ -11,7 +11,11 @@ const EDITOR_LIST = [{ id: 'sombra-do-vale', title: 'A Sombra do Vale', writable
 type App = Awaited<ReturnType<typeof setup>>;
 
 /** O servidor responde à lista de mesas da campanha: `null` é o aparelho que não o enxerga (de fora, ou sem editor). */
-async function answerTables(app: App, rows: EditorTable[] | null = null): Promise<void> {
+async function answerTables(
+  app: App,
+  rows: EditorTable[] | null = null,
+  archived: ArchivedTable[] = [],
+): Promise<void> {
   await app.settle();
   for (const request of app.http.match((r) => r.url.endsWith('/tables'))) {
     if (rows === null) {
@@ -21,6 +25,16 @@ async function answerTables(app: App, rows: EditorTable[] | null = null): Promis
       );
     } else {
       request.flush(rows);
+    }
+  }
+  for (const request of app.http.match((r) => r.url.endsWith('/archived-tables'))) {
+    if (rows === null) {
+      request.flush(
+        { error: { code: 'not_found', message: 'x' } },
+        { status: 404, statusText: 'x' },
+      );
+    } else {
+      request.flush(archived);
     }
   }
   await app.settle();
@@ -302,13 +316,13 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
     expect(app.root().textContent).toContain('Você ainda não tem mesa nesta campanha.');
   });
 
-  it('a lista de mesas mostra a mesa só do servidor, no vocabulário do jogo, com assumir e encerrar', async () => {
+  it('a lista de mesas mostra a mesa só do servidor, no vocabulário do jogo, com assumir e arquivar', async () => {
     const app = await openWithServer('/c/sombra-do-vale/mesas', [SERVER_TABLE]);
     const text = app.root().textContent ?? '';
     expect(text).toContain('Mesas desta campanha');
     expect(text).toContain('Mesa de Ana · em jogo · 2 jogadores · hoje');
     expect(text).toContain('Assumir como anfitrião');
-    expect(text).toContain('Encerrar');
+    expect(text).toContain('Arquivar');
     expect(text).not.toContain(TABLE_ID);
   });
 
@@ -352,14 +366,14 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
     expect(app.router.url).toBe(`/mesa/${TABLE_ID}`);
   });
 
-  it('encerrar confirma, apaga no servidor e atualiza a lista; cancelar não manda nada', async () => {
+  it('arquivar confirma, arquiva no servidor e atualiza a lista; cancelar não manda nada', async () => {
     const app = await openWithServer('/c/sombra-do-vale/mesas', [SERVER_TABLE]);
-    await app.click('[data-table-id] .dv-button--danger');
+    await app.click('[data-table-id] .saved__archive');
     sheetButton('Voltar')?.click();
     await app.settle();
     app.http.expectNone(`/editor/tables/${TABLE_ID}`);
-    await app.click('[data-table-id] .dv-button--danger');
-    sheetButton('Encerrar a mesa')?.click();
+    await app.click('[data-table-id] .saved__archive');
+    sheetButton('Arquivar a mesa')?.click();
     await app.settle();
     const request = app.http.expectOne(`/editor/tables/${TABLE_ID}`);
     expect(request.request.method).toBe('DELETE');
@@ -368,10 +382,10 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
     expect(app.root().querySelector('[data-table-id]')).toBeNull();
   });
 
-  it('se o encerramento falha, o erro aparece e a mesa continua na lista', async () => {
+  it('se o arquivamento falha, o erro aparece e a mesa continua na lista', async () => {
     const app = await openWithServer('/c/sombra-do-vale/mesas', [SERVER_TABLE]);
-    await app.click('[data-table-id] .dv-button--danger');
-    sheetButton('Encerrar a mesa')?.click();
+    await app.click('[data-table-id] .saved__archive');
+    sheetButton('Arquivar a mesa')?.click();
     await app.settle();
     app.http
       .expectOne(`/editor/tables/${TABLE_ID}`)
@@ -382,5 +396,254 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
     await app.settle();
     expect(app.root().textContent).toContain('O servidor falhou');
     expect(app.root().querySelector('[data-table-id]')).not.toBeNull();
+  });
+});
+
+describe('Campanha: mesas arquivadas', () => {
+  const ARCHIVED: ArchivedTable = {
+    table_id: 'aaaaaaaaaaaaaaaa',
+    phase: 'running',
+    host_name: 'Ana',
+    players: 2,
+    updated_at: 1_700_000_000,
+    archived_at: 1_700_000_500,
+  };
+  const OPEN = { error: { code: 'not_found', message: 'x' } };
+
+  /** Abre as mesas da campanha com o editor ligado e uma mesa arquivada no servidor. */
+  async function openArchived() {
+    const app = await setup('/c/sombra-do-vale/mesas');
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    app.http.expectOne('/editor/campaigns').flush(EDITOR_LIST);
+    await answerTables(app, [], [ARCHIVED]);
+    return app;
+  }
+
+  function button(app: App, label: string): HTMLButtonElement | undefined {
+    return Array.from(app.root().querySelectorAll('button')).find((b) =>
+      b.textContent?.includes(label),
+    );
+  }
+
+  it('lista as arquivadas à parte, com o vocabulário do jogo e sem ids', async () => {
+    const app = await openArchived();
+    const text = app.root().textContent ?? '';
+    expect(text).toContain('Mesas arquivadas');
+    expect(text).toContain('Mesa de Ana · em jogo · 2 jogadores · jogada pela última vez');
+    expect(text).not.toContain('aaaaaaaaaaaaaaaa');
+    expect(button(app, 'Restaurar')).toBeDefined();
+    expect(button(app, 'Ver histórico')).toBeDefined();
+    expect(button(app, 'Apagar de vez')).toBeDefined();
+  });
+
+  it('sem arquivadas, a seção nem aparece', async () => {
+    const app = await setup('/c/sombra-do-vale/mesas');
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    app.http.expectOne('/editor/campaigns').flush(EDITOR_LIST);
+    await answerTables(app, []);
+    expect(app.root().textContent).not.toContain('Mesas arquivadas');
+  });
+
+  it('restaurar manda ao servidor e atualiza as listas, sem pedir confirmação', async () => {
+    const app = await openArchived();
+    button(app, 'Restaurar')?.click();
+    await app.settle();
+    const restore = app.http.expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/restore');
+    expect(restore.request.method).toBe('POST');
+    restore.flush({
+      table_id: ARCHIVED.table_id,
+      phase: 'running',
+      host_name: 'Ana',
+      players: 2,
+      updated_at: 1_700_000_500,
+    });
+    await answerTables(app, [], []);
+    expect(app.root().textContent).not.toContain('Mesas arquivadas');
+  });
+
+  it('restaurar que o servidor recusa mostra o motivo e mantém a mesa arquivada', async () => {
+    const app = await openArchived();
+    button(app, 'Restaurar')?.click();
+    await app.settle();
+    app.http.expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/restore').flush(
+      {
+        error: {
+          code: 'table_unreadable',
+          message: 'a partida não combina mais com a campanha: ela segue arquivada',
+        },
+      },
+      { status: 409, statusText: 'x' },
+    );
+    await app.settle();
+    expect(app.root().textContent).toContain('não combina mais com a campanha');
+    expect(app.root().textContent).toContain('Mesas arquivadas');
+  });
+
+  it('apagar de vez confirma antes; cancelar não manda nada', async () => {
+    const app = await openArchived();
+    button(app, 'Apagar de vez')?.click();
+    await app.settle();
+    expect(document.body.textContent).toContain('Isto não tem volta');
+    sheetButton('Voltar')?.click();
+    await app.settle();
+    app.http.expectNone('/editor/archived-tables/aaaaaaaaaaaaaaaa');
+  });
+
+  it('apagar de vez confirmado apaga no servidor e atualiza a lista', async () => {
+    const app = await openArchived();
+    button(app, 'Apagar de vez')?.click();
+    await app.settle();
+    sheetButton('Apagar de vez')?.click();
+    await app.settle();
+    const purge = app.http.expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa');
+    expect(purge.request.method).toBe('DELETE');
+    purge.flush({ table_id: ARCHIVED.table_id });
+    await answerTables(app, [], []);
+    expect(app.root().textContent).not.toContain('Mesas arquivadas');
+  });
+
+  it('ver histórico abre o log da mesa, em ordem, e some ao fechar', async () => {
+    const app = await openArchived();
+    button(app, 'Ver histórico')?.click();
+    await app.settle();
+    app.http.expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/log').flush({
+      table_id: ARCHIVED.table_id,
+      turn: 2,
+      events: [
+        { index: 0, turn: 0, kind: 'start', text: 'A partida começou.' },
+        { index: 1, turn: 1, kind: 'check', text: 'Ana testa lutar: sucesso.' },
+        { index: 2, turn: 1, kind: 'note', text: '' },
+      ],
+    });
+    await app.settle();
+    const sheet = document.body.textContent ?? '';
+    expect(sheet).toContain('Histórico: mesa de Ana');
+    expect(sheet.indexOf('A partida começou.')).toBeLessThan(sheet.indexOf('Ana testa lutar'));
+    expect(document.body.querySelectorAll('.history__item')).toHaveLength(2); // o evento sem texto não aparece
+    sheetButton('Fechar')?.click();
+    await app.settle();
+    expect(document.body.querySelector('.history')).toBeNull();
+  });
+
+  it('falha ao ler o histórico mostra o erro e oferece tentar de novo', async () => {
+    const app = await openArchived();
+    button(app, 'Ver histórico')?.click();
+    await app.settle();
+    app.http
+      .expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/log')
+      .flush(OPEN, { status: 404, statusText: 'x' });
+    await app.settle();
+    expect(document.body.textContent).toContain('Tentar de novo');
+  });
+
+  it('tentar de novo mantém o botão (e o foco) e mostra o log quando a segunda leitura dá certo', async () => {
+    const app = await openArchived();
+    button(app, 'Ver histórico')?.click();
+    await app.settle();
+    app.http
+      .expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/log')
+      .flush(OPEN, { status: 404, statusText: 'x' });
+    await app.settle();
+    const retry = Array.from(document.body.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('Tentar de novo'),
+    ) as HTMLButtonElement;
+    retry.focus();
+    retry.click();
+    await app.settle();
+    expect(document.body.contains(retry)).toBe(true); // o botão não saiu da tela durante a nova tentativa
+    expect(retry.getAttribute('aria-busy')).toBe('true');
+    app.http.expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/log').flush({
+      table_id: ARCHIVED.table_id,
+      turn: 0,
+      events: [{ index: 0, turn: 0, kind: 'start', text: 'A partida começou.' }],
+    });
+    await app.settle();
+    expect(document.body.textContent).toContain('Início');
+    expect(document.body.textContent).toContain('A partida começou.');
+  });
+
+  it('o histórico vazio usa o estado de vazio da tela', async () => {
+    const app = await openArchived();
+    button(app, 'Ver histórico')?.click();
+    await app.settle();
+    app.http
+      .expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/log')
+      .flush({ table_id: ARCHIVED.table_id, turn: 0, events: [] });
+    await app.settle();
+    expect(document.body.textContent).toContain('Esta mesa não tem nada registrado.');
+  });
+
+  it('restaurar avisa o que aconteceu e a mesa volta para a lista de cima, com o foco nela', async () => {
+    const app = await openArchived();
+    button(app, 'Restaurar')?.click();
+    await app.settle();
+    app.http.expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/restore').flush({
+      table_id: ARCHIVED.table_id,
+      phase: 'running',
+      host_name: 'Ana',
+      players: 2,
+      updated_at: 1_700_000_500,
+    });
+    await answerTables(
+      app,
+      [
+        {
+          table_id: ARCHIVED.table_id,
+          phase: 'running',
+          host_name: 'Ana',
+          players: 2,
+          updated_at: 1_700_000_500,
+        },
+      ],
+      [],
+    );
+    const text = app.root().textContent ?? '';
+    expect(text).toContain('Mesa restaurada.');
+    expect(text).toContain('Assumir como anfitrião'); // reaparece na lista de cima (o navegador não tem o acesso)
+    expect(text).not.toContain('Mesas arquivadas');
+    expect(app.root().querySelector('[role="status"]')?.textContent).toContain('Mesa restaurada.');
+    expect(document.activeElement?.classList.contains('saved__assume')).toBe(true);
+  });
+
+  it('um erro do servidor aparece uma só vez, mesmo com mesas ativas e arquivadas na tela', async () => {
+    const app = await setup('/c/sombra-do-vale/mesas');
+    app.http.expectOne('/campaigns').flush(CAMPAIGNS);
+    app.http.expectOne('/editor/campaigns').flush(EDITOR_LIST);
+    await answerTables(
+      app,
+      [
+        {
+          table_id: 'bbbbbbbbbbbbbbbb',
+          phase: 'lobby',
+          host_name: 'Bia',
+          players: 1,
+          updated_at: 1,
+        },
+      ],
+      [ARCHIVED],
+    );
+    button(app, 'Restaurar')?.click();
+    await app.settle();
+    app.http
+      .expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa/restore')
+      .flush({ error: { code: 'table_limit', message: 'x' } }, { status: 409, statusText: 'x' });
+    await app.settle();
+    expect(app.root().querySelectorAll('[role="alert"]')).toHaveLength(1);
+    expect(app.root().textContent).toContain('Arquive ou apague outra mesa');
+  });
+
+  it('arquivar e apagar de vez também avisam; as linhas arquivadas dizem quando foram jogadas', async () => {
+    const app = await openArchived();
+    expect(app.root().textContent).toContain('jogada pela última vez');
+    button(app, 'Apagar de vez')?.click();
+    await app.settle();
+    expect(document.body.textContent).toContain('Mesa de Ana');
+    sheetButton('Apagar de vez')?.click();
+    await app.settle();
+    app.http
+      .expectOne('/editor/archived-tables/aaaaaaaaaaaaaaaa')
+      .flush({ table_id: ARCHIVED.table_id });
+    await answerTables(app, [], []);
+    expect(app.root().textContent).toContain('Mesa apagada de vez.');
   });
 });
