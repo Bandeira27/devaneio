@@ -6,8 +6,13 @@ Como o app do jogador se comporta, para que telas diferentes se sintam iguais. O
 
 ## Caminho de entrada
 
-Criar uma mesa ou entrar por convite é um caminho curto de três passos (Mesa ou Convite, Personagem, Jogar), com os
-passos visíveis. A tela larga mostra o contexto ao lado da tarefa; o celular mostra o mais provável primeiro (a tarefa; na home, "Continuar"). O que é técnico
+Criar uma mesa ou entrar por convite é um caminho curto de três passos: **Mesa** ou **Convite**, **Personagem** e
+**Sala** (a sala de espera). Os passos ficam visíveis em **toda** tela do caminho, cada uma com o seu como atual (as
+constantes estão em `shared/game/entry-steps.ts`); ao começar a campanha, a mesa deixa de ser entrada e os passos somem.
+O caminho **conduz**: criar a mesa ou aceitar o convite leva direto ao personagem, e quem foi convidado e chega à sala
+sem personagem é levado de volta a ele. O personagem não é um botão a descobrir. Só o anfitrião pode seguir sem
+personagem ("Ir para a mesa sem personagem"); para ele, "Criar personagem" fica na sala como retorno. Quem já tem
+personagem vai direto à sala, com o passo Personagem como feito. A tela larga mostra o contexto ao lado da tarefa; o celular mostra o mais provável primeiro (a tarefa; na home, "Continuar"). O que é técnico
 (endereço do servidor, código do convite) fica em "Opções avançadas", recolhido: o centro do convite é o link e o "Copiar".
 
 **A tela de entrar diz para onde o convite leva.** Com o convite no link, ela pergunta ao servidor o nome da mesa (o título
@@ -155,9 +160,10 @@ que decide se dá para agir (botões, turno, quem agiu) usa sempre a foto viva.
 
 ## Sala de espera, pausa e fim
 
-Criar uma mesa leva à **sala de espera** (a própria tela da mesa, em outra fase): o anfitrião vê quem já entrou e com que
+Criar uma mesa leva ao personagem e, depois dele, à **sala de espera** (a própria tela da mesa, em outra fase; o último
+passo do caminho de entrada): o anfitrião vê quem já entrou e com que
 personagem, o link do convite e o botão **Iniciar campanha**, bloqueado com o motivo escrito até haver um personagem;
-quem foi convidado vê quem está aqui, o caminho para criar o personagem e "Esperando o anfitrião iniciar". A lista se
+quem foi convidado vê quem está aqui (já com o personagem criado) e "Esperando o anfitrião iniciar". A lista se
 relê sozinha de poucos em poucos segundos. A história (abertura, primeiro marco) só começa ao iniciar.
 
 Na barra do anfitrião, o bloco **Partida** (fixo no topo) mostra o tempo de jogo e o que a fase permite: Pausar ou Retomar, e **Encerrar**

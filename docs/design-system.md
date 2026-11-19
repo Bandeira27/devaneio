@@ -102,7 +102,7 @@ usam `dvLoading` e mantêm o rótulo.
 **As telas de entrada** (entrar, convite, personagem) usam o **palco** `.dv-stage`: no celular uma coluna; a partir de
 64rem, o contexto à esquerda (passos, título em `.dv-display`, texto, ornamento, resumo da ficha) e a tarefa à direita.
 A **home** é capa + painel: à esquerda a apresentação, a premissa da campanha e as mesas guardadas ("Continuar" na mais
-recente), à direita criar mesa e "Tenho um convite" (recolhido). O cabeçalho e todas essas telas se alinham ao mesmo
+recente), à direita "Tenho um convite" (recolhido); criar mesa fica em `/c/:id/mesas`. O cabeçalho e todas essas telas se alinham ao mesmo
 contêiner (`--dv-measure-wide`).
 
 **Hierarquia sem peso de fonte** (as duas fontes só têm peso 400): escala (`.dv-title`, `.dv-section`, marca em `text-display`),

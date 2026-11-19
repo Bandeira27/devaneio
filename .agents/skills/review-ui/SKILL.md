@@ -22,6 +22,9 @@ escreve a mudança também deve passar por ela antes de pedir revisão.
 - [ ] Rótulos iguais em todo lugar (botão = título da folha); verbo no imperativo.
 - [ ] Todo erro diz o que aconteceu e o que fazer; texto humano, sem id nem código.
 - [ ] Nenhum beco sem saída: erro e vazio têm ação (tentar de novo, voltar, criar).
+- [ ] **Caminho com passos** (entrada na mesa): todo passo prometido tem uma tela que o mostra como atual, e toda tela do caminho mostra os passos; o nome do passo diz onde a pessoa está.
+- [ ] **Pré-requisito obrigatório é conduzido, não oferecido**: o sistema leva ao passo que falta; botão só serve para voltar a ele. Exceção, só se declarada (o anfitrião sem personagem).
+- [ ] O caminho foi percorrido **de ponta a ponta nos dois papéis** (anfitrião e convidado), incluindo reentrada com e sem o pré-requisito e o botão Voltar; mudou o destino de uma ação, conferiu quem mais aponta para a tela antiga (rotas, textos, docs).
 
 **Estados** (os que fizerem sentido)
 
@@ -55,7 +58,7 @@ escreve a mudança também deve passar por ela antes de pedir revisão.
 **Matriz visual** (navegador embutido ou `npm run storybook`, com o painel visível)
 
 - [ ] 375×812, 768×1024, 1300×800 e 1440+ (três painéis da mesa); sem rolagem horizontal em 320 px; texto a 200 % sem perda.
-- [ ] Telas: mesa (feed longo, ação pendente, bloqueada, sem personagem, desconectada, partida encerrada), home (com e sem mesas), convite, entrar, personagem, as folhas.
+- [ ] Telas: mesa (feed longo, ação pendente, bloqueada, sem personagem, desconectada, partida encerrada), home (com e sem mesas), criar mesa, sala de espera (como anfitrião e como convidado), convite, entrar, personagem, as folhas.
 
 ## Armadilhas de verificação
 

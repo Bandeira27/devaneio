@@ -44,8 +44,8 @@ este navegador?" vivem num serviço só (`core/catalog`). **Quais mesas existem*
 A mesa tem uma **fase** (`TableView.phase`: `lobby`, `running`, `paused`, `ended`; ver [`api-http.md`](api-http.md#fases-da-mesa)).
 A `TablePage` mostra a **sala de espera** (`features/table/components/lobby`) na fase `lobby` e o jogo nas outras; a mudança
 de fase é uma ação do `TableStore` (`lifecycle`) e vira evento no log, então o fluxo ao vivo relê a mesa sozinho. A fase
-entra nos bloqueios de ação (`actBlock`, em `shared/game/rules.ts`). Criar uma mesa leva a `/mesa/:id` (a sala), e o
-personagem do anfitrião se cria por lá.
+entra nos bloqueios de ação (`actBlock`, em `shared/game/rules.ts`). Criar uma mesa leva a `/mesa/:id/personagem` e, salvo o
+personagem, a `/mesa/:id` (a sala, último passo do caminho de entrada); o anfitrião pode pular o personagem.
 
 ## Estética: Desbotado
 
@@ -122,7 +122,7 @@ valida o app; o app é validado pelo `ng build`.
 
 ## Telas da primeira versão (jogador)
 
-Criar mesa, convite (link com endereço editável, que avisa quando for `localhost`), entrar mostrando o **aviso de
+Criar mesa, sala de espera com o convite (link com endereço editável, que avisa quando for `localhost`), entrar mostrando o **aviso de
 privacidade do LLM**, criar personagem (nome e atributos do sistema), e a mesa: feed ao vivo e ações em botões (`Ir`,
 `Testar`, `Atacar`, `Ficha`, `Falar`, `Comando`). O anfitrião usa a mesma tela e cria o próprio personagem; os comandos só
 dele ficam para a barra lateral do anfitrião.
