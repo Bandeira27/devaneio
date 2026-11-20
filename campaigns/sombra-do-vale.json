@@ -77,7 +77,8 @@
         },
         {
           "kind": "check_passed",
-          "skill_id": "persuadir"
+          "skill_id": "persuadir",
+          "location_id": "vila"
         }
       ]
     },
@@ -98,7 +99,8 @@
         },
         {
           "kind": "check_passed",
-          "skill_id": "investigar"
+          "skill_id": "investigar",
+          "location_id": "ruinas"
         }
       ]
     },
