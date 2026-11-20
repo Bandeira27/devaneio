@@ -166,7 +166,7 @@ def test_beats_advance_after_player_actions(session):
     _, beats = run(session, "marcos")
     assert beats == (
         "[concluído] Chegada à vila (chegada)\n"
-        "[ativo] A pista nas ruínas (pista) (exige: chegada)\n"
+        "[ativo] A pista nas ruínas (pista)\n"
         "[pendente] Confronto com o culto (confronto) (exige: pista)"
     )
 

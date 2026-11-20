@@ -85,9 +85,6 @@
       "id": "pista",
       "title": "A pista nas ruínas",
       "description": "Algo nas ruínas aponta para o culto.",
-      "requires": [
-        "chegada"
-      ],
       "activate_when": [
         {
           "kind": "at_location",

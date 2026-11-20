@@ -46,7 +46,7 @@ def test_duplicate_ids_are_reported(campaign_data, collection):
         (lambda d: d["npcs"][0].__setitem__("location_id", "nada"), "está em 'nada'"),
         (lambda d: d["npcs"][0].__setitem__("faction_id", "nada"), "pertence a 'nada'"),
         (lambda d: d.__setitem__("start_location_id", "nada"), "start_location_id 'nada'"),
-        (lambda d: d["beats"][1]["requires"].append("nada"), "requer 'nada'"),
+        (lambda d: d["beats"][2]["requires"].append("nada"), "requer 'nada'"),
     ],
     ids=["connection", "npc_location", "npc_faction", "start_location", "beat_requires"],
 )
@@ -63,18 +63,17 @@ def test_self_connection_is_reported(campaign_data):
 
 
 def test_direct_cycle_between_beats(campaign_data):
-    campaign_data["beats"][0]["requires"] = ["pista"]  # chegada <-> pista
+    campaign_data["beats"][1]["requires"] = ["confronto"]  # pista <-> confronto
     errors = errors_of(campaign_data)
     assert len(errors) == 1
     assert errors[0].startswith("ciclo entre marcos:")
-    assert "chegada" in errors[0]
+    assert "confronto" in errors[0]
     assert "pista" in errors[0]
 
 
 def test_indirect_cycle_between_beats(campaign_data):
-    campaign_data["beats"][0]["requires"] = [
-        "confronto"
-    ]  # chegada -> confronto -> pista -> chegada
+    campaign_data["beats"][0]["requires"] = ["confronto"]
+    campaign_data["beats"][1]["requires"] = ["chegada"]  # chegada -> confronto -> pista -> chegada
     errors = errors_of(campaign_data)
     assert errors == ["ciclo entre marcos: chegada -> confronto -> pista -> chegada"]
 
@@ -109,7 +108,7 @@ def test_all_errors_are_reported_together(campaign_data):
     campaign_data["start_location_id"] = "nada"
     campaign_data["locations"].append(dict(campaign_data["locations"][0]))
     campaign_data["npcs"][0]["faction_id"] = "ninguem"
-    campaign_data["beats"][0]["requires"] = ["pista"]
+    campaign_data["beats"][1]["requires"] = ["confronto"]
     errors = errors_of(campaign_data)
     assert len(errors) == 4
     joined = "\n".join(errors)
