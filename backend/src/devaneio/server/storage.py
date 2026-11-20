@@ -106,6 +106,11 @@ class Storage:
         self._tables: dict[str, _Table] = {}
         self._registry = threading.Lock()
 
+    @property
+    def database(self) -> Database:
+        """O banco, para quem guarda outras coisas da mesa (o chat) sem passar por ``Record``."""
+        return self._db
+
     # --- o banco -----------------------------------------------------------------
 
     def exists(self, table_id: str, *, scope: Scope = "active") -> bool:

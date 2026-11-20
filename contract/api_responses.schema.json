@@ -522,6 +522,66 @@
       "title": "Character",
       "type": "object"
     },
+    "ChatMessageView": {
+      "additionalProperties": false,
+      "description": "Uma mensagem do chat da mesa, igual para todos. Texto puro: o servidor não escapa marcação.",
+      "properties": {
+        "seq": {
+          "type": "integer"
+        },
+        "player_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "host",
+            "player"
+          ],
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "seq",
+        "player_id",
+        "name",
+        "role",
+        "text",
+        "at"
+      ],
+      "title": "ChatMessageView",
+      "type": "object"
+    },
+    "ChatView": {
+      "additionalProperties": false,
+      "description": "Mensagens do chat desde a posição pedida, com a última posição para a próxima leitura.",
+      "properties": {
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/ChatMessageView"
+          },
+          "type": "array"
+        },
+        "chat_seq": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "messages",
+        "chat_seq"
+      ],
+      "title": "ChatView",
+      "type": "object"
+    },
     "CheckPassed": {
       "additionalProperties": false,
       "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\n\nTestes de NPC não contam. Sem ``location_id``, vale um teste em qualquer lugar (combine com\n``at_location``); com ele, só conta o teste feito com o grupo nesse local.",
@@ -859,13 +919,25 @@
         "talk_seq": {
           "default": 0,
           "type": "integer"
+        },
+        "chat": {
+          "items": {
+            "$ref": "#/$defs/ChatMessageView"
+          },
+          "type": "array"
+        },
+        "chat_seq": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "required": [
         "revision",
         "events",
         "talk",
-        "talk_seq"
+        "talk_seq",
+        "chat",
+        "chat_seq"
       ],
       "title": "EventsView",
       "type": "object"
@@ -2201,6 +2273,12 @@
     "events": {
       "$ref": "#/$defs/EventsView"
     },
+    "chat_message": {
+      "$ref": "#/$defs/ChatMessageView"
+    },
+    "chat_view": {
+      "$ref": "#/$defs/ChatView"
+    },
     "campaign": {
       "$ref": "#/$defs/Campaign"
     },
@@ -2272,6 +2350,8 @@
     "say_result",
     "copilot_answer",
     "events",
+    "chat_message",
+    "chat_view",
     "campaign",
     "campaign_view",
     "rules",

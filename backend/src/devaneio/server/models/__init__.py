@@ -38,9 +38,11 @@ from .editor import (
     ValidationReport,
 )
 from .requests import (
+    MAX_CHAT,
     MAX_LINE,
     MAX_NAME,
     MAX_SEED,
+    ChatRequest,
     CommandLine,
     CommandRequest,
     CopilotRequest,
@@ -54,6 +56,8 @@ from .requests import (
     clean_name,
 )
 from .responses import (
+    ChatMessageView,
+    ChatView,
     CommandResult,
     CopilotAnswer,
     EventsView,
@@ -86,6 +90,7 @@ from .state import (
 )
 
 __all__ = [
+    "MAX_CHAT",
     "MAX_LINE",
     "MAX_NAME",
     "MAX_SEED",
@@ -100,6 +105,9 @@ __all__ = [
     "BeatInfo",
     "CampaignSummary",
     "CampaignView",
+    "ChatMessageView",
+    "ChatRequest",
+    "ChatView",
     "CombatInfo",
     "CommandLine",
     "CommandRequest",

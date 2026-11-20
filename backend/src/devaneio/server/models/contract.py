@@ -22,6 +22,7 @@ from .editor import (
     ValidationReport,
 )
 from .requests import (
+    ChatRequest,
     CommandRequest,
     CopilotRequest,
     CreateTableRequest,
@@ -31,6 +32,8 @@ from .requests import (
     SayRequest,
 )
 from .responses import (
+    ChatMessageView,
+    ChatView,
     CommandResult,
     CopilotAnswer,
     EventsView,
@@ -66,6 +69,7 @@ class ApiRequests(StrictModel):
     command: CommandRequest
     lifecycle: LifecycleRequest
     say: SayRequest
+    chat: ChatRequest
     copilot: CopilotRequest
     editor_validate: ValidateRequest
     editor_save: SaveRequest
@@ -84,6 +88,8 @@ class ApiResponses(StrictModel):
     say_result: SayResult
     copilot_answer: CopilotAnswer
     events: EventsView
+    chat_message: ChatMessageView
+    chat_view: ChatView
     campaign: Campaign
     campaign_view: CampaignView
     rules: RulesView

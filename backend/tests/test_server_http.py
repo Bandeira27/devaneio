@@ -759,6 +759,46 @@ def test_since_talk_must_be_a_non_negative_integer(client, value):
     assert (status, body["error"]["code"]) == (400, "bad_request")
 
 
+def test_the_chat_routes_over_http(client):
+    table_id, _, host, bia, _ = play_setup(client)
+    status, sent, _ = client.call(
+        "POST", f"/tables/{table_id}/chat", body={"text": "bora pelas ruínas"}, auth=bia
+    )
+    assert status == 201
+    assert (sent["seq"], sent["role"], sent["text"]) == (1, "player", "bora pelas ruínas")
+    status, chat, _ = client.call("GET", f"/tables/{table_id}/chat?since=0", auth=host)
+    assert status == 200
+    assert [m["text"] for m in chat["messages"]] == ["bora pelas ruínas"]
+    assert chat["chat_seq"] == 1
+    status, view, _ = client.call("GET", f"/tables/{table_id}/events", auth=host)
+    assert [m["text"] for m in view["chat"]] == ["bora pelas ruínas"]
+    status, view, _ = client.call("GET", f"/tables/{table_id}/events?since_chat=1", auth=host)
+    assert view["chat"] == []
+    assert view["chat_seq"] == 1
+
+
+def test_the_chat_route_refuses_without_a_token_and_with_a_bad_body(client):
+    table_id, _, _, bia, _ = play_setup(client)
+    status, body, _ = client.call("POST", f"/tables/{table_id}/chat", body={"text": "oi"})
+    assert (status, body["error"]["code"]) == (401, "unauthorized")
+    for bad in (
+        {"text": ""},
+        {"text": "a\nb"},
+        {"text": "x" * 501},
+        {"text": "oi", "extra": 1},
+        {},
+    ):
+        status, body, _ = client.call("POST", f"/tables/{table_id}/chat", body=bad, auth=bia)
+        assert (status, body["error"]["code"]) == (400, "bad_request")
+
+
+@pytest.mark.parametrize("value", ["-1", "x", "1.5", "9" * 17])
+def test_since_chat_must_be_a_non_negative_integer(client, value):
+    table_id, _, _, bia, _ = play_setup(client)
+    status, body, _ = client.call("GET", f"/tables/{table_id}/events?since_chat={value}", auth=bia)
+    assert (status, body["error"]["code"]) == (400, "bad_request")
+
+
 def test_the_copilot_route_answers_the_host_only(tmp_path, issued):
     with FakeLlmServer(lambda _body: (200, "Pense na floresta.")) as fake:
         service = TableService(

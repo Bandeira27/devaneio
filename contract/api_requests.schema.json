@@ -1,6 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
+    "ChatRequest": {
+      "additionalProperties": false,
+      "description": "Uma mensagem para o chat da mesa: uma linha de texto, só para o grupo.",
+      "properties": {
+        "text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "ChatRequest",
+      "type": "object"
+    },
     "CommandRequest": {
       "additionalProperties": false,
       "description": "Um comando: a linha e a revisão da mesa que o cliente viu.",
@@ -249,6 +265,9 @@
     "say": {
       "$ref": "#/$defs/SayRequest"
     },
+    "chat": {
+      "$ref": "#/$defs/ChatRequest"
+    },
     "copilot": {
       "$ref": "#/$defs/CopilotRequest"
     },
@@ -269,6 +288,7 @@
     "command",
     "lifecycle",
     "say",
+    "chat",
     "copilot",
     "editor_validate",
     "editor_save",

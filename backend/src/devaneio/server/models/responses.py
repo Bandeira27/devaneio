@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field
 
 from devaneio.engine import GameStatus
+from devaneio.game import Role
 from devaneio.schema import (
     Id,
     StrictModel,
@@ -75,6 +76,24 @@ class TalkView(StrictModel):
     text: str
 
 
+class ChatMessageView(StrictModel):
+    """Uma mensagem do chat da mesa, igual para todos. Texto puro: o servidor não escapa marcação."""
+
+    seq: int
+    player_id: Id
+    name: str
+    role: Role
+    text: str
+    at: float  # quando foi enviada, em segundos de época do servidor
+
+
+class ChatView(StrictModel):
+    """Mensagens do chat desde a posição pedida, com a última posição para a próxima leitura."""
+
+    messages: list[ChatMessageView]
+    chat_seq: int
+
+
 class EventsView(StrictModel):
     """Eventos e falas novos desde a última leitura, com as posições para a próxima."""
 
@@ -83,6 +102,9 @@ class EventsView(StrictModel):
     # `talk_seq` é a última fala; o cliente a devolve em `since_talk`. Sobe entre reinícios.
     talk: list[TalkView] = Field(default_factory=list)
     talk_seq: int = 0
+    # `chat_seq` é a última mensagem do chat; o cliente a devolve em `since_chat`.
+    chat: list[ChatMessageView] = Field(default_factory=list)
+    chat_seq: int = 0
 
 
 class CommandResult(StrictModel):

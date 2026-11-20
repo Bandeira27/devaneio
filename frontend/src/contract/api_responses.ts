@@ -33,6 +33,8 @@ export interface ApiResponses {
   say_result: SayResult;
   copilot_answer: CopilotAnswer;
   events: EventsView;
+  chat_message: ChatMessageView;
+  chat_view: ChatView;
   campaign: Campaign;
   campaign_view: CampaignView;
   rules: RulesView;
@@ -322,6 +324,8 @@ export interface EventsView {
   events: EventView[];
   talk: TalkView[];
   talk_seq: number;
+  chat: ChatMessageView[];
+  chat_seq: number;
 }
 /**
  * Uma fala do mestre ou de um NPC.
@@ -334,6 +338,24 @@ export interface TalkView {
   after: number;
   to: string;
   text: string;
+}
+/**
+ * Uma mensagem do chat da mesa, igual para todos. Texto puro: o servidor não escapa marcação.
+ */
+export interface ChatMessageView {
+  seq: number;
+  player_id: string;
+  name: string;
+  role: "host" | "player";
+  text: string;
+  at: number;
+}
+/**
+ * Mensagens do chat desde a posição pedida, com a última posição para a próxima leitura.
+ */
+export interface ChatView {
+  messages: ChatMessageView[];
+  chat_seq: number;
 }
 /**
  * A campanha: locais, NPCs, marcos e fatos, tudo estático (o que muda fica no `GameState`).

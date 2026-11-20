@@ -30,6 +30,7 @@ from devaneio.schema import Campaign
 
 from .auth import hash_secret, new_invite, new_token
 from .catalog import Catalog
+from .chat import ChatDesk
 from .copilot import CopilotDesk
 from .errors import ApiFailure
 from .lifecycle import LifecycleDesk
@@ -38,6 +39,9 @@ from .models import (
     TURN_POLICY,
     CampaignSummary,
     CampaignView,
+    ChatMessageView,
+    ChatRequest,
+    ChatView,
     CommandRequest,
     CommandResult,
     CopilotAnswer,
@@ -78,6 +82,7 @@ class Cursor(NamedTuple):
 
     events: int
     talk: int
+    chat: int = 0
 
 
 LLM_NOTICE = (
@@ -137,6 +142,7 @@ class TableService:
             llm_secrets,
         )
         self._copilot = CopilotDesk(storage, self._llm_source, self.load_session, copilot_cooldown)
+        self._chat = ChatDesk(storage, clock)
 
     @property
     def llm(self) -> LlmConfig | None:
@@ -234,6 +240,7 @@ class TableService:
         *,
         wait: float = 0,
         since_talk: int = 0,
+        since_chat: int | None = None,
     ) -> EventsView:
         """Eventos e falas novos desde a última leitura, com espera opcional.
 
@@ -243,17 +250,28 @@ class TableService:
 
         Com ``wait`` > 0 e sem ``since_talk``, o mural não conta como novidade: só falas
         posteriores a esta chamada acordam a espera (senão um cliente que não devolve
-        ``talk_seq`` giraria sem esperar, relendo o banco a cada volta).
+        ``talk_seq`` giraria sem esperar, relendo o banco a cada volta). Com o chat é igual, mas
+        só quando ``since_chat`` falta: um ``0`` explícito é "desde o começo" e conta, para uma
+        mensagem enviada entre duas chamadas de um chat ainda vazio não se perder.
         """
         # Antes da carga: uma gravação entre as duas deixaria a visão velha com a versão nova.
         # Só com mesa existente, porque ``version`` cria entrada e o id ainda não foi validado.
         seen = self.storage.version(table_id) if self.storage.exists(table_id) else 0
-        cursor = Cursor(since, since_talk)
+        cursor = Cursor(since, since_talk, since_chat or 0)
         view = self._events_view(table_id, token, cursor)
         if wait > 0 and since_talk == 0:
-            cursor = Cursor(since, view.talk_seq)
+            cursor = cursor._replace(talk=view.talk_seq)
             view = view.model_copy(update={"talk": []})
-        if view.events or view.talk or wait <= 0 or not self.storage.enter_wait(table_id):
+        if wait > 0 and since_chat is None:
+            cursor = cursor._replace(chat=view.chat_seq)
+            view = view.model_copy(update={"chat": []})
+        if (
+            view.events
+            or view.talk
+            or view.chat
+            or wait <= 0
+            or not self.storage.enter_wait(table_id)
+        ):
             return view
         try:
             return self._wait_for_events(table_id, token, cursor, wait=wait, view=view, seen=seen)
@@ -264,11 +282,14 @@ class TableService:
         session, _, _, player = self._open(table_id, token)
         presentation = self.storage.presentation(table_id)
         talk, talk_seq = presentation.talk_since(cursor.talk)
+        chat = self._chat.since(table_id, cursor.chat)
         return EventsView(
             revision=len(session.state.events),
             events=events_view(session, cursor.events, presentation.narrations(), role=player.role),
             talk=talk,
             talk_seq=talk_seq,
+            chat=chat.messages,
+            chat_seq=chat.chat_seq,
         )
 
     def _wait_for_events(
@@ -283,7 +304,7 @@ class TableService:
     ) -> EventsView:
         deadline = self.storage.now() + wait
         changed = self.storage.condition(table_id)
-        while not (view.events or view.talk):
+        while not (view.events or view.talk or view.chat):
             baseline = seen
 
             def moved(baseline: int = baseline) -> bool:
@@ -296,6 +317,14 @@ class TableService:
                 seen = self.storage.version(table_id)
             view = self._events_view(table_id, token, cursor)
         return view
+
+    def post_chat(self, table_id: str, token: str | None, request: ChatRequest) -> ChatMessageView:
+        """Envia uma mensagem ao chat da mesa (ver ``chat.ChatDesk``)."""
+        return self._chat.post(table_id, token, request)
+
+    def get_chat(self, table_id: str, token: str | None, since: int) -> ChatView:
+        """O histórico do chat desde ``since``."""
+        return self._chat.read(table_id, token, since)
 
     def run_command(
         self, table_id: str, token: str | None, request: CommandRequest

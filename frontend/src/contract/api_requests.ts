@@ -15,6 +15,7 @@ export interface ApiRequests {
   command: CommandRequest;
   lifecycle: LifecycleRequest;
   say: SayRequest;
+  chat: ChatRequest;
   copilot: CopilotRequest;
   editor_validate: ValidateRequest;
   editor_save: SaveRequest;
@@ -61,6 +62,12 @@ export interface LifecycleRequest {
 export interface SayRequest {
   text: string;
   revision: number;
+}
+/**
+ * Uma mensagem para o chat da mesa: uma linha de texto, só para o grupo.
+ */
+export interface ChatRequest {
+  text: string;
 }
 /**
  * Pergunta avulsa ao copiloto do anfitrião (sem estado: cada chamada leva o contexto atual).

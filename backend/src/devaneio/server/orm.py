@@ -6,7 +6,7 @@ produzem, e um teste confere que os dois não se afastam.
 
 from __future__ import annotations
 
-from sqlalchemy import Float, Index, String, Text
+from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -42,3 +42,23 @@ class GameTable(Base):
     updated_at: Mapped[float] = mapped_column(Float, nullable=False)
     # Nulo = ativa. Arquivada: fora da lista, do jogo, do limite e da trava da campanha; estado e log ficam.
     archived_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class ChatMessage(Base):
+    """Uma mensagem do chat da mesa (só para o grupo; não é evento nem entra no estado da partida).
+
+    ``name`` e ``role`` são os do jogador na hora de enviar. ``seq`` sobe de 1 em 1 por mesa e continua depois de um
+    reinício. Some junto com a mesa apagada de vez.
+    """
+
+    __tablename__ = "chat_messages"
+
+    table_id: Mapped[str] = mapped_column(
+        String, ForeignKey("tables.id", ondelete="CASCADE"), primary_key=True
+    )
+    seq: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[float] = mapped_column(Float, nullable=False)

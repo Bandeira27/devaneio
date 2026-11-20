@@ -102,6 +102,16 @@ class LifecycleRequest(StrictModel):
     revision: int = Field(ge=0)
 
 
+MAX_CHAT = 500
+ChatText = Annotated[str, BeforeValidator(clean_line), Field(min_length=1, max_length=MAX_CHAT)]
+
+
+class ChatRequest(StrictModel):
+    """Uma mensagem para o chat da mesa: uma linha de texto, só para o grupo."""
+
+    text: ChatText
+
+
 class SayRequest(StrictModel):
     """Um texto livre para o mestre de IA: o texto e a revisão que o cliente viu."""
 

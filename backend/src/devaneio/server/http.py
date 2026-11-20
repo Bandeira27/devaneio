@@ -32,6 +32,7 @@ from .editor import (
 from .errors import ApiFailure
 from .models import (
     ApiError,
+    ChatRequest,
     CommandRequest,
     CopilotRequest,
     CreateTableRequest,
@@ -129,6 +130,14 @@ class Handler(BaseHTTPRequestHandler):
         request = self._read_json(SayRequest)
         return 200, self.server.service.say(match.group(1), self._token(), request)
 
+    def _post_chat(self, match: re.Match[str]) -> tuple[int, Payload]:
+        request = self._read_json(ChatRequest)
+        return 201, self.server.service.post_chat(match.group(1), self._token(), request)
+
+    def _get_chat(self, match: re.Match[str]) -> tuple[int, Payload]:
+        since = self._query_int("since", default=0, max_digits=16)
+        return 200, self.server.service.get_chat(match.group(1), self._token(), since)
+
     def _copilot(self, match: re.Match[str]) -> tuple[int, Payload]:
         request = self._read_json(CopilotRequest)
         return 200, self.server.service.copilot(match.group(1), self._token(), request)
@@ -136,11 +145,17 @@ class Handler(BaseHTTPRequestHandler):
     def _get_events(self, match: re.Match[str]) -> tuple[int, Payload]:
         since = self._query_int("since", default=0)
         since_talk = self._query_int("since_talk", default=0, max_digits=16)
+        since_chat = self._query_int("since_chat", default=-1, max_digits=16)
         wait = self._query_int("wait", default=0)
         if wait > MAX_WAIT:
             raise ApiFailure(400, "bad_request", f"'wait' vai de 0 a {MAX_WAIT} segundos")
         return 200, self.server.service.get_events(
-            match.group(1), self._token(), since, wait=wait, since_talk=since_talk
+            match.group(1),
+            self._token(),
+            since,
+            wait=wait,
+            since_talk=since_talk,
+            since_chat=None if since_chat < 0 else since_chat,
         )
 
     # --- editor (só da própria máquina) -------------------------------------------
@@ -251,6 +266,8 @@ class Handler(BaseHTTPRequestHandler):
         ("POST", re.compile(r"^/tables/([^/]+)/lifecycle$"), _lifecycle),
         ("POST", re.compile(r"^/tables/([^/]+)/say$"), _say),
         ("POST", re.compile(r"^/tables/([^/]+)/copilot$"), _copilot),
+        ("POST", re.compile(r"^/tables/([^/]+)/chat$"), _post_chat),
+        ("GET", re.compile(r"^/tables/([^/]+)/chat$"), _get_chat),
         ("GET", re.compile(r"^/tables/([^/]+)/events$"), _get_events),
         ("GET", re.compile(r"^/editor/campaigns$"), _editor_campaigns),
         ("POST", re.compile(r"^/editor/campaigns$"), _editor_create),

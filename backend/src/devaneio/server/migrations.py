@@ -48,6 +48,21 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         # dá para restaurá-la. Nulo = mesa ativa; o valor é quando foi arquivada.
         "ALTER TABLE tables ADD COLUMN archived_at REAL",
     ),
+    (
+        # O chat da mesa: mensagens só do grupo, fora do estado da partida. `seq` é por mesa; somem com a mesa apagada.
+        """
+        CREATE TABLE chat_messages (
+            table_id TEXT NOT NULL REFERENCES tables (id) ON DELETE CASCADE,
+            seq INTEGER NOT NULL,
+            player_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            text TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            PRIMARY KEY (table_id, seq)
+        )
+        """,
+    ),
 )
 LATEST = len(MIGRATIONS)
 
