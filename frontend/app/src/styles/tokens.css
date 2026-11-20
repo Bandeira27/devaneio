@@ -118,6 +118,7 @@
   /* O contêiner do app em tela larga: lateral + respiro + feed da mesa. É a medida exata das colunas; o cabeçalho, a home e a entrada se alinham a ela. */
   --dv-measure-wide: calc(var(--dv-rail-width) + var(--dv-space-6) + var(--dv-measure-feed));
   --dv-dock-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da barra de ações fixa */
+  --dv-rail-top: 0rem; /* a mesa atualiza em tempo de execução (tela larga): onde a lateral começa na página, para a cena caber na janela já na abertura */
   --dv-rail-side-height: 0rem; /* a mesa atualiza em tempo de execução (tela larga): a altura da cena e do grupo na lateral */
   --dv-rail-dock-height: 0rem; /* idem: a altura da barra de ações na lateral */
   --dv-situation-height: 0rem; /* a mesa atualiza em tempo de execução: a altura da linha de situação presa no topo (celular) */

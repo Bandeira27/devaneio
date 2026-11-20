@@ -124,6 +124,17 @@
 
 @media (min-width: 64rem) {
   .table {
+    /*
+     * A altura que a cena pode ter na lateral: a janela, menos onde a lateral começa na página e menos a barra de ações
+     * logo abaixo, para a barra já abrir à vista. Passando disso a cena rola por dentro. Nunca abaixo de 12rem: numa
+     * janela muito baixa a barra só aparece depois de rolar, mas a cena continua legível.
+     */
+    --rail-room: max(
+      12rem,
+      calc(
+        100dvh - var(--dv-rail-top, 0rem) - var(--dv-rail-dock-height, 0rem) - 2 * var(--dv-space-4)
+      )
+    );
     max-width: var(--dv-measure-wide);
     /* A pílula da conversa flutua no canto: o fim da página sobe acima dela, para nada ficar sempre coberto. */
     padding-bottom: calc(var(--dv-touch) + 2 * var(--dv-space-4));
@@ -156,7 +167,7 @@
     grid-area: rail;
     position: sticky;
     top: var(--dv-space-4);
-    max-height: calc(100dvh - 3 * var(--dv-space-4) - var(--dv-rail-dock-height));
+    max-height: var(--rail-room);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -233,7 +244,7 @@
 
   .table--host .table__side {
     grid-area: rail;
-    max-height: calc(100dvh - 3 * var(--dv-space-4) - var(--dv-rail-dock-height));
+    max-height: var(--rail-room);
   }
 
   .table--host .table__dock {

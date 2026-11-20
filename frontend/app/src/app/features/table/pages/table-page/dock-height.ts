@@ -57,6 +57,10 @@ export function publishSituationHeight(bar: Signal<ElementRef<HTMLElement> | und
  * Mede a cena e o grupo (`side`) e a barra de ações (`dock`) da lateral da mesa na tela larga e publica as alturas em
  * `--dv-rail-side-height` e `--dv-rail-dock-height`. As duas peças ficam presas juntas: a barra de ações cola logo abaixo
  * da cena (por margem e por `top`), e a cena só rola por dentro se não couber na janela com a barra embaixo dela.
+ *
+ * Também publica `--dv-rail-top`: onde a lateral começa na página (com a página no topo, antes de ela grudar). A cena usa
+ * esse número para caber na janela **desde a abertura**: sem ele a barra de ações, que vem logo abaixo da cena, abria
+ * fora da tela em janelas baixas e só aparecia depois de rolar.
  */
 export function publishRailHeights(
   side: Signal<ElementRef<HTMLElement> | undefined>,
@@ -69,7 +73,10 @@ export function publishRailHeights(
       return;
     }
     const root = document.documentElement;
+    const layout = sideElement.parentElement;
     const publish = (): void => {
+      const top = layout ? layout.getBoundingClientRect().top + window.scrollY : 0;
+      root.style.setProperty('--dv-rail-top', isWide() ? `${Math.round(top)}px` : '0px');
       root.style.setProperty(
         '--dv-rail-side-height',
         isWide() ? `${sideElement.offsetHeight}px` : '0px',
@@ -82,9 +89,17 @@ export function publishRailHeights(
     const observer = new ResizeObserver(publish);
     observer.observe(sideElement);
     observer.observe(dockElement);
+    // O que aparece acima da lateral (um aviso, um título que quebra) a empurra sem mudar o tamanho dela.
+    const above = layout?.parentElement;
+    if (above) {
+      observer.observe(above);
+    }
+    window.addEventListener('resize', publish);
     publish();
     onCleanup(() => {
       observer.disconnect();
+      window.removeEventListener('resize', publish);
+      root.style.removeProperty('--dv-rail-top');
       root.style.removeProperty('--dv-rail-side-height');
       root.style.removeProperty('--dv-rail-dock-height');
     });
