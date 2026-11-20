@@ -36,13 +36,13 @@
           <dv-notice kind="warn">
             Esta campanha já tem mesa, e as mesas a relêem do arquivo: ela não pode ser regravada.
             Arquive as mesas ou salve uma cópia para mudar.
-            @if (store.tables().length > 0) {
+            @if (tables.list().length > 0) {
               <ul class="editor__tables">
-                @for (table of store.tables(); track table.table_id) {
+                @for (table of tables.list(); track table.table_id) {
                   <li class="editor__table">
                     <span class="editor__table-line">{{ line(table) }}</span>
                     <span class="editor__table-actions">
-                      @if (store.knowsTable(table.table_id)) {
+                      @if (tables.knows(table.table_id)) {
                         <a
                           dvButton
                           dvSize="sm"
@@ -56,7 +56,7 @@
                           dvButton
                           dvSize="sm"
                           type="button"
-                          [dvBlocked]="store.tableBusy() !== null"
+                          [dvBlocked]="tables.busy() !== null"
                           [attr.aria-label]="'Assumir como anfitrião: ' + line(table)"
                           (click)="store.assumeHost(table.table_id)"
                         >
@@ -67,8 +67,8 @@
                         dvButton
                         dvSize="sm"
                         type="button"
-                        [dvBlocked]="store.tableBusy() !== null"
-                        [dvLoading]="store.tableBusy() === table.table_id"
+                        [dvBlocked]="tables.busy() !== null"
+                        [dvLoading]="tables.busy() === table.table_id"
                         [attr.aria-label]="'Arquivar: ' + line(table)"
                         (click)="archiveTable(table.table_id)"
                       >
@@ -84,8 +84,8 @@
             </button>
           </dv-notice>
         }
-        @if (store.tablesError()) {
-          <dv-notice kind="error">{{ store.tablesError() }}</dv-notice>
+        @if (tables.error()) {
+          <dv-notice kind="error">{{ tables.error() }}</dv-notice>
         }
 
         @if (store.info()) {

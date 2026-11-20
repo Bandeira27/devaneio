@@ -4,7 +4,6 @@ import { firstValueFrom } from 'rxjs';
 import type {
   Campaign,
   EditorCampaign,
-  EditorTable,
   PreviewView,
   RulesView,
   SystemInfo,
@@ -14,9 +13,6 @@ import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
 import { CampaignCatalog } from '@core/catalog/campaign-catalog';
 import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
-import { SessionStore } from '@core/session/session-store';
-import { ServerTables } from '@core/tables/server-tables';
-import { TableActionRunner } from '@core/tables/table-action-runner';
 import {
   addBeat,
   addFact,
@@ -33,10 +29,10 @@ import {
   type ItemKind,
 } from '@shared/game/campaign-edit';
 import { slugify, uniqueId } from '@shared/game/names';
-import { ASSUME_HOST_CONFIRM, ARCHIVE_TABLE_CONFIRM } from '@shared/game/server-tables';
 import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
+import { EditorTables } from './editor-tables';
 
 /** De que seção do roteiro é cada parte da campanha (o resto, como título e premissa, é a visão geral). */
 const SECTION_OF: Record<string, string[]> = {
@@ -72,8 +68,7 @@ export class EditorStore {
   private readonly created = inject(CreatedCampaign);
   private readonly router = inject(Router);
   private readonly sheet = inject(Sheet);
-  private readonly serverTables = inject(ServerTables);
-  private readonly session = inject(SessionStore);
+  private readonly tables = inject(EditorTables);
   private readonly delay = inject(VALIDATE_DELAY);
 
   readonly state = signal<LoadState>('loading');
@@ -83,13 +78,6 @@ export class EditorStore {
   readonly savedId = signal<string | null>(null);
   /** A campanha pode ser regravada? Falso quando alguma mesa a usa. */
   readonly writable = signal(true);
-  /** As mesas do servidor que travam a campanha (só enquanto ela não pode ser regravada). */
-  readonly tables = signal<EditorTable[]>([]);
-  private readonly tableActions = new TableActionRunner();
-  /** O que deu errado ao arquivar uma mesa ou assumir o lugar de anfitrião. */
-  readonly tablesError = this.tableActions.error;
-  /** A mesa que está sendo arquivada ou assumida agora (bloqueia os botões das mesas até acabar). */
-  readonly tableBusy = this.tableActions.busy;
   readonly systems = signal<SystemInfo[]>([]);
   readonly rules = signal<RulesView | null>(null);
   readonly report = signal<ValidationReport | null>(null);
@@ -189,7 +177,7 @@ export class EditorStore {
         this.start(campaign, campaignId, list.find((c) => c.id === campaignId)?.writable ?? true);
       }
       await this.loadRules();
-      await this.loadTables();
+      await this.tables.load(this.savedId(), this.writable());
       this.state.set('ready');
       this.scheduleValidation(0);
     } catch (error) {
@@ -489,56 +477,25 @@ export class EditorStore {
 
   // --- gravar ---------------------------------------------------------------------
 
-  /** As mesas que travam a campanha, ou nada se ela pode ser regravada. */
-  async loadTables(): Promise<void> {
-    const id = this.savedId();
-    this.tables.set(
-      id !== null && !this.writable() ? ((await this.serverTables.list(id)) ?? []) : [],
-    );
-  }
-
-  /** O navegador já tem o acesso a esta mesa (dá para abri-la sem assumir)? */
-  knowsTable(tableId: string): boolean {
-    return this.session.get(tableId) !== null;
-  }
-
-  /** Arquiva uma mesa (depois de confirmar) e libera a campanha se era a última que a travava. */
+  /** Arquiva uma mesa (depois de confirmar) e, se era a última que travava a campanha, libera a gravação. */
   async archiveTable(tableId: string): Promise<boolean> {
-    const ok = await this.sheet.open<boolean>(ConfirmSheet, {
-      label: 'Arquivar a mesa',
-      data: ARCHIVE_TABLE_CONFIRM,
-    });
-    return (
-      ok === true &&
-      this.tableActions.run(tableId, async () => {
-        await this.serverTables.archive(tableId);
-        const id = this.savedId();
-        const list = await firstValueFrom(this.api.editorCampaigns());
-        this.writable.set(list.find((c) => c.id === id)?.writable ?? true);
-        await this.loadTables();
-        this.info.set(
-          this.writable() ? 'Mesa arquivada. A campanha já pode ser regravada.' : 'Mesa arquivada.',
-        );
-      })
+    const done = await this.tables.archive(tableId, this.savedId());
+    if (done === null) {
+      return false;
+    }
+    this.writable.set(done.writable);
+    this.info.set(
+      done.writable ? 'Mesa arquivada. A campanha já pode ser regravada.' : 'Mesa arquivada.',
     );
+    return true;
   }
 
   /** Assume o lugar de anfitrião de uma mesa (depois de confirmar) e vai para ela. */
   async assumeHost(tableId: string): Promise<void> {
     const campaign = this.campaign();
     const id = this.savedId();
-    if (campaign === null || id === null) {
-      return;
-    }
-    const ok = await this.sheet.open<boolean>(ConfirmSheet, {
-      label: 'Assumir como anfitrião',
-      data: ASSUME_HOST_CONFIRM,
-    });
-    if (ok === true) {
-      await this.tableActions.run(tableId, async () => {
-        await this.serverTables.assumeHost(tableId, { id, title: campaign.title });
-        await this.router.navigate(['/mesa', tableId]);
-      });
+    if (campaign !== null && id !== null) {
+      await this.tables.assumeHost(tableId, { id, title: campaign.title });
     }
   }
 

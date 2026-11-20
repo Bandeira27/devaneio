@@ -20,6 +20,7 @@ import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement } from '@shared/ui/focus';
 import { EditorStore } from '../../editor.store';
+import { EditorTables } from '../../editor-tables';
 import { DvIcon } from '../../../../shared/ui/icon/icon';
 
 /** Quanto a conferência espera (ms) antes de dizer "Conferindo…". */
@@ -29,12 +30,12 @@ const SLOW_CHECK_MS = 300;
  * O roteiro de uma campanha (a tela de edição): a situação da conferência (o servidor confere a cada edição e
  * os erros e avisos vêm em português), e a barra de gravar. Gravar fica bloqueado com o motivo escrito enquanto houver
  * erro; uma campanha que já tem mesa só se grava como cópia. As seções (locais, NPCs, facções...) são páginas filhas e o menu delas é a barra lateral da campanha. Tem o próprio
- * `EditorStore`, que as seções injetam.
+ * `EditorStore`, que as seções injetam, e as mesas que travam a campanha vêm do `EditorTables`.
  */
 @Component({
   selector: 'dv-editor-page',
   imports: [DvIcon, RouterLink, RouterOutlet, DvBadge, DvButton, DvNotice, DvState],
-  providers: [EditorStore],
+  providers: [EditorStore, EditorTables],
   templateUrl: './edit-page.html',
   styleUrl: './edit-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +48,7 @@ export class EditorPage implements OnInit {
   readonly copia = input('');
 
   protected readonly store = inject(EditorStore);
+  protected readonly tables = inject(EditorTables);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   /**
