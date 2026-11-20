@@ -1,3 +1,24 @@
+.tables__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-3);
+}
+
+.tables__head .dv-title {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+/* Fase, papel e quando: uma linha de anotações que quebra com calma. */
+.saved__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dv-space-1) var(--dv-space-3);
+}
+
 .saved {
   display: grid;
   gap: var(--dv-space-2);

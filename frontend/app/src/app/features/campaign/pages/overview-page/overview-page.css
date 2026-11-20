@@ -11,3 +11,10 @@
   flex-wrap: wrap;
   gap: var(--dv-space-2);
 }
+
+.overview__latest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dv-space-1) var(--dv-space-2);
+}

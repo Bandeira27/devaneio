@@ -9,9 +9,12 @@
     <section class="overview__play dv-card dv-stack" aria-labelledby="titulo-jogar">
       <h2 class="dv-section" id="titulo-jogar">Jogar</h2>
       @if (latest(); as table) {
-        <p class="dv-note">
-          Sua mesa mais recente: {{ table.role === 'host' ? 'anfitrião' : 'jogador' }} ·
-          {{ when(table.savedAt) }}
+        <p class="overview__latest dv-note">
+          Sua mesa mais recente:
+          <dv-badge [tone]="table.role === 'host' ? 'info' : 'neutral'">{{
+            table.role === 'host' ? 'anfitrião' : 'jogador'
+          }}</dv-badge>
+          · {{ when(table.savedAt) }}
         </p>
         <div class="overview__actions">
           <a dvButton="primary" [routerLink]="['/mesa', table.tableId]"

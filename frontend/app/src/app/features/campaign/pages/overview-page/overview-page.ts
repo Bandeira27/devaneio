@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { whenOf } from '@shared/game/when';
+import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvOrnament } from '@shared/ui/ornament/ornament';
 import { CampaignStore } from '../../campaign.store';
@@ -12,7 +13,7 @@ import { DvIcon } from '../../../../shared/ui/icon/icon';
  */
 @Component({
   selector: 'dv-campaign-overview-page',
-  imports: [DvIcon, RouterLink, DvButton, DvOrnament],
+  imports: [DvBadge, DvIcon, RouterLink, DvButton, DvOrnament],
   providers: [CampaignStore],
   templateUrl: './overview-page.html',
   styleUrl: './overview-page.css',

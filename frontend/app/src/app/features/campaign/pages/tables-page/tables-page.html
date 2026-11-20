@@ -1,9 +1,18 @@
 <div class="tables dv-stack">
-  <h1 class="dv-title">Mesas</h1>
+  <header class="tables__head">
+    <h1 class="dv-title">Mesas</h1>
+    <a
+      class="tables__create"
+      [dvButton]="store.tables().length > 0 ? '' : 'primary'"
+      [routerLink]="['/c', campaignId(), 'nova-mesa']"
+    >
+      <dv-icon name="add" size="sm" />Criar uma mesa
+    </a>
+  </header>
 
   @if (store.tables().length > 0 || store.serverOnly().length > 0 || store.forgotten()) {
     <section class="dv-stack" aria-labelledby="titulo-guardadas">
-      <h2 class="dv-section" id="titulo-guardadas">Mesas desta campanha</h2>
+      <h2 class="dv-visually-hidden" id="titulo-guardadas">Mesas desta campanha</h2>
       <ul class="saved">
         @for (table of store.tables(); track table.tableId; let first = $first) {
           <li
@@ -13,8 +22,11 @@
           >
             <div class="saved__info">
               <span class="saved__title" [attr.title]="table.title">{{ table.title }}</span>
-              <span class="dv-note">
-                {{ table.role === 'host' ? 'anfitrião' : 'jogador' }} · {{ when(table.savedAt) }}
+              <span class="saved__meta">
+                <dv-badge [tone]="table.role === 'host' ? 'info' : 'neutral'">{{
+                  table.role === 'host' ? 'anfitrião' : 'jogador'
+                }}</dv-badge>
+                <span class="dv-note">{{ when(table.savedAt) }}</span>
               </span>
             </div>
             <div class="saved__actions">
@@ -60,8 +72,11 @@
           >
             <div class="saved__info">
               <span class="saved__title" [attr.title]="name(table)">{{ name(table) }}</span>
-              <span class="dv-note">{{ details(table) }}</span>
-              <span class="dv-note">Este navegador ainda não tem o acesso a esta mesa.</span>
+              <span class="saved__meta">
+                <dv-badge [tone]="phase(table).tone">{{ phase(table).label }}</dv-badge>
+                <dv-badge tone="warn" icon="warn">sem acesso aqui</dv-badge>
+                <span class="dv-note">{{ meta(table) }}</span>
+              </span>
             </div>
             <div class="saved__actions">
               <button
@@ -91,6 +106,12 @@
           </li>
         }
       </ul>
+      @if (store.serverOnly().length > 0) {
+        <p class="dv-note">
+          “Sem acesso aqui” quer dizer que a mesa existe no servidor, mas este navegador não tem o
+          acesso dela: assuma como anfitrião para abri-la, ou arquive.
+        </p>
+      }
       @if (store.forgotten(); as gone) {
         <dv-notice animate.leave="dv-leave">
           Mesa “{{ gone.title }}” esquecida neste navegador.
@@ -124,7 +145,10 @@
           >
             <div class="saved__info">
               <span class="saved__title" [attr.title]="name(table)">{{ name(table) }}</span>
-              <span class="dv-note">{{ archivedDetails(table) }}</span>
+              <span class="saved__meta">
+                <dv-badge [tone]="phase(table).tone">{{ phase(table).label }}</dv-badge>
+                <span class="dv-note">{{ archivedMeta(table) }}</span>
+              </span>
             </div>
             <div class="saved__actions">
               <button
@@ -172,11 +196,4 @@
   @if (store.done()) {
     <dv-notice kind="ok" animate.leave="dv-leave">{{ store.done() }}</dv-notice>
   }
-
-  <a
-    [dvButton]="store.tables().length > 0 ? '' : 'primary'"
-    [routerLink]="['/c', campaignId(), 'nova-mesa']"
-  >
-    <dv-icon name="add" size="sm" />Criar uma mesa
-  </a>
 </div>

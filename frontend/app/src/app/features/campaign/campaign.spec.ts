@@ -321,7 +321,9 @@ describe('Campanha: o servidor manda na lista de mesas', () => {
     const text = app.root().textContent ?? '';
     expect(text).toContain('Mesas desta campanha');
     expect(text).toContain('Mesa de Ana');
-    expect(text).toContain('em jogo · 2 jogadores · hoje');
+    expect(text).toContain('em jogo');
+    expect(text).toContain('2 jogadores · hoje');
+    expect(text).toContain('sem acesso aqui');
     expect(text).toContain('Assumir como anfitrião');
     expect(text).toContain('Arquivar');
     expect(text).not.toContain(TABLE_ID);
@@ -431,7 +433,8 @@ describe('Campanha: mesas arquivadas', () => {
     const text = app.root().textContent ?? '';
     expect(text).toContain('Mesas arquivadas');
     expect(text).toContain('Mesa de Ana');
-    expect(text).toContain('em jogo · 2 jogadores · jogada pela última vez');
+    expect(text).toContain('em jogo');
+    expect(text).toContain('2 jogadores · jogada pela última vez');
     expect(text).not.toContain('aaaaaaaaaaaaaaaa');
     expect(button(app, 'Restaurar')).toBeDefined();
     expect(button(app, 'Ver histórico')).toBeDefined();

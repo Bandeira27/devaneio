@@ -11,13 +11,15 @@ import {
 import { RouterLink } from '@angular/router';
 import type { ArchivedTable, EditorTable } from '@contract/api_responses';
 import {
-  archivedDetails,
   archivedLine,
-  tableDetails,
+  archivedMeta,
   tableLine,
+  tableMeta,
   tableName,
+  tablePhase,
 } from '@shared/game/server-tables';
 import { whenOf } from '@shared/game/when';
+import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { focusElement } from '@shared/ui/focus';
 import { DvNotice } from '@shared/ui/notice/notice';
@@ -31,7 +33,7 @@ import { DvIcon } from '../../../../shared/ui/icon/icon';
  */
 @Component({
   selector: 'dv-campaign-tables-page',
-  imports: [DvIcon, RouterLink, DvButton, DvNotice],
+  imports: [DvBadge, DvIcon, RouterLink, DvButton, DvNotice],
   providers: [CampaignStore],
   templateUrl: './tables-page.html',
   styleUrl: './tables-page.css',
@@ -48,9 +50,10 @@ export class TablesPage {
   protected readonly archivedLine = (table: ArchivedTable): string =>
     archivedLine(table, Date.now());
   protected readonly name = tableName;
-  protected readonly details = (table: EditorTable): string => tableDetails(table, Date.now());
-  protected readonly archivedDetails = (table: ArchivedTable): string =>
-    archivedDetails(table, Date.now());
+  protected readonly phase = tablePhase;
+  protected readonly meta = (table: EditorTable): string => tableMeta(table, Date.now());
+  protected readonly archivedMeta = (table: ArchivedTable): string =>
+    archivedMeta(table, Date.now());
   protected readonly when = (time: number): string => whenOf(time, Date.now());
 
   constructor() {

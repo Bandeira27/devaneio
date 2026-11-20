@@ -11,6 +11,27 @@ const PHASE = {
 const playersOf = (table: EditorTable | ArchivedTable): string =>
   `${table.players} ${table.players === 1 ? 'jogador' : 'jogadores'}`;
 
+/** O selo da fase da mesa: o texto e o tom (em jogo é o que está vivo; encerrada, o que já acabou). */
+export function tablePhase(table: EditorTable | ArchivedTable): {
+  label: string;
+  tone: 'info' | 'ok' | 'warn' | 'neutral';
+} {
+  const tones = { lobby: 'info', running: 'ok', paused: 'warn', ended: 'neutral' } as const;
+  return { label: PHASE[table.phase], tone: tones[table.phase] };
+}
+
+/** Jogadores e quando, sem a fase (que vira selo): "2 jogadores · ontem". */
+export function tableMeta(table: EditorTable, now: number): string {
+  return `${playersOf(table)} · ${whenOf(table.updated_at * 1000, now)}`;
+}
+
+/** O mesmo da arquivada: "2 jogadores · jogada pela última vez ontem · arquivada ontem". */
+export function archivedMeta(table: ArchivedTable, now: number): string {
+  const archived = whenOf(table.archived_at * 1000, now);
+  const played = whenOf(table.updated_at * 1000, now);
+  return `${playersOf(table)} · jogada pela última vez ${played} · arquivada ${archived}`;
+}
+
 /** O nome da mesa, que é texto livre do anfitrião: "Mesa de Ana" (ou só "Mesa" sem anfitrião). */
 export function tableName(table: EditorTable | ArchivedTable): string {
   return table.host_name === '' ? 'Mesa' : `Mesa de ${table.host_name}`;
