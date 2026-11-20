@@ -8,20 +8,34 @@ const PHASE = {
   ended: 'encerrada',
 } as const;
 
-/** A mesa em uma linha, no vocabulário do jogo: "Mesa de Ana · em jogo · 2 jogadores · ontem". */
-export function tableLine(table: EditorTable, now: number): string {
-  const players = `${table.players} ${table.players === 1 ? 'jogador' : 'jogadores'}`;
-  const host = table.host_name === '' ? 'Mesa' : `Mesa de ${table.host_name}`;
-  return `${host} · ${PHASE[table.phase]} · ${players} · ${whenOf(table.updated_at * 1000, now)}`;
+const playersOf = (table: EditorTable | ArchivedTable): string =>
+  `${table.players} ${table.players === 1 ? 'jogador' : 'jogadores'}`;
+
+/** O nome da mesa, que é texto livre do anfitrião: "Mesa de Ana" (ou só "Mesa" sem anfitrião). */
+export function tableName(table: EditorTable | ArchivedTable): string {
+  return table.host_name === '' ? 'Mesa' : `Mesa de ${table.host_name}`;
 }
 
-/** A mesa arquivada em uma linha: "Mesa de Ana · em jogo · 2 jogadores · arquivada ontem". */
-export function archivedLine(table: ArchivedTable, now: number): string {
-  const players = `${table.players} ${table.players === 1 ? 'jogador' : 'jogadores'}`;
-  const host = table.host_name === '' ? 'Mesa' : `Mesa de ${table.host_name}`;
+/** O resto da linha da mesa, que tem tamanho previsível: "em jogo · 2 jogadores · ontem". */
+export function tableDetails(table: EditorTable, now: number): string {
+  return `${PHASE[table.phase]} · ${playersOf(table)} · ${whenOf(table.updated_at * 1000, now)}`;
+}
+
+/** O resto da linha da mesa arquivada: "em jogo · 2 jogadores · jogada pela última vez ontem · arquivada ontem". */
+export function archivedDetails(table: ArchivedTable, now: number): string {
   const archived = whenOf(table.archived_at * 1000, now);
   const played = whenOf(table.updated_at * 1000, now);
-  return `${host} · ${PHASE[table.phase]} · ${players} · jogada pela última vez ${played} · arquivada ${archived}`;
+  return `${PHASE[table.phase]} · ${playersOf(table)} · jogada pela última vez ${played} · arquivada ${archived}`;
+}
+
+/** A mesa em uma linha, no vocabulário do jogo: "Mesa de Ana · em jogo · 2 jogadores · ontem". */
+export function tableLine(table: EditorTable, now: number): string {
+  return `${tableName(table)} · ${tableDetails(table, now)}`;
+}
+
+/** A mesa arquivada em uma linha: "Mesa de Ana · em jogo · 2 jogadores · jogada pela última vez ontem · arquivada ontem". */
+export function archivedLine(table: ArchivedTable, now: number): string {
+  return `${tableName(table)} · ${archivedDetails(table, now)}`;
 }
 
 /** O que a folha de confirmar diz ao arquivar uma mesa. */

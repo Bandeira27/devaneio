@@ -1,6 +1,10 @@
 :host {
   display: inline-flex;
   align-items: center;
+  /* O selo pode citar um nome livre (o personagem de um jogador): nunca passa da largura do que o contém. */
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   gap: var(--dv-space-1);
   padding: 0;
   /* Uma anotação à margem: o filete pontilhado e fraco é só do texto (pontilhado é informação) e o selo não é clicável. */

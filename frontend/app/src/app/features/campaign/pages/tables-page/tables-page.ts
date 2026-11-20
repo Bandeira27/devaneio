@@ -10,7 +10,13 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { ArchivedTable, EditorTable } from '@contract/api_responses';
-import { archivedLine, tableLine } from '@shared/game/server-tables';
+import {
+  archivedDetails,
+  archivedLine,
+  tableDetails,
+  tableLine,
+  tableName,
+} from '@shared/game/server-tables';
 import { whenOf } from '@shared/game/when';
 import { DvButton } from '@shared/ui/button/button';
 import { focusElement } from '@shared/ui/focus';
@@ -41,6 +47,10 @@ export class TablesPage {
   protected readonly line = (table: EditorTable): string => tableLine(table, Date.now());
   protected readonly archivedLine = (table: ArchivedTable): string =>
     archivedLine(table, Date.now());
+  protected readonly name = tableName;
+  protected readonly details = (table: EditorTable): string => tableDetails(table, Date.now());
+  protected readonly archivedDetails = (table: ArchivedTable): string =>
+    archivedDetails(table, Date.now());
   protected readonly when = (time: number): string => whenOf(time, Date.now());
 
   constructor() {

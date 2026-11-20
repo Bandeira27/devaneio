@@ -1,5 +1,6 @@
 .overview__premise {
   margin: 0;
+  overflow-wrap: anywhere;
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
   line-height: var(--dv-leading-narration);

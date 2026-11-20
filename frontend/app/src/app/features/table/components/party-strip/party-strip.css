@@ -8,7 +8,7 @@
 
 .party__member {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--dv-space-1) var(--dv-space-3);
 }
@@ -16,6 +16,7 @@
 .party__name {
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
+  overflow-wrap: anywhere;
 }
 
 .party__badges {

@@ -6,9 +6,17 @@
   list-style: none;
 }
 
+/* O nome vem do anfitrião (texto livre): quebra em qualquer ponto e, passando de duas linhas, termina em reticências
+   (o nome inteiro fica no `title` e nos rótulos dos botões). */
 .saved__title {
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .saved__forget {
@@ -23,8 +31,12 @@
   gap: var(--dv-space-3);
 }
 
+/* O texto toma o espaço que sobra e pode encolher (sem `min-width: 0` o nome longo alarga o cartão); as ações descem
+   para baixo dele quando não cabem ao lado. */
 .saved__info {
   display: grid;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .saved__actions {

@@ -12,7 +12,7 @@
             animate.leave="dv-leave"
           >
             <div class="saved__info">
-              <span class="saved__title">{{ table.title }}</span>
+              <span class="saved__title" [attr.title]="table.title">{{ table.title }}</span>
               <span class="dv-note">
                 {{ table.role === 'host' ? 'anfitrião' : 'jogador' }} · {{ when(table.savedAt) }}
               </span>
@@ -59,7 +59,8 @@
             animate.leave="dv-leave"
           >
             <div class="saved__info">
-              <span class="saved__title">{{ line(table) }}</span>
+              <span class="saved__title" [attr.title]="name(table)">{{ name(table) }}</span>
+              <span class="dv-note">{{ details(table) }}</span>
               <span class="dv-note">Este navegador ainda não tem o acesso a esta mesa.</span>
             </div>
             <div class="saved__actions">
@@ -122,7 +123,8 @@
             animate.leave="dv-leave"
           >
             <div class="saved__info">
-              <span class="saved__title">{{ archivedLine(table) }}</span>
+              <span class="saved__title" [attr.title]="name(table)">{{ name(table) }}</span>
+              <span class="dv-note">{{ archivedDetails(table) }}</span>
             </div>
             <div class="saved__actions">
               <button

@@ -6,14 +6,17 @@
   list-style: none;
 }
 
+/* Nome de jogador e de personagem é texto livre: a coluna pode encolher (`minmax(0, 1fr)`) e o nome quebra. */
 .lobby__person {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--dv-space-1);
 }
 
 .lobby__name {
   font-family: var(--dv-font-narration);
   font-size: var(--dv-text-narration);
+  overflow-wrap: anywhere;
 }
 
 .lobby__badges {
