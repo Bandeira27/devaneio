@@ -1,4 +1,4 @@
-import type { EventView, EventsView, TalkView } from '@contract/api_responses';
+import type { ChatMessageView, EventView, EventsView, TalkView } from '@contract/api_responses';
 import type { EventsQuery } from '../api/api-types';
 import { ApiFailure } from '../api/api-failure';
 import {
@@ -14,6 +14,10 @@ function event(index: number, text = `evento ${index}`): EventView {
   return { index, turn: 0, kind: 'move', text, prose: text, narration: null, outcome: null };
 }
 
+function chatMessage(seq: number, text = `mensagem ${seq}`): ChatMessageView {
+  return { seq, player_id: 'p2', name: 'Bia', role: 'player', text, at: 1_000 + seq };
+}
+
 function talk(seq: number): TalkView {
   return { seq, after: 0, to: 'aria', text: `fala ${seq}` };
 }
@@ -23,8 +27,10 @@ function view(
   events: EventView[] = [],
   talks: TalkView[] = [],
   talkSeq = 0,
+  chat: ChatMessageView[] = [],
+  chatSeq = 0,
 ): EventsView {
-  return { revision, events, talk: talks, talk_seq: talkSeq };
+  return { revision, events, talk: talks, talk_seq: talkSeq, chat, chat_seq: chatSeq };
 }
 
 type Step = EventsView | Error | (() => Promise<EventsView>);
@@ -102,9 +108,24 @@ describe('LiveFeed', () => {
     const feed = new LiveFeed(env, 120);
     const done = feed.run();
     await drain(feed, env, 3);
-    expect(env.queries[0]).toEqual({ since: 120 - INITIAL_WINDOW, sinceTalk: 0, wait: 0 });
-    expect(env.queries[1]).toEqual({ since: 120, sinceTalk: 0, wait: LONG_POLL_SECONDS });
-    expect(env.queries[2]).toEqual({ since: 121, sinceTalk: 0, wait: LONG_POLL_SECONDS });
+    expect(env.queries[0]).toEqual({
+      since: 120 - INITIAL_WINDOW,
+      sinceTalk: 0,
+      sinceChat: 0,
+      wait: 0,
+    });
+    expect(env.queries[1]).toEqual({
+      since: 120,
+      sinceTalk: 0,
+      sinceChat: 0,
+      wait: LONG_POLL_SECONDS,
+    });
+    expect(env.queries[2]).toEqual({
+      since: 121,
+      sinceTalk: 0,
+      sinceChat: 0,
+      wait: LONG_POLL_SECONDS,
+    });
     feed.stop();
     await done;
   });
@@ -335,6 +356,35 @@ describe('LiveFeed', () => {
       feed.stop();
       await done;
       expect(env.queries).toHaveLength(0);
+    });
+  });
+
+  describe('chat', () => {
+    it('guarda as mensagens, devolve a última posição e não repete as que já tem', async () => {
+      const env = new FakeEnv(
+        view(1, [], [], 0, [chatMessage(1), chatMessage(2)], 2),
+        view(1, [], [], 0, [chatMessage(2), chatMessage(3)], 3),
+      );
+      const feed = new LiveFeed(env, 1);
+      const done = feed.run();
+      await drain(feed, env, 3);
+      expect(feed.chat().map((m) => m.seq)).toEqual([1, 2, 3]);
+      expect(env.queries[1]?.sinceChat).toBe(2);
+      expect(env.queries[2]?.sinceChat).toBe(3);
+      feed.stop();
+      await done;
+    });
+
+    it('uma mensagem enviada por esta aba aparece já e a volta do long-poll não a repete', async () => {
+      const env = new FakeEnv(view(1), view(1, [], [], 0, [chatMessage(1, 'oi')], 1));
+      const feed = new LiveFeed(env, 1);
+      feed.addChat(chatMessage(1, 'oi'));
+      expect(feed.chat().map((m) => m.text)).toEqual(['oi']);
+      const done = feed.run();
+      await drain(feed, env, 3);
+      expect(feed.chat()).toHaveLength(1);
+      feed.stop();
+      await done;
     });
   });
 

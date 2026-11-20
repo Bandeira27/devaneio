@@ -34,6 +34,19 @@
         </a>
         <h1 class="dv-title">{{ store.title() }}</h1>
         <dv-connection-badge [status]="store.liveStatus()" />
+        <button dvButton type="button" class="table__chat" (click)="openChat()">
+          <dv-icon name="say" size="sm" />Conversa
+          @if (store.chat.unread() > 0) {
+            <dv-badge tone="info"
+              ><span class="dv-visually-hidden">{{
+                store.chat.unread() === 1
+                  ? '1 mensagem nova'
+                  : store.chat.unread() + ' mensagens novas'
+              }}</span
+              ><span aria-hidden="true">{{ store.chat.unread() }}</span></dv-badge
+            >
+          }
+        </button>
         @if (store.phase() !== 'lobby') {
           <dv-play-clock
             class="table__clock"

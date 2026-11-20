@@ -73,7 +73,11 @@ async function open(
   await app.settle();
   app.http
     .match((r) => r.url === `/tables/${TABLE_ID}/events`)
-    .forEach((r) => !r.cancelled && r.flush({ revision: 3, events: [], talk: [], talk_seq: 0 }));
+    .forEach(
+      (r) =>
+        !r.cancelled &&
+        r.flush({ revision: 3, events: [], talk: [], talk_seq: 0, chat: [], chat_seq: 0 }),
+    );
   await app.settle();
   // O painel do anfitrião abre como folha sobre a mesa: texto e botões valem para a mesa e para ela.
   const scopes = (): Element[] =>

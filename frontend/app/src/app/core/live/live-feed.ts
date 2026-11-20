@@ -1,11 +1,18 @@
 import { signal } from '@angular/core';
-import type { EventView, EventsView, TalkView } from '@contract/api_responses';
+import type { ChatMessageView, EventView, EventsView, TalkView } from '@contract/api_responses';
 import type { EventsQuery } from '../api/api-types';
 import { ApiFailure } from '../api/api-failure';
 import { backoffDelay } from './live-backoff';
-import { MAX_EVENTS, MAX_TALK, mergeEvents, mergeTalk } from './live-merge';
+import {
+  MAX_CHAT_KEPT,
+  MAX_EVENTS,
+  MAX_TALK,
+  mergeChat,
+  mergeEvents,
+  mergeTalk,
+} from './live-merge';
 
-export { MAX_EVENTS, MAX_TALK };
+export { MAX_CHAT_KEPT, MAX_EVENTS, MAX_TALK };
 
 /** Como está a conexão ao vivo: conectando, no ar, sem rede, token vencido, mesa sumida ou falha definitiva. */
 export type LiveStatus = 'connecting' | 'live' | 'offline' | 'expired' | 'gone' | 'failed';
@@ -30,16 +37,18 @@ export const FAST_EMPTY_MS = 1000;
 /**
  * O fluxo ao vivo de uma mesa: um laço de long-poll por aba. Primeira chamada sem espera (carrega a janela
  * inicial e o mural), depois `wait` de 20 s. Guarda a `revision` (não `index + 1`: o jogador comum recebe
- * eventos com buracos) e o `talk_seq`. Erro de rede e do servidor recuam com jitter; 401 e 404 encerram.
+ * eventos com buracos), o `talk_seq` e o `chat_seq`. Erro de rede e do servidor recuam com jitter; 401 e 404 encerram.
  */
 export class LiveFeed {
   readonly status = signal<LiveStatus>('connecting');
   readonly events = signal<EventView[]>([]);
   readonly talk = signal<TalkView[]>([]);
+  readonly chat = signal<ChatMessageView[]>([]);
   readonly revision = signal(0);
 
   private since: number;
   private sinceTalk = 0;
+  private sinceChat = 0;
   private first = true;
   private readonly abort = new AbortController();
 
@@ -66,7 +75,7 @@ export class LiveFeed {
       let view: EventsView;
       try {
         view = await this.env.fetchEvents(
-          { since: this.since, sinceTalk: this.sinceTalk, wait },
+          { since: this.since, sinceTalk: this.sinceTalk, sinceChat: this.sinceChat, wait },
           signal,
         );
       } catch (error) {
@@ -103,6 +112,14 @@ export class LiveFeed {
     }
   }
 
+  /** Põe já na tela uma mensagem que esta aba acabou de enviar (a volta do long-poll a traria, e repetida seria ignorada). */
+  addChat(message: ChatMessageView): void {
+    const merged = mergeChat(this.chat(), [message]);
+    if (merged !== null) {
+      this.chat.set(merged);
+    }
+  }
+
   stop(): void {
     this.abort.abort();
   }
@@ -110,17 +127,22 @@ export class LiveFeed {
   private apply(view: EventsView): boolean {
     const events = mergeEvents(this.events(), view.events);
     const talk = mergeTalk(this.talk(), view.talk);
+    const chat = mergeChat(this.chat(), view.chat);
     if (events !== null) {
       this.events.set(events);
     }
     if (talk !== null) {
       this.talk.set(talk);
     }
+    if (chat !== null) {
+      this.chat.set(chat);
+    }
     const moved = view.revision !== this.revision();
     this.revision.set(view.revision);
     this.since = view.revision;
     this.sinceTalk = Math.max(this.sinceTalk, view.talk_seq);
-    return events !== null || talk !== null || moved;
+    this.sinceChat = Math.max(this.sinceChat, view.chat_seq);
+    return events !== null || talk !== null || chat !== null || moved;
   }
 
   private delay(attempt: number): number {

@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
+import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvIcon } from '@shared/ui/icon/icon';
@@ -33,6 +34,7 @@ import { SceneCard } from '../../components/scene-card/scene-card';
 import { HostAside } from '../../host/host-aside';
 import { HostSession, canDock } from '../../host/host-session';
 import { HostSheet } from '../../host/host-sheet';
+import { ChatSheet } from '../../components/sheets/chat-sheet';
 import { TableStore } from '../../table.store';
 
 /** Tela da mesa: cena, grupo, feed ao vivo e as ações. */
@@ -40,6 +42,7 @@ import { TableStore } from '../../table.store';
   selector: 'dv-table-page',
   imports: [
     CharacterCard,
+    DvBadge,
     RouterLink,
     DvButton,
     DvDisclosure,
@@ -146,6 +149,11 @@ export class TablePage {
         this.documentTitle.setTitle(`${campaign} · Devaneio`);
       }
     });
+  }
+
+  /** Abre a conversa da mesa numa folha; a pessoa volta a ler a mesa ao fechar. */
+  protected openChat(): void {
+    void this.sheet.open(ChatSheet, { label: 'Conversa da mesa', injector: this.injector });
   }
 
   /** Abre ou fecha a barra do anfitrião: ao lado da mesa na tela larga, um bottom sheet nas outras. */

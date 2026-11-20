@@ -40,7 +40,7 @@ describe('TableLive', () => {
     expect(first.request.params.get('wait')).toBe('0');
     expect(first.request.params.get('since')).toBe('30');
     expect(first.request.headers.get('Authorization')).toBe('Bearer tk');
-    first.flush({ revision: 80, events: [], talk: [], talk_seq: 0 });
+    first.flush({ revision: 80, events: [], talk: [], talk_seq: 0, chat: [], chat_seq: 0 });
     await vi.waitFor(() => expect(feed.status()).toBe('live'));
     const second = await vi.waitFor(() => events());
     expect(second.request.params.get('wait')).toBe('20');

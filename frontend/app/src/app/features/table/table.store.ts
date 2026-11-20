@@ -21,6 +21,7 @@ import type { LoadState } from '@shared/game/load-state';
 import { hostViewOf } from '@shared/game/host';
 import { plainNote, usableWeapons } from '@shared/game/rules';
 import { TableActions } from './table.actions';
+import { TableChat } from './table.chat';
 import {
   blockedReasonOf,
   characterOf,
@@ -72,6 +73,16 @@ export class TableStore implements OnDestroy {
   readonly liveStatus = computed<LiveStatus>(() => this.feed()?.status() ?? 'connecting');
   readonly events = computed<EventView[]>(() => this.feed()?.events() ?? []);
   readonly talk = computed<TalkView[]>(() => this.feed()?.talk() ?? []);
+  /** O chat da mesa: mensagens, não lidas e envio. */
+  readonly chat = new TableChat(
+    this.api,
+    () => this.tableId(),
+    computed(() => this.feed()?.chat() ?? []),
+    computed(() => this.table()?.you ?? ''),
+    (message) => this.feed()?.addChat(message),
+  );
+  /** Dá para escrever no chat até a partida ser encerrada (a pausa trava só as ações do jogo). */
+  readonly canChat = computed(() => this.phase() !== 'ended');
 
   readonly turn = computed(() => this.table()?.state.turn ?? 0);
   readonly status = computed(() => this.table()?.status ?? 'active');
@@ -138,6 +149,12 @@ export class TableStore implements OnDestroy {
 
   constructor() {
     effect(() => this.syncReveal());
+    effect(() => {
+      // A primeira carga traz o histórico do chat: o que já existia ao abrir a mesa não é "não lido".
+      if (this.liveStatus() === 'live') {
+        untracked(() => this.chat.baseline());
+      }
+    });
     effect(() => {
       const text = this.actions.reply();
       untracked(() => {

@@ -72,11 +72,19 @@ describe('ApiClient', () => {
   });
 
   it('monta a consulta do long-poll', () => {
-    void firstValueFrom(api.events(TABLE, { since: 7, sinceTalk: 3, wait: 20 }));
+    void firstValueFrom(api.events(TABLE, { since: 7, sinceTalk: 3, sinceChat: 5, wait: 20 }));
     const request = http.expectOne((r) => r.url === `/tables/${TABLE}/events`);
     expect(request.request.params.get('since')).toBe('7');
     expect(request.request.params.get('since_talk')).toBe('3');
+    expect(request.request.params.get('since_chat')).toBe('5');
     expect(request.request.params.get('wait')).toBe('20');
+  });
+
+  it('manda uma mensagem do chat com o token da mesa', () => {
+    void firstValueFrom(api.postChat(TABLE, { text: 'bora' })).catch(() => undefined);
+    const request = http.expectOne(`/tables/${TABLE}/chat`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ text: 'bora' });
   });
 
   it('manda comando e texto livre com a revisão', () => {

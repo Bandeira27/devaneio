@@ -25,7 +25,11 @@ async function open(table: TableView = hostTable(), role: 'host' | 'player' = 'h
   const live = () =>
     app.http
       .match((r) => r.url === `/tables/${TABLE_ID}/events`)
-      .forEach((r) => !r.cancelled && r.flush({ revision: 3, events: [], talk: [], talk_seq: 0 }));
+      .forEach(
+        (r) =>
+          !r.cancelled &&
+          r.flush({ revision: 3, events: [], talk: [], talk_seq: 0, chat: [], chat_seq: 0 }),
+      );
   live();
   await app.settle();
   const root = (): HTMLElement => document.querySelector('dv-host-sheet') as HTMLElement;

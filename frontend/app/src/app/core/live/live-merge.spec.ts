@@ -1,5 +1,12 @@
-import type { EventView, TalkView } from '@contract/api_responses';
-import { MAX_EVENTS, MAX_TALK, mergeEvents, mergeTalk } from './live-merge';
+import type { ChatMessageView, EventView, TalkView } from '@contract/api_responses';
+import {
+  MAX_CHAT_KEPT,
+  MAX_EVENTS,
+  MAX_TALK,
+  mergeChat,
+  mergeEvents,
+  mergeTalk,
+} from './live-merge';
 
 const event = (index: number): EventView => ({
   index,
@@ -37,5 +44,30 @@ describe('mergeTalk', () => {
     const merged = mergeTalk([], many) ?? [];
     expect(merged).toHaveLength(MAX_TALK);
     expect(merged.at(-1)?.seq).toBe(MAX_TALK + 3);
+  });
+});
+
+describe('mergeChat', () => {
+  const message = (seq: number): ChatMessageView => ({
+    seq,
+    player_id: 'p1',
+    name: 'Ana',
+    role: 'host',
+    text: `m${seq}`,
+    at: seq,
+  });
+
+  it('ordena por seq, ignora a repetida e devolve null sem novidade', () => {
+    expect(
+      mergeChat([message(1), message(4)], [message(3), message(4)])?.map((m) => m.seq),
+    ).toEqual([1, 3, 4]);
+    expect(mergeChat([message(1)], [message(1)])).toBeNull();
+  });
+
+  it('guarda só as mais recentes', () => {
+    const many = Array.from({ length: MAX_CHAT_KEPT + 4 }, (_, i) => message(i + 1));
+    const merged = mergeChat([], many) ?? [];
+    expect(merged).toHaveLength(MAX_CHAT_KEPT);
+    expect(merged[0]?.seq).toBe(5);
   });
 });

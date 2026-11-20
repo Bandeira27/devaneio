@@ -7,6 +7,8 @@ const eventsView = (revision: number): EventsView => ({
   events: [],
   talk: [],
   talk_seq: 0,
+  chat: [],
+  chat_seq: 0,
 });
 const commandResult = (over: object = {}) => ({
   revision: 4,
@@ -241,7 +243,7 @@ describe('Ações da mesa', () => {
     const firstCampaign = app.http.expectOne(`/tables/${TABLE_ID}/campaign`);
     app.http
       .expectOne((r) => r.url === `/tables/${TABLE_ID}/events` && r.params.get('wait') === '20')
-      .flush({ revision: 9, events: [], talk: [], talk_seq: 0 });
+      .flush({ revision: 9, events: [], talk: [], talk_seq: 0, chat: [], chat_seq: 0 });
     await app.settle();
     first.flush(table({ revision: 8 }));
     firstCampaign.flush(campaignView());

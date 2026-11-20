@@ -23,6 +23,8 @@ const eventsView = (
   events,
   talk,
   talk_seq: talkSeq,
+  chat: [],
+  chat_seq: 0,
 });
 
 function withCharacter(over: Partial<TableView> = {}): TableView {

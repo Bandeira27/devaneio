@@ -7,6 +7,7 @@ import type {
   Campaign,
   CampaignSummary,
   CampaignView,
+  ChatMessageView,
   CommandResult,
   CopilotAnswer,
   EditorCampaign,
@@ -27,6 +28,7 @@ import type {
   ValidationReport,
 } from '@contract/api_responses';
 import type {
+  ChatRequest,
   CommandRequest,
   CopilotRequest,
   CreateTableRequest,
@@ -81,11 +83,17 @@ export class ApiClient {
     const params = new HttpParams()
       .set('since', query.since)
       .set('since_talk', query.sinceTalk)
+      .set('since_chat', query.sinceChat)
       .set('wait', query.wait);
     return this.http.get<EventsView>(`${this.base(tableId)}/events`, {
       ...this.as(tableId),
       params,
     });
+  }
+
+  /** Manda uma mensagem ao chat da mesa (só para o grupo; não passa pelo motor nem pelo mestre de IA). */
+  postChat(tableId: string, request: ChatRequest): Observable<ChatMessageView> {
+    return this.http.post<ChatMessageView>(`${this.base(tableId)}/chat`, request, this.as(tableId));
   }
 
   command(tableId: string, request: CommandRequest): Observable<CommandResult> {
