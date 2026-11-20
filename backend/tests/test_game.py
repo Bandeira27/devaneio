@@ -157,10 +157,9 @@ def test_new_game_starts_with_root_beats_active(session):
 def test_beats_advance_after_player_actions(session):
     session, text = run(session, 'entrar aria "Aria"', "ir floresta")
     assert (
-        text
-        == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
-    )
-    session, text = run(session, "ir ruinas")
+        text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta."
+    )  # sem persuadir, nada fecha
+    session, text = run(session, "marco concluir chegada", "ir ruinas")
     assert text.endswith("\nMarco ativado: A pista nas ruínas.")
     _, look = run(session, "olhar")
     assert "Irmão Vael (sacerdote) hp 12/12, hostil" in look
@@ -174,7 +173,12 @@ def test_beats_advance_after_player_actions(session):
 
 def test_manual_beat_commands(session):
     session, text = run(
-        session, 'entrar aria "Aria"', "ir floresta", "ir ruinas", "marco concluir pista"
+        session,
+        'entrar aria "Aria"',
+        "ir floresta",
+        "marco concluir chegada",
+        "ir ruinas",
+        "marco concluir pista",
     )
     assert text == "Marco concluído: A pista nas ruínas.\nMarco ativado: Confronto com o culto."
     with pytest.raises(CommandError, match="está 'active', precisava estar 'pending'"):
@@ -288,13 +292,11 @@ def test_is_command_uses_the_same_prefix_rule(line, expected):
 
 def test_move_and_log(session):
     session, text = run(session, "ir floresta")
-    assert (
-        text
-        == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\nMarco concluído: Chegada à vila."
-    )
+    assert text == "O grupo vai de Vila de Pedra Alta para Floresta Cinzenta."
     session, look = run(session, "olhar")
     assert look.startswith("Turno 0 — Floresta Cinzenta (floresta)")
     assert "Aqui: ninguém" in look
+    session, _ = run(session, "marco concluir chegada")
     _, log = run(session, "log 2")
     assert log == (
         "[t0] O grupo vai de Vila de Pedra Alta para Floresta Cinzenta.\n"
@@ -493,7 +495,12 @@ def test_defeat_locks_actions_and_olhar_says_so(session):
 
 def test_victory_when_the_last_beat_closes(session):
     session, _ = run(
-        session, 'entrar aria "Aria" +espada', "ir floresta", "ir ruinas", "marco concluir pista"
+        session,
+        'entrar aria "Aria" +espada',
+        "ir floresta",
+        "marco concluir chegada",
+        "ir ruinas",
+        "marco concluir pista",
     )
     before = session.state
     session, _ = run(session, "ferir sacerdote 99")

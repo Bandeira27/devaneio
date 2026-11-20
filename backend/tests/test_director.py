@@ -4,7 +4,6 @@ from devaneio.engine import (
     add_character,
     advance_beats,
     apply_damage,
-    complete_beat,
     direct,
     holds,
     initial_state,
@@ -94,15 +93,21 @@ def test_advance_activates_root_beat_only(state, campaign):
 def test_beats_follow_the_journey(state, campaign):
     s, _ = advance_beats(state, campaign)
     s, texts = advance_beats(at(s, campaign, "floresta"), campaign)
+    assert texts == ()  # chegada exige estar na vila e vencer a conversa
+    s, texts = advance_beats(at(s, campaign, "vila"), campaign)
+    assert texts == ()  # na vila, mas sem a conversa vencida
+    s, texts = advance_beats(with_check(s, skill="persuadir"), campaign)
     assert texts == ("Marco concluído: Chegada à vila.",)  # pista exige ruínas
-    s, texts = advance_beats(at(s, campaign, "ruinas"), campaign)
+    s, texts = advance_beats(at(s, campaign, "floresta", "ruinas"), campaign)
     assert texts == ("Marco ativado: A pista nas ruínas.",)
     assert s.beats["confronto"] is BeatStatus.PENDING  # exige pista concluída
     s, texts = advance_beats(s, campaign)
-    assert texts == ()  # pista só conclui por ação explícita
-    s = complete_beat(s, campaign, beat_id="pista").state
-    s, texts = advance_beats(s, campaign)
-    assert texts == ("Marco ativado: Confronto com o culto.",)
+    assert texts == ()  # nas ruínas, mas sem a investigação vencida
+    s, texts = advance_beats(with_check(s, skill="investigar"), campaign)
+    assert texts == (
+        "Marco concluído: A pista nas ruínas.",
+        "Marco ativado: Confronto com o culto.",  # liberado na mesma passada
+    )
     s = apply_damage(
         s, campaign, target_kind="npc", target_id="sacerdote", amount=99, source="x"
     ).state

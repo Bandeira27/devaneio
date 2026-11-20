@@ -309,6 +309,7 @@ def test_an_action_that_wins_the_game_does_not_try_to_close_the_turn(desk):
     bia = desk.join("Bia")
     desk.cmd(bia, 'entrar bia "Bia" FOR=5')
     desk.cmd(bia, "ir floresta")  # único personagem: cada ação fecha o turno sozinha
+    desk.cmd(desk.host, "marco concluir chegada")
     desk.cmd(bia, "ir ruinas")
     desk.cmd(desk.host, "marco concluir pista")
     desk.cmd(desk.host, "ferir sacerdote 11")  # sobra 1 de hp

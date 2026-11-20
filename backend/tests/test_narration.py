@@ -8,6 +8,7 @@ from devaneio.engine import (
     add_character,
     advance_beats,
     apply_damage,
+    complete_beat,
     deal_damage,
     fail_beat,
     heal,
@@ -52,6 +53,9 @@ def played(campaign, rules):
     s, _ = advance_beats(initial_state(campaign, rules, 8), campaign)
     s = add_character(s, rules, character_id="aria", name="Aria", attributes={"FOR": 3}).state
     s, _ = advance_beats(move(s, campaign, to_location_id="floresta").state, campaign)
+    # chegada exige vila + persuadir: aqui o marco é concluído à mão, para gerar o beat_done
+    s = complete_beat(s, campaign, beat_id="chegada").state
+    s, _ = advance_beats(s, campaign)
     s, _ = advance_beats(move(s, campaign, to_location_id="ruinas").state, campaign)
     s = resolve_check(
         s, rules, character_id="aria", skill_id="investigar", difficulty_id="normal"

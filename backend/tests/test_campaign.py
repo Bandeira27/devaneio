@@ -165,9 +165,12 @@ def test_unknown_condition_kind_is_a_structural_error(campaign_data):
 
 def test_example_campaign_has_triggers(campaign):
     by_id = {b.id: b for b in campaign.beats}
-    assert by_id["chegada"].complete_when[0].location_id == "floresta"
+    # chegada só fecha com o grupo na vila e a conversa vencida (persuadir)
+    assert by_id["chegada"].complete_when[0].location_id == "vila"
+    assert by_id["chegada"].complete_when[1].skill_id == "persuadir"
+    assert by_id["pista"].complete_when[0].location_id == "ruinas"
+    assert by_id["pista"].complete_when[1].skill_id == "investigar"
     assert by_id["confronto"].complete_when[1].npc_id == "sacerdote"
-    assert by_id["pista"].complete_when == []
 
 
 def test_example_facts_are_revealed_by_conditions(campaign):

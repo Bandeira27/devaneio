@@ -75,7 +75,8 @@ def test_free_text_end_to_end(tmp_path):
 
     data = json.loads(save.read_text(encoding="utf-8"))
     assert data["state"]["current_location_id"] == "floresta"
-    assert [e["kind"] for e in data["state"]["events"]][-2:] == ["move", "beat_done"]
+    # chegada exige vila + persuadir: mover para a floresta não conclui marco algum
+    assert [e["kind"] for e in data["state"]["events"]][-2:] == ["character_joined", "move"]
     # a chave só vai no cabeçalho da requisição: nunca para a saída nem para o arquivo
     assert KEY not in out
     assert KEY not in result.stderr

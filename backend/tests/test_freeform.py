@@ -71,11 +71,8 @@ def test_proposal_runs_through_the_engine(base):
     result = run_freeform(session, "tento passar sem ser vista e sigo para a floresta")
     assert result.commands == ("testar furtividade normal", "ir floresta")
     assert result.say == "Você some entre as sombras."
-    assert kinds(result.session)[-3:] == [
-        "check",
-        "move",
-        "beat_done",
-    ]  # o diretor concluiu o marco
+    # ir para a floresta não conclui marco algum: chegada exige vila + persuadir
+    assert kinds(result.session)[-2:] == ["check", "move"]
     assert result.session.state.current_location_id == "floresta"
     assert result.session.state.rng_draws == 2  # a rolagem é do motor, não do modelo
     call = client.calls[0]
@@ -207,7 +204,9 @@ def test_requires_a_configured_llm(base):
 
 
 def test_format_output_uses_llm_prose_with_mechanical_lines(base):
-    after, text = execute(base, "ir floresta")
+    after, moved = execute(base, "ir floresta")
+    after, done = execute(after, "marco concluir chegada")
+    text = f"{moved}\n{done}"
     client = ScriptedClient("A trilha se abre entre pinheiros altos.")
     out = format_output(base.narrator, base.state, after.state, text, client)
     lines = out.split("\n")
@@ -220,7 +219,9 @@ def test_format_output_uses_llm_prose_with_mechanical_lines(base):
 
 
 def test_format_output_falls_back_to_the_grammar_with_a_note(base):
-    after, text = execute(base, "ir floresta")
+    after, moved = execute(base, "ir floresta")
+    after, done = execute(after, "marco concluir chegada")
+    text = f"{moved}\n{done}"
     out = format_output(
         base.narrator, base.state, after.state, text, ScriptedClient(LlmError("fora do ar"))
     )

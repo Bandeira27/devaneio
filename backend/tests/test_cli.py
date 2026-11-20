@@ -27,7 +27,18 @@ def test_end_to_end_through_the_process(tmp_path):
     assert "Partida criada: A Sombra do Vale (seed 3)" in created.stdout
 
     script = (
-        "\n".join(['entrar aria "Aria" FOR=3', "ir floresta", "pular", "fim", "log", "sair"]) + "\n"
+        "\n".join(
+            [
+                'entrar aria "Aria" FOR=3',
+                "ir floresta",
+                "marco concluir chegada",
+                "pular",
+                "fim",
+                "log",
+                "sair",
+            ]
+        )
+        + "\n"
     )
     played = subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
@@ -87,7 +98,7 @@ def test_end_to_end_output_is_narrated(tmp_path):
     )
     played = subprocess.run(
         [sys.executable, "-m", "devaneio.cli", "jogar", str(save)],
-        input="ir floresta\nsair\n",
+        input="ir floresta\nmarco concluir chegada\nsair\n",
         check=True,
         capture_output=True,
         text=True,
