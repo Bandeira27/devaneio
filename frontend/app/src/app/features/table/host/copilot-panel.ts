@@ -16,7 +16,6 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { focusElement } from '@shared/ui/focus';
-import { DvState } from '@shared/ui/state/state';
 import { TableStore } from '../table.store';
 import { HostSession } from './host-session';
 import { DvIcon } from '../../../shared/ui/icon/icon';
@@ -28,7 +27,7 @@ import { DvIcon } from '../../../shared/ui/icon/icon';
  */
 @Component({
   selector: 'dv-copilot-panel',
-  imports: [DvIcon, DvBadge, DvButton, DvField, DvInput, DvNotice, DvState],
+  imports: [DvIcon, DvBadge, DvButton, DvField, DvInput, DvNotice],
   templateUrl: './copilot-panel.html',
   styleUrl: './copilot-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

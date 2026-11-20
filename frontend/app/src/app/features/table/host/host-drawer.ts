@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { DvButton } from '@shared/ui/button/button';
 import { BeatsPanel } from './beats-panel';
 import { CopilotPanel } from './copilot-panel';
 import { FactsPanel } from './facts-panel';
 import { LifecycleTools } from './lifecycle-tools';
 import { TurnTools } from './turn-tools';
+import { TableStore } from '../table.store';
 import { WorldPanel } from './world-panel';
 
 /**
@@ -19,6 +20,7 @@ import { WorldPanel } from './world-panel';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HostDrawer {
+  protected readonly store = inject(TableStore);
   protected readonly sections = [
     { id: 'agora', label: 'Agora' },
     { id: 'trama', label: 'Trama' },

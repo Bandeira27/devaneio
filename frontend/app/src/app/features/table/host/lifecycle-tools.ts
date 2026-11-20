@@ -67,14 +67,19 @@ import { TableStore } from '../table.store';
               </button>
             }
           }
+        </div>
+        <!-- O definitivo fica à parte do que se faz o tempo todo (pausar, retomar): outra linha, menor, sob um filete. -->
+        <div class="tools tools--end">
           <button
             dvButton="danger"
+            dvSize="sm"
             type="button"
             [dvBlocked]="store.lifecycleBusy()"
             (click)="end()"
           >
             Encerrar a partida
           </button>
+          <span class="dv-note">É definitivo: ninguém mais age.</span>
         </div>
         @if (store.phase() === 'lobby' && store.party().length === 0) {
           <p id="sem-personagem" class="dv-note">Crie ao menos um personagem para iniciar.</p>
@@ -86,7 +91,13 @@ import { TableStore } from '../table.store';
     .tools {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--dv-space-2);
+      align-items: center;
+      gap: var(--dv-space-2) var(--dv-space-3);
+    }
+
+    .tools--end {
+      padding-top: var(--dv-space-3);
+      border-top: var(--dv-border-width) dotted var(--dv-line);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

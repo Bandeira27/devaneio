@@ -1,9 +1,7 @@
 <section class="dv-card dv-stack" aria-labelledby="copiloto-titulo">
   <h2 id="copiloto-titulo" class="dv-section">Copiloto</h2>
   @if (!store.canSay()) {
-    <dv-state kind="unavailable">
-      O copiloto precisa de um mestre de IA, e esta mesa não tem um ligado.
-    </dv-state>
+    <p class="dv-note">Indisponível: esta mesa não tem um mestre de IA ligado.</p>
   } @else {
     <p class="dv-note">
       Ele vê a campanha inteira, segredos inclusive. A resposta só você lê e não volta ao grupo. Ele

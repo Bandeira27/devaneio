@@ -16,8 +16,14 @@
   </div>
 
   <div class="drawer__part" [class.drawer__part--off]="section() !== 'agora'">
-    <dv-copilot-panel />
-    <dv-turn-tools />
+    <!-- Sem mestre de IA o copiloto não serve: as ferramentas do turno, que o anfitrião usa de fato, vêm primeiro. -->
+    @if (store.canSay()) {
+      <dv-copilot-panel />
+      <dv-turn-tools />
+    } @else {
+      <dv-turn-tools />
+      <dv-copilot-panel />
+    }
   </div>
   <div class="drawer__part" [class.drawer__part--off]="section() !== 'trama'">
     <dv-beats-panel />

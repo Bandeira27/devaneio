@@ -71,8 +71,8 @@ describe('Barra do anfitrião (bottom sheet)', () => {
     expect(headings).toEqual([
       'Painel do anfitrião',
       'Partida',
+      'Ferramentas do turno', // sem mestre de IA o copiloto vai para depois das ferramentas do turno
       'Copiloto',
-      'Ferramentas do turno',
       'Marcos',
       'Fatos',
       'NPCs',
@@ -168,11 +168,32 @@ describe('Barra do anfitrião (bottom sheet)', () => {
     expect(world.textContent).toContain('O grupo está aqui');
   });
 
-  it('sem mestre de IA o copiloto diz que não está disponível', async () => {
+  it('sem mestre de IA o copiloto diz em uma linha que está indisponível', async () => {
     const { root } = await open();
     const panel = root().querySelector('dv-copilot-panel') as HTMLElement;
-    expect(panel.textContent).toContain('precisa de um mestre de IA');
+    expect(panel.textContent).toContain('Indisponível');
+    expect(panel.textContent).toContain('mestre de IA');
     expect(panel.querySelector('textarea')).toBeNull();
+    expect(panel.querySelector('dv-state')).toBeNull(); // não ocupa a barra com um bloco de aviso
+  });
+
+  it('sem mestre de IA as ferramentas do turno vêm antes do copiloto; com ele, depois', async () => {
+    const { root } = await open();
+    const part = root().querySelector('.drawer__part') as HTMLElement;
+    expect(Array.from(part.children).map((c) => c.tagName.toLowerCase())).toEqual([
+      'dv-turn-tools',
+      'dv-copilot-panel',
+    ]);
+  });
+
+  it('encerrar a partida fica à parte, sob um filete, e continua pedindo confirmação', async () => {
+    const { root } = await open();
+    const end = root().querySelector('.tools--end') as HTMLElement;
+    expect(end.querySelector('button')?.textContent?.trim()).toBe('Encerrar a partida');
+    expect(end.querySelector('button')?.classList.contains('dv-button--danger')).toBe(true);
+    expect(
+      root().querySelectorAll('dv-lifecycle-tools .tools:not(.tools--end) button'),
+    ).toHaveLength(1); // só Pausar na outra linha
   });
 
   it('o copiloto manda a pergunta e mostra a resposta como texto, só na página', async () => {
