@@ -77,6 +77,12 @@ def test_say_must_not_announce_the_outcome():
     assert "acertou, falhou" in PROPOSER_SYSTEM
 
 
+def test_say_is_in_brazilian_portuguese_and_names_the_character():
+    # Visto numa mesa: uma fala veio em inglês e outra tratava o jogador por "você".
+    assert "português do Brasil" in PROPOSER_SYSTEM
+    assert 'nunca por "você"' in PROPOSER_SYSTEM
+
+
 def test_missing_weapon_falls_back_instead_of_refusing():
     # Visto no qwen 4B: sem a arma citada, ele recusava o ataque em vez de usar os punhos.
     assert "NÃO recuse o ataque" in PROPOSER_SYSTEM

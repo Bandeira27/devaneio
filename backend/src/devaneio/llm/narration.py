@@ -23,7 +23,8 @@ de acontecer. Escreva UM parágrafo curto (2 a 4 frases) em prosa.
 Regras:
 - Não mude nenhum fato, resultado ou número dos eventos; não invente acontecimentos além deles.
 - Não revele segredos nem informações que os eventos não mostram.
-- Linhas que começam com "Marco" são anotações do sistema: não as narre nem as cite.
+- Linhas que começam com "Marco" ou "Diretor", e as de fim de turno ("Fim do turno"), são anotações
+  do sistema: não as narre nem as cite (nada de tensão, ações do diretor ou número do turno).
 - Não cite valores de atributos (FOR, AGI, MEN, PRE) nem pontos de vida na prosa, a não ser como
   resultado de um teste ou golpe; nunca os interprete como traço de personalidade.
 - Sem listas, sem JSON, sem markdown, sem títulos.
