@@ -1,5 +1,4 @@
 import { DestroyRef, Injectable, InjectionToken, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type {
   Campaign,
@@ -11,8 +10,7 @@ import type {
 } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
 import { ApiFailure, messageOf } from '@core/api/api-failure';
-import { CampaignCatalog } from '@core/catalog/campaign-catalog';
-import { CreatedCampaign, NEW_CAMPAIGN } from '@core/catalog/created-campaign';
+import { NEW_CAMPAIGN } from '@core/catalog/created-campaign';
 import {
   addBeat,
   addFact,
@@ -32,6 +30,7 @@ import { slugify, uniqueId } from '@shared/game/names';
 import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
+import { EditorSave } from './editor-save';
 import { EditorTables } from './editor-tables';
 import { RequestSequence } from './request-sequence';
 
@@ -65,11 +64,9 @@ const key = (kind: ItemKind, id: string): string => `${kind}:${id}`;
 @Injectable()
 export class EditorStore {
   private readonly api = inject(ApiClient);
-  private readonly catalog = inject(CampaignCatalog);
-  private readonly created = inject(CreatedCampaign);
-  private readonly router = inject(Router);
   private readonly sheet = inject(Sheet);
   private readonly tables = inject(EditorTables);
+  private readonly saver = inject(EditorSave);
   private readonly delay = inject(VALIDATE_DELAY);
 
   readonly state = signal<LoadState>('loading');
@@ -89,8 +86,8 @@ export class EditorStore {
     before: Campaign;
     autoBefore: ReadonlySet<string>;
   } | null>(null);
-  readonly saving = signal(false);
-  readonly saveError = signal('');
+  readonly saving = this.saver.saving;
+  readonly saveError = this.saver.error;
   readonly justSaved = signal(false);
   /** A conferência não chegou ao servidor (rede, servidor fora): não é erro da campanha, e dá para tentar de novo. */
   readonly checkError = signal('');
@@ -114,8 +111,6 @@ export class EditorStore {
   private readonly savedText = signal('');
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly validations = new RequestSequence();
-  /** A navegação que acompanha a gravação (para o endereço da campanha nova) não pede confirmação de descarte. */
-  private navigatingAfterSave = false;
   /** O id da campanha nova acompanha o título até o autor escrevê-lo à mão. */
   private readonly autoCampaignId = signal(false);
 
@@ -520,49 +515,23 @@ export class EditorStore {
     }
   }
 
+  /** Grava a campanha (se nada impede) e põe o estado da edição em dia com o que o servidor devolveu. */
   async save(): Promise<boolean> {
     const campaign = this.campaign();
     if (campaign === null || this.saveBlock() !== '') {
       return false;
     }
-    this.saving.set(true);
-    this.saveError.set('');
-    try {
-      const savedId = this.savedId();
-      const result =
-        savedId === null
-          ? await firstValueFrom(this.api.editorCreate(campaign))
-          : await firstValueFrom(this.api.editorUpdate(savedId, campaign));
+    return this.saver.save(campaign, this.savedId(), (result) => {
       this.savedId.set(result.id);
       this.writable.set(result.writable);
-      void this.catalog.load(); // o catálogo de campanhas (título, novidade) acompanha o que foi gravado
       this.savedText.set(JSON.stringify(campaign));
       this.justSaved.set(this.campaign() === campaign); // se o autor editou durante a gravação, ainda há o que gravar
-      if (savedId === null) {
-        const section = this.router.url.split('?')[0]?.split('/').slice(4) ?? []; // o que vem depois de /c/<id>/roteiro
-        this.navigatingAfterSave = true;
-        this.created.announce(result.id); // a tela segue a mesma: só o endereço troca `nova` pelo id
-        try {
-          await this.router.navigate(['/c', result.id, 'roteiro', ...section], {
-            replaceUrl: true,
-          });
-        } finally {
-          this.created.clear();
-          this.navigatingAfterSave = false;
-        }
-      }
-      return true;
-    } catch (error) {
-      this.saveError.set(messageOf(error));
-      return false;
-    } finally {
-      this.saving.set(false);
-    }
+    });
   }
 
   /** Pode sair da tela? Com alterações não gravadas, pergunta antes de descartar. */
   async canLeave(): Promise<boolean> {
-    if (!this.dirty() || this.navigatingAfterSave) {
+    if (!this.dirty() || this.saver.navigatingAfterSave) {
       return true;
     }
     const ok = await this.sheet.open<boolean>(ConfirmSheet, {

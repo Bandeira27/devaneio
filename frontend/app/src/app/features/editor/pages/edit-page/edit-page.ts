@@ -19,6 +19,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvNotice } from '@shared/ui/notice/notice';
 import { DvState } from '@shared/ui/state/state';
 import { focusElement } from '@shared/ui/focus';
+import { EditorSave } from '../../editor-save';
 import { EditorStore } from '../../editor.store';
 import { EditorTables } from '../../editor-tables';
 import { DvIcon } from '../../../../shared/ui/icon/icon';
@@ -35,7 +36,7 @@ const SLOW_CHECK_MS = 300;
 @Component({
   selector: 'dv-editor-page',
   imports: [DvIcon, RouterLink, RouterOutlet, DvBadge, DvButton, DvNotice, DvState],
-  providers: [EditorStore, EditorTables],
+  providers: [EditorStore, EditorTables, EditorSave],
   templateUrl: './edit-page.html',
   styleUrl: './edit-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
