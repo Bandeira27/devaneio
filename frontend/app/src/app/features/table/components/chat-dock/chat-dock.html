@@ -1,0 +1,82 @@
+<p class="dv-visually-hidden" role="status">
+  @if (!chat.open() && chat.unread() > 0) {
+    {{ unreadLabel() }} na conversa
+  }
+</p>
+
+@if (chat.open()) {
+  <section
+    #card
+    class="chat__card"
+    aria-labelledby="conversa-titulo"
+    tabindex="-1"
+    animate.enter="dv-enter"
+    (keydown.escape)="toggle()"
+  >
+    <header class="chat__head">
+      <h2 class="dv-section" id="conversa-titulo">Conversa</h2>
+      <button
+        dvButton
+        type="button"
+        class="chat__close"
+        aria-label="Recolher a conversa"
+        (click)="toggle()"
+      >
+        <dv-icon name="close" />
+      </button>
+    </header>
+
+    <div #log class="chat__log" role="log" aria-label="Mensagens da conversa" tabindex="0">
+      <ol class="chat__list">
+        @for (message of chat.messages(); track message.seq) {
+          <li class="chat__message" [class.chat__message--mine]="message.player_id === you()">
+            <span class="chat__who">
+              <span class="chat__name">{{ message.name }}</span>
+              @if (message.role === 'host') {
+                <dv-badge tone="info">anfitrião</dv-badge>
+              }
+              <time class="dv-note" [attr.datetime]="iso(message.at)">{{ clock(message.at) }}</time>
+            </span>
+            <span class="chat__text">{{ message.text }}</span>
+          </li>
+        } @empty {
+          <li class="dv-note">
+            Ninguém falou ainda. Esta conversa é só do grupo: o mestre de IA não a lê.
+          </li>
+        }
+      </ol>
+    </div>
+
+    @if (!store.canChat()) {
+      <p class="dv-note">A partida foi encerrada: a conversa fica só para ler.</p>
+    } @else {
+      <form class="chat__form" (submit)="$event.preventDefault(); send()">
+        <input
+          #field
+          class="dv-input"
+          type="text"
+          autocomplete="off"
+          enterkeyhint="send"
+          aria-label="Mensagem para o grupo"
+          [attr.maxlength]="max"
+          [attr.aria-describedby]="chat.error() ? 'conversa-erro' : null"
+          [attr.aria-invalid]="chat.error() ? 'true' : null"
+          [value]="text()"
+          (input)="text.set(fieldValue($event))"
+        />
+        <button dvButton="primary" type="submit" [dvLoading]="chat.busy()">Enviar</button>
+      </form>
+      @if (chat.error()) {
+        <p class="chat__error dv-note" id="conversa-erro" role="alert">{{ chat.error() }}</p>
+      }
+    }
+  </section>
+} @else {
+  <button #pill dvButton type="button" class="chat__pill" aria-expanded="false" (click)="toggle()">
+    <dv-icon name="say" size="sm" />Conversa
+    @if (chat.unread() > 0) {
+      <span class="dv-visually-hidden">, {{ unreadLabel() }}</span>
+      <dv-badge tone="info" aria-hidden="true">{{ chat.unread() }}</dv-badge>
+    }
+  </button>
+}

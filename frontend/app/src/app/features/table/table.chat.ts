@@ -11,6 +11,8 @@ import { messageOf } from '@core/api/api-failure';
 export class TableChat {
   readonly busy = signal(false);
   readonly error = signal('');
+  /** A conversa está aberta (o cartão) ou recolhida (só a pílula com o contador). */
+  readonly open = signal(false);
   /**
    * A última mensagem que a pessoa viu. `null` até a primeira carga: o histórico que já existia ao abrir a mesa não
    * conta como novidade (`baseline`).
@@ -34,6 +36,10 @@ export class TableChat {
     /** Entrega a mensagem enviada ao fluxo ao vivo, para aparecer já, sem esperar a próxima volta do long-poll. */
     private readonly deliver: (message: ChatMessageView) => void,
   ) {}
+
+  toggle(): void {
+    this.open.update((open) => !open);
+  }
 
   /** Marca o que já existe como visto, uma vez só: o histórico da abertura da mesa não conta como novidade. */
   baseline(): void {

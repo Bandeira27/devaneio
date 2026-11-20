@@ -1,6 +1,6 @@
 # Chat da mesa
 
-**Status: decidido e implementado em 2026-11-20** (servidor, API e a folha "Conversa" na mesa). A regra 9 do [AGENTS.md](../AGENTS.md) não lista o chat como
+**Status: decidido e implementado em 2026-11-20** (servidor, API e o chat flutuante na mesa). A regra 9 do [AGENTS.md](../AGENTS.md) não lista o chat como
 fora de escopo, e o dono pediu a funcionalidade. O desenho segue o do [banco](desenho-banco.md) e do
 [long-poll](api-http.md).
 
@@ -31,7 +31,7 @@ invisíveis, o que também recusa quebra de linha. O servidor não escapa marca�
 | Rota                              | Auth   | Resposta                                                                                         |
 | --------------------------------- | ------ | ------------------------------------------------------------------------------------------------ |
 | `POST /tables/{id}/chat` `{text}` | Bearer | `201 ChatMessageView`. `409 ended`, `429 chat_rate_limited` (1 mensagem por segundo por jogador) |
-| `GET /tables/{id}/chat?since=N`   | Bearer | `ChatView {messages, chat_seq}`: até 100 mensagens com `seq` > `N`, as mais recentes, em ordem |
+| `GET /tables/{id}/chat?since=N`   | Bearer | `ChatView {messages, chat_seq}`: até 100 mensagens com `seq` > `N`, as mais recentes, em ordem   |
 
 O acompanhamento ao vivo reaproveita o long-poll de `GET /tables/{id}/events`: `EventsView` ganha `chat` e
 `chat_seq`, e a rota aceita `since_chat`. Como com `since_talk`, com `wait` e **sem** `since_chat` (parâmetro ausente) o histórico
@@ -47,9 +47,21 @@ motor, o `game` e o LLM não sabem que o chat existe. O contrato ganha `ChatRequ
 
 ## Interface
 
-Uma folha "Conversa" aberta por um botão no cabeçalho da mesa (com contador de mensagens não lidas; o histórico que já
-existia ao abrir a mesa não conta), com campo de uma linha e Enter para enviar. Nomes longos quebram, nunca estouram.
-Um painel fixo ao lado do feed na tela larga fica para depois.
+Um chat **flutuante e não modal** (`dv-chat-dock`). Recolhido é uma pílula "Conversa" com o contador de mensagens
+novas (o histórico que já existia ao abrir a mesa não conta); aberto é um cartão que não escurece nem prende o foco,
+para a história e as ações seguirem à vista. Foi escolhido no lugar de uma folha modal: conversar não pode bloquear o
+jogo.
+
+- **Celular:** o cartão fica acima da barra de ações (`--dv-dock-height`) e abaixo da linha de situação.
+- **Tela larga (64rem):** cartão estreito no canto inferior direito; com a barra do anfitrião aberta (80rem), cede o
+  canto e fica à esquerda dela.
+- **Acessibilidade:** o cartão é uma região com nome; abrir leva o foco ao campo (ou ao cartão, se a mesa acabou),
+  Esc recolhe e devolve o foco à pílula; a lista é um `log` educado; a pílula traz as mensagens novas no próprio nome.
+- Campo de uma linha, Enter envia. Nomes longos quebram, nunca estouram.
+
+Alternativas avaliadas e deixadas de lado: aba "História / Conversa" no feed (esconde a cena enquanto se conversa),
+painel fixo na lateral (briga com a conta de alturas da lateral sticky) e mensagens dentro do feed (mistura conversa
+do grupo com a ficção).
 
 ## Fora desta fatia
 

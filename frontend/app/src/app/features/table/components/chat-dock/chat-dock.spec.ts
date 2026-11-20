@@ -3,10 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import type { ChatMessageView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
-import { SheetRef } from '@shared/ui/sheet/sheet';
 import { TableChat } from '../../table.chat';
 import { TableStore } from '../../table.store';
-import { ChatSheet } from './chat-sheet';
+import { ChatDock } from './chat-dock';
 
 const message = (seq: number, over: Partial<ChatMessageView> = {}): ChatMessageView => ({
   seq,
@@ -18,7 +17,7 @@ const message = (seq: number, over: Partial<ChatMessageView> = {}): ChatMessageV
   ...over,
 });
 
-function mount(opts: { messages?: ChatMessageView[]; canChat?: boolean } = {}) {
+function mount(opts: { messages?: ChatMessageView[]; canChat?: boolean; open?: boolean } = {}) {
   const messages = signal(opts.messages ?? []);
   const posted: string[] = [];
   const api = {
@@ -34,21 +33,43 @@ function mount(opts: { messages?: ChatMessageView[]; canChat?: boolean } = {}) {
     signal('p1'),
     (m) => messages.update((all) => [...all, m]),
   );
+  chat.baseline();
+  chat.open.set(opts.open ?? true);
   const store = { chat, canChat: signal(opts.canChat ?? true), table: signal({ you: 'p1' }) };
-  TestBed.configureTestingModule({
-    providers: [
-      { provide: TableStore, useValue: store },
-      { provide: SheetRef, useValue: { close: vi.fn() } },
-    ],
-  });
-  const fixture = TestBed.createComponent(ChatSheet);
+  TestBed.configureTestingModule({ providers: [{ provide: TableStore, useValue: store }] });
+  const fixture = TestBed.createComponent(ChatDock);
   fixture.detectChanges();
   return { el: fixture.nativeElement as HTMLElement, fixture, posted, chat, messages };
 }
 
 const input = (el: HTMLElement) => el.querySelector('input') as HTMLInputElement;
 
-describe('ChatSheet', () => {
+describe('ChatDock', () => {
+  it('recolhida é só a pílula, sem o cartão, e com o contador das mensagens novas', () => {
+    const { el, fixture, messages } = mount({ open: false });
+    expect(el.querySelector('.chat__card')).toBeNull();
+    expect(el.querySelector('.chat__pill')?.getAttribute('aria-expanded')).toBe('false');
+    messages.set([message(1), message(2, { player_id: 'p1' })]);
+    fixture.detectChanges();
+    expect(el.querySelector('.chat__pill dv-badge')?.textContent?.trim()).toBe('1');
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('1 mensagem nova');
+  });
+
+  it('abrir mostra o cartão como região com nome, não modal, e marca as mensagens como lidas', async () => {
+    const { el, fixture, chat, messages } = mount({ open: false });
+    messages.set([message(1), message(2)]);
+    fixture.detectChanges();
+    expect(chat.unread()).toBe(2);
+    (el.querySelector('.chat__pill') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.querySelector('.chat__card')?.getAttribute('aria-labelledby')).toBe(
+      'conversa-titulo',
+    );
+    expect(el.querySelector('[aria-modal]')).toBeNull();
+    expect(chat.unread()).toBe(0);
+  });
+
   it('mostra as mensagens com nome, selo do anfitrião e a minha marcada', () => {
     const { el } = mount({
       messages: [
@@ -61,14 +82,12 @@ describe('ChatSheet', () => {
     expect(items[0]?.textContent).toContain('Ana');
     expect(items[0]?.textContent).toContain('anfitrião');
     expect(items[0]?.classList.contains('chat__message--mine')).toBe(true);
-    expect(items[1]?.textContent).toContain('mensagem 2');
     expect(items[1]?.textContent).not.toContain('anfitrião');
     expect(el.querySelector('[role="log"]')).not.toBeNull();
   });
 
   it('sem mensagens explica que a conversa é só do grupo', () => {
-    const { el } = mount();
-    expect(el.textContent).toContain('o mestre de IA não a lê');
+    expect(mount().el.textContent).toContain('o mestre de IA não a lê');
   });
 
   it('o texto da mensagem vai como texto, nunca como marcação', () => {
@@ -97,9 +116,17 @@ describe('ChatSheet', () => {
     expect(posted).toEqual([]);
   });
 
-  it('abrir marca as mensagens como lidas', () => {
-    const { chat } = mount({ messages: [message(1), message(2)] });
-    expect(chat.unread()).toBe(0);
+  it('Esc recolhe a conversa e o foco volta à pílula', async () => {
+    const { el, fixture, chat } = mount();
+    (el.querySelector('.chat__card') as HTMLElement).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(chat.open()).toBe(false);
+    expect(el.querySelector('.chat__card')).toBeNull();
+    expect(el.querySelector('.chat__pill')).not.toBeNull();
   });
 
   it('com a mesa encerrada fica só para ler: sem campo de texto', () => {
@@ -109,8 +136,30 @@ describe('ChatSheet', () => {
     expect(el.textContent).toContain('mensagem 1');
   });
 
+  it('com a mesa encerrada, abrir leva o foco ao cartão (não há campo) e o Esc ainda recolhe', async () => {
+    const { el, fixture } = mount({ canChat: false, open: false });
+    (el.querySelector('.chat__pill') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(el.querySelector('.chat__card'));
+  });
+
+  it('a pílula diz quantas mensagens novas há no próprio nome', () => {
+    const { el, fixture, messages } = mount({ open: false });
+    messages.set([message(1), message(2)]);
+    fixture.detectChanges();
+    expect(el.querySelector('.chat__pill')?.textContent).toContain('2 mensagens novas');
+  });
+
   it('o limite do campo é o do servidor', () => {
-    const { el } = mount();
-    expect(input(el).getAttribute('maxlength')).toBe('500');
+    expect(input(mount().el).getAttribute('maxlength')).toBe('500');
+  });
+
+  it('mostra o motivo quando o servidor recusa', async () => {
+    const { el, fixture, chat } = mount();
+    chat.error.set('Devagar: espere um instante.');
+    fixture.detectChanges();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Devagar');
+    expect(input(el).getAttribute('aria-invalid')).toBe('true');
   });
 });

@@ -1,0 +1,134 @@
+/*
+ * Flutuante e não modal. O próprio elemento é o que fica fixo, como um trilho de ponta a ponta que não pega cliques
+ * (`pointer-events: none`): só a pílula e o cartão pegam. No celular o trilho fica acima da barra de ações
+ * (`--dv-dock-height`, publicada pela página; é 0 na tela larga) e a pílula vai para o canto direito.
+ */
+:host {
+  position: fixed;
+  inset-inline: var(--dv-space-4);
+  bottom: calc(var(--dv-dock-height, 0rem) + var(--dv-space-3));
+  z-index: var(--dv-z-sticky);
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.chat__pill,
+.chat__card {
+  pointer-events: auto;
+}
+
+.chat__pill {
+  box-shadow: var(--dv-shadow-float);
+  background: var(--dv-surface-1);
+}
+
+.chat__card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--dv-space-3);
+  width: 100%;
+  max-height: min(
+    28rem,
+    calc(
+      100dvh - var(--dv-dock-height, 0rem) - var(--dv-situation-height, 0rem) - 4 *
+        var(--dv-space-4)
+    )
+  );
+  padding: var(--dv-space-4);
+  border: var(--dv-border-width) dotted var(--dv-line);
+  border-radius: var(--dv-radius-lg);
+  background: var(--dv-surface-1);
+  color: var(--dv-text);
+  box-shadow: var(--dv-shadow-float);
+}
+
+.chat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dv-space-3);
+}
+
+/* Recolher é discreto: sem contorno em repouso, como o fechar das folhas. */
+.chat__close {
+  border-color: transparent;
+  color: var(--dv-text-muted);
+}
+
+@media (hover: hover) {
+  .chat__close:hover {
+    border-color: var(--dv-border-control);
+    color: var(--dv-text);
+  }
+}
+
+.chat__log {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.chat__list {
+  display: grid;
+  align-content: start;
+  gap: var(--dv-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat__message {
+  display: grid;
+  gap: var(--dv-space-1);
+}
+
+.chat__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--dv-space-1) var(--dv-space-2);
+}
+
+/* O nome é texto livre do jogador: quebra em vez de estourar. A minha mensagem leva a borda da cor da tinta. */
+.chat__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--dv-font-narration);
+}
+
+.chat__text {
+  overflow-wrap: anywhere;
+}
+
+.chat__message--mine {
+  padding-inline-start: var(--dv-space-3);
+  border-inline-start: var(--dv-border-width-strong) solid var(--dv-ink);
+}
+
+.chat__form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--dv-space-2);
+}
+
+.chat__error {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--dv-danger);
+}
+
+/* Tela larga: um cartão estreito no canto inferior direito, que cede o canto à barra do anfitrião quando ela está aberta. */
+@media (min-width: 64rem) {
+  :host {
+    inset-inline-start: auto;
+    inset-inline-end: var(--dv-space-4);
+    width: var(--dv-rail-width);
+  }
+}
+
+@media (min-width: 80rem) {
+  :host(.chat--aside) {
+    inset-inline-end: calc(var(--dv-host-width) + 2 * var(--dv-space-4));
+  }
+}
