@@ -75,6 +75,12 @@
   gap: var(--dv-space-3);
 }
 
+/* Celular: a barra de ações é presa no pé da página. O respiro de baixo do shell a descolava da borda ao fim da
+   rolagem (ela subia esse tanto, com um vazio embaixo): aqui a página termina na própria barra, que já guarda a área segura. */
+.table:has(.table__dock) {
+  margin-bottom: calc(-1 * max(var(--dv-space-6), env(safe-area-inset-bottom)));
+}
+
 .table__feed {
   /* A pílula da conversa flutua acima da barra de ações: o fim da história sobe acima dela, para nada ficar coberto. */
   padding-bottom: calc(var(--dv-touch) + var(--dv-space-3));
@@ -123,6 +129,10 @@
 }
 
 @media (min-width: 64rem) {
+  .table:has(.table__dock) {
+    margin-bottom: 0; /* na tela larga a barra de ações está na lateral, não no pé da página */
+  }
+
   .table {
     /*
      * A altura que a cena pode ter na lateral: a janela, menos onde a lateral começa na página e menos a barra de ações

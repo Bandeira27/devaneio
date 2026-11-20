@@ -21,7 +21,8 @@ import { SheetRef } from './sheet';
       </button>
     </div>
   `,
-  styles: ':host { display: block; }',
+  /* `contents`: o cabeçalho preso (`.dv-sheet__head`) precisa ter a folha por pai, não esta caixa, que acaba onde ele acaba. */
+  styles: ':host { display: contents; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvSheetHead {

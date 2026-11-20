@@ -6,8 +6,8 @@
 :host {
   position: fixed;
   inset-inline: var(--dv-space-4);
-  /* Acima da barra de ações, mais o respiro do fim da página (`shell__main`): ao fim da rolagem a barra sobe esse tanto e o chat não pode encostar nela. */
-  bottom: calc(var(--dv-dock-height, 0rem) + var(--dv-space-6) + var(--dv-space-3));
+  /* Acima da barra de ações, que no celular termina na borda da janela (a mesa cancela o respiro do shell). */
+  bottom: calc(var(--dv-dock-height, 0rem) + var(--dv-space-3));
   z-index: var(--dv-z-sticky);
   display: flex;
   justify-content: flex-end;
