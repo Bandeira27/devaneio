@@ -198,10 +198,12 @@ describe('edição da campanha', () => {
     expect(defaultCondition('check_passed', hostCampaign, ['lutar'])).toEqual({
       kind: 'check_passed',
       skill_id: 'lutar',
+      location_id: null,
     });
     expect(defaultCondition('check_passed', hostCampaign, [])).toEqual({
       kind: 'check_passed',
       skill_id: '',
+      location_id: null,
     });
   });
 
@@ -236,9 +238,11 @@ describe('edição da campanha', () => {
       kind: 'npc_down',
       npc_id: 'b',
     });
-    expect(withTarget({ kind: 'check_passed', skill_id: 'a' }, 'b')).toEqual({
+    // O local do teste, se a condição o tem, sobrevive à troca da habilidade.
+    expect(withTarget({ kind: 'check_passed', skill_id: 'a', location_id: 'vila' }, 'b')).toEqual({
       kind: 'check_passed',
       skill_id: 'b',
+      location_id: 'vila',
     });
   });
 

@@ -46,7 +46,7 @@ Regras:
   precisam valer ao mesmo tempo (E, nunca "ou"). Lista vazia em "conclui_quando" ou "revela_quando" quer
   dizer que só o anfitrião decide. Tipos: at_location = o grupo está nesse local; npc_down = esse NPC caiu;
   beat_done = esse marco foi concluído; turn_at_least = chegou a esse turno; check_passed = algum
-  personagem passou num teste dessa habilidade.
+  personagem passou num teste dessa habilidade (se tiver local, só vale o teste feito nesse local).
 - Use só o que está no contexto. Não invente fatos, NPCs, locais nem resultados de testes.
 - Quando citar um segredo, marque-o como segredo ("[segredo]") para o anfitrião não repetir por engano
   aos jogadores.

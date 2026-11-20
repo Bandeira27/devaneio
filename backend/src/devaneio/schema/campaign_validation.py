@@ -13,7 +13,15 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from .campaign import AtLocation, Beat, BeatDone, Campaign, Condition, NpcDown
+from .campaign import (
+    AtLocation,
+    Beat,
+    BeatDone,
+    Campaign,
+    CheckPassed,
+    Condition,
+    NpcDown,
+)
 
 
 class CampaignIntegrityError(ValueError):
@@ -101,7 +109,11 @@ def _condition_errors(
     """
     errors: list[str] = []
     for cond in conditions:
-        if isinstance(cond, AtLocation) and cond.location_id not in known.locations:
+        if (isinstance(cond, AtLocation) and cond.location_id not in known.locations) or (
+            isinstance(cond, CheckPassed)
+            and cond.location_id is not None
+            and cond.location_id not in known.locations
+        ):
             errors.append(f"{where}: local '{cond.location_id}' não existe")
         elif isinstance(cond, NpcDown) and cond.npc_id not in known.npcs:
             errors.append(f"{where}: npc '{cond.npc_id}' não existe")

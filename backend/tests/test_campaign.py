@@ -162,6 +162,11 @@ def test_unknown_condition_kind_is_a_structural_error(campaign_data):
         Campaign.model_validate(campaign_data)
 
 
+def test_check_passed_location_must_exist(campaign_data):
+    campaign_data["beats"][1]["complete_when"][1]["location_id"] = "nada"
+    assert errors_of(campaign_data) == ["marco 'pista', complete_when: local 'nada' não existe"]
+
+
 def test_example_campaign_has_triggers(campaign):
     by_id = {b.id: b for b in campaign.beats}
     # chegada só fecha com o grupo na vila e a conversa vencida (persuadir)

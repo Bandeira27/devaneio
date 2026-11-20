@@ -33,11 +33,27 @@ def holds(condition: Condition, state: GameState) -> bool:
     if isinstance(condition, TurnAtLeast):
         return state.turn >= condition.turn
     if isinstance(condition, CheckPassed):
-        return any(
-            e.kind == "check"
-            and e.data.get("actor_kind") == "character"
-            and e.data.get("skill_id") == condition.skill_id
-            and e.data.get("outcome") in PASSED
-            for e in state.events
-        )
+        return _check_passed(condition, state)
     raise EngineError(f"condição desconhecida: {condition!r}")
+
+
+def _check_passed(condition: CheckPassed, state: GameState) -> bool:
+    """Algum teste de personagem passou na habilidade (e, se a condição pede, no local).
+
+    O local do teste sai do próprio log: o grupo está onde o último ``move`` o deixou, e antes de
+    qualquer ``move`` está onde o primeiro saiu (ou onde está agora, se nunca se moveu).
+    """
+    moves = [e for e in state.events if e.kind == "move"]
+    here = moves[0].data.get("from_location_id") if moves else state.current_location_id
+    for event in state.events:
+        if event.kind == "move":
+            here = event.data.get("to_location_id")
+        elif (
+            event.kind == "check"
+            and event.data.get("actor_kind") == "character"
+            and event.data.get("skill_id") == condition.skill_id
+            and event.data.get("outcome") in PASSED
+            and (condition.location_id is None or here == condition.location_id)
+        ):
+            return True
+    return False

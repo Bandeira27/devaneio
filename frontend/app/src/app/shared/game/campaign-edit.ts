@@ -269,7 +269,7 @@ export function defaultCondition(
     case 'turn_at_least':
       return { kind, turn: 1 };
     case 'check_passed':
-      return { kind, skill_id: skillIds[0] ?? '' };
+      return { kind, skill_id: skillIds[0] ?? '', location_id: null };
   }
 }
 

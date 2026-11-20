@@ -40,9 +40,11 @@ No estado (dinâmico):
 
 Nova condição, na mesma união fechada das condições dos marcos:
 
-- `CheckPassed(kind="check_passed", skill_id)`: vale se algum evento `check` daquela habilidade terminou em
-  sucesso ou sucesso crítico. Combina com as outras por E, como toda lista de condições (por exemplo
-  `at_location vila` mais `check_passed persuasao`). É "alguma vez": não exige que o teste tenha sido no local.
+- `CheckPassed(kind="check_passed", skill_id, location_id?)`: vale se algum evento `check` daquela habilidade
+  terminou em sucesso ou sucesso crítico. Combina com as outras por E, como toda lista de condições (por exemplo
+  `at_location vila` mais `check_passed persuasao`). Sem `location_id` é "alguma vez": não exige que o teste
+  tenha sido no local. Com `location_id`, só conta o teste feito com o grupo nesse local (o motor deduz o local
+  pelos eventos `move`), o que impede um teste feito antes, em outro lugar, de fechar o marco ao chegar.
 
 Validação (lista de erros, como o resto): ids de fato únicos, `about` existente e referências das condições
 de `reveal_when` conferidas pela mesma função usada nos marcos.
@@ -76,9 +78,10 @@ de `reveal_when` conferidas pela mesma função usada nos marcos.
 
 ## Limites conhecidos
 
-- `check_passed` olha o log inteiro: não exige que o teste tenha sido no local nem contra um NPC. O exemplo do
-  ferreiro (`at_location vila` mais `check_passed persuadir`) revela ao entrar na vila depois de persuadir
-  qualquer um em outro lugar. Alvo e local no teste ficam para quando houver ações declarativas.
+- `check_passed` olha o log inteiro e não exige que o teste tenha sido contra um NPC. Sem `location_id`, o
+  exemplo do ferreiro (`at_location vila` mais `check_passed persuadir`) revela ao entrar na vila depois de
+  persuadir qualquer um em outro lugar; com `location_id: vila` isso não acontece. O alvo do teste fica para
+  quando houver ações declarativas.
 - `skill_id` de `check_passed` não é conferido contra o sistema de regras na carga: erro de digitação deixa o fato
   sem revelar, sem aviso. Cabe ao validador de autoria do passo 2.
 - `about` é só rótulo e aparece a jogadores e ao LLM quando o fato é revelado. Apontar para um marco pendente ou

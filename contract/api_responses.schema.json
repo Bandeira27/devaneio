@@ -524,7 +524,7 @@
     },
     "CheckPassed": {
       "additionalProperties": false,
-      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\n\nTestes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.",
+      "description": "Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.\n\nTestes de NPC não contam. Sem ``location_id``, vale um teste em qualquer lugar (combine com\n``at_location``); com ele, só conta o teste feito com o grupo nesse local.",
       "properties": {
         "kind": {
           "const": "check_passed",
@@ -533,11 +533,24 @@
         "skill_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]*$",
           "type": "string"
+        },
+        "location_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
         "kind",
-        "skill_id"
+        "skill_id",
+        "location_id"
       ],
       "title": "CheckPassed",
       "type": "object"

@@ -60,6 +60,32 @@ def test_check_passed_needs_a_character_success_in_that_skill(state):
     assert not holds(cond, with_check(state, actor_kind="npc"))
 
 
+def test_check_passed_with_a_location_only_counts_checks_made_there(state, campaign):
+    in_ruins = CheckPassed(kind="check_passed", skill_id="investigar", location_id="ruinas")
+    # Um sucesso na vila não vale para as ruínas, mesmo com o grupo lá depois.
+    village = with_check(state, skill="investigar")
+    assert not holds(in_ruins, village)
+    arrived = at(village, campaign, "floresta", "ruinas")
+    assert not holds(in_ruins, arrived)
+    # Só o teste feito com o grupo nas ruínas conta.
+    assert holds(in_ruins, with_check(arrived, skill="investigar"))
+    # Sair das ruínas depois não desfaz o teste já passado.
+    left = at(with_check(arrived, skill="investigar"), campaign, "floresta")
+    assert holds(in_ruins, left)
+    # Falha, outra habilidade e teste de NPC nas ruínas não contam.
+    assert not holds(in_ruins, with_check(arrived, skill="investigar", outcome="failure"))
+    assert not holds(in_ruins, with_check(arrived, skill="lutar"))
+    assert not holds(in_ruins, with_check(arrived, skill="investigar", actor_kind="npc"))
+
+
+def test_check_passed_with_a_location_on_a_group_that_never_moved(state):
+    here = CheckPassed(kind="check_passed", skill_id="persuadir", location_id="vila")
+    elsewhere = CheckPassed(kind="check_passed", skill_id="persuadir", location_id="ruinas")
+    passed = with_check(state)
+    assert holds(here, passed)
+    assert not holds(elsewhere, passed)
+
+
 def test_conditions(state, campaign):
     assert holds(AtLocation(kind="at_location", location_id="vila"), state)
     assert not holds(AtLocation(kind="at_location", location_id="ruinas"), state)

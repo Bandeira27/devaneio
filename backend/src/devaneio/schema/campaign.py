@@ -80,11 +80,13 @@ class TurnAtLeast(StrictModel):
 class CheckPassed(StrictModel):
     """Algum personagem já passou (sucesso ou sucesso crítico) num teste desta habilidade.
 
-    Testes de NPC não contam. Não exige local nem turno: combine com ``at_location`` etc.
+    Testes de NPC não contam. Sem ``location_id``, vale um teste em qualquer lugar (combine com
+    ``at_location``); com ele, só conta o teste feito com o grupo nesse local.
     """
 
     kind: Literal["check_passed"]
     skill_id: Id
+    location_id: Id | None = None
 
 
 Condition = Annotated[

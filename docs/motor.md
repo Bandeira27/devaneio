@@ -39,7 +39,8 @@ a partir de hp perdido, hostis presentes, caídos e marcos falhos) e registra um
 futuro. O diretor nunca inventa texto; só dispara ações do motor.
 
 Condições disponíveis nos marcos e nos fatos: `at_location`, `npc_down`, `beat_done`, `turn_at_least` e
-`check_passed` (algum personagem passou num teste da habilidade; teste de NPC não conta).
+`check_passed` (algum personagem passou num teste da habilidade; teste de NPC não conta; com `location_id`,
+só vale o teste feito com o grupo nesse local, que o motor reconstrói pelos eventos `move` do log).
 Um marco sem `complete_when` só conclui por ação explícita (`marco concluir <id>` no CLI).
 
 A **fase da mesa** (sala de espera, em andamento, pausada, encerrada) não é do motor: vive em `TableMeta` (`game/`), e quem a muda é `game/lifecycle.py`, que só compõe o motor (a abertura da história roda ao iniciar). O desfecho derivado (`game_status`) segue sendo outro eixo.
