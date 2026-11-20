@@ -9,7 +9,7 @@ import { TableStore } from '../../table.store';
  */
 @Component({
   selector: 'dv-host-redirect',
-  template: '',
+  templateUrl: './host-redirect.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HostRedirect {

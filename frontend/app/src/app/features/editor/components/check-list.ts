@@ -8,24 +8,7 @@ import type { SelectOption } from '@shared/ui/select/select';
  */
 @Component({
   selector: 'dv-check-list',
-  template: `
-    <fieldset class="checks">
-      <legend>{{ legend() }}</legend>
-      @if (hint()) {
-        <p class="dv-note">{{ hint() }}</p>
-      }
-      @for (option of options(); track option.value) {
-        <label class="check">
-          <input
-            type="checkbox"
-            [checked]="selected().includes(option.value)"
-            (change)="toggle(option.value, $event)"
-          />
-          {{ option.label }}
-        </label>
-      }
-    </fieldset>
-  `,
+  templateUrl: './check-list.html',
   styleUrl: './check-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

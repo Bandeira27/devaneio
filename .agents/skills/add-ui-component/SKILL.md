@@ -13,7 +13,9 @@ reflexo: o contrato do que já existe cobre quase tudo.
 1. **Procure antes.** Existe um componente, uma diretiva ou uma classe `.dv-*` que sirva (ou que sirva estendida)? O
    componente novo só se justifica com **dois ou mais usos reais** ou um problema de UX comprovado. Divisor e lista, por
    exemplo, são classes, não componentes.
-2. **Escreva o contrato** no JSDoc do componente ([rule 10](../../rules/10-documentacao.md)): o que é; entradas; saídas;
+2. **Três arquivos, sempre:** `nome.ts`, `nome.html` e `nome.css`, com `templateUrl` e `styleUrl`; nada de `template:` ou
+   `styles:` inline, nem num componente de uma linha.
+   **Escreva o contrato** no JSDoc do componente ([rule 10](../../rules/10-documentacao.md)): o que é; entradas; saídas;
    estados (repouso, `focus-visible`, `active`, `disabled` ou bloqueado com motivo, `loading`, erro, vazio, no que fizerem
    sentido); teclado; papel ARIA; movimento; comportamento em tela estreita.
 3. **Use só tokens** (`var(--dv-...)`). Valor novo entra em `src/styles/tokens.css` com o papel comentado; cor nova, com o
@@ -36,5 +38,6 @@ reflexo: o contrato do que já existe cobre quase tudo.
   `disabled` quando o foco não pode se perder.
 - `animate.leave` só alcança elementos do template; o painel do CDK tem tratamento próprio (`Sheet`).
 - Input com alias é barrado pelo ESLint: nomeie a propriedade (`dvBlocked`), não use `alias`.
-- Estilo `styles:` inline só como string simples, sem `${}` (o design-lint não lê interpolação).
+- Template e estilo em arquivo próprio (`nome.html` e `nome.css`, com `templateUrl` e `styleUrl`), sempre: o ESLint barra
+  `template:` e `styles:` inline. O design-lint lê os `.css` do componente como qualquer outro.
 - Token declarado e sem uso fica na lista de espera do design-lint, que só pode encolher.

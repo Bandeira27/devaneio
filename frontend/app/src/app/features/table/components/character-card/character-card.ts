@@ -11,12 +11,7 @@ import { DvPips } from '@shared/ui/pips/pips';
 @Component({
   selector: 'dv-character-card',
   imports: [DvKeyValue, DvPips],
-  template: `
-    <div class="dv-stack">
-      <dv-pips [value]="character().hp" [max]="character().max_hp" />
-      <dv-key-value [items]="items()" />
-    </div>
-  `,
+  templateUrl: './character-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CharacterCard {

@@ -14,10 +14,7 @@ export interface CharacterSheetData {
 @Component({
   selector: 'dv-character-sheet',
   imports: [CharacterCard, DvSheetHead],
-  template: `
-    <dv-sheet-head [title]="data.character.name" />
-    <dv-character-card [character]="data.character" [rules]="data.rules" />
-  `,
+  templateUrl: './character-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CharacterSheet {

@@ -11,13 +11,7 @@ const LABELS = { running: 'Rodando', paused: 'Pausada', ended: 'Encerrada' } as 
  */
 @Component({
   selector: 'dv-play-clock',
-  template: `
-    @if (label(); as text) {
-      <span class="clock__label">{{ text }}</span>
-      <span class="clock__time" aria-hidden="true">{{ visual() }}</span>
-      <span class="dv-visually-hidden">{{ text }}: {{ spoken() }}</span>
-    }
-  `,
+  templateUrl: './play-clock.html',
   styleUrl: './play-clock.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.clock--idle]': "phase() !== 'running'" },

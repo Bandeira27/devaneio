@@ -20,17 +20,17 @@ Um `SKIP` do frontend significa que Prettier, tsc e contrato **não** foram veri
 
 ## Quando falhar: causa antes de sintoma
 
-| Falha | Leia a mensagem e... |
-|---|---|
-| `ruff format` | `cd backend && .venv/bin/ruff format . ../scripts --config pyproject.toml` |
-| `ruff check` | corrija; `ruff check --fix` só para o que é seguro. Entenda a regra (`ruff rule S310`) antes de agir |
-| `mypy` | ajuste o **tipo** ou a lógica (estreite `Literal`, discrimine a união). Não use `Any`/`cast` para calar |
-| `import-linter` | o import viola as camadas ([rule 03](../../rules/03-arquitetura.md)); mova o código para a camada certa |
-| `pytest` / cobertura | conserte o código ou escreva o teste que falta; nunca baixe `fail_under` |
-| `contrato em dia` | rode a skill `change-contract` e commite o regenerado |
-| `supressões` | complete código + justificativa, ou remova a supressão e corrija a causa |
-| `atribuição` | remova a linha de atribuição de IA da mensagem ou do código |
-| `governança` | ajuste a estrutura de `.agents/`, links ou symlinks que o script apontou |
+| Falha                | Leia a mensagem e...                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ruff format`        | `cd backend && .venv/bin/ruff format . ../scripts --config pyproject.toml`                              |
+| `ruff check`         | corrija; `ruff check --fix` só para o que é seguro. Entenda a regra (`ruff rule S310`) antes de agir    |
+| `mypy`               | ajuste o **tipo** ou a lógica (estreite `Literal`, discrimine a união). Não use `Any`/`cast` para calar |
+| `import-linter`      | o import viola as camadas ([rule 03](../../rules/03-arquitetura.md)); mova o código para a camada certa |
+| `pytest` / cobertura | conserte o código ou escreva o teste que falta; nunca baixe `fail_under`                                |
+| `contrato em dia`    | rode a skill `change-contract` e commite o regenerado                                                   |
+| `supressões`         | complete código + justificativa, ou remova a supressão e corrija a causa                                |
+| `atribuição`         | remova a linha de atribuição de IA da mensagem ou do código                                             |
+| `governança`         | ajuste a estrutura de `.agents/`, links ou symlinks que o script apontou                                |
 
 ## O que fazer com um falso positivo
 

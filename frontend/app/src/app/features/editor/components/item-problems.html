@@ -1,0 +1,6 @@
+@for (message of problems().errors; track $index) {
+  <dv-notice kind="error">{{ message }}</dv-notice>
+}
+@for (finding of problems().findings; track $index) {
+  <dv-notice [kind]="finding.level === 'erro' ? 'error' : 'warn'">{{ finding.text }}</dv-notice>
+}

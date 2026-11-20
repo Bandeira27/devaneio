@@ -14,12 +14,12 @@ lendo `.agents/agents/<papel>.md` em sequência, com o mesmo protocolo.
 O coordenador classifica a mudança **antes** de acionar e registra a classificação no relatório.
 Rode `scripts/check` primeiro: o que ele pega não precisa de revisor.
 
-| Nível | Critério objetivo | Quem entra |
-|---|---|---|
-| N0 | só docs/comentários, renomeação sem efeito, formatação | ninguém; `scripts/check` basta |
-| N1 | mudança localizada num pacote, sem alterar comportamento público, contrato nem dependências | `code-reviewer` |
-| N2 | muda comportamento observável ou corrige bug | `code-reviewer` + `test-engineer` |
-| N3 | toca uma fronteira de risco (abaixo) | N2 + especialistas da fronteira |
+| Nível | Critério objetivo                                                                           | Quem entra                        |
+| ----- | ------------------------------------------------------------------------------------------- | --------------------------------- |
+| N0    | só docs/comentários, renomeação sem efeito, formatação                                      | ninguém; `scripts/check` basta    |
+| N1    | mudança localizada num pacote, sem alterar comportamento público, contrato nem dependências | `code-reviewer`                   |
+| N2    | muda comportamento observável ou corrige bug                                                | `code-reviewer` + `test-engineer` |
+| N3    | toca uma fronteira de risco (abaixo)                                                        | N2 + especialistas da fronteira   |
 
 Fronteira de risco → especialista:
 
@@ -36,13 +36,13 @@ por reflexo: custo e ruído crescem mais rápido que o valor.
 
 ## 2. Tarefas que exigem colaboração
 
-| Tarefa | Agentes |
-|---|---|
-| mudança de contrato | `architecture-guardian` + `test-engineer` |
-| qualquer mudança em `llm/` | `security-reviewer` + `architecture-guardian` + `test-engineer` |
-| dependência nova | `architecture-guardian` + `security-reviewer` |
-| primeira ação do motor de um tipo novo | `architecture-guardian` + `test-engineer` |
-| mudança de tela ou componente de UI | `code-reviewer` + `ui-reviewer` |
+| Tarefa                                 | Agentes                                                         |
+| -------------------------------------- | --------------------------------------------------------------- |
+| mudança de contrato                    | `architecture-guardian` + `test-engineer`                       |
+| qualquer mudança em `llm/`             | `security-reviewer` + `architecture-guardian` + `test-engineer` |
+| dependência nova                       | `architecture-guardian` + `security-reviewer`                   |
+| primeira ação do motor de um tipo novo | `architecture-guardian` + `test-engineer`                       |
+| mudança de tela ou componente de UI    | `code-reviewer` + `ui-reviewer`                                 |
 
 ## 3. Comunicação e compartilhamento de descobertas
 

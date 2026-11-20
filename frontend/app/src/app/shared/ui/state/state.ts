@@ -21,18 +21,7 @@ export type StateKind = 'loading' | 'empty' | 'error' | 'unavailable';
 @Component({
   selector: 'dv-state',
   imports: [DvBrand, DvIcon, DvOrnament],
-  template: `
-    @if (cover()) {
-      <span class="mark" aria-hidden="true"><dv-brand size="lg" /><dv-ornament /></span>
-    }
-    @if (kind() === 'loading') {
-      <span class="pending" aria-hidden="true"><i></i><i></i><i></i></span>
-    } @else {
-      <dv-icon [name]="icon()" />
-    }
-    <p class="message"><ng-content /></p>
-    <ng-content select="[dvStateAction]" />
-  `,
+  templateUrl: './state.html',
   styleUrl: './state.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

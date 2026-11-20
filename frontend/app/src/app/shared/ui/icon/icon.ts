@@ -77,9 +77,7 @@ const PATHS: Record<IconName, string> = {
  */
 @Component({
   selector: 'dv-icon',
-  template: `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-    <path [attr.d]="path()" />
-  </svg>`,
+  templateUrl: './icon.html',
   styleUrl: './icon.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 'aria-hidden': 'true', '[class]': "'icon icon--' + size()" },

@@ -10,15 +10,8 @@ import { EditorStore } from '../editor.store';
 @Component({
   selector: 'dv-item-problems',
   imports: [DvNotice],
-  template: `
-    @for (message of problems().errors; track $index) {
-      <dv-notice kind="error">{{ message }}</dv-notice>
-    }
-    @for (finding of problems().findings; track $index) {
-      <dv-notice [kind]="finding.level === 'erro' ? 'error' : 'warn'">{{ finding.text }}</dv-notice>
-    }
-  `,
-  styles: ':host { display: grid; gap: var(--dv-space-2); } :host:empty { display: none; }',
+  templateUrl: './item-problems.html',
+  styleUrl: './item-problems.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ItemProblems {

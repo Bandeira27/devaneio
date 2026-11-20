@@ -5,15 +5,15 @@ Quem escreve o código não decide, sozinho, que uma verificação deixa de vale
 
 ## Ferramentas (todas dentro de `scripts/check`)
 
-| Ferramenta | Para quê | Configuração |
-|---|---|---|
-| `ruff check` | lint: estilo, bugs prováveis, segurança, imports, supressões | `backend/pyproject.toml` |
-| `ruff format` | formatação (linha 100); o formatador manda, não se discute estilo | idem |
-| `mypy --strict` | tipos em `src/` | idem |
-| `import-linter` | camadas ([rule 03](03-arquitetura.md)) | idem |
-| `pytest` + cobertura | testes, piso 92% ([rule 04](04-testes.md)) | idem |
-| `prettier` + `tsc` | frontend (gerado em `src/contract` é ignorado) | `frontend/` |
-| `check_*.py` | supressões, atribuição, governança | `scripts/` |
+| Ferramenta           | Para quê                                                          | Configuração             |
+| -------------------- | ----------------------------------------------------------------- | ------------------------ |
+| `ruff check`         | lint: estilo, bugs prováveis, segurança, imports, supressões      | `backend/pyproject.toml` |
+| `ruff format`        | formatação (linha 100); o formatador manda, não se discute estilo | idem                     |
+| `mypy --strict`      | tipos em `src/`                                                   | idem                     |
+| `import-linter`      | camadas ([rule 03](03-arquitetura.md))                            | idem                     |
+| `pytest` + cobertura | testes, piso 92% ([rule 04](04-testes.md))                        | idem                     |
+| `prettier` + `tsc`   | frontend (gerado em `src/contract` é ignorado)                    | `frontend/`              |
+| `check_*.py`         | supressões, atribuição, governança                                | `scripts/`               |
 
 ## Proibido para fazer um portão passar
 
@@ -34,7 +34,7 @@ Quem escreve o código não decide, sozinho, que uma verificação deixa de vale
 
 - Código específico: `# noqa: S310`, `# type: ignore[assignment]`.
 - Menor extensão possível: uma linha, nunca arquivo ou bloco.
-- Justificativa na mesma linha, depois de ` — `, ou num comentário na linha de cima:
+- Justificativa na mesma linha, depois de `—`, ou num comentário na linha de cima:
   `# noqa: S310 — esquema http(s) validado em LlmConfig`.
 - Proporcional: uma linha para um falso positivo pontual. Se o mesmo padrão se repete, o problema é a regra:
   vá ao dono.

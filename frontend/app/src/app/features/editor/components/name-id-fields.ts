@@ -23,34 +23,7 @@ import { EditorStore } from '../editor.store';
 @Component({
   selector: 'dv-name-id-fields',
   imports: [DvDisclosure, DvField, DvInput],
-  template: `
-    <dv-field [label]="label()" [announce]="false" [error]="store.errorAt(path() + '.' + field())">
-      @if (multiline()) {
-        <textarea
-          dvInput
-          rows="3"
-          [value]="name()"
-          (input)="nameChange.emit(fieldValue($event))"
-        ></textarea>
-      } @else {
-        <input dvInput type="text" [value]="name()" (input)="nameChange.emit(fieldValue($event))" />
-      }
-    </dv-field>
-    <dv-disclosure label="Avançado: identificador" [(open)]="advancedOpen">
-      <dv-field
-        label="Identificador"
-        [announce]="false"
-        [hint]="
-          store.isAuto(kind(), id())
-            ? 'Acompanha ' + follows() + '. Escreva aqui para fixar outro.'
-            : 'Letras minúsculas sem acento, números, - e _.'
-        "
-        [error]="idError() || store.errorAt(path() + '.id')"
-      >
-        <input dvInput type="text" [value]="id()" (change)="commit($event)" />
-      </dv-field>
-    </dv-disclosure>
-  `,
+  templateUrl: './name-id-fields.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NameIdFields {

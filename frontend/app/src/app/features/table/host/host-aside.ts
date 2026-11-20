@@ -7,25 +7,7 @@ import { HostDrawer } from './host-drawer';
 @Component({
   selector: 'dv-host-aside',
   imports: [DvButton, DvIcon, HostDrawer],
-  template: `
-    <aside id="painel-anfitriao" aria-labelledby="painel-anfitriao-titulo">
-      <header class="host-aside__head">
-        <h2 id="painel-anfitriao-titulo" class="dv-section host-aside__title" tabindex="-1">
-          Painel do anfitrião
-        </h2>
-        <button
-          dvButton
-          class="dv-sheet__close"
-          type="button"
-          aria-label="Fechar o painel"
-          (click)="closed.emit()"
-        >
-          <dv-icon name="close" />
-        </button>
-      </header>
-      <dv-host-drawer />
-    </aside>
-  `,
+  templateUrl: './host-aside.html',
   styleUrl: './host-aside.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

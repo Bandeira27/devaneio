@@ -14,31 +14,7 @@ export type { ChoiceOption };
 @Component({
   selector: 'dv-choice',
   imports: [DvIcon],
-  template: `
-    <fieldset>
-      <legend>{{ legend() }}</legend>
-      @for (option of options(); track option.value) {
-        <label class="option" [class.option--selected]="option.value === value()">
-          <input
-            type="radio"
-            [name]="name"
-            [value]="option.value"
-            [checked]="option.value === value()"
-            (change)="value.set(option.value)"
-          />
-          <span class="text">
-            <span class="label">{{ option.label }}</span>
-            @if (option.detail) {
-              <span class="detail">{{ option.detail }}</span>
-            }
-          </span>
-          @if (option.value === value()) {
-            <dv-icon name="ok" size="sm" />
-          }
-        </label>
-      }
-    </fieldset>
-  `,
+  templateUrl: './choice.html',
   styleUrl: './choice.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -12,33 +12,7 @@ import { DvIcon } from '../icon/icon';
 @Component({
   selector: 'dv-steps',
   imports: [DvIcon],
-  template: `
-    <ol role="list" aria-label="Passos">
-      @for (step of steps(); track $index; let i = $index) {
-        <li
-          [class.done]="i < current()"
-          [class.current]="i === current()"
-          [attr.aria-current]="i === current() ? 'step' : null"
-        >
-          <span class="number" aria-hidden="true">
-            @if (i < current()) {
-              <dv-icon name="ok" size="sm" />
-            } @else {
-              {{ i + 1 }}
-            }
-          </span>
-          <span class="label"
-            >{{ step }}
-            @if (i === current()) {
-              <span class="dv-visually-hidden"> (agora)</span>
-            } @else if (i < current()) {
-              <span class="dv-visually-hidden"> (feito)</span>
-            }
-          </span>
-        </li>
-      }
-    </ol>
-  `,
+  templateUrl: './steps.html',
   styleUrl: './steps.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

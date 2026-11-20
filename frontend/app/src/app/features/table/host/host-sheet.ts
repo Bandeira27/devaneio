@@ -11,33 +11,8 @@ import { HostDrawer } from './host-drawer';
 @Component({
   selector: 'dv-host-sheet',
   imports: [DvNotice, DvSheetHead, HostDrawer],
-  template: `
-    <dv-sheet-head title="Painel do anfitrião" />
-    <div class="host-sheet">
-      @if (store.actionError()) {
-        <dv-notice kind="error" dismissible (dismissed)="store.dismissFeedback()">
-          {{ store.actionError() }}
-        </dv-notice>
-      }
-      @if (store.reply()) {
-        <dv-notice dismissible (dismissed)="store.dismissFeedback()">
-          {{ store.reply() }}
-        </dv-notice>
-      }
-      <dv-host-drawer />
-    </div>
-  `,
-  styles: `
-    .host-sheet {
-      display: grid;
-      gap: var(--dv-space-4);
-    }
-
-    dv-notice {
-      max-height: 10rem;
-      overflow-y: auto;
-    }
-  `,
+  templateUrl: './host-sheet.html',
+  styleUrl: './host-sheet.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HostSheet {

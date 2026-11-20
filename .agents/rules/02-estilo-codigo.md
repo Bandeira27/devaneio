@@ -8,7 +8,7 @@ O que `ruff`, `ruff format` e `mypy --strict` já cobrem **não é repetido aqui
 - Documentação, comentários, docstrings, mensagens de erro e commits em **pt-br**; identificadores em inglês
   (`deal_damage`, `rng_draws`). Ids de domínio são slugs (`aria`, `vila`).
 - Nome diz o quê, não o como. Evite abreviações opacas (`l`, `x`); se o nome precisa de comentário, troque o nome.
-- Comentário explica o *porquê* e é curto; contrato vai em docstring/JSDoc ([rule 10](10-documentacao.md)).
+- Comentário explica o _porquê_ e é curto; contrato vai em docstring/JSDoc ([rule 10](10-documentacao.md)).
 - Compatível com **Python 3.10** (declarado em `requires-python`; o CI roda 3.10 e 3.12). Use
   `from __future__ import annotations` e tipos completos.
 
@@ -19,6 +19,12 @@ O que `ruff`, `ruff format` e `mypy --strict` já cobrem **não é repetido aqui
   `raise NovoErro(...) from exc` ao traduzir outro.
 - Reuso: antes de escrever, procure a função existente (`engine/lookup.py`, `engine/errors.py`,
   `game/commands/`). Siga o padrão do vizinho; não crie um segundo mecanismo para a mesma coisa.
+- **Componente Angular: template e estilo sempre em arquivo próprio** (`templateUrl: './nome.html'`,
+  `styleUrl: './nome.css'`), do lado do `.ts`, nunca inline em `template:` ou `styles:`, nem nos componentes
+  minúsculos. O ESLint barra (`@angular-eslint/component-max-inline-declarations` em 0). Stories e testes, que montam
+  componentes de demonstração, ficam de fora.
+- Import no topo do arquivo. O `import()` dinâmico das rotas (`loadChildren`) é a exceção de propósito: é ele que divide
+  o app em pedaços carregados sob demanda, então não vira import estático; ele mora em `app/route-loaders.ts`.
 - Quanto cabe em um arquivo: [rule 09](09-responsabilidades.md). Como documentar: [rule 10](10-documentacao.md).
 
 ## Tamanho e complexidade são indicadores, não limites

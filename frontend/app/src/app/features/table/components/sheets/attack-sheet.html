@@ -1,0 +1,30 @@
+<dv-sheet-head title="Atacar" />
+@if (data.targets.length === 0) {
+  <p class="dv-note">Não há ninguém aqui para atacar.</p>
+} @else if (data.weapons.length === 0) {
+  <p class="dv-note">Você não tem nenhuma arma.</p>
+} @else {
+  <form
+    class="dv-stack"
+    #form
+    tabindex="-1"
+    (submit)="$event.preventDefault(); ref.close(command())"
+  >
+    <dv-choice legend="Alvo" [options]="targets()" [(value)]="target" />
+    @if (data.weapons.length > 1) {
+      <dv-choice legend="Arma" [options]="weapons()" [(value)]="weapon" />
+    } @else {
+      <p class="dv-note">Com {{ weaponNameOne() }}. Dano {{ data.weapons[0]?.damage }}.</p>
+    }
+    @if (data.modifiers.length > 0) {
+      <dv-disclosure [label]="'Ajustar: ' + (modifierLabel() || 'sem modificador')">
+        <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
+      </dv-disclosure>
+    }
+    <p class="dv-note">Gasta a sua ação.</p>
+    <dv-sheet-foot>
+      <button dvButton type="button" (click)="ref.close()">Cancelar</button>
+      <button dvButton="primary" type="submit">Atacar {{ targetName() }}</button>
+    </dv-sheet-foot>
+  </form>
+}

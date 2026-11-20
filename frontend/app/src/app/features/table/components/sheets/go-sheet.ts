@@ -21,24 +21,7 @@ export interface GoSheetData {
 @Component({
   selector: 'dv-go-sheet',
   imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice],
-  template: `
-    <dv-sheet-head title="Para onde ir?" />
-    @if (data.exits.length === 0) {
-      <p class="dv-note">Não há saídas daqui.</p>
-      <dv-sheet-foot>
-        <button dvButton type="button" cdkFocusInitial (click)="ref.close()">Fechar</button>
-      </dv-sheet-foot>
-    } @else {
-      <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
-        <dv-choice legend="Destino" [options]="options" [(value)]="destination" />
-        <p class="dv-note">O grupo todo se move. Gasta a sua ação.</p>
-        <dv-sheet-foot>
-          <button dvButton type="button" (click)="ref.close()">Cancelar</button>
-          <button dvButton="primary" type="submit">Ir para {{ destinationName() }}</button>
-        </dv-sheet-foot>
-      </form>
-    }
-  `,
+  templateUrl: './go-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GoSheet {

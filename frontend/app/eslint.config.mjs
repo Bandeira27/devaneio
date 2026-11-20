@@ -128,6 +128,19 @@ export default defineConfig([
       '@typescript-eslint/no-extraneous-class': 'off',
     },
   },
+  // Template e estilo de componente sempre em arquivo próprio (`templateUrl` e `styleUrl`), nunca inline: a marcação e o
+  // CSS ganham destaque, formatação e navegação do editor, e o `.ts` fica só com a lógica (rule 09). Vale para o app
+  // inteiro, inclusive os componentes minúsculos. Stories e testes montam componentes de demonstração e ficam de fora.
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.stories.ts', 'src/app/testing/**'],
+    rules: {
+      '@angular-eslint/component-max-inline-declarations': [
+        'error',
+        { template: 0, styles: 0, animations: 0 },
+      ],
+    },
+  },
   // Documentação (rule 10): JSDoc sem tipos em tudo que o app exporta; `@param` só quando acrescenta algo.
   {
     files: ['src/app/**/*.ts'],

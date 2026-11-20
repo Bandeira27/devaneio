@@ -12,7 +12,7 @@ import { TableStore } from '../../table.store';
   selector: 'dv-table-frame',
   imports: [RouterOutlet],
   providers: [TableStore, HostSession],
-  template: '<router-outlet />',
+  templateUrl: './table-frame.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableFrame implements OnInit {

@@ -13,7 +13,7 @@
 
 - **Atômicos**: uma mudança lógica por commit, e cada commit deixa os portões verdes.
 - Mensagem em pt-br, `tipo: descrição` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`, `ci`).
-  Corpo opcional explica o *porquê*.
+  Corpo opcional explica o _porquê_.
 - Formatação em massa, refatoração por indicador e mudança de comportamento ficam em commits **separados**.
 - **Nenhuma atribuição de IA, em lugar nenhum**: sem `Co-Authored-By`, sem "Generated with ...", sem emoji
   de robô, sem citar ferramenta ou modelo como autor, nas mensagens de commit, em descrições e comentários de

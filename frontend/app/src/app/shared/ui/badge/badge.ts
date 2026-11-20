@@ -12,14 +12,7 @@ export type BadgeTone = 'neutral' | 'ok' | 'warn' | 'info' | 'danger';
 @Component({
   selector: 'dv-badge',
   imports: [DvIcon],
-  template: `
-    @if (pending()) {
-      <span class="badge__dot" aria-hidden="true"></span>
-    } @else if (icon(); as name) {
-      <dv-icon [name]="name" size="sm" />
-    }
-    <ng-content />
-  `,
+  templateUrl: './badge.html',
   styleUrl: './badge.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class]': "'badge badge--' + tone()" },

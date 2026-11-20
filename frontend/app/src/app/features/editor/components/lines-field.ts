@@ -20,11 +20,7 @@ import { DvInput } from '@shared/ui/field/input';
 @Component({
   selector: 'dv-lines-field',
   imports: [DvField, DvInput],
-  template: `
-    <dv-field [label]="label()" [hint]="hint()" [error]="error()" [announce]="false">
-      <textarea dvInput rows="3" [value]="text()" (input)="typed($event)"></textarea>
-    </dv-field>
-  `,
+  templateUrl: './lines-field.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinesField {

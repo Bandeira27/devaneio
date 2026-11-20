@@ -19,14 +19,7 @@ export interface ConfirmSheetData {
 @Component({
   selector: 'dv-confirm-sheet',
   imports: [DvSheetHead, DvSheetFoot, DvButton],
-  template: `
-    <dv-sheet-head [title]="data.title" />
-    <p cdkFocusInitial tabindex="-1">{{ data.text }}</p>
-    <dv-sheet-foot>
-      <button dvButton type="button" (click)="ref.close()">Voltar</button>
-      <button dvButton="primary" type="button" (click)="ref.close(true)">{{ data.action }}</button>
-    </dv-sheet-foot>
-  `,
+  templateUrl: './confirm-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmSheet {

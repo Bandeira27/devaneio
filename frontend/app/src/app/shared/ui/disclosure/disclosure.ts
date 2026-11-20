@@ -7,12 +7,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
  */
 @Component({
   selector: 'dv-disclosure',
-  template: `
-    <details [open]="open()" (toggle)="toggled($event)">
-      <summary>{{ label() }}</summary>
-      <div class="body"><ng-content /></div>
-    </details>
-  `,
+  templateUrl: './disclosure.html',
   styleUrl: './disclosure.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

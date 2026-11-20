@@ -12,7 +12,7 @@ export type BrandSize = 'md' | 'lg';
  */
 @Component({
   selector: 'dv-brand',
-  template: `<span class="seal" aria-hidden="true">D</span><span class="word">Devaneio</span>`,
+  templateUrl: './brand.html',
   styleUrl: './brand.css',
   host: { '[class]': "'brand--' + size()" },
   changeDetection: ChangeDetectionStrategy.OnPush,

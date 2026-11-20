@@ -34,6 +34,6 @@ Nunca edite os dois últimos à mão.
 - Docstring de modelo e `description` de campo entram no contrato: editar só a docstring já muda `contract/` e
   os tipos TS. Regenere e revise o diff como em qualquer mudança de modelo.
 
-- `Campaign` é exportada em modo *validation* e `GameState` em modo *serialization* (campos com default
+- `Campaign` é exportada em modo _validation_ e `GameState` em modo _serialization_ (campos com default
   viram obrigatórios para o cliente): não mude isso sem entender o porquê (`export_schema.py`).
 - Títulos por campo são desligados de propósito (evitam `Id1`, `Turn2` nos tipos TS).

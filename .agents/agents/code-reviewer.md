@@ -31,7 +31,7 @@ segurança do LLM, segredos, arquivos → `security-reviewer`; desempenho → `p
 2. Leia o diff inteiro e o contexto ao redor, não só as linhas alteradas.
 3. Tamanho de função ou módulo é **indicador, não limite**: só sinalize se conseguir dizer qual
    responsabilidade se mistura ou o que fica difícil de ler/testar ([rule 02](../rules/02-estilo-codigo.md)).
-4. Ao citar um princípio (DRY, SOLID, KISS...), mostre o problema concreto *e* o custo da correção
+4. Ao citar um princípio (DRY, SOLID, KISS...), mostre o problema concreto _e_ o custo da correção
    proposta. "Viola DRY" sem conhecimento duplicado não é achado.
 5. Distinga bug (`bloqueia`) de gosto (`nota`). Não imponha preferência pessoal.
 

@@ -7,17 +7,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
  */
 @Component({
   selector: 'dv-ornament',
-  template: `
-    <svg
-      viewBox="0 0 120 8"
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M0 4H50M70 4H120" fill="none" stroke="currentColor" stroke-width="1" />
-      <path d="M60 0.5L63.5 4L60 7.5L56.5 4Z" fill="currentColor" />
-    </svg>
-  `,
+  templateUrl: './ornament.html',
   styleUrl: './ornament.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

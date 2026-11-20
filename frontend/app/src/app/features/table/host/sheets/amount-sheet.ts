@@ -33,34 +33,7 @@ export const AMOUNT_COPY = {
 @Component({
   selector: 'dv-amount-sheet',
   imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice, DvField, DvInput, DvStepper],
-  template: `
-    <dv-sheet-head [title]="copy.title" />
-    @if (data.targets.length === 0) {
-      <p class="dv-note">Não há ninguém para {{ data.verb }}.</p>
-    } @else {
-      <form class="dv-stack" (submit)="$event.preventDefault(); send()">
-        <dv-choice legend="Quem" [options]="options()" [(value)]="target" />
-        <dv-stepper label="Quantia" [min]="1" [max]="maxAmount" [(value)]="amount" />
-        <dv-field
-          label="Fonte (opcional)"
-          [hint]="'Aparece no registro: ' + copy.source + '.'"
-          [error]="error()"
-        >
-          <input
-            dvInput
-            type="text"
-            autocomplete="off"
-            [attr.maxlength]="max"
-            [value]="source()"
-            (input)="source.set(fieldValue($event))"
-          />
-        </dv-field>
-        <dv-sheet-foot>
-          <button dvButton="primary" type="submit">{{ copy.action }}</button>
-        </dv-sheet-foot>
-      </form>
-    }
-  `,
+  templateUrl: './amount-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AmountSheet {

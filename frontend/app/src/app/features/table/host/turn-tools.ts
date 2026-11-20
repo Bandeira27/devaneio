@@ -13,36 +13,8 @@ import { AMOUNT_COPY, AmountSheet } from './sheets/amount-sheet';
 @Component({
   selector: 'dv-turn-tools',
   imports: [DvButton],
-  template: `
-    <section class="dv-card dv-stack" aria-labelledby="turno-titulo">
-      <h2 id="turno-titulo" class="dv-section">Ferramentas do turno</h2>
-      <div class="tools">
-        <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="endTurn()">
-          Fim do turno
-        </button>
-        <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="rest()">
-          Descansar
-        </button>
-        <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="amount('ferir')">
-          Ferir
-        </button>
-        <button dvButton type="button" [dvBlocked]="store.actionBusy()" (click)="amount('curar')">
-          Curar
-        </button>
-      </div>
-      <p class="dv-note">
-        Ferir um NPC que o grupo não vê não aparece para os jogadores. O que você faz aqui entra no
-        registro da mesa.
-      </p>
-    </section>
-  `,
-  styles: `
-    .tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--dv-space-2);
-    }
-  `,
+  templateUrl: './turn-tools.html',
+  styleUrl: './turn-tools.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TurnTools {

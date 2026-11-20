@@ -22,23 +22,7 @@ export interface CheckSheetData {
 @Component({
   selector: 'dv-check-sheet',
   imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice, DvDisclosure],
-  template: `
-    <dv-sheet-head title="Testar" />
-    <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
-      <dv-choice legend="Habilidade" [options]="skills()" [(value)]="skill" grid />
-      <dv-disclosure [label]="'Ajustar: ' + summary()">
-        <div class="dv-stack">
-          <dv-choice legend="Dificuldade" [options]="difficulties()" [(value)]="difficulty" grid />
-          @if (data.rules.modifiers.length > 0) {
-            <dv-choice legend="Modificador" [options]="modifiers()" [(value)]="modifier" />
-          }
-        </div>
-      </dv-disclosure>
-      <dv-sheet-foot>
-        <button dvButton="primary" type="submit">Testar</button>
-      </dv-sheet-foot>
-    </form>
-  `,
+  templateUrl: './check-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckSheet {

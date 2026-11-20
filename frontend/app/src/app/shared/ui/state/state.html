@@ -1,0 +1,10 @@
+@if (cover()) {
+  <span class="mark" aria-hidden="true"><dv-brand size="lg" /><dv-ornament /></span>
+}
+@if (kind() === 'loading') {
+  <span class="pending" aria-hidden="true"><i></i><i></i><i></i></span>
+} @else {
+  <dv-icon [name]="icon()" />
+}
+<p class="message"><ng-content /></p>
+<ng-content select="[dvStateAction]" />

@@ -11,30 +11,7 @@ import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 @Component({
   selector: 'dv-command-sheet',
   imports: [DvSheetHead, DvSheetFoot, DvButton, DvField, DvInput],
-  template: `
-    <dv-sheet-head title="Comando" />
-    <form class="dv-stack" (submit)="$event.preventDefault(); send()">
-      <dv-field
-        label="Comando"
-        hint="Escreva uma ação do jogo. Por exemplo: olhar ou ficha."
-        [error]="error()"
-      >
-        <input
-          dvInput
-          cdkFocusInitial
-          type="text"
-          autocomplete="off"
-          autocapitalize="none"
-          spellcheck="false"
-          [value]="line()"
-          (input)="line.set(fieldValue($event))"
-        />
-      </dv-field>
-      <dv-sheet-foot>
-        <button dvButton="primary" type="submit">Enviar</button>
-      </dv-sheet-foot>
-    </form>
-  `,
+  templateUrl: './command-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommandSheet {

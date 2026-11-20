@@ -1,0 +1,14 @@
+<dv-sheet-head title="Painel do anfitrião" />
+<div class="host-sheet">
+  @if (store.actionError()) {
+    <dv-notice kind="error" dismissible (dismissed)="store.dismissFeedback()">
+      {{ store.actionError() }}
+    </dv-notice>
+  }
+  @if (store.reply()) {
+    <dv-notice dismissible (dismissed)="store.dismissFeedback()">
+      {{ store.reply() }}
+    </dv-notice>
+  }
+  <dv-host-drawer />
+</div>

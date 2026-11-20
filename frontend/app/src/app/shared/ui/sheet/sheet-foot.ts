@@ -9,7 +9,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
  */
 @Component({
   selector: 'dv-sheet-foot',
-  template: '<ng-content />',
+  templateUrl: './sheet-foot.html',
   host: { class: 'dv-sheet__foot' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

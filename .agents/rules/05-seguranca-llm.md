@@ -186,7 +186,7 @@ O LLM é **entrada não confiável**. O que ele devolve é um palpite a validar,
 
 ## Checklist ao mexer em `llm/`, `game/`, `cli/` ou carga de arquivos
 
-- O que o modelo pode fazer mudou? Atualize a allow-list *e* o teste que a prova.
+- O que o modelo pode fazer mudou? Atualize a allow-list _e_ o teste que a prova.
 - Há caminho novo de texto externo até o motor, o shell, um arquivo ou um log?
 - Há segredo que possa aparecer em exceção, `repr` ou mensagem de erro?
 - O teste usa o servidor falso, não rede real?

@@ -1,0 +1,6 @@
+<dv-sheet-head [title]="data.title" />
+<p cdkFocusInitial tabindex="-1">{{ data.text }}</p>
+<dv-sheet-foot>
+  <button dvButton type="button" (click)="ref.close()">Voltar</button>
+  <button dvButton="primary" type="button" (click)="ref.close(true)">{{ data.action }}</button>
+</dv-sheet-foot>

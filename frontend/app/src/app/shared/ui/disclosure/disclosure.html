@@ -1,0 +1,4 @@
+<details [open]="open()" (toggle)="toggled($event)">
+  <summary>{{ label() }}</summary>
+  <div class="body"><ng-content /></div>
+</details>

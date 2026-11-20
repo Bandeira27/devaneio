@@ -17,17 +17,7 @@ export interface SelectOption {
 @Component({
   selector: 'dv-select',
   imports: [DvField, DvInput],
-  template: `
-    <dv-field [label]="label()" [hint]="hint()" [error]="error()" [announce]="announce()">
-      <select dvInput [disabled]="disabled()" (change)="value.set(fieldValue($event))">
-        @for (option of shown(); track option.value) {
-          <option [value]="option.value" [selected]="option.value === value()">
-            {{ option.label }}
-          </option>
-        }
-      </select>
-    </dv-field>
-  `,
+  templateUrl: './select.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DvSelect {

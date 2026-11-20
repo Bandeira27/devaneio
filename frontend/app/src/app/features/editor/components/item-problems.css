@@ -1,0 +1,7 @@
+:host {
+  display: grid;
+  gap: var(--dv-space-2);
+}
+:host:empty {
+  display: none;
+}

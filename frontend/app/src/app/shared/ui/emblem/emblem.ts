@@ -10,7 +10,7 @@ import { DvIcon } from '../icon/icon';
 @Component({
   selector: 'dv-emblem',
   imports: [DvIcon],
-  template: `<dv-icon [name]="emblem().icon" />`,
+  templateUrl: './emblem.html',
   styleUrl: './emblem.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

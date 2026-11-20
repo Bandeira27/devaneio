@@ -12,29 +12,7 @@ import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 @Component({
   selector: 'dv-say-sheet',
   imports: [DvSheetHead, DvSheetFoot, DvButton, DvField, DvInput],
-  template: `
-    <dv-sheet-head title="Falar" />
-    <form class="dv-stack" (submit)="$event.preventDefault(); send()">
-      <dv-field
-        label="O que você diz ou faz"
-        hint="O mestre responde e, se for o caso, resolve a ação por você."
-        [error]="error()"
-      >
-        <textarea
-          dvInput
-          cdkFocusInitial
-          rows="3"
-          [attr.maxlength]="max"
-          [value]="text()"
-          (input)="text.set(fieldValue($event))"
-        ></textarea>
-      </dv-field>
-      <dv-sheet-foot>
-        <span class="dv-note" aria-hidden="true">{{ text().length }}/{{ max }}</span>
-        <button dvButton="primary" type="submit">Enviar</button>
-      </dv-sheet-foot>
-    </form>
-  `,
+  templateUrl: './say-sheet.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SaySheet {

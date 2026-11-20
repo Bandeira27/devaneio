@@ -19,12 +19,7 @@ const VIEW: Record<LiveStatus, { text: string; tone: BadgeTone; icon: IconName |
 @Component({
   selector: 'dv-connection-badge',
   imports: [DvBadge],
-  template: `<dv-badge
-    [tone]="view().tone"
-    [icon]="view().icon"
-    [pending]="status() === 'connecting'"
-    >{{ view().text }}</dv-badge
-  >`,
+  templateUrl: './connection-badge.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { role: 'status' },
 })
