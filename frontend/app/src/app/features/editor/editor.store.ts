@@ -33,6 +33,7 @@ import type { LoadState } from '@shared/game/load-state';
 import { ConfirmSheet } from '@shared/ui/confirm/confirm-sheet';
 import { Sheet } from '@shared/ui/sheet/sheet';
 import { EditorTables } from './editor-tables';
+import { RequestSequence } from './request-sequence';
 
 /** De que seção do roteiro é cada parte da campanha (o resto, como título e premissa, é a visão geral). */
 const SECTION_OF: Record<string, string[]> = {
@@ -102,7 +103,7 @@ export class EditorStore {
   readonly previewing = signal(false);
   readonly previewError = signal('');
   private readonly previewOf = signal('');
-  private previewSequence = 0;
+  private readonly previews = new RequestSequence();
   /** A prévia é de antes das últimas alterações? */
   readonly previewStale = computed(
     () => this.preview() !== null && this.previewOf() !== JSON.stringify(this.campaign()),
@@ -112,7 +113,7 @@ export class EditorStore {
   private readonly auto = signal<ReadonlySet<string>>(new Set());
   private readonly savedText = signal('');
   private timer: ReturnType<typeof setTimeout> | undefined;
-  private sequence = 0;
+  private readonly validations = new RequestSequence();
   /** A navegação que acompanha a gravação (para o endereço da campanha nova) não pede confirmação de descarte. */
   private navigatingAfterSave = false;
   /** O id da campanha nova acompanha o título até o autor escrevê-lo à mão. */
@@ -213,7 +214,7 @@ export class EditorStore {
     this.info.set('');
     this.preview.set(null);
     this.previewError.set('');
-    this.previewSequence++; // uma prévia pedida para a campanha anterior não vale mais
+    this.previews.invalidate(); // uma prévia pedida para a campanha anterior não vale mais
     this.previewing.set(false);
     this.autoCampaignId.set(false);
     this.auto.set(new Set());
@@ -381,7 +382,7 @@ export class EditorStore {
 
   private scheduleValidation(delay: number): void {
     clearTimeout(this.timer);
-    this.sequence++; // qualquer resposta de uma conferência anterior deixa de valer já
+    this.validations.invalidate(); // qualquer resposta de uma conferência anterior deixa de valer já
     this.validating.set(true);
     this.timer = setTimeout(() => void this.validate(), delay);
   }
@@ -391,20 +392,20 @@ export class EditorStore {
     if (campaign === null) {
       return;
     }
-    const mine = this.sequence;
+    const current = this.validations.begin();
     try {
       const report = await firstValueFrom(this.api.editorValidate(campaign));
-      if (mine === this.sequence) {
+      if (current()) {
         this.report.set(report);
         this.checkError.set('');
       }
     } catch (error) {
-      if (mine === this.sequence) {
+      if (current()) {
         this.report.set(null);
         this.checkError.set(messageOf(error)); // não é erro da campanha: dá para conferir de novo
       }
     } finally {
-      if (mine === this.sequence) {
+      if (current()) {
         this.validating.set(false);
       }
     }
@@ -433,21 +434,21 @@ export class EditorStore {
     if (campaign === null || this.previewing()) {
       return;
     }
-    const mine = ++this.previewSequence;
+    const current = this.previews.begin();
     this.previewing.set(true);
     this.previewError.set('');
     try {
       const preview = await firstValueFrom(this.api.editorPreview(campaign));
-      if (mine === this.previewSequence) {
+      if (current()) {
         this.preview.set(preview);
         this.previewOf.set(JSON.stringify(campaign)); // a campanha enviada, não a de agora: editar no meio deixa a prévia antiga
       }
     } catch (error) {
-      if (mine === this.previewSequence) {
+      if (current()) {
         this.previewError.set(messageOf(error));
       }
     } finally {
-      if (mine === this.previewSequence) {
+      if (current()) {
         this.previewing.set(false);
       }
     }
