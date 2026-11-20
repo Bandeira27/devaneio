@@ -64,10 +64,11 @@ export interface SayRequest {
   revision: number;
 }
 /**
- * Uma mensagem para o chat da mesa: uma linha de texto, só para o grupo.
+ * Uma mensagem para o chat da mesa: uma linha de texto, para o grupo todo ou, com ``to``, um sussurro para um jogador.
  */
 export interface ChatRequest {
   text: string;
+  to?: string | null;
 }
 /**
  * Pergunta avulsa ao copiloto do anfitrião (sem estado: cada chamada leva o contexto atual).

@@ -63,6 +63,10 @@ MIGRATIONS: tuple[tuple[str, ...], ...] = (
         )
         """,
     ),
+    (
+        # Sussurro: o destinatário (id do jogador). Nulo = mensagem para a mesa toda.
+        "ALTER TABLE chat_messages ADD COLUMN to_player_id TEXT",
+    ),
 )
 LATEST = len(MIGRATIONS)
 

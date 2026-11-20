@@ -107,9 +107,11 @@ ChatText = Annotated[str, BeforeValidator(clean_line), Field(min_length=1, max_l
 
 
 class ChatRequest(StrictModel):
-    """Uma mensagem para o chat da mesa: uma linha de texto, só para o grupo."""
+    """Uma mensagem para o chat da mesa: uma linha de texto, para o grupo todo ou, com ``to``, um sussurro para um jogador."""
 
     text: ChatText
+    # O id do jogador que recebe um sussurro; ausente = mensagem para a mesa toda.
+    to: Id | None = None
 
 
 class SayRequest(StrictModel):

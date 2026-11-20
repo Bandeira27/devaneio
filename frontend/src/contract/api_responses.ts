@@ -340,7 +340,7 @@ export interface TalkView {
   text: string;
 }
 /**
- * Uma mensagem do chat da mesa, igual para todos. Texto puro: o servidor não escapa marcação.
+ * Uma mensagem do chat da mesa: para todos, ou um sussurro que só quem enviou e quem recebe veem. Texto puro: o servidor não escapa marcação.
  */
 export interface ChatMessageView {
   seq: number;
@@ -348,6 +348,8 @@ export interface ChatMessageView {
   name: string;
   role: "host" | "player";
   text: string;
+  to: string | null;
+  to_name: string | null;
   at: number;
 }
 /**

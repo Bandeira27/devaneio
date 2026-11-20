@@ -47,12 +47,18 @@ class Room:
             CreateTableRequest(campaign_id="sombra-do-vale", host_name="Ana", seed=7)
         )
         self.id, self.host = created.table_id, created.host_token
+        self.ids = {"Ana": "p1"}
 
     def join(self, name):
-        return self.service.join_table(self.id, JoinRequest(invite_code="convite", name=name)).token
+        joined = self.service.join_table(self.id, JoinRequest(invite_code="convite", name=name))
+        self.ids[name] = joined.player_id
+        return joined.token
 
-    def say(self, token, text):
-        return self.service.post_chat(self.id, token, ChatRequest(text=text))
+    def say(self, token, text, to=None):
+        return self.service.post_chat(self.id, token, ChatRequest(text=text, to=to))
+
+    def texts(self, token, since=0):
+        return [m.text for m in self.service.get_chat(self.id, token, since).messages]
 
     def later(self, seconds=2.0):
         self.clock.now += seconds
@@ -225,3 +231,116 @@ def test_apagar_a_mesa_de_vez_leva_o_chat_junto(room):
         lambda s: s.execute(text("SELECT COUNT(*) FROM chat_messages")).scalar_one()
     )
     assert count_rows == 0
+
+
+class Trio:
+    """Ana (anfitriã), Bruno e Carla, com um sussurro de Bruno para Carla já enviado."""
+
+    def __init__(self, tmp_path):
+        self.room = Room(tmp_path)
+        self.ana = self.room.host
+        self.bruno = self.room.join("Bruno")
+        self.carla = self.room.join("Carla")
+        self.ids = self.room.ids
+
+
+@pytest.fixture
+def trio(tmp_path):
+    return Trio(tmp_path)
+
+
+def test_o_sussurro_so_e_visto_por_quem_enviou_e_por_quem_recebeu(trio):
+    room = trio.room
+    sent = room.say(trio.bruno, "o ferreiro mente", to=trio.ids["Carla"])
+    assert (sent.to, sent.to_name) == (trio.ids["Carla"], "Carla")
+    assert room.texts(trio.bruno) == ["o ferreiro mente"]
+    assert room.texts(trio.carla) == ["o ferreiro mente"]
+    assert room.texts(trio.ana) == []  # nem o anfitrião lê o que não é dele
+
+
+def test_a_mensagem_publica_e_o_sussurro_convivem_na_mesma_conversa(trio):
+    room = trio.room
+    room.say(trio.ana, "bom dia a todos")
+    room.later()
+    room.say(trio.bruno, "só para você", to=trio.ids["Carla"])
+    room.later()
+    room.say(trio.carla, "entendi", to=trio.ids["Bruno"])
+    assert room.texts(trio.ana) == ["bom dia a todos"]
+    assert room.texts(trio.bruno) == ["bom dia a todos", "só para você", "entendi"]
+    assert room.texts(trio.carla) == ["bom dia a todos", "só para você", "entendi"]
+
+
+def test_o_cursor_sobe_mesmo_com_sussurro_alheio_e_nada_dele_vaza(trio):
+    room = trio.room
+    room.say(trio.bruno, "segredo", to=trio.ids["Carla"])
+    chat = room.service.get_chat(room.id, trio.ana, 0)
+    assert chat.messages == []
+    assert chat.chat_seq == 1  # a posição é da mesa, o conteúdo não
+    assert "segredo" not in chat.model_dump_json()
+
+
+def test_o_long_poll_filtra_o_sussurro_e_acorda_so_o_destinatario(trio):
+    room = trio.room
+    room.say(trio.bruno, "só para a Carla", to=trio.ids["Carla"])
+    seen = room.service.get_events(room.id, trio.carla, 0, wait=0)
+    assert [m.text for m in seen.chat] == ["só para a Carla"]
+    assert room.service.get_events(room.id, trio.ana, 0, wait=0).chat == []
+    assert room.service.get_events(room.id, trio.bruno, 0, wait=0).chat == seen.chat
+
+
+def test_um_sussurro_novo_chega_ao_destinatario_que_ja_esperava(trio):
+    room = trio.room
+    thread, results = _wait_in_thread(room, trio.carla, since_chat=0)
+    room.say(trio.bruno, "psiu", to=trio.ids["Carla"])
+    thread.join(timeout=5)
+    (view,) = results
+    assert [m.text for m in view.chat] == ["psiu"]
+
+
+def test_sussurro_alheio_nao_entrega_nada_a_quem_esperava_e_a_espera_continua(trio):
+    room = trio.room
+    thread, results = _wait_in_thread(room, trio.ana, since_chat=0)
+    room.say(trio.bruno, "entre nós", to=trio.ids["Carla"])
+    time.sleep(0.2)
+    assert thread.is_alive()  # acordou, nada para ela, voltou a esperar
+    room.later()
+    room.say(trio.carla, "para todos")
+    thread.join(timeout=5)
+    (view,) = results
+    assert [m.text for m in view.chat] == ["para todos"]
+
+
+def test_o_limite_de_100_conta_so_o_que_a_pessoa_pode_ver(trio):
+    room = trio.room
+    for n in range(3):
+        room.say(trio.bruno, f"privado {n}", to=trio.ids["Carla"])
+        room.later()
+    room.say(trio.bruno, "público")
+    assert room.texts(trio.ana) == ["público"]
+
+
+@pytest.mark.parametrize("target", ["eu", "p99", "inexistente"])
+def test_destinatario_invalido_e_recusado_e_nada_e_gravado(trio, target):
+    room = trio.room
+    to = trio.ids["Bruno"] if target == "eu" else target
+    with pytest.raises(ApiFailure) as info:
+        room.say(trio.bruno, "oi", to=to)
+    assert (info.value.status, info.value.code) == (422, "bad_recipient")
+    assert room.texts(trio.bruno) == []
+
+
+def test_da_para_sussurrar_para_o_anfitriao_e_ele_responde(trio):
+    room = trio.room
+    room.say(trio.bruno, "posso pedir uma dica?", to=trio.ids["Ana"])
+    room.later()
+    room.say(trio.ana, "olhe o altar", to=trio.ids["Bruno"])
+    assert room.texts(trio.ana) == ["posso pedir uma dica?", "olhe o altar"]
+    assert room.texts(trio.bruno) == ["posso pedir uma dica?", "olhe o altar"]
+    assert room.texts(trio.carla) == []
+
+
+def test_o_nome_do_destinatario_e_resolvido_na_hora_de_mostrar(trio):
+    room = trio.room
+    room.say(trio.bruno, "oi", to=trio.ids["Carla"])
+    (message,) = room.service.get_chat(room.id, trio.bruno, 0).messages
+    assert message.to_name == "Carla"

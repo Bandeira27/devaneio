@@ -6,7 +6,7 @@ fora de escopo, e o dono pediu a funcionalidade. O desenho segue o do [banco](de
 
 ## O que é
 
-Uma conversa **entre os jogadores da mesa**, só para a mesa toda. Não passa pelo motor nem pelo LLM: não vira
+Uma conversa **entre os jogadores da mesa**: para todos, ou em sussurro para um jogador. Não passa pelo motor nem pelo LLM: não vira
 `Event`, não muda o `GameState`, o mestre de IA não lê nem responde. É o canto onde o grupo se combina ("vamos pelas
 ruínas?") sem misturar com o que o personagem faz.
 
@@ -14,24 +14,39 @@ ruínas?") sem misturar com o que o personagem faz.
 
 - **Guardado no banco, por mesa.** Tabela `chat_messages` (migração 4). O histórico sobrevive a reinício, entra no
   backup e some junto com a mesa apagada de vez. Mesa arquivada guarda a conversa; restaurar a traz de volta.
-- **Só mensagem para a mesa toda.** Sem sussurro nesta fatia: não há regra de visibilidade nova a errar.
+- **Mensagem para a mesa toda, ou sussurro** (decidido em 2026-11-20): um jogador sussurra para **um** outro jogador da mesa, anfitrião inclusive. O anfitrião é um destinatário como outro qualquer e **não lê** sussurros alheios.
 - **Fases:** conversa na sala de espera, em jogo e pausada. Mesa encerrada é só leitura (`409 ended`).
 
 ## Modelo
 
-`ChatMessage(table_id, seq, player_id, name, role, text, created_at)`, chave `(table_id, seq)`. `seq` sobe de 1 em 1
+`ChatMessage(table_id, seq, player_id, to_player_id, name, role, text, created_at)`, chave `(table_id, seq)`. `seq` sobe de 1 em 1
 por mesa e continua depois de um reinício. `name` e `role` são o do jogador **na hora de enviar** (a mensagem não muda
 se o nome mudar). O servidor guarda as últimas 500 mensagens por mesa; as mais antigas saem na gravação.
 
 O texto tem 1 a 500 caracteres, limpo como uma linha de comando (`clean_line`): NFKC, sem caracteres de controle ou
 invisíveis, o que também recusa quebra de linha. O servidor não escapa marcação; o front mostra tudo como texto.
 
+## Sussurro
+
+`to_player_id` nulo é mensagem para a mesa toda; preenchido, é um sussurro. **Só o remetente e o destinatário** o veem:
+o filtro é feito no servidor, na leitura do histórico e no long-poll (`player_id = eu OR to_player_id = eu OR
+to_player_id IS NULL`). O destinatário tem de ser outro jogador da mesa (`422 bad_recipient`; sussurrar para si mesmo
+também é recusado). A mensagem guarda o **id** do destinatário e o nome é resolvido na hora de mostrar (`to_name`).
+
+`chat_seq` continua sendo a última posição **da mesa**, não da pessoa: o cursor de quem lê sobe mesmo quando a última
+mensagem foi um sussurro que ele não vê. Disso resulta um vazamento mínimo, o de saber que _houve_ mensagem (nunca
+quem, para quem ou o quê); aceito.
+
+**Privacidade real.** O sussurro fica no banco em texto claro, como o resto do chat: quem roda o servidor (em geral o
+anfitrião) pode lê-lo no arquivo ou no backup. Não aparece na interface de ninguém além dos dois, mas **não é segredo
+contra quem administra a máquina**. A interface o diz ao lado do campo, sempre que há um sussurro em preparo.
+
 ## API
 
-| Rota                              | Auth   | Resposta                                                                                         |
-| --------------------------------- | ------ | ------------------------------------------------------------------------------------------------ |
-| `POST /tables/{id}/chat` `{text}` | Bearer | `201 ChatMessageView`. `409 ended`, `429 chat_rate_limited` (1 mensagem por segundo por jogador) |
-| `GET /tables/{id}/chat?since=N`   | Bearer | `ChatView {messages, chat_seq}`: até 100 mensagens com `seq` > `N`, as mais recentes, em ordem   |
+| Rota                                   | Auth   | Resposta                                                                                                                                                     |
+| -------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /tables/{id}/chat` `{text, to?}` | Bearer | `201 ChatMessageView`. `to` é o id do jogador de um sussurro. `409 ended`, `422 bad_recipient`, `429 chat_rate_limited` (1 mensagem por segundo por jogador) |
+| `GET /tables/{id}/chat?since=N`        | Bearer | `ChatView {messages, chat_seq}`: até 100 mensagens com `seq` > `N`, as mais recentes, em ordem                                                               |
 
 O acompanhamento ao vivo reaproveita o long-poll de `GET /tables/{id}/events`: `EventsView` ganha `chat` e
 `chat_seq`, e a rota aceita `since_chat`. Como com `since_talk`, com `wait` e **sem** `since_chat` (parâmetro ausente) o histórico
@@ -65,4 +80,4 @@ do grupo com a ficção).
 
 ## Fora desta fatia
 
-Sussurro para o anfitrião, edição ou exclusão de mensagem, moderação, "fulano está digitando", menções e anexos.
+Sussurro para mais de uma pessoa, edição ou exclusão de mensagem, moderação, "fulano está digitando", menções e anexos.

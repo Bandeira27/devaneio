@@ -279,10 +279,10 @@ class TableService:
             self.storage.leave_wait(table_id)
 
     def _events_view(self, table_id: str, token: str | None, cursor: Cursor) -> EventsView:
-        session, _, _, player = self._open(table_id, token)
+        session, table, player_id, player = self._open(table_id, token)
         presentation = self.storage.presentation(table_id)
         talk, talk_seq = presentation.talk_since(cursor.talk)
-        chat = self._chat.since(table_id, cursor.chat)
+        chat = self._chat.since(table_id, cursor.chat, player_id, table)
         return EventsView(
             revision=len(session.state.events),
             events=events_view(session, cursor.events, presentation.narrations(), role=player.role),

@@ -58,6 +58,8 @@ class ChatMessage(Base):
     )
     seq: Mapped[int] = mapped_column(Integer, primary_key=True)
     player_id: Mapped[str] = mapped_column(String, nullable=False)
+    # Nulo = mensagem para a mesa toda; preenchido = sussurro, visto só por quem enviou e por este jogador.
+    to_player_id: Mapped[str | None] = mapped_column(String, nullable=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(String, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)

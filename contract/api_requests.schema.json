@@ -3,12 +3,24 @@
   "$defs": {
     "ChatRequest": {
       "additionalProperties": false,
-      "description": "Uma mensagem para o chat da mesa: uma linha de texto, só para o grupo.",
+      "description": "Uma mensagem para o chat da mesa: uma linha de texto, para o grupo todo ou, com ``to``, um sussurro para um jogador.",
       "properties": {
         "text": {
           "maxLength": 500,
           "minLength": 1,
           "type": "string"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

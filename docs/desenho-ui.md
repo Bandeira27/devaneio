@@ -26,7 +26,7 @@ anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)
   fragmento, que nunca chega ao servidor nem ao log.
 - **Token no navegador** (`Authorization: Bearer`, `localStorage`), sem cookie. Risco aceito: exposição a XSS, mitigada
   por CSP restrita, escape do Angular e proibição de `innerHTML` e `bypassSecurityTrust*` por lint (que entra com o app).
-- **Estado:** signals em serviços por feature, sem camada de *use-case* à parte: a regra do jogo mora no backend, e a SPA
+- **Estado:** signals em serviços por feature, sem camada de _use-case_ à parte: a regra do jogo mora no backend, e a SPA
   só mostra o estado e manda a ação. **Um tema**, com todas as cores em OKLCH num arquivo de tokens.
 - **Serviço e store.** Tudo o que se injeta é um serviço (`@Injectable`), nomeado pelo papel, **sem o sufixo `Service`**
   (`ApiClient`, `ServerTables`, `CampaignCatalog`). Um **store** (`*Store`) é o serviço que guarda o **estado de uma tela

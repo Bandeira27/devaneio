@@ -777,6 +777,24 @@ def test_the_chat_routes_over_http(client):
     assert view["chat_seq"] == 1
 
 
+def test_a_whisper_over_http_reaches_only_the_recipient(client):
+    table_id, _, host, bia, _ = play_setup(client)
+    _, table, _ = client.call("GET", f"/tables/{table_id}", auth=bia)
+    host_id = next(p["id"] for p in table["players"] if p["role"] == "host")
+    status, sent, _ = client.call(
+        "POST", f"/tables/{table_id}/chat", body={"text": "psiu", "to": host_id}, auth=bia
+    )
+    assert status == 201
+    assert sent["to"] == host_id
+    assert sent["to_name"] == "Ana"
+    _, mine, _ = client.call("GET", f"/tables/{table_id}/chat?since=0", auth=host)
+    assert [m["text"] for m in mine["messages"]] == ["psiu"]
+    status, bad, _ = client.call(
+        "POST", f"/tables/{table_id}/chat", body={"text": "x", "to": "p99"}, auth=bia
+    )
+    assert (status, bad["error"]["code"]) == (422, "bad_recipient")
+
+
 def test_the_chat_route_refuses_without_a_token_and_with_a_bad_body(client):
     table_id, _, _, bia, _ = play_setup(client)
     status, body, _ = client.call("POST", f"/tables/{table_id}/chat", body={"text": "oi"})

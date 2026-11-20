@@ -33,22 +33,22 @@ O servidor só faz I/O: a conferência da campanha (`game.check_campaign_data`) 
 
 ## API (`server/editor.py`)
 
-| Rota                                           | Faz                                                                                              |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `GET /editor/campaigns`                        | `[{id, title, writable}]`; `writable` = nenhuma mesa usa o arquivo                               |
-| `GET /editor/campaigns/{id}`                   | a `Campaign` inteira                                                                             |
-| `POST /editor/validate` `{campaign}`           | `{ok, errors: [{path, message}], findings: [{level, text}]}`                                     |
-| `POST /editor/campaigns` `{campaign}`          | cria (`409` se o id existe); `201 {id, title, writable}`                                         |
-| `PUT /editor/campaigns/{id}` `{campaign}`      | regrava (`409` com mesa; o id não muda)                                                          |
-| `GET /editor/systems` e `/editor/systems/{id}` | os sistemas de regras disponíveis e o `RulesView` (habilidades e dificuldades)                   |
-| `POST /editor/preview` `{campaign}`            | `{player, llm, llm_secrets, copilot_chars, copilot_limit}`                                       |
-| `GET /editor/campaigns/{id}/tables`            | `[{table_id, phase, host_name, players, updated_at}]`: as mesas que usam a campanha, sem segredo |
-| `DELETE /editor/tables/{id}`                   | **arquiva** a mesa: sai do jogo, da lista e da trava da campanha, e acorda quem espera (`{table_id}`) |
+| Rota                                           | Faz                                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `GET /editor/campaigns`                        | `[{id, title, writable}]`; `writable` = nenhuma mesa usa o arquivo                                         |
+| `GET /editor/campaigns/{id}`                   | a `Campaign` inteira                                                                                       |
+| `POST /editor/validate` `{campaign}`           | `{ok, errors: [{path, message}], findings: [{level, text}]}`                                               |
+| `POST /editor/campaigns` `{campaign}`          | cria (`409` se o id existe); `201 {id, title, writable}`                                                   |
+| `PUT /editor/campaigns/{id}` `{campaign}`      | regrava (`409` com mesa; o id não muda)                                                                    |
+| `GET /editor/systems` e `/editor/systems/{id}` | os sistemas de regras disponíveis e o `RulesView` (habilidades e dificuldades)                             |
+| `POST /editor/preview` `{campaign}`            | `{player, llm, llm_secrets, copilot_chars, copilot_limit}`                                                 |
+| `GET /editor/campaigns/{id}/tables`            | `[{table_id, phase, host_name, players, updated_at}]`: as mesas que usam a campanha, sem segredo           |
+| `DELETE /editor/tables/{id}`                   | **arquiva** a mesa: sai do jogo, da lista e da trava da campanha, e acorda quem espera (`{table_id}`)      |
 | `GET /editor/campaigns/{id}/archived-tables`   | `[{table_id, phase, host_name, players, updated_at, archived_at}]`: as arquivadas, a mais recente primeiro |
-| `POST /editor/archived-tables/{id}/restore`    | traz a mesa de volta (mesmos tokens e convite); `409` se a campanha mudou ou o servidor está cheio |
-| `GET /editor/archived-tables/{id}/log`         | o histórico: `{table_id, turn, events: [{index, turn, kind, text}]}`, sem `data`                  |
-| `DELETE /editor/archived-tables/{id}`          | apaga de vez uma mesa **arquivada** (`404` se está ativa); não tem volta                          |
-| `POST /editor/tables/{id}/host-access`         | reemite o acesso do anfitrião: `{table_id, player_id, token, invite_code}`                       |
+| `POST /editor/archived-tables/{id}/restore`    | traz a mesa de volta (mesmos tokens e convite); `409` se a campanha mudou ou o servidor está cheio         |
+| `GET /editor/archived-tables/{id}/log`         | o histórico: `{table_id, turn, events: [{index, turn, kind, text}]}`, sem `data`                           |
+| `DELETE /editor/archived-tables/{id}`          | apaga de vez uma mesa **arquivada** (`404` se está ativa); não tem volta                                   |
+| `POST /editor/tables/{id}/host-access`         | reemite o acesso do anfitrião: `{table_id, player_id, token, invite_code}`                                 |
 
 Com `--sem-editor`, ou de fora da máquina do servidor, tudo isso é `404`. O corpo vai até 512 KiB. O catálogo passa a ver a campanha salva sem reiniciar.
 

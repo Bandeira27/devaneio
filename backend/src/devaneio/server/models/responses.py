@@ -77,13 +77,16 @@ class TalkView(StrictModel):
 
 
 class ChatMessageView(StrictModel):
-    """Uma mensagem do chat da mesa, igual para todos. Texto puro: o servidor não escapa marcação."""
+    """Uma mensagem do chat da mesa: para todos, ou um sussurro que só quem enviou e quem recebe veem. Texto puro: o servidor não escapa marcação."""
 
     seq: int
     player_id: Id
     name: str
     role: Role
     text: str
+    # Sussurro: o jogador que o recebe e o nome dele agora; os dois nulos = mensagem para a mesa toda.
+    to: Id | None = None
+    to_name: str | None = None
     at: float  # quando foi enviada, em segundos de época do servidor
 
 

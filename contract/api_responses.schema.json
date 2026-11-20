@@ -524,7 +524,7 @@
     },
     "ChatMessageView": {
       "additionalProperties": false,
-      "description": "Uma mensagem do chat da mesa, igual para todos. Texto puro: o servidor não escapa marcação.",
+      "description": "Uma mensagem do chat da mesa: para todos, ou um sussurro que só quem enviou e quem recebe veem. Texto puro: o servidor não escapa marcação.",
       "properties": {
         "seq": {
           "type": "integer"
@@ -546,6 +546,29 @@
         "text": {
           "type": "string"
         },
+        "to": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "to_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "at": {
           "type": "number"
         }
@@ -556,6 +579,8 @@
         "name",
         "role",
         "text",
+        "to",
+        "to_name",
         "at"
       ],
       "title": "ChatMessageView",
