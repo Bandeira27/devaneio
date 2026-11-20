@@ -76,11 +76,11 @@
       "O turno #turno# chega ao fim. #respiro#",
       "Fecha-se o turno #turno#. #respiro#"
     ],
-    "respiro": ["O tempo segue.", "Algo se move ao longe.", "Ninguém relaxa de verdade."],
+    "respiro": ["O tempo segue.", "Algo se move ao longe."],
 
     "director.calmo": [
       "Em #local#, o ar está parado. Nada ameaça, por enquanto.",
-      "#local# segue quieto. A calma pode ser só aparência."
+      "Em #local#, tudo segue em silêncio. A calma pode ser só aparência."
     ],
     "director.tenso": [
       "Há tensão em #local#. Olhares se cruzam, mãos vão às armas.",
