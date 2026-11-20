@@ -124,9 +124,11 @@ class SayDesk:
             if fresh_events:
                 self._save(table_id, replace(new_session, table=new_table))
                 self._storage.presentation(table_id).store_narrations(narrations)
-            if freeform.say:  # a fala vai a todos, com ou sem evento novo
+            if (
+                freeform.say
+            ):  # a fala vai a todos, com ou sem evento novo; vem antes dos eventos da ação
                 self._storage.presentation(table_id).add_talk(
-                    after=len(new_session.state.events), to=who, text=freeform.say
+                    after=revision, to=who, text=freeform.say
                 )
             if fresh_events or freeform.say:
                 self._storage.announce_change(table_id)

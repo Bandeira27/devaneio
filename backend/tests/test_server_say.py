@@ -752,6 +752,7 @@ def test_the_speech_reaches_every_reader_in_the_talk_log(desk, script):
     bia = desk.player("Bia")
     caio = desk.player("Caio")
     script.proposals.append(proposal(CHECK, say="Bram diz: cuidado na trilha."))
+    before = desk.revision(bia)
     result = desk.say(bia, "tento")
     assert result.say == "Bram diz: cuidado na trilha."
     for token in (bia, caio, desk.host):
@@ -759,7 +760,7 @@ def test_the_speech_reaches_every_reader_in_the_talk_log(desk, script):
         [talk] = view.talk
         assert talk.text == "Bram diz: cuidado na trilha."
         assert talk.to == "bia"
-        assert talk.after == result.revision  # encaixa depois dos eventos da ação
+        assert talk.after == before  # antes dos eventos da ação
         assert view.talk_seq == talk.seq
     assert "cuidado na trilha" not in desk.raw()  # só em memória
 
