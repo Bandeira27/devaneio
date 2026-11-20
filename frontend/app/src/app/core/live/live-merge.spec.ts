@@ -54,6 +54,8 @@ describe('mergeChat', () => {
     name: 'Ana',
     role: 'host',
     text: `m${seq}`,
+    to: null,
+    to_name: null,
     at: seq,
   });
 

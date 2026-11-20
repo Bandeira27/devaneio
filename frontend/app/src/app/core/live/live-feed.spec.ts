@@ -15,7 +15,16 @@ function event(index: number, text = `evento ${index}`): EventView {
 }
 
 function chatMessage(seq: number, text = `mensagem ${seq}`): ChatMessageView {
-  return { seq, player_id: 'p2', name: 'Bia', role: 'player', text, at: 1_000 + seq };
+  return {
+    seq,
+    player_id: 'p2',
+    name: 'Bia',
+    role: 'player',
+    text,
+    to: null,
+    to_name: null,
+    at: 1_000 + seq,
+  };
 }
 
 function talk(seq: number): TalkView {

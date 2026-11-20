@@ -112,6 +112,42 @@
   gap: var(--dv-space-2);
 }
 
+/* "Para quem" ocupa a linha de cima; o campo e o botão ficam na de baixo. */
+.chat__to {
+  grid-column: 1 / -1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Um sussurro em preparo se nota antes de enviar: o contorno do campo fica tracejado e o botão troca de rótulo. */
+.chat__form--whisper .dv-input {
+  border-style: dashed;
+}
+
+/* Sussurro: filete tracejado à esquerda e itálico (a forma, nunca só a cor). Se a mensagem também é minha, o filete
+   continua da cor da tinta: o sinal de autoria não se perde. */
+.chat__message--whisper {
+  padding-inline-start: var(--dv-space-3);
+  border-inline-start-width: var(--dv-border-width-strong);
+  border-inline-start-style: dashed;
+  border-inline-start-color: var(--dv-warn);
+  font-style: italic;
+}
+
+.chat__message--whisper.chat__message--mine {
+  border-inline-start-color: var(--dv-ink);
+}
+
+.chat__mode {
+  grid-column: 1 / -1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.chat__reply {
+  justify-self: start;
+}
+
 .chat__error {
   margin: 0;
   overflow-wrap: anywhere;

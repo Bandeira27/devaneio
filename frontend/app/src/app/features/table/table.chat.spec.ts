@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { from, of, throwError } from 'rxjs';
-import type { ChatMessageView } from '@contract/api_responses';
+import type { ChatMessageView, PlayerView } from '@contract/api_responses';
 import type { ApiClient } from '@core/api/api-client';
 import { ApiFailure } from '@core/api/api-failure';
 import { TableChat } from './table.chat';
@@ -11,21 +11,30 @@ const message = (seq: number, playerId = 'p2', text = `m${seq}`): ChatMessageVie
   name: 'Bia',
   role: 'player',
   text,
+  to: null,
+  to_name: null,
   at: seq,
 });
 
-function setup(post: (text: string) => unknown) {
+function setup(post: (text: string) => unknown, players = signal<PlayerView[]>([])) {
   const messages = signal<ChatMessageView[]>([]);
   const delivered: ChatMessageView[] = [];
-  const api = { postChat: (_id: string, request: { text: string }) => post(request.text) };
+  const bodies: { text: string; to?: string | null }[] = [];
+  const api = {
+    postChat: (_id: string, request: { text: string; to?: string | null }) => {
+      bodies.push(request);
+      return post(request.text);
+    },
+  };
   const chat = new TableChat(
     api as unknown as ApiClient,
     () => 'a'.repeat(16),
     messages,
     signal('p1'),
     (m) => delivered.push(m),
+    players,
   );
-  return { chat, messages, delivered };
+  return { chat, messages, delivered, bodies };
 }
 
 describe('TableChat', () => {
@@ -78,5 +87,52 @@ describe('TableChat', () => {
     expect(await chat.send('dois')).toBe(false);
     resolve(message(1));
     expect(await first).toBe(true);
+  });
+
+  describe('sussurro', () => {
+    const players = signal<PlayerView[]>([
+      { id: 'p1', name: 'Ana', role: 'host', character_ids: [] },
+      { id: 'p2', name: 'Bruno', role: 'player', character_ids: [] },
+      { id: 'p3', name: 'Carla', role: 'player', character_ids: [] },
+    ]);
+    const whisper = (seq: number, to: string): ChatMessageView => ({
+      ...message(seq),
+      to,
+      to_name: 'Ana',
+    });
+
+    it('os destinatários são os outros jogadores, o anfitrião inclusive, nunca eu', () => {
+      const { chat } = setup(() => of(message(1)), players);
+      expect(chat.recipients().map((p) => p.id)).toEqual(['p2', 'p3']);
+    });
+
+    it('sem escolha a mensagem vai para a mesa toda; escolhido, vai só para aquele jogador', async () => {
+      const { chat, bodies } = setup((text) => of(message(1, 'p1', text)), players);
+      await chat.send('para todos');
+      chat.sendTo('p3');
+      await chat.send('só para a Carla');
+      chat.sendTo('');
+      await chat.send('de novo para todos');
+      expect(bodies.map((b) => b.to)).toEqual([null, 'p3', null]);
+    });
+
+    it('um sussurro cujo destinatário sumiu não sai para a mesa toda: o envio é recusado com o motivo', async () => {
+      const mutable = signal(players());
+      const { chat, bodies } = setup((text) => of(message(1, 'p1', text)), mutable);
+      chat.sendTo('p3');
+      mutable.set(players().filter((p) => p.id !== 'p3'));
+      expect(chat.recipientGone()).toBe(true);
+      expect(await chat.send('oi')).toBe(false);
+      expect(chat.error()).toContain('saiu da mesa');
+      expect(bodies).toEqual([]);
+    });
+
+    it('conta quantos dos não lidos são sussurros para mim', () => {
+      const { chat, messages } = setup(() => of(message(1)), players);
+      chat.baseline();
+      messages.set([message(1), whisper(2, 'p1'), { ...message(3), to: 'p3', to_name: 'Carla' }]);
+      expect(chat.unread()).toBe(3);
+      expect(chat.unreadWhispers()).toBe(1); // o de p3 era de outra pessoa (nem chegaria aqui, mas não conta)
+    });
   });
 });

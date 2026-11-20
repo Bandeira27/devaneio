@@ -10,6 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import type { ChatMessageView } from '@contract/api_responses';
 import { DvBadge } from '@shared/ui/badge/badge';
 import { DvButton } from '@shared/ui/button/button';
 import { fieldValue } from '@shared/ui/field/field-value';
@@ -74,7 +75,30 @@ export class ChatDock {
 
   protected unreadLabel(): string {
     const unread = this.chat.unread();
-    return unread === 1 ? '1 mensagem nova' : `${unread} mensagens novas`;
+    const whispers = this.chat.unreadWhispers();
+    const base = unread === 1 ? '1 mensagem nova' : `${unread} mensagens novas`;
+    if (whispers === 0) {
+      return base;
+    }
+    return `${base}, ${whispers === 1 ? '1 sussurro' : `${whispers} sussurros`} para você`;
+  }
+
+  /** Dá para responder em sussurro a quem ainda está na mesa. */
+  protected canReplyTo(playerId: string): boolean {
+    return this.chat.recipients().some((player) => player.id === playerId);
+  }
+
+  /** O selo de um sussurro: "para você" ou "para fulano" (quem sussurrou já está no nome da mensagem). */
+  protected whisperLabel(message: ChatMessageView): string {
+    return message.to === this.you()
+      ? 'sussurro para você'
+      : `sussurro para ${message.to_name ?? 'alguém'}`;
+  }
+
+  /** Responder a um sussurro: a próxima mensagem vai só para quem o enviou, com o foco no campo. */
+  protected reply(playerId: string): void {
+    this.chat.sendTo(playerId);
+    afterNextRender(() => this.field()?.nativeElement.focus(), { injector: this.injector });
   }
 
   /** Abre ou recolhe; ao abrir o foco vai ao campo, ao recolher volta à pílula. */

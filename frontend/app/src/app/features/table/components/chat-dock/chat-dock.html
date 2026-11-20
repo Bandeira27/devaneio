@@ -29,15 +29,34 @@
     <div #log class="chat__log" role="log" aria-label="Mensagens da conversa" tabindex="0">
       <ol class="chat__list">
         @for (message of chat.messages(); track message.seq) {
-          <li class="chat__message" [class.chat__message--mine]="message.player_id === you()">
+          <li
+            class="chat__message"
+            [class.chat__message--mine]="message.player_id === you()"
+            [class.chat__message--whisper]="message.to !== null"
+          >
             <span class="chat__who">
               <span class="chat__name">{{ message.name }}</span>
               @if (message.role === 'host') {
                 <dv-badge tone="info">anfitrião</dv-badge>
               }
+              @if (message.to !== null) {
+                <dv-badge tone="warn" icon="info">{{ whisperLabel(message) }}</dv-badge>
+              }
               <time class="dv-note" [attr.datetime]="iso(message.at)">{{ clock(message.at) }}</time>
             </span>
             <span class="chat__text">{{ message.text }}</span>
+            @if (message.to === you() && store.canChat() && canReplyTo(message.player_id)) {
+              <button
+                dvButton
+                dvSize="sm"
+                type="button"
+                class="chat__reply"
+                [attr.aria-label]="'Responder em sussurro a ' + message.name"
+                (click)="reply(message.player_id)"
+              >
+                Responder
+              </button>
+            }
           </li>
         } @empty {
           <li class="dv-note">
@@ -50,21 +69,53 @@
     @if (!store.canChat()) {
       <p class="dv-note">A partida foi encerrada: a conversa fica só para ler.</p>
     } @else {
-      <form class="chat__form" (submit)="$event.preventDefault(); send()">
+      <form
+        class="chat__form"
+        [class.chat__form--whisper]="chat.recipient() !== ''"
+        (submit)="$event.preventDefault(); send()"
+      >
+        @if (chat.recipients().length > 0) {
+          <select
+            class="dv-input chat__to"
+            aria-label="Enviar para"
+            (change)="chat.sendTo(fieldValue($event))"
+          >
+            <option value="" [selected]="chat.recipient() === ''">Para a mesa toda</option>
+            @for (player of chat.recipients(); track player.id) {
+              <option [value]="player.id" [selected]="chat.recipient() === player.id">
+                Sussurro para {{ player.name }}
+              </option>
+            }
+          </select>
+        }
+        @if (chat.recipientName()) {
+          <p class="chat__mode dv-note">
+            Só {{ chat.recipientName() }} vê esta mensagem na tela, mas ela fica guardada no
+            servidor da mesa.
+          </p>
+        } @else if (chat.recipientGone()) {
+          <p class="chat__mode dv-note" role="alert">
+            Quem ia receber o sussurro saiu da mesa: escolha para quem enviar.
+          </p>
+        }
         <input
           #field
           class="dv-input"
           type="text"
           autocomplete="off"
           enterkeyhint="send"
-          aria-label="Mensagem para o grupo"
+          [attr.aria-label]="
+            chat.recipientName() ? 'Sussurro para ' + chat.recipientName() : 'Mensagem para o grupo'
+          "
           [attr.maxlength]="max"
           [attr.aria-describedby]="chat.error() ? 'conversa-erro' : null"
           [attr.aria-invalid]="chat.error() ? 'true' : null"
           [value]="text()"
           (input)="text.set(fieldValue($event))"
         />
-        <button dvButton="primary" type="submit" [dvLoading]="chat.busy()">Enviar</button>
+        <button dvButton="primary" type="submit" [dvLoading]="chat.busy()">
+          {{ chat.recipient() === '' ? 'Enviar' : 'Sussurrar' }}
+        </button>
       </form>
       @if (chat.error()) {
         <p class="chat__error dv-note" id="conversa-erro" role="alert">{{ chat.error() }}</p>
@@ -76,7 +127,9 @@
     <dv-icon name="say" size="sm" />Conversa
     @if (chat.unread() > 0) {
       <span class="dv-visually-hidden">, {{ unreadLabel() }}</span>
-      <dv-badge tone="info" aria-hidden="true">{{ chat.unread() }}</dv-badge>
+      <dv-badge [tone]="chat.unreadWhispers() > 0 ? 'warn' : 'info'" aria-hidden="true">{{
+        chat.unread()
+      }}</dv-badge>
     }
   </button>
 }

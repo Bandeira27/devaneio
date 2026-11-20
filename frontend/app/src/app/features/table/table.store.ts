@@ -80,6 +80,7 @@ export class TableStore implements OnDestroy {
     computed(() => this.feed()?.chat() ?? []),
     computed(() => this.table()?.you ?? ''),
     (message) => this.feed()?.addChat(message),
+    computed(() => this.table()?.players ?? []),
   );
   /** Dá para escrever no chat até a partida ser encerrada (a pausa trava só as ações do jogo). */
   readonly canChat = computed(() => this.phase() !== 'ended');

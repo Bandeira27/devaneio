@@ -1,6 +1,6 @@
 import { computed, signal, type Signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ChatMessageView } from '@contract/api_responses';
+import type { ChatMessageView, PlayerView } from '@contract/api_responses';
 import { ApiClient } from '@core/api/api-client';
 import { messageOf } from '@core/api/api-failure';
 
@@ -19,14 +19,33 @@ export class TableChat {
    */
   private readonly seen = signal<number | null>(null);
 
-  /** Mensagens dos outros que chegaram depois da última vez que a conversa foi aberta. */
-  readonly unread = computed(() => {
+  /** Mensagens dos outros que chegaram depois da última vez que a conversa foi aberta (sussurros inclusive). */
+  readonly unreadMessages = computed(() => {
     const seen = this.seen();
     return seen === null
-      ? 0
-      : this.messages().filter((message) => message.seq > seen && message.player_id !== this.you())
-          .length;
+      ? []
+      : this.messages().filter((message) => message.seq > seen && message.player_id !== this.you());
   });
+  readonly unread = computed(() => this.unreadMessages().length);
+  /** Quantas dessas são sussurros para mim. */
+  readonly unreadWhispers = computed(
+    () => this.unreadMessages().filter((message) => message.to === this.you()).length,
+  );
+
+  /** Quem pode receber um sussurro: os outros jogadores da mesa (o anfitrião é um deles). */
+  readonly recipients = computed(() => this.players().filter((player) => player.id !== this.you()));
+  private readonly chosen = signal('');
+  /** Para quem vai a próxima mensagem: o id de um jogador (sussurro) ou `''` para a mesa toda. */
+  readonly recipient = computed(() => {
+    const id = this.chosen();
+    return this.recipients().some((player) => player.id === id) ? id : '';
+  });
+  /** O sussurro escolhido já não tem para quem ir (o jogador deixou a mesa): nunca vira mensagem pública sozinho. */
+  readonly recipientGone = computed(() => this.chosen() !== '' && this.recipient() === '');
+  /** O nome de quem recebe o sussurro em preparo, ou `''` quando a mensagem vai para a mesa toda. */
+  readonly recipientName = computed(
+    () => this.recipients().find((player) => player.id === this.recipient())?.name ?? '',
+  );
 
   constructor(
     private readonly api: ApiClient,
@@ -35,7 +54,13 @@ export class TableChat {
     private readonly you: Signal<string>,
     /** Entrega a mensagem enviada ao fluxo ao vivo, para aparecer já, sem esperar a próxima volta do long-poll. */
     private readonly deliver: (message: ChatMessageView) => void,
+    private readonly players: Signal<PlayerView[]>,
   ) {}
+
+  /** Escolhe para quem vai a próxima mensagem (`''` = a mesa toda). */
+  sendTo(playerId: string): void {
+    this.chosen.set(playerId);
+  }
 
   toggle(): void {
     this.open.update((open) => !open);
@@ -59,10 +84,18 @@ export class TableChat {
     if (this.busy()) {
       return false;
     }
+    if (this.recipientGone()) {
+      this.error.set('Quem ia receber o sussurro saiu da mesa: escolha para quem enviar.');
+      return false;
+    }
     this.busy.set(true);
     this.error.set('');
     try {
-      this.deliver(await firstValueFrom(this.api.postChat(this.tableId(), { text })));
+      this.deliver(
+        await firstValueFrom(
+          this.api.postChat(this.tableId(), { text, to: this.recipient() || null }),
+        ),
+      );
       return true;
     } catch (error) {
       this.error.set(messageOf(error));

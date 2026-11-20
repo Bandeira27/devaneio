@@ -7,12 +7,20 @@ import { TableChat } from '../../table.chat';
 import { TableStore } from '../../table.store';
 import { ChatDock } from './chat-dock';
 
+const PLAYERS = [
+  { id: 'p1', name: 'Ana', role: 'host' as const, character_ids: [] },
+  { id: 'p2', name: 'Bruno', role: 'player' as const, character_ids: [] },
+  { id: 'p3', name: 'Carla', role: 'player' as const, character_ids: [] },
+];
+
 const message = (seq: number, over: Partial<ChatMessageView> = {}): ChatMessageView => ({
   seq,
   player_id: 'p2',
   name: 'Bruno',
   role: 'player',
   text: `mensagem ${seq}`,
+  to: null,
+  to_name: null,
   at: 1_700_000_000 + seq,
   ...over,
 });
@@ -32,6 +40,7 @@ function mount(opts: { messages?: ChatMessageView[]; canChat?: boolean; open?: b
     messages,
     signal('p1'),
     (m) => messages.update((all) => [...all, m]),
+    signal(PLAYERS),
   );
   chat.baseline();
   chat.open.set(opts.open ?? true);
@@ -161,5 +170,89 @@ describe('ChatDock', () => {
     fixture.detectChanges();
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Devagar');
     expect(input(el).getAttribute('aria-invalid')).toBe('true');
+  });
+
+  describe('sussurro', () => {
+    it('o seletor lista a mesa toda e cada outro jogador, e escolher muda o botão para Sussurrar', () => {
+      const { el, fixture } = mount();
+      const select = el.querySelector('select') as HTMLSelectElement;
+      expect(Array.from(select.options).map((o) => o.textContent?.trim())).toEqual([
+        'Para a mesa toda',
+        'Sussurro para Bruno',
+        'Sussurro para Carla',
+      ]);
+      expect(el.querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Enviar');
+      select.value = 'p3';
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(el.querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Sussurrar');
+      expect(el.querySelector('.chat__form--whisper')).not.toBeNull();
+    });
+
+    it('um sussurro recebido tem selo "para você", forma própria e botão Responder', () => {
+      const { el } = mount({
+        messages: [message(1, { to: 'p1', to_name: 'Ana', text: 'psiu' })],
+      });
+      const item = el.querySelector('.chat__message') as HTMLElement;
+      expect(item.classList.contains('chat__message--whisper')).toBe(true);
+      expect(item.textContent).toContain('sussurro para você');
+      expect(item.querySelector('.chat__reply')?.getAttribute('aria-label')).toBe(
+        'Responder em sussurro a Bruno',
+      );
+    });
+
+    it('um sussurro que eu enviei diz para quem foi e não tem Responder', () => {
+      const { el } = mount({
+        messages: [message(1, { player_id: 'p1', to: 'p3', to_name: 'Carla', text: 'segredo' })],
+      });
+      const item = el.querySelector('.chat__message') as HTMLElement;
+      expect(item.textContent).toContain('sussurro para Carla');
+      expect(item.querySelector('.chat__reply')).toBeNull();
+    });
+
+    it('Responder escolhe quem sussurrou como destinatário', () => {
+      const { el, fixture, chat } = mount({
+        messages: [message(1, { to: 'p1', to_name: 'Ana', text: 'psiu' })],
+      });
+      (el.querySelector('.chat__reply') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(chat.recipient()).toBe('p2');
+      expect((el.querySelector('select') as HTMLSelectElement).value).toBe('p2');
+    });
+
+    it('a pílula diz quantos dos não lidos são sussurros', () => {
+      const { el, fixture, messages } = mount({ open: false });
+      messages.set([message(1), message(2, { to: 'p1', to_name: 'Ana' })]);
+      fixture.detectChanges();
+      expect(el.querySelector('.chat__pill')?.textContent).toContain(
+        '2 mensagens novas, 1 sussurro para você',
+      );
+    });
+
+    it('em sussurro o campo diz para quem vai, e que só aquela pessoa vê, mas fica guardado', () => {
+      const { el, fixture, chat } = mount();
+      chat.sendTo('p3');
+      fixture.detectChanges();
+      expect(input(el).getAttribute('aria-label')).toBe('Sussurro para Carla');
+      expect(el.querySelector('.chat__mode')?.textContent).toContain('Só Carla vê esta mensagem');
+      expect(el.querySelector('.chat__mode')?.textContent).toContain('guardada no servidor');
+    });
+
+    it('não oferece Responder a quem já não está na mesa', () => {
+      const { el } = mount({
+        messages: [message(1, { player_id: 'p9', name: 'Fantasma', to: 'p1', to_name: 'Ana' })],
+      });
+      expect(el.querySelector('.chat__message--whisper')).not.toBeNull();
+      expect(el.querySelector('.chat__reply')).toBeNull();
+    });
+
+    it('mesa encerrada: sem seletor, sem Responder', () => {
+      const { el } = mount({
+        canChat: false,
+        messages: [message(1, { to: 'p1', to_name: 'Ana' })],
+      });
+      expect(el.querySelector('select')).toBeNull();
+      expect(el.querySelector('.chat__reply')).toBeNull();
+    });
   });
 });
