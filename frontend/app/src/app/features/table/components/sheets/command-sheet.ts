@@ -5,11 +5,12 @@ import { DvInput } from '@shared/ui/field/input';
 import { SheetRef } from '@shared/ui/sheet/sheet';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 
 /** Folha de digitar um comando; devolve a linha escrita. */
 @Component({
   selector: 'dv-command-sheet',
-  imports: [DvSheetHead, DvButton, DvField, DvInput],
+  imports: [DvSheetHead, DvSheetFoot, DvButton, DvField, DvInput],
   template: `
     <dv-sheet-head title="Comando" />
     <form class="dv-stack" (submit)="$event.preventDefault(); send()">
@@ -29,9 +30,9 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
           (input)="line.set(fieldValue($event))"
         />
       </dv-field>
-      <div class="dv-sheet__foot">
+      <dv-sheet-foot>
         <button dvButton="primary" type="submit">Enviar</button>
-      </div>
+      </dv-sheet-foot>
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

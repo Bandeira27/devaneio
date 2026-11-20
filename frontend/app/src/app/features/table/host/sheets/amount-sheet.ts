@@ -15,6 +15,7 @@ import { fieldValue } from '@shared/ui/field/field-value';
 import { DvInput } from '@shared/ui/field/input';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 import { DvStepper } from '@shared/ui/stepper/stepper';
 
 /** O que a folha de ferir ou curar recebe: o verbo e os alvos possíveis. */
@@ -31,7 +32,7 @@ export const AMOUNT_COPY = {
 /** Folha de ferir ou curar à mão: alvo, quantia e, se quiser, a fonte que vai para o registro. Devolve a linha. */
 @Component({
   selector: 'dv-amount-sheet',
-  imports: [DvSheetHead, DvButton, DvChoice, DvField, DvInput, DvStepper],
+  imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice, DvField, DvInput, DvStepper],
   template: `
     <dv-sheet-head [title]="copy.title" />
     @if (data.targets.length === 0) {
@@ -54,9 +55,9 @@ export const AMOUNT_COPY = {
             (input)="source.set(fieldValue($event))"
           />
         </dv-field>
-        <div class="dv-sheet__foot">
+        <dv-sheet-foot>
           <button dvButton="primary" type="submit">{{ copy.action }}</button>
-        </div>
+        </dv-sheet-foot>
       </form>
     }
   `,

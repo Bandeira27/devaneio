@@ -9,10 +9,14 @@
 
 .history__item {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: var(--dv-space-3);
 }
 
 .history__turn {
   white-space: nowrap;
+}
+
+.history__text {
+  overflow-wrap: anywhere;
 }

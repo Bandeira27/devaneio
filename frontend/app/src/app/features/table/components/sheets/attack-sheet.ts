@@ -8,6 +8,7 @@ import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvChoice, type ChoiceOption } from '@shared/ui/choice/choice';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 
 /** O que a folha de atacar recebe: armas, alvos e modificadores. */
 export interface AttackSheetData {
@@ -22,7 +23,7 @@ export interface AttackSheetData {
  */
 @Component({
   selector: 'dv-attack-sheet',
-  imports: [DvSheetHead, DvButton, DvChoice, DvDisclosure],
+  imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice, DvDisclosure],
   template: `
     <dv-sheet-head title="Atacar" />
     @if (data.targets.length === 0) {
@@ -48,10 +49,10 @@ export interface AttackSheetData {
           </dv-disclosure>
         }
         <p class="dv-note">Gasta a sua ação.</p>
-        <div class="dv-sheet__foot">
+        <dv-sheet-foot>
           <button dvButton type="button" (click)="ref.close()">Cancelar</button>
           <button dvButton="primary" type="submit">Atacar {{ targetName() }}</button>
-        </div>
+        </dv-sheet-foot>
       </form>
     }
   `,

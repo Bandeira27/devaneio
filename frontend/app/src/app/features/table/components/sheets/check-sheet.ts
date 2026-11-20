@@ -8,6 +8,7 @@ import { DvDisclosure } from '@shared/ui/disclosure/disclosure';
 import { DvChoice, type ChoiceOption } from '@shared/ui/choice/choice';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 
 /** O que a folha de testar recebe: o sistema de regras. */
 export interface CheckSheetData {
@@ -20,7 +21,7 @@ export interface CheckSheetData {
  */
 @Component({
   selector: 'dv-check-sheet',
-  imports: [DvSheetHead, DvButton, DvChoice, DvDisclosure],
+  imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice, DvDisclosure],
   template: `
     <dv-sheet-head title="Testar" />
     <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
@@ -33,9 +34,9 @@ export interface CheckSheetData {
           }
         </div>
       </dv-disclosure>
-      <div class="dv-sheet__foot">
+      <dv-sheet-foot>
         <button dvButton="primary" type="submit">Testar</button>
-      </div>
+      </dv-sheet-foot>
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

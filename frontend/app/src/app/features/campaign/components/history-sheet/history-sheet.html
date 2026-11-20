@@ -22,7 +22,7 @@
             <span class="dv-note history__turn">{{
               event.turn === 0 ? 'Início' : 'Turno ' + event.turn
             }}</span>
-            <span>{{ event.text }}</span>
+            <span class="history__text">{{ event.text }}</span>
           </li>
         }
       </ol>
@@ -30,6 +30,6 @@
   }
 }
 
-<div class="dv-sheet__foot">
+<dv-sheet-foot>
   <button dvButton type="button" (click)="ref.close()">Fechar</button>
-</div>
+</dv-sheet-foot>

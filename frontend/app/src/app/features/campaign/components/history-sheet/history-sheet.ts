@@ -6,6 +6,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvIcon } from '@shared/ui/icon/icon';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 import { DvState } from '@shared/ui/state/state';
 
 /** O que a folha do histórico recebe: a mesa arquivada e o nome dela para o título. */
@@ -20,7 +21,7 @@ export interface HistorySheetData {
  */
 @Component({
   selector: 'dv-history-sheet',
-  imports: [DvButton, DvIcon, DvSheetHead, DvState],
+  imports: [DvButton, DvIcon, DvSheetHead, DvSheetFoot, DvState],
   templateUrl: './history-sheet.html',
   styleUrl: './history-sheet.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

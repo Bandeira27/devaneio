@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DvButton } from '../button/button';
 import { SHEET_DATA, SheetRef } from '../sheet/sheet';
 import { DvSheetHead } from '../sheet/sheet-head';
+import { DvSheetFoot } from '../sheet/sheet-foot';
 
 /** O que a folha de confirmar recebe: o título, o que vai acontecer e o texto do botão de confirmar. */
 export interface ConfirmSheetData {
@@ -17,14 +18,14 @@ export interface ConfirmSheetData {
  */
 @Component({
   selector: 'dv-confirm-sheet',
-  imports: [DvSheetHead, DvButton],
+  imports: [DvSheetHead, DvSheetFoot, DvButton],
   template: `
     <dv-sheet-head [title]="data.title" />
     <p cdkFocusInitial tabindex="-1">{{ data.text }}</p>
-    <div class="dv-sheet__foot">
+    <dv-sheet-foot>
       <button dvButton type="button" (click)="ref.close()">Voltar</button>
       <button dvButton="primary" type="button" (click)="ref.close(true)">{{ data.action }}</button>
-    </div>
+    </dv-sheet-foot>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

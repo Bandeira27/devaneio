@@ -72,23 +72,57 @@
   }
 }
 
-/* Rodapé da folha: a ação secundária (voltar) na ponta esquerda e a primária na direita; sozinho, o botão vai à direita. */
+/* Rodapé da folha (shared/ui/sheet/sheet-foot): as ações na ponta direita, a secundária antes da primária; sozinho, o
+   botão também vai à direita. Um `.dv-note` (contador) fica à esquerda. Com muitas opções a folha rola e o rodapé
+   fica sempre à vista; a área segura entra no próprio rodapé, que gruda na borda da tela. */
 .dv-sheet__foot {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: var(--dv-space-2);
   margin-top: var(--dv-space-4);
-  /* Com muitas opções a folha rola: a ação fica sempre à vista. */
   position: sticky;
   bottom: 0;
-  padding-block: var(--dv-space-2);
+  padding-top: var(--dv-space-2);
+  padding-bottom: max(var(--dv-space-4), env(safe-area-inset-bottom));
   background: var(--dv-surface-1);
 }
 
-.dv-sheet__foot > :only-child {
-  margin-inline-start: auto;
+.dv-sheet__foot > .dv-note {
+  margin-inline-end: auto;
+}
+
+/* Com rodapé, o respiro de baixo e a área segura são do rodapé, que gruda na borda da tela ao rolar. */
+.cdk-overlay-pane.dv-sheet:has(.dv-sheet__foot) {
+  padding-bottom: 0;
+}
+
+/* Rótulos com nome de NPC ou lugar são texto livre: quebram em vez de estourar a folha. */
+.dv-sheet__foot .dv-button {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Dentro de um formulário em pilha o espaço entre blocos já vem do `gap`: não soma outro. */
+.dv-stack > .dv-sheet__foot {
+  margin-top: 0;
+}
+
+/* Tela estreita: os botões empilham na largura toda, a primária embaixo (alvo de toque grande, sem linha quebrada). */
+@media (max-width: 30rem) {
+  .dv-sheet__foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dv-sheet__foot > .dv-note {
+    margin-inline-end: 0;
+    text-align: end;
+  }
 }
 
 /* Na tela larga a folha vira um diálogo no meio (continuidade com a folha: pergunta 3 da rule 12). O deslocamento é

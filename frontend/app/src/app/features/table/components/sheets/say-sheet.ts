@@ -6,11 +6,12 @@ import { DvInput } from '@shared/ui/field/input';
 import { SheetRef } from '@shared/ui/sheet/sheet';
 import { fieldValue } from '@shared/ui/field/field-value';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 
 /** Folha de falar com o mestre de IA; devolve o texto escrito. */
 @Component({
   selector: 'dv-say-sheet',
-  imports: [DvSheetHead, DvButton, DvField, DvInput],
+  imports: [DvSheetHead, DvSheetFoot, DvButton, DvField, DvInput],
   template: `
     <dv-sheet-head title="Falar" />
     <form class="dv-stack" (submit)="$event.preventDefault(); send()">
@@ -28,10 +29,10 @@ import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
           (input)="text.set(fieldValue($event))"
         ></textarea>
       </dv-field>
-      <div class="dv-sheet__foot">
+      <dv-sheet-foot>
         <span class="dv-note" aria-hidden="true">{{ text().length }}/{{ max }}</span>
         <button dvButton="primary" type="submit">Enviar</button>
-      </div>
+      </dv-sheet-foot>
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

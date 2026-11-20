@@ -4,6 +4,7 @@ import { DvButton } from '@shared/ui/button/button';
 import { DvChoice, type ChoiceOption } from '@shared/ui/choice/choice';
 import { SHEET_DATA, SheetRef } from '@shared/ui/sheet/sheet';
 import { DvSheetHead } from '@shared/ui/sheet/sheet-head';
+import { DvSheetFoot } from '@shared/ui/sheet/sheet-foot';
 
 /** O que a folha de ir recebe: as saídas do local. */
 export interface GoSheetData {
@@ -19,22 +20,22 @@ export interface GoSheetData {
  */
 @Component({
   selector: 'dv-go-sheet',
-  imports: [DvSheetHead, DvButton, DvChoice],
+  imports: [DvSheetHead, DvSheetFoot, DvButton, DvChoice],
   template: `
     <dv-sheet-head title="Para onde ir?" />
     @if (data.exits.length === 0) {
       <p class="dv-note">Não há saídas daqui.</p>
-      <div class="dv-sheet__foot">
+      <dv-sheet-foot>
         <button dvButton type="button" cdkFocusInitial (click)="ref.close()">Fechar</button>
-      </div>
+      </dv-sheet-foot>
     } @else {
       <form class="dv-stack" (submit)="$event.preventDefault(); ref.close(command())">
         <dv-choice legend="Destino" [options]="options" [(value)]="destination" />
         <p class="dv-note">O grupo todo se move. Gasta a sua ação.</p>
-        <div class="dv-sheet__foot">
+        <dv-sheet-foot>
           <button dvButton type="button" (click)="ref.close()">Cancelar</button>
           <button dvButton="primary" type="submit">Ir para {{ destinationName() }}</button>
-        </div>
+        </dv-sheet-foot>
       </form>
     }
   `,
