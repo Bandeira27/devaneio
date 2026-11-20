@@ -111,9 +111,19 @@ describe('buildFeed', () => {
       expect(types(feed)).toEqual(['turno 1', 'event-0', 'event-1', 'talk-1000', 'event-2']);
     });
 
-    it('as que vieram antes de qualquer evento abrem o fluxo', () => {
+    it('a fala dita com a ação vem logo depois do divisor do turno, não antes', () => {
       const feed = buildFeed([event(0, 1)], [talk(1000, 0)], 1);
-      expect(types(feed)).toEqual(['talk-1000', 'turno 1', 'event-0']);
+      expect(types(feed)).toEqual(['turno 1', 'talk-1000', 'event-0']);
+    });
+
+    it('a fala da ação que abre o turno seguinte fica nesse turno', () => {
+      const feed = buildFeed([event(0, 1), event(1, 2)], [talk(1000, 1)], 2);
+      expect(types(feed)).toEqual(['turno 1', 'event-0', 'turno 2', 'talk-1000', 'event-1']);
+    });
+
+    it('a fala de antes de um intervalo de eventos escondidos fica no turno anterior', () => {
+      const feed = buildFeed([event(0, 1), event(3, 2)], [talk(1000, 1)], 2);
+      expect(types(feed)).toEqual(['turno 1', 'event-0', 'talk-1000', 'turno 2', 'event-3']);
     });
 
     it('as mais novas que todos os eventos ficam no fim, em ordem de seq', () => {

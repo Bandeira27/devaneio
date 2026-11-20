@@ -120,7 +120,9 @@ export function buildFeed(
   };
 
   for (const event of ordered) {
-    flushTalk(event.index); // falas que vieram antes deste evento (after <= índice)
+    // Falas anteriores ao evento (after < índice) ficam no turno de antes; as ditas junto com a ação deste
+    // evento (after == índice) vêm depois do divisor, no turno a que pertencem.
+    flushTalk(event.index - 1);
     if (event.turn !== lastTurn) {
       items.push({
         type: 'turn',
@@ -130,6 +132,7 @@ export function buildFeed(
       });
       lastTurn = event.turn;
     }
+    flushTalk(event.index);
     lastEventTurn = event.turn;
     const outcome = event.outcome ?? null;
     const narration = event.narration ?? event.prose;
