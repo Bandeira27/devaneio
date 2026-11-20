@@ -77,6 +77,12 @@ def test_say_must_not_announce_the_outcome():
     assert "acertou, falhou" in PROPOSER_SYSTEM
 
 
+def test_uncertain_attempts_must_become_checks_not_just_talk():
+    # Visto numa mesa: "investigo a vila e falo com todos" voltou só com fala, e nada foi testado.
+    assert 'proponha um "check"' in PROPOSER_SYSTEM
+    assert "persuadir" in PROPOSER_SYSTEM
+
+
 def test_say_is_in_brazilian_portuguese_and_names_the_character():
     # Visto numa mesa: uma fala veio em inglês e outra tratava o jogador por "você".
     assert "português do Brasil" in PROPOSER_SYSTEM

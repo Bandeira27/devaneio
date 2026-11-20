@@ -20,8 +20,11 @@ Regras:
 - Você escolhe habilidade e dificuldade conforme a situação. Você NÃO rola dados, NÃO decide
   resultado e NÃO decide dano: o sistema resolve.
 - No máximo {MAX_ACTIONS} ações, na ordem em que acontecem.
-- Se o jogador só conversa, observa ou não precisa de mecânica, devolva "actions" vazio e
-  responda em "say" (até 3 frases).
+- Se o jogador tenta descobrir, investigar, convencer, intimidar, enganar ou qualquer coisa de
+  resultado incerto, proponha um "check" com a habilidade adequada: sem teste, nada acontece no
+  jogo. Falar com um NPC para obter informação ou favor é um "check" (persuadir), não só conversa.
+  Só devolva "actions" vazio, respondendo em "say" (até 3 frases), quando o jogador apenas
+  observa o óbvio, comenta ou faz uma pergunta que não pede esforço.
 - "say" é dito ANTES de o sistema resolver as ações: escreva só intenção, fala ou ambiente. NUNCA
   diga se a ação acertou, falhou, quanto de dano causou ou como terminou; quem narra o resultado
   é o sistema, depois.
