@@ -26,7 +26,15 @@ anfitrião está em [`desenho-painel-anfitriao.md`](desenho-painel-anfitriao.md)
   fragmento, que nunca chega ao servidor nem ao log.
 - **Token no navegador** (`Authorization: Bearer`, `localStorage`), sem cookie. Risco aceito: exposição a XSS, mitigada
   por CSP restrita, escape do Angular e proibição de `innerHTML` e `bypassSecurityTrust*` por lint (que entra com o app).
-- **Estado:** signals em serviços por feature. **Um tema**, com todas as cores em OKLCH num arquivo de tokens.
+- **Estado:** signals em serviços por feature, sem camada de *use-case* à parte: a regra do jogo mora no backend, e a SPA
+  só mostra o estado e manda a ação. **Um tema**, com todas as cores em OKLCH num arquivo de tokens.
+- **Serviço e store.** Tudo o que se injeta é um serviço (`@Injectable`), nomeado pelo papel, **sem o sufixo `Service`**
+  (`ApiClient`, `ServerTables`, `CampaignCatalog`). Um **store** (`*Store`) é o serviço que guarda o **estado de uma tela
+  ou de uma feature em signals**: a página o fornece em `providers` e o descarta com ela (`EditorStore`,
+  `CreateTableStore`), salvo os de `core/` (`SessionStore`), que são da aplicação toda. Ação que orquestra várias
+  chamadas e tem regra própria no cliente (arquivar uma mesa, gravar) não fica engordando o store: vai para um serviço
+  da feature, que o store ou a página chama (`EditorTables`). O critério de quando dividir é o da
+  [rule 09](../.agents/rules/09-responsabilidades.md).
 - **Botões** para as ações, com chat opcional para digitar comandos; o texto livre pelo LLM segue como ação.
 - **Mesa primeiro, editor depois.** O editor só atende a máquina do servidor (localhost), sem flag.
 - **Configuração do mestre de IA** (`/configuracao`, ligada na tela inicial): guarda o LLM da máquina (endereço, modelo, tempo e chave) e, como o editor, só abre por `localhost`. Vale na hora; a chave só entra e nunca volta. Ver [`llm.md`](llm.md) e [`desenho-banco.md`](desenho-banco.md).
